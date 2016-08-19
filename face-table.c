@@ -17,38 +17,50 @@
 
 #include "face-table.h"
 
-#include <utlist.h>
 #include <debug.h>
 
 #include <stdlib.h>
+#include <string.h>
 
-static ndn_face_entry_t *_face_table;
+static ndn_face_entry_t _face_table[NDN_FACE_ENTRIES_NUMOF];
 
 int ndn_face_table_size(void)
 {
-    ndn_face_entry_t *entry;
-    int size;
-    DL_COUNT(_face_table, entry, size);
+    int size = 0;
+    for (int i = 0; i < NDN_FACE_ENTRIES_NUMOF; ++i) {
+        if (_face_table[i].id != KERNEL_PID_UNDEF) {
+            size++;
+        }
+    }
     return size;
 }
 
 ndn_face_entry_t* ndn_face_table_find(kernel_pid_t id)
 {
-    ndn_face_entry_t* entry;
-    DL_SEARCH_SCALAR(_face_table, entry, id, id);
-    return entry;
+    for (int i = 0; i < NDN_FACE_ENTRIES_NUMOF; ++i) {
+        if (_face_table[i].id == id) {
+            return &_face_table[i];
+        }
+    }
+    return NULL;
 }
 
 int ndn_face_table_add(kernel_pid_t id, int type)
 {
-    ndn_face_entry_t *entry = ndn_face_table_find(id);
-    if (entry != NULL) {
-        DEBUG("ndn: face entry (id=%" PRIkernel_pid ") already exists\n", id);
-        return -1;
+    ndn_face_entry_t *entry = NULL;
+
+    for (int i = 0; i < NDN_FACE_ENTRIES_NUMOF; ++i) {
+        if (_face_table[i].id == id) {
+            DEBUG("ndn: face entry (id=%" PRIkernel_pid ") already exists\n", id);
+            return -1;
+        }
+
+        if ((!entry) && (_face_table[i].id == KERNEL_PID_UNDEF)) {
+            entry = &_face_table[i];
+        }
     }
 
-    entry = (ndn_face_entry_t*)malloc(sizeof(ndn_face_entry_t));
-    if (entry == NULL) {
+    if (!entry) {
         DEBUG("ndn: cannot allocate face entry (id=%" PRIkernel_pid ")\n", id);
         return -1;
     }
@@ -56,29 +68,29 @@ int ndn_face_table_add(kernel_pid_t id, int type)
     entry->prev = entry->next = NULL;
     entry->id = id;
     entry->type = type;
-    DL_PREPEND(_face_table, entry);
     DEBUG("ndn: add face entry (id=%" PRIkernel_pid ", type=%d)\n", id, type);
     return 0;
 }
 
 int ndn_face_table_remove(kernel_pid_t id)
 {
-    ndn_face_entry_t *entry, *tmp;
-    DL_FOREACH_SAFE(_face_table, entry, tmp) {
-        if (entry->id == id) {
-            DL_DELETE(_face_table, entry);
-            free(entry);
-            DEBUG("ndn: remove face entry (id=%" PRIkernel_pid ", type=%d)\n",
-                  entry->id, entry->type);
-            return 0;
-        }
+    ndn_face_entry_t *entry = ndn_face_table_find(id);
+    if (entry) {
+        DEBUG("ndn: remove face entry (id=%" PRIkernel_pid ", type=%d)\n",
+              entry->id, entry->type);
+        memset(entry, 0, sizeof(*entry));
+        entry->id = KERNEL_PID_UNDEF;
+        return 0;
     }
+
     return -1;
 }
 
 void ndn_face_table_init(void)
 {
-    _face_table = NULL;
+    for (int i = 0; i < NDN_FACE_ENTRIES_NUMOF; ++i) {
+        _face_table[i].id = KERNEL_PID_UNDEF;
+    }
 }
 
 /** @} */

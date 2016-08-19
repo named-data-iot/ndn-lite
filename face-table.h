@@ -26,6 +26,12 @@
 extern "C" {
 #endif
 
+#ifndef NDN_FACE_ENTRIES_NUMOF
+/**
+ * @brief Number of max. faces in the face table
+ */
+#define NDN_FACE_ENTRIES_NUMOF (10)
+#endif
 
 typedef struct _face_list_entry {
     kernel_pid_t id;  /**< ID of the incoming face */
