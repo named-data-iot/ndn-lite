@@ -103,6 +103,7 @@ int ndn_pit_add(kernel_pid_t face_id, int face_type, ndn_shared_block_t* si)
         ndn_block_t pn;
         int r = ndn_interest_get_name(&entry->shared_pi->block, &pn);
         assert(r == 0);
+        (void) r;
 
         if (0 == memcmp(pn.buf, name.buf,
                         (pn.len < name.len ? pn.len : name.len))) {
