@@ -238,7 +238,7 @@ static void *_event_loop(void *args)
     msg_init_queue(msg_q, GNRC_NDN_MSG_QUEUE_SIZE);
 
     me_reg.demux_ctx = GNRC_NETREG_DEMUX_CTX_ALL;
-    me_reg.pid = thread_getpid();
+    me_reg.target.pid = thread_getpid();
 
     /* register interest in all NDN packets */
     gnrc_netreg_register(GNRC_NETTYPE_NDN, &me_reg);
