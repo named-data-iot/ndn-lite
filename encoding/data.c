@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef FEATURE_PERIPH_HWRNG
 typedef struct uECC_SHA256_HashContext {
     uECC_HashContext uECC;
     sha256_context_t ctx;
@@ -49,6 +50,7 @@ static void _finish_sha256(const uECC_HashContext *base, uint8_t *hash_result)
     uECC_SHA256_HashContext *context = (uECC_SHA256_HashContext*)base;
     sha256_final(&context->ctx, hash_result);
 }
+#endif
 
 ndn_shared_block_t* ndn_data_create(ndn_block_t* name,
                                     ndn_metainfo_t* metainfo,
@@ -179,6 +181,7 @@ ndn_shared_block_t* ndn_data_create(ndn_block_t* name,
             sha256(data.buf + 2, dl - 66, h);
             uECC_Curve curve = uECC_secp256r1();
 
+#ifndef FEATURE_PERIPH_HWRNG
             // allocate memory on heap to avoid stack overflow
             uint8_t *tmp = (uint8_t*)malloc(32 + 32 + 64);
             if (tmp == NULL) {
@@ -206,6 +209,13 @@ ndn_shared_block_t* ndn_data_create(ndn_block_t* name,
                 free((void*)data.buf);
                 return NULL;
             }
+#else
+            int res = uECC_sign(key, h, sizeof(h), buf + 2, curve);
+            if (res == 0) {
+                free((void*)data.buf);
+                return NULL;
+            }
+#endif
         }
         break;
 
@@ -359,6 +369,7 @@ ndn_shared_block_t* ndn_data_create2(ndn_name_t* name,
             sha256(data.buf + 2, dl - 66, h);
             uECC_Curve curve = uECC_secp256r1();
 
+#ifndef FEATURE_PERIPH_HWRNG
             // allocate memory on heap to avoid stack overflow
             uint8_t *tmp = (uint8_t*)malloc(32 + 32 + 64);
             if (tmp == NULL) {
@@ -386,6 +397,13 @@ ndn_shared_block_t* ndn_data_create2(ndn_name_t* name,
                 free((void*)data.buf);
                 return NULL;
             }
+#else
+            int res = uECC_sign(key, h, sizeof(h), buf + 2, curve);
+            if (res == 0) {
+                free((void*)data.buf);
+                return NULL;
+            }
+#endif
         }
         break;
 
