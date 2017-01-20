@@ -94,7 +94,7 @@ int ndn_pit_add(kernel_pid_t face_id, int face_type, ndn_shared_block_t* si)
     }
 
     /* convert lifetime to us */
-    lifetime *= MS_IN_USEC;
+    lifetime *= US_PER_MS;
 
     // check for interests with the same name and selectors
     ndn_pit_entry_t *entry;

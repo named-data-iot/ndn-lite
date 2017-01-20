@@ -69,7 +69,7 @@ typedef struct _l2_frag_entry {
 } _l2_frag_entry_t;
 
 //TODO: use larger timeout value in non-test environment
-#define NDN_L2_FRAG_MAX_LIFETIME    (10U * SEC_IN_USEC)
+#define NDN_L2_FRAG_MAX_LIFETIME    (10U * US_PER_SEC)
 
 static _l2_frag_entry_t* _l2_frag_list;
 
