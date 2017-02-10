@@ -46,7 +46,7 @@ ndn_shared_block_t* ndn_shared_block_create(ndn_block_t* block)
     memcpy(nbuf, block->buf, block->len);
     shared->block.buf = nbuf;
     shared->block.len = block->len;
-    atomic_set_to_one(&shared->ref);
+    atomic_init(&shared->ref, 1);
     return shared;
 }
 
@@ -69,14 +69,15 @@ ndn_shared_block_t* ndn_shared_block_create_by_move(ndn_block_t* block)
     shared->block.len = block->len;
     block->buf = NULL;
     block->len = 0;
-    atomic_set_to_one(&shared->ref);
+    atomic_init(&shared->ref, 1);
     return shared;
 }
 
 void ndn_shared_block_release(ndn_shared_block_t* shared)
 {
     assert(shared != NULL);
-    int ref = atomic_dec(&shared->ref) - 1;
+    int ref =
+      atomic_fetch_sub_explicit(&shared->ref, 1, memory_order_acq_rel) - 1;
     if (ref == 0) {
         /* no one is using this block; free the memory. */
         DEBUG("ndn: free shared block memory\n");
@@ -89,7 +90,7 @@ void ndn_shared_block_release(ndn_shared_block_t* shared)
 ndn_shared_block_t* ndn_shared_block_copy(ndn_shared_block_t* shared)
 {
     assert(shared != NULL);
-    atomic_inc(&shared->ref);
+    atomic_fetch_add_explicit(&shared->ref, 1, memory_order_acq_rel);
     return shared;
 }
 

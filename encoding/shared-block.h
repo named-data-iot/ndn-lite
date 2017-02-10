@@ -22,7 +22,7 @@
 
 #include "block.h"
 
-#include <atomic.h>
+#include <stdatomic.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,7 +32,7 @@ extern "C" {
  * @brief  Type to represent a shared block structure.
  */
 typedef struct ndn_shared_block {
-    atomic_int_t ref;
+    atomic_int ref;
     ndn_block_t block;
 } ndn_shared_block_t;
 
