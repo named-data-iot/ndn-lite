@@ -599,4 +599,19 @@ int ndn_app_put_data(ndn_app_t* handle, ndn_shared_block_t* sd)
     return 0;
 }
 
+void ndn_app_send_msg_to_app(kernel_pid_t id, ndn_shared_block_t* block,
+                             int msg_type)
+{
+    msg_t m;
+    m.type = msg_type;
+    m.content.ptr = (void*)block;
+    if (msg_try_send(&m, id) < 1) {
+        DEBUG("ndn: cannot send msg to pid %"
+              PRIkernel_pid "\n", id);
+        // release the shared ptr here
+        ndn_shared_block_release(block);
+    }
+    DEBUG("ndn: msg sent to pid %" PRIkernel_pid "\n", id);
+}
+
 /** @} */

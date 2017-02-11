@@ -246,6 +246,16 @@ int ndn_app_register_prefix2(ndn_app_t* handle, ndn_name_t* name,
  */
 int ndn_app_put_data(ndn_app_t* handle, ndn_shared_block_t* sd);
 
+/**
+ * @brief   Sends a TLV block to an app.
+ *
+ * @param[in]  id       PID of the app to which the block is sent.
+ * @param[in]  block    TLV block to send.
+ * @param[in]  msg_type Type of the TLV block (Interest or Data).
+ */
+void ndn_app_send_msg_to_app(kernel_pid_t id, ndn_shared_block_t* block,
+                             int msg_type);
+
 #ifdef __cplusplus
 }
 #endif

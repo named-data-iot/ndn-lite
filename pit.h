@@ -20,8 +20,8 @@
 #ifndef NDN_PIT_H_
 #define NDN_PIT_H_
 
-#include "face-table.h"
 #include "encoding/shared-block.h"
+#include "face-table.h"
 
 #include <kernel_types.h>
 #include <xtimer.h>
@@ -30,8 +30,10 @@
 extern "C" {
 #endif
 
+struct ndn_forwarding_strategy;
+
 /**
- * @brief  Type to represent the PIT entry.
+ * @brief  Type to represent a PIT entry.
  */
 typedef struct ndn_pit_entry {
     struct ndn_pit_entry *prev;
@@ -43,6 +45,8 @@ typedef struct ndn_pit_entry {
     // List of incoming faces
     _face_list_entry_t *face_list;
     int face_list_size;
+
+    struct ndn_forwarding_strategy* forwarding_strategy;
 } ndn_pit_entry_t;
 
 /**
@@ -52,13 +56,26 @@ typedef struct ndn_pit_entry {
  * @param[in]  face_type  Type of the incoming face.
  * @param[in]  si         Shared TLV block of the Interest packet to add. Will
  *                        be "copied" into the new PIT entry.
+ * @param[in]  strategy   Forwarding strategy used by the Interest @p si. If an
+ *                        entry with the same pending Interest already exists,
+ *                        its strategy choice will be overwritten with this one.
+ * @param[out] pit_entry  Location to store the added PIT entry.
  *
  * @return     0, if success.
  * @return     1, if Interet with the same name and selectors already exists.
- * @return     -1, if @p si is invlid.
+ * @return     -1, if @p si is NULL or invlid.
  * @retrun     -1, if out of memory.
  */
-int ndn_pit_add(kernel_pid_t face_id, int face_type, ndn_shared_block_t* si);
+int ndn_pit_add(kernel_pid_t face_id, int face_type, ndn_shared_block_t* si,
+		struct ndn_forwarding_strategy* strategy,
+		ndn_pit_entry_t** pit_entry);
+
+/**
+ * @brief  Removes PIT entry from PIT and releases allocated memory.
+ *
+ * @param[in]  entry  PIT entry to remove.
+ */
+void ndn_pit_release(ndn_pit_entry_t *entry);
 
 /**
  * @brief  Removes the expired entry from PIT based on the @p msg pointer.

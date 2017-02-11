@@ -20,9 +20,12 @@
 #include "encoding/data.h"
 #include "msg-type.h"
 #include "face-table.h"
+#include "forwarding-strategy.h"
 #include "netif.h"
 #include "ndn.h"
+#include "app.h"
 
+#define ENABLE_DEBUG 1
 #include <debug.h>
 #include <utlist.h>
 
@@ -72,9 +75,12 @@ static ndn_pit_entry_t* _pit_entry_add_face(ndn_pit_entry_t* entry,
     }
 }
 
-int ndn_pit_add(kernel_pid_t face_id, int face_type, ndn_shared_block_t* si)
+int ndn_pit_add(kernel_pid_t face_id, int face_type, ndn_shared_block_t* si,
+		struct ndn_forwarding_strategy* strategy,
+		ndn_pit_entry_t** pit_entry)
 {
-    assert(si != NULL);
+    if (si == NULL) return -1;
+    if (strategy == NULL) return -1;
 
     ndn_block_t name;
     if (0 != ndn_interest_get_name(&si->block, &name)) {
@@ -116,6 +122,10 @@ int ndn_pit_add(kernel_pid_t face_id, int face_type, ndn_shared_block_t* si)
                 /* reset timer */
                 xtimer_set_msg(&entry->timer, lifetime, &entry->timer_msg,
                                ndn_pid);
+		// overwrite forwarding strategy
+		entry->forwarding_strategy = strategy;
+		if (pit_entry != NULL)
+		    *pit_entry = entry;
                 return 1;
             }
         }
@@ -141,6 +151,8 @@ int ndn_pit_add(kernel_pid_t face_id, int face_type, ndn_shared_block_t* si)
     }
 
     DL_PREPEND(_pit, entry);
+    if (pit_entry != NULL)
+	*pit_entry = entry;
 
     /* initialize the timer */
     entry->timer.target = entry->timer.long_target = 0;
@@ -152,11 +164,14 @@ int ndn_pit_add(kernel_pid_t face_id, int face_type, ndn_shared_block_t* si)
     /* set a timer to send a message to ndn thread */
     xtimer_set_msg(&entry->timer, lifetime, &entry->timer_msg, ndn_pid);
 
+    // set forwarding strategy
+    entry->forwarding_strategy = strategy;
+
     DEBUG("ndn: add new pit entry (face=%" PRIkernel_pid ")\n", face_id);
     return 0;
 }
 
-void _ndn_pit_release(ndn_pit_entry_t *entry)
+void ndn_pit_release(ndn_pit_entry_t *entry)
 {
     assert(_pit != NULL);
     DL_DELETE(_pit, entry);
@@ -175,6 +190,17 @@ void ndn_pit_timeout(msg_t *msg)
         if (&elem->timer_msg == msg) {
             DEBUG("ndn: remove pit entry due to timeout (face_list_size=%d)\n",
                   elem->face_list_size);
+
+	    // invoke forwarding strategy trigger if available
+	    if (elem->forwarding_strategy->before_expire_pending_interest) {
+		DEBUG("ndn: invoke forwarding strategy trigger: before_expire_"
+		      "pending_interest\n");
+		elem->forwarding_strategy->before_expire_pending_interest(elem);
+	    } else {
+		DEBUG("ndn: forwarding strategy does not have trigger: before_ "
+		      "expire_pending_interest\n");
+	    }
+
             // notify app face, if any
             msg_t timeout;
             timeout.type = NDN_APP_MSG_TYPE_TIMEOUT;
@@ -195,23 +221,9 @@ void ndn_pit_timeout(msg_t *msg)
                     // for releasing the shared ptr
                 }
             }
-            _ndn_pit_release(elem);
+            ndn_pit_release(elem);
         }
     }
-}
-
-static void _send_data_to_app(kernel_pid_t id, ndn_shared_block_t* data)
-{
-    msg_t m;
-    m.type = NDN_APP_MSG_TYPE_DATA;
-    m.content.ptr = (void*)data;
-    if (msg_try_send(&m, id) < 1) {
-        DEBUG("ndn: cannot send data to pid %"
-              PRIkernel_pid "\n", id);
-        // release the shared ptr here
-        ndn_shared_block_release(data);
-    }
-    DEBUG("ndn: data sent to pid %" PRIkernel_pid "\n", id);
 }
 
 int ndn_pit_match_data(ndn_shared_block_t* sd, kernel_pid_t iface)
@@ -242,6 +254,17 @@ int ndn_pit_match_data(ndn_shared_block_t* sd, kernel_pid_t iface)
             DL_DELETE(_pit, entry);
             xtimer_remove(&entry->timer);
 
+	    // invoke forwarding strategy trigger if available
+	    if (entry->forwarding_strategy->before_satisfy_interest) {
+		DEBUG("ndn: invoke forwarding strategy trigger: before_satisfy_"
+		      "interest\n");
+		entry->forwarding_strategy->before_satisfy_interest
+		    (&sd->block, iface, entry);
+	    } else {
+		DEBUG("ndn: forwarding strategy does not have trigger: before_"
+		      "satisfy_interest\n");
+	    }
+
             for (int i = 0; i < entry->face_list_size; ++i) {
                 kernel_pid_t id = entry->face_list[i].id;
                 if (id == iface)
@@ -258,7 +281,7 @@ int ndn_pit_match_data(ndn_shared_block_t* sd, kernel_pid_t iface)
                         DEBUG("ndn: send data to app face %"
                               PRIkernel_pid "\n", id);
                         ndn_shared_block_t* ssd = ndn_shared_block_copy(sd);
-                        _send_data_to_app(id, ssd);
+                        ndn_app_send_msg_to_app(id, ssd, NDN_APP_MSG_TYPE_DATA);
                         break;
 
                     default:

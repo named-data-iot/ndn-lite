@@ -17,16 +17,19 @@
 
 #include "ndn.h"
 #include "face-table.h"
+#include "app.h"
 #include "netif.h"
 #include "l2.h"
 #include "pit.h"
 #include "fib.h"
 #include "cs.h"
+#include "forwarding-strategy.h"
 #include "encoding/ndn-constants.h"
 #include "encoding/name.h"
 #include "encoding/interest.h"
 #include "msg-type.h"
 
+#define ENABLE_DEBUG 1
 #include <debug.h>
 #include <net/gnrc/netapi.h>
 #include <net/gnrc/netif.h>
@@ -47,26 +50,12 @@ static char _stack[GNRC_NDN_STACK_SIZE];
 
 kernel_pid_t ndn_pid = KERNEL_PID_UNDEF;
 
-static void _send_msg_to_app(kernel_pid_t id, ndn_shared_block_t* block,
-                             int msg_type)
-{
-    msg_t m;
-    m.type = msg_type;
-    m.content.ptr = (void*)block;
-    if (msg_try_send(&m, id) < 1) {
-        DEBUG("ndn: cannot send msg to pid %"
-              PRIkernel_pid "\n", id);
-        // release the shared ptr here
-        ndn_shared_block_release(block);
-    }
-    DEBUG("ndn: msg sent to pid %" PRIkernel_pid "\n", id);
-}
-
 static void _process_interest(kernel_pid_t face_id, int face_type,
                               ndn_shared_block_t* si)
 {
     assert(si != NULL);
 
+    // check cache table
     ndn_shared_block_t* sd = ndn_cs_match(&si->block);
     if (sd != NULL) {
         ndn_shared_block_release(si);
@@ -83,7 +72,7 @@ static void _process_interest(kernel_pid_t face_id, int face_type,
             case NDN_FACE_APP:
                 DEBUG("ndn: send cached data to app face %"
                       PRIkernel_pid "\n", face_id);
-                _send_msg_to_app(face_id, sd, NDN_APP_MSG_TYPE_DATA);
+                ndn_app_send_msg_to_app(face_id, sd, NDN_APP_MSG_TYPE_DATA);
                 break;
 
             default:
@@ -94,62 +83,32 @@ static void _process_interest(kernel_pid_t face_id, int face_type,
         return;
     }
 
-    /* add to pit table */
-    if (ndn_pit_add(face_id, face_type, si) != 0) {
-        ndn_shared_block_release(si);
-        return;
-    }
-
-    /* check fib */
+    // check forwarding strategy
     ndn_block_t name;
     if (ndn_interest_get_name(&si->block, &name) < 0) {
-        DEBUG("ndn: cannot get name from interest block\n");
+        DEBUG("ndn: cannot get name from interest block, drop packet\n");
         ndn_shared_block_release(si);
         return;
     }
 
-    ndn_fib_entry_t* fib_entry = ndn_fib_lookup(&name);
-    if (fib_entry == NULL) {
-        DEBUG("ndn: no route for interest name, drop packet\n");
+    ndn_forwarding_strategy_t* strategy = ndn_forwarding_strategy_lookup(&name);
+    if (strategy == NULL) {
+	DEBUG("ndn: no forwarding strategy for interest name, drop packet\n");
+        ndn_shared_block_release(si);
+        return;
+    }
+    assert(strategy->after_receive_interest != NULL);
+
+    // add to pit table
+    ndn_pit_entry_t* pit_entry = NULL;
+    if (ndn_pit_add(face_id, face_type, si, strategy, &pit_entry) != 0) {
         ndn_shared_block_release(si);
         return;
     }
 
-    /* send to the first available interface */
-    //TODO: differet forwarding strategies
-    assert(fib_entry->face_list_size > 0);
-    assert(fib_entry->face_list != NULL);
-
-    int index;
-    for (index = 0; index < fib_entry->face_list_size; ++index) {
-        // find the first face that is different from the incoming face
-        if (fib_entry->face_list[index].id != face_id)
-            break;
-    }
-    if (index == fib_entry->face_list_size) {
-        DEBUG("ndn: no face available for forwarding\n");
-        ndn_shared_block_release(si);
-        return;
-    }
-
-    kernel_pid_t iface = fib_entry->face_list[index].id;
-    switch (fib_entry->face_list[index].type) {
-        case NDN_FACE_NETDEV:
-            DEBUG("ndn: send to netdev face %" PRIkernel_pid "\n", iface);
-            ndn_netif_send(iface, &si->block);
-            ndn_shared_block_release(si);
-            break;
-
-        case NDN_FACE_APP:
-            DEBUG("ndn: send to app face %" PRIkernel_pid "\n", iface);
-            _send_msg_to_app(iface, si, NDN_APP_MSG_TYPE_INTEREST);
-            break;
-
-        default:
-            ndn_shared_block_release(si);
-            break;
-    }
-
+    // invoke forwarding strategy trigger and transfer ownership of si
+    DEBUG("ndn: invoke forwarding strategy trigger: after_receive_interest\n");
+    strategy->after_receive_interest(si, face_id, pit_entry);
     return;
 }
 
@@ -350,6 +309,8 @@ kernel_pid_t ndn_init(void)
     ndn_face_table_init();
     ndn_fib_init();
     ndn_netif_auto_add();
+
+    ndn_forwarding_strategy_init();
 
     ndn_pit_init();
     ndn_cs_init();
