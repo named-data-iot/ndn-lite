@@ -132,9 +132,11 @@ static void default_strategy_after_receive_interest(ndn_shared_block_t* si,
         return;
     }
 
-    /* send to the first available interface */
-    assert(fib_entry->face_list_size > 0);
-    assert(fib_entry->face_list != NULL);
+    if (fib_entry->face_list_size == 0 || fib_entry->face_list == NULL) {
+	DEBUG("ndn: no outgoing face in the fib entry\n");
+	ndn_shared_block_release(si);
+        return;
+    }
 
     int index;
     for (index = 0; index < fib_entry->face_list_size; ++index) {
@@ -152,8 +154,50 @@ static void default_strategy_after_receive_interest(ndn_shared_block_t* si,
     return;
 }
 
-static ndn_forwarding_strategy_t default_strategy = {
+ndn_forwarding_strategy_t default_strategy = {
     .after_receive_interest = default_strategy_after_receive_interest,
+    .before_satisfy_interest = NULL,
+    .before_expire_pending_interest = NULL
+};
+
+static void
+multicast_strategy_after_receive_interest(ndn_shared_block_t* si,
+					  kernel_pid_t incoming_face,
+					  ndn_pit_entry_t* pit_entry)
+{
+    ndn_block_t name;
+    ndn_interest_get_name(&si->block, &name);
+
+    (void)pit_entry;
+
+    // check fib
+    ndn_fib_entry_t* fib_entry = ndn_fib_lookup(&name);
+    if (fib_entry == NULL) {
+        DEBUG("ndn: no route for interest name, drop packet\n");
+        ndn_shared_block_release(si);
+        return;
+    }
+
+    if (fib_entry->face_list_size == 0 || fib_entry->face_list == NULL) {
+	DEBUG("ndn: no outgoing face in the fib entry\n");
+	ndn_shared_block_release(si);
+        return;
+    }
+
+    // forward to all outgoing faces that are not the same as incoming face
+    for (int index = 0; index < fib_entry->face_list_size; ++index) {
+        if (fib_entry->face_list[index].id != incoming_face) {
+	    ndn_forwarding_strategy_action_send_interest
+		(ndn_shared_block_copy(si), fib_entry->face_list[index].id,
+		 fib_entry->face_list[index].type);
+	}
+    }
+    ndn_shared_block_release(si);
+    return;
+}
+
+ndn_forwarding_strategy_t multicast_strategy = {
+    .after_receive_interest = multicast_strategy_after_receive_interest,
     .before_satisfy_interest = NULL,
     .before_expire_pending_interest = NULL
 };

@@ -92,6 +92,11 @@ void ndn_forwarding_strategy_action_send_interest(ndn_shared_block_t* si,
  */
 void ndn_forwarding_strategy_init(void);
 
+
+// Global objects for built-in strategies
+extern ndn_forwarding_strategy_t default_strategy;
+extern ndn_forwarding_strategy_t multicast_strategy;
+
 #ifdef __cplusplus
 }
 #endif
