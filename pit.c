@@ -250,6 +250,7 @@ int ndn_pit_match_data(ndn_shared_block_t* sd, kernel_pid_t iface)
         if (r == -2 || r == 0) {
             // either pn is a prefix of name, or they are the same
             found = 0;
+	    DEBUG("ndn: found matching pit entry for data\n");
 
             DL_DELETE(_pit, entry);
             xtimer_remove(&entry->timer);

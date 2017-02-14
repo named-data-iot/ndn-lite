@@ -124,8 +124,10 @@ static void _process_data(kernel_pid_t face_id, int face_type,
         // found match in pit
         // try to add data to CS
         ndn_cs_add(sd);
-    } // otherwise drop unsolicited data
-
+    } else {
+	// otherwise drop unsolicited data
+	DEBUG("ndn: no matching pit entry found for data\n");
+    }
     ndn_shared_block_release(sd);
 }
 
@@ -265,6 +267,22 @@ static void *_event_loop(void *args)
                 }
                 msg_reply(&msg, &reply);
                 break;
+
+	    case NDN_APP_MSG_TYPE_ADD_STRATEGY:
+		DEBUG("ndn: ADD_STRATEGY messages received from pid %"
+		      PRIkernel_pid "\n", msg.sender_pid);
+		struct _ndn_app_add_strategy_param* param =
+		    (struct _ndn_app_add_strategy_param*)msg.content.ptr;
+		if (ndn_forwarding_strategy_add(param->prefix,
+						param->strategy) != 0) {
+		    DEBUG("ndn: failed to add forwarding strategy\n");
+		    ndn_shared_block_release(param->prefix);
+		    reply.content.value = 1;
+		} else {
+		    reply.content.value = 0;
+		}
+		msg_reply(&msg, &reply);
+		break;
 
             case GNRC_NETAPI_MSG_TYPE_RCV:
                 DEBUG("ndn: RCV message received from pid %"

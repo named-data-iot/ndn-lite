@@ -599,6 +599,26 @@ int ndn_app_put_data(ndn_app_t* handle, ndn_shared_block_t* sd)
     return 0;
 }
 
+int ndn_app_add_strategy(ndn_shared_block_t* prefix,
+			 ndn_forwarding_strategy_t* strategy)
+{
+    struct _ndn_app_add_strategy_param param;
+    param.prefix = prefix;  // receiver of this message takes the ownership
+    param.strategy = strategy;
+    msg_t op, reply;
+    op.type = NDN_APP_MSG_TYPE_ADD_STRATEGY;
+    op.content.ptr = (void*)(&param);
+
+    reply.content.value = 1;
+    msg_send_receive(&op, &reply, ndn_pid);
+    if (reply.content.value != 0) {
+        DEBUG("ndn_app: cannot add forwarding strategy (pid=%"
+              PRIkernel_pid ")\n", handle->id);
+        return -1;
+    }
+    return 0;
+}
+
 void ndn_app_send_msg_to_app(kernel_pid_t id, ndn_shared_block_t* block,
                              int msg_type)
 {

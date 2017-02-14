@@ -21,6 +21,7 @@
 #define NDN_APP_H_
 
 #include "encoding/name.h"
+#include "forwarding-strategy.h"
 
 #include <kernel_types.h>
 #include <xtimer.h>
@@ -255,6 +256,26 @@ int ndn_app_put_data(ndn_app_t* handle, ndn_shared_block_t* sd);
  */
 void ndn_app_send_msg_to_app(kernel_pid_t id, ndn_shared_block_t* block,
                              int msg_type);
+
+// private struct used by add_strategy operation
+struct _ndn_app_add_strategy_param {
+    ndn_shared_block_t* prefix;
+    ndn_forwarding_strategy_t* strategy;
+};
+
+/**
+ * @brief   Adds @p strategy for @p prefix.
+ *
+ * @param[in]  prefix  Prefix for which the strategy is set. This function takes
+ *                     ownership of this pointer and will pass the ownership to
+ *                     the ndn thread.
+ * @param[in]  strategy The strategy for @p prefix.
+ *
+ * @return  0, if success.
+ * @return  -1, if failed to set the strategy.
+ */
+int ndn_app_add_strategy(ndn_shared_block_t* prefix,
+			 ndn_forwarding_strategy_t* strategy);
 
 #ifdef __cplusplus
 }

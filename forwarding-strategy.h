@@ -58,6 +58,8 @@ ndn_forwarding_strategy_t* ndn_forwarding_strategy_lookup(ndn_block_t* name);
 
 /**
  * @brief   Adds a forwarding strategy for a given prefix to the strategy table.
+ *          If an entry with the same prefix already exists, the strategy will
+ *          be overwritten with the new strategy.
  *
  * @param[in]  prefix    The name prefix the uses the strategy. This function
  *                       acquires the ownership of @p prefix.
@@ -68,7 +70,6 @@ ndn_forwarding_strategy_t* ndn_forwarding_strategy_lookup(ndn_block_t* name);
  * @return  -1, if @p strategy is NULL.
  * @return  -1, if @p strategy does not have after_receive_interest trigger.
  * @return  -1, if the table is full.
- * @return  -1, if a strategy with the same prefix already exists.
  */
 int ndn_forwarding_strategy_add(ndn_shared_block_t* prefix,
 				ndn_forwarding_strategy_t* strategy);

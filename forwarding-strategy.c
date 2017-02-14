@@ -72,19 +72,21 @@ int ndn_forwarding_strategy_add(ndn_shared_block_t* prefix,
 	return -1;
     }
 
-    // check for duplicate entry
+    // check for existing entry with same prefix
     for (int i = 0; i < _strategy_table_size; ++i) {
 	_strategy_table_entry_t* entry = &_strategy_table[i];
 	int r =
             ndn_name_compare_block(&entry->prefix->block, &prefix->block);
         if (r == 0) {
             // found entry with the same prefix
-	    DEBUG("ndn: found existing forwarding strategy with same prefix\n");
-	    ndn_shared_block_release(prefix);
-	    return -1;
+	    DEBUG("ndn: overwrite forwarding strategy for existing entry\n");
+	    entry->strategy = *strategy;
+	    // we're done
+	    return 0;
         }	
     }
 
+    // add new entry
     _strategy_table_entry_t* entry = &_strategy_table[_strategy_table_size++];
     entry->prefix = prefix;  // move semantics
     entry->plen = ndn_name_get_size_from_block(&prefix->block);
@@ -119,6 +121,8 @@ static void default_strategy_after_receive_interest(ndn_shared_block_t* si,
 						    kernel_pid_t incoming_face,
 						    ndn_pit_entry_t* pit_entry)
 {
+    DEBUG("ndn: in default strategy trigger: after_receive_interest\n");
+
     ndn_block_t name;
     ndn_interest_get_name(&si->block, &name);
 
@@ -165,6 +169,8 @@ multicast_strategy_after_receive_interest(ndn_shared_block_t* si,
 					  kernel_pid_t incoming_face,
 					  ndn_pit_entry_t* pit_entry)
 {
+    DEBUG("ndn: in multicast strategy trigger: after_receive_interest\n");
+
     ndn_block_t name;
     ndn_interest_get_name(&si->block, &name);
 
