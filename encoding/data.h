@@ -80,6 +80,32 @@ ndn_shared_block_t* ndn_data_create2(ndn_name_t* name,
                                      const unsigned char* key,
                                      size_t key_len);
 
+#define NDN_DATA_CCM_KEY_LEN      16
+#define NDN_DATA_CCM_NONCE_LEN    8
+#define NDN_DATA_CCM_AUTH_TAG_LEN 12
+#define NDN_DATA_CCM_LENGTH_ENCODING 2
+
+/**
+ * @brief   Creates a shared TLV block that contains the encoded Data packet
+ *          encrypted and signed by AES-CCM authenticated encryption algorithm.
+ *
+ * @param[in]  name          TLV block of the data name.
+ * @param[in]  content       Content of the data.
+ * @param[in]  key           Pointer to the AES-CCM key.
+ * @param[in]  key_len       Length of the AES-CCM key.
+ *
+ * @return  Pointer to the shared TLV block, if success.
+ * @return  NULL, if out of memory when allocating the block.
+ * @return  NULL, if @p name or @p content is NULL or invalid.
+ * @return  NULL, if @p key is NULL.
+ * @return  NULL, if @p key_len is not NDN_DATA_CCM_KEY_LEN.
+ * @return  NULL, if cipher API returns failure.
+ */
+ndn_shared_block_t* ndn_data_encrypt_with_ccm(ndn_block_t* name,
+					      ndn_block_t* content,
+					      const uint8_t* key,
+					      uint8_t key_len);
+
 /**
  * @brief  Retrieves the TLV-encoded name from a Data TLV block.
  *
@@ -144,6 +170,21 @@ int ndn_data_get_key_locator(ndn_block_t* block, ndn_block_t* key_name);
  */
 int ndn_data_verify_signature(ndn_block_t* block, const unsigned char* key,
                               size_t key_len);
+
+/**
+ * @brief    Decrypts and authenticates the data packet with caller-supplied
+ *           AES-CCM key.
+ *
+ * @return  Shared block point of the decrypted content, if decryption and
+ *          authentication succeed.
+ * @return  NULL, if @p block is NULL or malformed.
+ * @return  NULL, if @p key is NULL.
+ * @return  NULL, if @p key_len is not NDN_DATA_CCM_KEY_LEN.
+ * @return  NULL, if cipher API returns failure.
+ */
+ndn_shared_block_t* ndn_data_decrypt_with_ccm(ndn_block_t* block,
+					      const uint8_t* key,
+					      uint8_t key_len);
 
 #ifdef __cplusplus
 }

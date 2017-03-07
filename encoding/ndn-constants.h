@@ -45,6 +45,7 @@ enum {
     /* Metainfo-related TLVs */
     NDN_TLV_CONTENT_TYPE     = 24,
     NDN_TLV_FRESHNESS_PERIOD = 25,
+    NDN_TLV_CCM_NONCE        = 30,
 
     /* Signature-related TLVs */
     NDN_TLV_SIGNATURE_TYPE   = 27,
@@ -58,6 +59,7 @@ enum {
     NDN_CONTENT_TYPE_LINK = 1,
     NDN_CONTENT_TYPE_KEY  = 2,
     NDN_CONTENT_TYPE_NACK = 3,
+    NDN_CONTENT_TYPE_CCM  = 50,
 };
 
 /* signature type values */

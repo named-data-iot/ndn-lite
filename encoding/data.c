@@ -17,9 +17,14 @@
 
 #include "data.h"
 
+#define ENABLE_DEBUG 1
 #include <debug.h>
+
+#include <crypto/ciphers.h>
+#include <crypto/modes/ccm.h>
 #include <hashes/sha256.h>
 #include <net/gnrc/nettype.h>
+#include <random.h>
 #include <uECC.h>
 
 #include <stdlib.h>
@@ -38,8 +43,8 @@ static void _init_sha256(const uECC_HashContext *base)
 }
 
 static void _update_sha256(const uECC_HashContext *base,
-                          const uint8_t *message,
-                          unsigned message_size)
+                           const uint8_t *message,
+                           unsigned message_size)
 {
     uECC_SHA256_HashContext *context = (uECC_SHA256_HashContext*)base;
     sha256_update(&context->ctx, message, message_size);
@@ -409,6 +414,119 @@ ndn_shared_block_t* ndn_data_create2(ndn_name_t* name,
 
         default:
             break;
+    }
+
+    ndn_shared_block_t* sd = ndn_shared_block_create_by_move(&data);
+    if (sd == NULL) {
+        free((void*)data.buf);
+        return NULL;
+    }
+    return sd;
+}
+
+ndn_shared_block_t* ndn_data_encrypt_with_ccm(ndn_block_t* name,
+                                              ndn_block_t* content,
+                                              const uint8_t* key,
+                                              uint8_t key_len)
+{
+    if (name == NULL || content == NULL || key == NULL)
+        return NULL;
+
+    if (key_len != NDN_DATA_CCM_KEY_LEN)
+        return NULL;
+
+    // Initiate cipher
+    cipher_t cipher;
+    if (cipher_init(&cipher, CIPHER_AES_128, key, key_len) < 0) {
+        DEBUG("ndn_encoding: cannot init ccm cipher for encryption\n");
+        return NULL;
+    }
+
+    /*
+     * Layout of CCM-encrypted data packet format:
+     *
+     *                           Content
+     *    +------+------+-------------------------+
+     *    |      |      |+-----+----------+-------+
+     *    | Name | Meta ||Nonce|Ciphertext|AuthTag|
+     *    |      |      |+-----+----------+-------+
+     *    +------+------+-------------------------+
+     *
+     *   Length of Ciphertext: the same as input content size
+     *   Length of Nonce: 8
+     *   Length of Auth-Tag: 12
+     */
+
+    ndn_metainfo_t metainfo = { NDN_CONTENT_TYPE_CCM, 0x7102034};
+    int ml = ndn_metainfo_total_length(&metainfo);
+    if (ml <= 0) return NULL;
+
+    int cl = ndn_block_total_length(NDN_TLV_CONTENT, NDN_DATA_CCM_NONCE_LEN
+                                    + content->len + NDN_DATA_CCM_AUTH_TAG_LEN);
+
+    int dl = name->len + ml + cl;
+
+    ndn_block_t data;
+    data.len = ndn_block_total_length(NDN_TLV_DATA, dl);
+    uint8_t* buf = (uint8_t*)malloc(data.len);
+    if (buf == NULL) {
+        DEBUG("ndn_encoding: cannot allocate memory for data block\n");
+        return NULL;
+    }
+    data.buf = buf;
+
+    int l, r = data.len;
+    // Write data type and length
+    buf[0] = NDN_TLV_DATA;
+    l = ndn_block_put_var_number(dl, buf + 1, r - 1);
+    buf += l + 1;
+    r -= l + 1;
+    assert(r == dl);
+
+    // Mark the start of "additional authenticated data"
+    uint8_t* aad = buf;
+
+    // Write name
+    memcpy(buf, name->buf, name->len);
+    buf += name->len;
+    r -= name->len;
+
+    // Write metainfo
+    ndn_metainfo_wire_encode(&metainfo, buf, ml);
+    buf += ml;
+    r -= ml;
+
+    // Write content type and length
+    buf[0] = NDN_TLV_CONTENT;
+    l = ndn_block_put_var_number(NDN_DATA_CCM_NONCE_LEN + content->len
+                                 + NDN_DATA_CCM_AUTH_TAG_LEN, buf + 1, r - 1);
+    buf += l + 1;
+    r -= l + 1;
+
+    int aad_len = (int)(buf - aad) + NDN_DATA_CCM_NONCE_LEN;
+
+    uint8_t* nonce = buf;
+    // Generate nonce
+    for (int i = 0; i < NDN_DATA_CCM_NONCE_LEN; i += 4) {
+        uint32_t r = random_uint32();
+        nonce[i] = (r & 0xff000000) >> 24;
+        nonce[i+1] = (r & 0xff0000) >> 16;
+        nonce[i+2] = (r & 0xff00) >> 8;
+        nonce[i+3] = r & 0xff;
+    }
+
+    buf += NDN_DATA_CCM_NONCE_LEN;
+
+    // Encrypt with CCM
+    int err =
+        cipher_encrypt_ccm(&cipher, aad, aad_len, NDN_DATA_CCM_AUTH_TAG_LEN,
+                           NDN_DATA_CCM_LENGTH_ENCODING, nonce,
+                           NDN_DATA_CCM_NONCE_LEN, (uint8_t*)content->buf,
+                           content->len, buf);
+    if (err < 0) {
+        DEBUG("ndn_encoding: ccm encryption returns error code %d\n", err);
+        free((void*)data.buf);
+        return NULL;
     }
 
     ndn_shared_block_t* sd = ndn_shared_block_create_by_move(&data);
@@ -840,6 +958,111 @@ int ndn_data_verify_signature(ndn_block_t* block,
             break;
     }
     return -1; // never reach here
+}
+
+ndn_shared_block_t* ndn_data_decrypt_with_ccm(ndn_block_t* block,
+                                              const uint8_t* key,
+                                              uint8_t key_len)
+{
+    if (block == NULL || key == NULL || key_len != NDN_DATA_CCM_KEY_LEN)
+        return NULL;
+
+    // Parse the data packet first
+    const uint8_t* buf = block->buf;
+    int len = block->len;
+    uint32_t num;
+    int l;
+
+    /* read data type */
+    if (*buf != NDN_TLV_DATA) return NULL;
+    buf += 1;
+    len -= 1;
+
+    /* read data length */
+    l = ndn_block_get_var_number(buf, len, &num);
+    if (l < 0) return NULL;
+    buf += l;
+    len -= l;
+
+    if ((int)num > len) return NULL;  // incomplete packet
+
+    // Mark start of AAD
+    uint8_t* aad = (uint8_t*)buf;
+
+    /* read name type */
+    if (*buf != NDN_TLV_NAME) return NULL;
+    buf += 1;
+    len -= 1;
+
+    /* read name length and skip value */
+    l = ndn_block_get_var_number(buf, len, &num);
+    if (l < 0) return NULL;
+    buf += l + (int)num;
+    len -= l + (int)num;
+
+    /* read metainfo */
+    ndn_metainfo_t metainfo;
+    l = ndn_metainfo_from_block(buf, len, &metainfo);
+    if (metainfo.content_type != NDN_CONTENT_TYPE_CCM) {
+        DEBUG("ndn_encoding: wrong content type %d for ccm data\n",
+              metainfo.content_type);
+        return NULL;
+    }
+
+    buf += l;
+    len -= l;
+
+    /* read content type */
+    if (*buf != NDN_TLV_CONTENT) return NULL;
+    buf += 1;
+    len -= 1;
+
+    /* read content length and skip value */
+    l = ndn_block_get_var_number(buf, len, &num);
+    if (l < 0) return NULL;
+    int content_len = (int)num - NDN_DATA_CCM_NONCE_LEN
+        - NDN_DATA_CCM_AUTH_TAG_LEN;
+    uint8_t* nonce = (uint8_t*)buf + l;
+    uint8_t* ciphertext = nonce + NDN_DATA_CCM_NONCE_LEN;
+
+    // Initiate cipher
+    cipher_t cipher;
+    if (cipher_init(&cipher, CIPHER_AES_128, key, key_len) < 0) {
+        DEBUG("ndn_encoding: cannot init ccm cipher for decryption\n");
+        return NULL;
+    }
+
+    // Allocate memory for AAD
+    int aad_len = (int)(ciphertext - aad);
+
+    // Allocate memory for plaintext
+    ndn_block_t content;
+    content.len = content_len;
+    content.buf = (uint8_t*)malloc(content.len);
+    if (content.buf == NULL) {
+        DEBUG("ndn_encoding: cannot allocate memory for plaintext\n");
+        return NULL;
+    }
+
+    // Decrypt with CCM
+    int err =
+        cipher_decrypt_ccm(&cipher, aad, aad_len, NDN_DATA_CCM_AUTH_TAG_LEN,
+                           NDN_DATA_CCM_LENGTH_ENCODING,
+                           nonce, NDN_DATA_CCM_NONCE_LEN, ciphertext,
+                           content_len + NDN_DATA_CCM_AUTH_TAG_LEN,
+                           (uint8_t*)content.buf);
+    if (err < 0) {
+        DEBUG("ndn_encoding: ccm decryption returns error code %d\n", err);
+        free((void*)content.buf);
+        return NULL;
+    }
+
+    ndn_shared_block_t* sb = ndn_shared_block_create_by_move(&content);
+    if (sb == NULL) {
+        free((void*)content.buf);
+        return NULL;
+    }
+    return sb;
 }
 
 /** @} */
