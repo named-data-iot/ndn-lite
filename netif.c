@@ -22,7 +22,6 @@
 
 #include <debug.h>
 #include <net/netopt.h>
-#include <net/netdev2.h>
 #include <net/gnrc/netapi.h>
 #include <net/gnrc/netif.h>
 #include <net/gnrc/netif/hdr.h>
