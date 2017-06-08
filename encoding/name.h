@@ -197,7 +197,7 @@ ndn_shared_block_t* ndn_name_append_uint8(ndn_block_t* block, uint8_t num) {
  */
 static inline
 ndn_shared_block_t* ndn_name_append_uint16(ndn_block_t* block, uint16_t num) {
-    num = HTONS(num);
+    num = htons(num);
     return ndn_name_append(block, (uint8_t*)&num, 2);
 }
 
@@ -215,7 +215,7 @@ ndn_shared_block_t* ndn_name_append_uint16(ndn_block_t* block, uint16_t num) {
  */
 static inline
 ndn_shared_block_t* ndn_name_append_uint32(ndn_block_t* block, uint32_t num) {
-    num = HTONL(num);
+    num = htonl(num);
     return ndn_name_append(block, (uint8_t*)&num, 4);
 }
 
