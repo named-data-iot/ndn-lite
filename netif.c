@@ -39,16 +39,19 @@ void ndn_netif_auto_add(void)
     }
 
     /* get list of interfaces */
-    kernel_pid_t ifs[GNRC_NETIF_NUMOF];
-    size_t ifnum = gnrc_netif_get(ifs);
+    size_t ifnum = gnrc_netif_numof();
 
     if (ifnum == 0) {
         DEBUG("ndn: no interfaces registered, cannot add netif\n");
         return;
     }
 
-    for (int i = 0; i < GNRC_NETIF_NUMOF; ++i) {
-        kernel_pid_t iface = ifs[i];
+    int i = -1;
+    gnrc_netif_t *netif = NULL;
+
+    while ((netif = gnrc_netif_iter(netif))) {
+        i++;
+        kernel_pid_t iface = netif->pid;
         gnrc_nettype_t proto;
 
         // get device mtu
@@ -59,10 +62,6 @@ void ndn_netif_auto_add(void)
                   PRIkernel_pid ")\n", iface);
             continue;
         }
-
-        //XXX: test-only!!!
-        /* if (_netif_table[i].mtu > 40) */
-        /*     _netif_table[i].mtu = 40; */
 
         // set device net proto to NDN
         if (gnrc_netapi_get(iface, NETOPT_PROTO, 0,
