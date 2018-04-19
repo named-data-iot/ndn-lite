@@ -34,7 +34,7 @@ enum {
     /* Interest-related TLVs */
     NDN_TLV_SELECTORS        = 9,
     NDN_TLV_NONCE            = 10,
-    NDN_TLV_INTERESTLIFETIME = 11,
+    NDN_TLV_INTERESTLIFETIME = 12,
 
     /* Data-related TLVs */
     NDN_TLV_METAINFO         = 20,
