@@ -212,7 +212,7 @@ int ndn_netif_send(kernel_pid_t iface, ndn_block_t* block)
     }
 
     /* check mtu */
-    if (block->len > netif->mtu) {
+    if (block->len > (int)netif->mtu) {
         DEBUG("ndn: packet size (%d) exceeds device mtu (%u); "
               "send with fragmentation (iface=%" PRIkernel_pid ")\n",
               block->len, netif->mtu, iface);
