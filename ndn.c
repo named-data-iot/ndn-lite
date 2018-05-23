@@ -144,7 +144,7 @@ static void _process_packet(kernel_pid_t face_id, int face_type,
     if (buf[0] & NDN_L2_FRAG_HB_MASK) {
         uint16_t frag_id = (buf[1] << 8) + buf[2];
         DEBUG("ndn: l2 fragment received (MF=%x, SEQ=%u, ID=%02x, "
-              "packet size = %d, iface=%" PRIkernel_pid ")\n",
+              "packet size = %zu, iface=%" PRIkernel_pid ")\n",
               (buf[0] & NDN_L2_FRAG_MF_MASK) >> 5,
               buf[0] & NDN_L2_FRAG_SEQ_MASK,
               frag_id, pkt->size, face_id);

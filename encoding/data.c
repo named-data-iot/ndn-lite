@@ -895,7 +895,7 @@ int ndn_data_verify_signature(ndn_block_t* block,
         case NDN_SIG_TYPE_DIGEST_SHA256:
         {
             if (num != 32) {
-                DEBUG("ndn_encoding: invalid digest sig value length (%u)\n",
+                DEBUG("ndn_encoding: invalid digest sig value length (%"PRIu32")\n",
                       num);
                 return -1;
             }
@@ -912,7 +912,7 @@ int ndn_data_verify_signature(ndn_block_t* block,
         case NDN_SIG_TYPE_HMAC_SHA256:
         {
             if (num != 32) {
-                DEBUG("ndn_encoding: invalid hmac sig value length (%u)\n",
+                DEBUG("ndn_encoding: invalid hmac sig value length (%"PRIu32")\n",
                       num);
                 return -1;
             }
@@ -934,7 +934,7 @@ int ndn_data_verify_signature(ndn_block_t* block,
         case NDN_SIG_TYPE_ECDSA_SHA256:
         {
             if (num != 64) {
-                DEBUG("ndn_encoding: invalid ecdsa sig value length (%u)\n",
+                DEBUG("ndn_encoding: invalid ecdsa sig value length (%"PRIu32")\n",
                       num);
                 return -1;
             }
@@ -1004,7 +1004,7 @@ ndn_shared_block_t* ndn_data_decrypt_with_ccm(ndn_block_t* block,
     ndn_metainfo_t metainfo;
     l = ndn_metainfo_from_block(buf, len, &metainfo);
     if (metainfo.content_type != NDN_CONTENT_TYPE_CCM) {
-        DEBUG("ndn_encoding: wrong content type %d for ccm data\n",
+        DEBUG("ndn_encoding: wrong content type %"PRId32" for ccm data\n",
               metainfo.content_type);
         return NULL;
     }
