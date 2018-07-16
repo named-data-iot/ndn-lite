@@ -168,8 +168,10 @@ int ndn_data_get_key_locator(ndn_block_t* block, ndn_block_t* key_name);
  *          by HMAC-SHA256 algorithm.
  * @return  -1, if verification fails.
  */
-int ndn_data_verify_signature(ndn_block_t* block, const unsigned char* key,
-                              size_t key_len);
+int
+ndn_data_verify_signature(ndn_block_t* block,
+                          const unsigned char* key,
+                          size_t key_len);
 
 /**
  * @brief    Decrypts and authenticates the data packet with caller-supplied
@@ -182,9 +184,10 @@ int ndn_data_verify_signature(ndn_block_t* block, const unsigned char* key,
  * @return  NULL, if @p key_len is not NDN_DATA_CCM_KEY_LEN.
  * @return  NULL, if cipher API returns failure.
  */
-ndn_shared_block_t* ndn_data_decrypt_with_ccm(ndn_block_t* block,
-					      const uint8_t* key,
-					      uint8_t key_len);
+ndn_shared_block_t*
+ndn_data_decrypt_with_ccm(ndn_block_t* block,
+                          const uint8_t* key,
+                          uint8_t key_len);
 
 #ifdef __cplusplus
 }

@@ -66,6 +66,8 @@ int ndn_name_component_compare(ndn_name_component_t* lhs, ndn_name_component_t* 
  */
 int ndn_name_component_wire_encode(ndn_name_component_t* comp, uint8_t* buf, int len);
 
+int ndn_name_component_wire_decode(ndn_block_t* block, ndn_name_component_t** comp);
+
 
 /**
  * @brief   Type to represent a name.
@@ -135,6 +137,21 @@ int ndn_name_total_length(ndn_name_t* name);
  * @return  -1 if @p name or @p buf is NULL.
  */
 int ndn_name_wire_encode(ndn_name_t* name, uint8_t* buf, int len);
+
+ /**
+ * @brief   Decodes a name into caller-supplied buffer following the TLV wire format.
+ *          Does nothing if the name is empty.
+ *
+ * @param[in]  name      Name to be encoded.
+ * @param[out] buf       Pointer to the caller-supplied memory buffer.
+ * @param[in]  len       Size of the buffer.
+ *
+ * @return  Number of bytes written to the buffer, if success.
+ * @return  -1 if the buffer is not big enough to store the encoded name.
+ * @return  -1 if @p name is invalid.
+ * @return  -1 if @p name or @p buf is NULL.
+ */
+int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t** name);
 
 /**
  * @brief   Creates a TLV-encoded shared name block from a URI string.

@@ -66,6 +66,29 @@ int ndn_name_component_wire_encode(ndn_name_component_t* comp, uint8_t* buf,
     return tl;
 }
 
+int ndn_name_component_wire_decode(ndn_block_t* block, ndn_name_component_t** comp)
+{
+  const uint8_t* buf = block->buf;
+  int len = block->len;
+  uint32_t length;
+  int length_of_l;
+
+  if (*buf != NDN_TLV_NAME_COMPONENT) return -1;
+  ++buf;
+  --len;
+
+  length_of_l = ndn_block_get_var_number(buf, len, &length);
+  if (length_of_l < 0) return -1;
+  buf += length_of_l;
+  len -= length_of_l;
+
+  *comp = malloc(sizeof(ndn_name_component_t));
+  (*comp)->len = len;
+  (*comp)->buf = buf;
+
+  return 0;
+}
+
 
 int ndn_name_compare(ndn_name_t* lhs, ndn_name_t* rhs)
 {
@@ -142,6 +165,50 @@ int ndn_name_wire_encode(ndn_name_t* name, uint8_t* buf, int len)
                                                         len - bytes_written);
     }
     return tl;
+}
+
+int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t** name)
+{
+  const uint8_t* buf = block->buf;
+  int len = block->len;
+  uint32_t length;
+  int length_of_l;
+
+  if (*buf != NDN_TLV_NAME) return -1;
+  buf += 1;
+  len -= 1;
+
+  length_of_l = ndn_block_get_var_number(buf, len, &length);
+  if (length_of_l < 0) return -1;
+  buf += length_of_l;
+  len -= length_of_l;
+
+  if ((int)length > len) return -1;  // incomplete name
+
+  *name = malloc(sizeof(ndn_name_t));
+
+  uint32_t comp_length = 0;
+  int comp_length_of_l = 0;
+  int size = 0;
+  while (true) {
+    if (*buf != NDN_TLV_NAME_COMPONENT) break;
+    buf += 1;
+    len -= 1;
+
+    comp_length_of_l = ndn_block_get_var_number(buf, len, &comp_length);
+    buf += comp_length_of_l;
+    len -= comp_length_of_l;
+
+    (*name)->comps[size].buf = buf;
+    (*name)->comps[size].len = comp_length;
+
+    ++size;
+    buf += comp_length;
+    len -= comp_length;
+  }
+
+  (*name)->size = size;
+  return 0;
 }
 
 static inline int _check_hex(char c)
