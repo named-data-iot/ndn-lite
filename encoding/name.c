@@ -206,7 +206,7 @@ int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t* name)
 
     puts("start");
     ndn_name_component_t component;
-    uint8_t* comp_buf = (uint8_t*)malloc(comp_length);
+    uint8_t* comp_buf = (uint8_t*)malloc(comp_length * sizeof(uint8_t));
     component.buf = comp_buf;
 
     puts("after assignment");
@@ -222,7 +222,7 @@ int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t* name)
     len -= comp_length;
   }
 
-  name->comps = realloc(name->comps, size);
+  name->comps = realloc(name->comps, size * sizeof(uint8_t));
   name->size = size;
   return 0;
 }
