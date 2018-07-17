@@ -167,7 +167,7 @@ int ndn_name_wire_encode(ndn_name_t* name, uint8_t* buf, int len)
     return tl;
 }
 
-int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t** name)
+int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t* name)
 {
   const uint8_t* buf = block->buf;
   int len = block->len;
@@ -188,8 +188,6 @@ int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t** name)
 
   if ((int)length > len) return -1;  // incomplete name
 
-  *name = malloc(sizeof(ndn_name_t));
-
   uint32_t comp_length = 0;
   int comp_length_of_l = 0;
   int size = 0;
@@ -204,15 +202,19 @@ int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t** name)
     buf += comp_length_of_l;
     len -= comp_length_of_l;
 
-    (*name)->comps[size].buf = buf;
-    (*name)->comps[size].len = comp_length;
+    puts("start");
+
+    name->comps[size].buf = buf;
+    name->comps[size].len = comp_length;
+
+    puts("end");
 
     ++size;
     buf += comp_length;
     len -= comp_length;
   }
 
-  (*name)->size = size;
+  name->size = size;
   return 0;
 }
 

@@ -151,7 +151,7 @@ int ndn_name_wire_encode(ndn_name_t* name, uint8_t* buf, int len);
  * @return  -1 if @p name is invalid.
  * @return  -1 if @p name or @p buf is NULL.
  */
-int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t** name);
+int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t* name);
 
 /**
  * @brief   Creates a TLV-encoded shared name block from a URI string.
