@@ -210,7 +210,7 @@ int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t* name)
     component.buf = comp_buf;
 
     puts("after assignment");
-    memcpy(comp_buf, buf, comp_length);
+    memcpy(comp_buf, buf, comp_length * sizeof(uint8_t));
     component.len = comp_length;
 
     name->comps[size] = component;
