@@ -58,7 +58,7 @@ ndn_cert_get_key_name(ndn_name_t* cert_name, ndn_name_t* key_name)
   }
 
   key_name->size = cert_name->size - 2;
-  identity_name->comps = malloc(key_name->size * sizeof(ndn_name_component_t));
+  key_name->comps = malloc(key_name->size * sizeof(ndn_name_component_t));
 
   for (int i = 0; i < key_name->size; ++i) {
     key_name->comps[i] = cert_name->comps[i];
