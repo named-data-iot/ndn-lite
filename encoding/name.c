@@ -188,6 +188,8 @@ int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t* name)
 
   if ((int)length > len) return -1;  // incomplete name
 
+  name->comps = malloc(10 * sizeof(ndn_name_component_t));
+
   uint32_t comp_length = 0;
   int comp_length_of_l = 0;
   int size = 0;
@@ -203,9 +205,15 @@ int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t* name)
     len -= comp_length_of_l;
 
     puts("start");
+    ndn_name_component_t component;
+    uint8_t* comp_buf = (uint8_t*)malloc(comp_length);
+    component.buf = comp_buf;
 
-    name->comps[size].buf = buf;
-    name->comps[size].len = comp_length;
+    puts("after assignment");
+    memcpy(comp_buf, buf, comp_length);
+    component.len = comp_length;
+
+    name->comps[size] = component;
 
     puts("end");
 
@@ -214,6 +222,7 @@ int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t* name)
     len -= comp_length;
   }
 
+  name->comps = realloc(name->comps, size);
   name->size = size;
   return 0;
 }
