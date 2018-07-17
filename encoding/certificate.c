@@ -27,10 +27,10 @@ ndn_cert_is_certificate_name(ndn_name_t* cert_name)
   ndn_name_component_t component;
   ndn_name_get_component(cert_name, -4, &component);
 
-  if (component.len != 6) return 0;
-  if (component.buf[3] != 'K'
-      || component.buf[4] != 'E'
-      || component.buf[5] != 'Y') return 0;
+  if (component.len != 3) return 0;
+  if (component.buf[0] != 'K'
+      || component.buf[1] != 'E'
+      || component.buf[2] != 'Y') return 0;
   return 1;
 }
 
@@ -42,8 +42,9 @@ ndn_cert_get_identity_name(ndn_name_t* cert_name, ndn_name_t* identity_name)
   }
 
   identity_name->size = cert_name->size - 4;
-  int i = 0;
-  for (; i < identity_name->size; ++i) {
+  identity_name->comps = malloc(identity_name->size * sizeof(ndn_name_component_t));
+
+  for (int i = 0; i < identity_name->size; ++i) {
     identity_name->comps[i] = cert_name->comps[i];
   }
   return 0;
@@ -57,8 +58,9 @@ ndn_cert_get_key_name(ndn_name_t* cert_name, ndn_name_t* key_name)
   }
 
   key_name->size = cert_name->size - 2;
-  int i = 0;
-  for (; i < key_name->size; ++i) {
+  identity_name->comps = malloc(key_name->size * sizeof(ndn_name_component_t));
+
+  for (int i = 0; i < key_name->size; ++i) {
     key_name->comps[i] = cert_name->comps[i];
   }
   return 0;
