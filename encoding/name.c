@@ -179,6 +179,9 @@ int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t** name)
   len -= 1;
 
   length_of_l = ndn_block_get_var_number(buf, len, &length);
+  printf("the length of name-length %d \n", length_of_l);
+  printf("the length of name %d \n", length);
+
   if (length_of_l < 0) return -1;
   buf += length_of_l;
   len -= length_of_l;
@@ -190,12 +193,14 @@ int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t** name)
   uint32_t comp_length = 0;
   int comp_length_of_l = 0;
   int size = 0;
-  while (true) {
-    if (*buf != NDN_TLV_NAME_COMPONENT) break;
+  while (*buf == NDN_TLV_NAME_COMPONENT) {
     buf += 1;
     len -= 1;
 
     comp_length_of_l = ndn_block_get_var_number(buf, len, &comp_length);
+    printf("the length of comp-length %d \n", comp_length_of_l);
+    printf("the length of comp %d \n", comp_length);
+
     buf += comp_length_of_l;
     len -= comp_length_of_l;
 
