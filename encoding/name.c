@@ -66,25 +66,27 @@ int ndn_name_component_wire_encode(ndn_name_component_t* comp, uint8_t* buf,
     return tl;
 }
 
-int ndn_name_component_wire_decode(ndn_block_t* block, ndn_name_component_t** comp)
+int ndn_name_component_wire_decode(ndn_block_t* block, ndn_name_component_t* comp)
 {
   const uint8_t* buf = block->buf;
   int len = block->len;
-  uint32_t length;
+  uint32_t comp_length;
   int length_of_l;
 
   if (*buf != NDN_TLV_NAME_COMPONENT) return -1;
-  ++buf;
-  --len;
+  buf += 1;
+  len -= 1;
 
-  length_of_l = ndn_block_get_var_number(buf, len, &length);
+  length_of_l = ndn_block_get_var_number(buf, len, &comp_length);
   if (length_of_l < 0) return -1;
   buf += length_of_l;
   len -= length_of_l;
 
-  *comp = malloc(sizeof(ndn_name_component_t));
-  (*comp)->len = len;
-  (*comp)->buf = buf;
+  uint8_t* comp_buf = (uint8_t*)malloc(comp_length * sizeof(uint8_t));
+  comp.buf = comp_buf;
+
+  memcpy(comp_buf, buf, comp_length * sizeof(uint8_t));
+  comp.len = comp_length;
 
   return 0;
 }
