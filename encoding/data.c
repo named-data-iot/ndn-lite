@@ -115,6 +115,7 @@ ndn_shared_block_t* ndn_data_create(ndn_block_t* name,
     // Write data type and length
     buf[0] = NDN_TLV_DATA;
     l = ndn_block_put_var_number(dl, buf + 1, r - 1);
+    int dataLength = l;
     buf += l + 1;
     r -= l + 1;
     assert(r == dl);
@@ -170,12 +171,12 @@ ndn_shared_block_t* ndn_data_create(ndn_block_t* name,
     switch (sig_type) {
         case NDN_SIG_TYPE_DIGEST_SHA256:
             buf[1] = 32;
-            sha256(data.buf + 2, dl - 34, buf + 2);
+            sha256(data.buf + 1 + dataLength, dl - 34, buf + 2);
             break;
 
         case NDN_SIG_TYPE_HMAC_SHA256:
             buf[1] = 32;
-            hmac_sha256(key, key_len, (const unsigned*)(data.buf + 2),
+            hmac_sha256(key, key_len, (const unsigned*)(data.buf + 1 + dataLength),
                         dl - 34, buf + 2);
             break;
 
@@ -183,7 +184,7 @@ ndn_shared_block_t* ndn_data_create(ndn_block_t* name,
         {
             buf[1] = 64;
             uint8_t h[32] = {0};
-            sha256(data.buf + 2, dl - 66, h);
+            sha256(data.buf + 1 + dataLength, dl - 66, h);
             uECC_Curve curve = uECC_secp256r1();
 
 #ifndef FEATURE_PERIPH_HWRNG
