@@ -171,12 +171,12 @@ ndn_shared_block_t* ndn_data_create(ndn_block_t* name,
     switch (sig_type) {
         case NDN_SIG_TYPE_DIGEST_SHA256:
             buf[1] = 32;
-            sha256(data.buf + 1 + dataLength, dl - 34, buf + 2);
+            sha256(data.buf + 2, dl - 34, buf + 2);
             break;
 
         case NDN_SIG_TYPE_HMAC_SHA256:
             buf[1] = 32;
-            hmac_sha256(key, key_len, (const unsigned*)(data.buf + 1 + dataLength),
+            hmac_sha256(key, key_len, (const unsigned*)(data.buf + 2),
                         dl - 34, buf + 2);
             break;
 

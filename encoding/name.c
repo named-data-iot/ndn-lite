@@ -66,31 +66,6 @@ int ndn_name_component_wire_encode(ndn_name_component_t* comp, uint8_t* buf,
     return tl;
 }
 
-int ndn_name_component_wire_decode(ndn_block_t* block, ndn_name_component_t* comp)
-{
-  const uint8_t* buf = block->buf;
-  int len = block->len;
-  uint32_t comp_length;
-  int length_of_l;
-
-  if (*buf != NDN_TLV_NAME_COMPONENT) return -1;
-  buf += 1;
-  len -= 1;
-
-  length_of_l = ndn_block_get_var_number(buf, len, &comp_length);
-  if (length_of_l < 0) return -1;
-  buf += length_of_l;
-  len -= length_of_l;
-
-  uint8_t* comp_buf = (uint8_t*)malloc(comp_length * sizeof(uint8_t));
-  comp.buf = comp_buf;
-
-  memcpy(comp_buf, buf, comp_length * sizeof(uint8_t));
-  comp.len = comp_length;
-
-  return 0;
-}
-
 
 int ndn_name_compare(ndn_name_t* lhs, ndn_name_t* rhs)
 {
@@ -167,66 +142,6 @@ int ndn_name_wire_encode(ndn_name_t* name, uint8_t* buf, int len)
                                                         len - bytes_written);
     }
     return tl;
-}
-
-int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t* name)
-{
-  const uint8_t* buf = block->buf;
-  int len = block->len;
-  uint32_t length;
-  int length_of_l;
-
-  if (*buf != NDN_TLV_NAME) return -1;
-  buf += 1;
-  len -= 1;
-
-  length_of_l = ndn_block_get_var_number(buf, len, &length);
-  printf("the length of name-length %d \n", length_of_l);
-  printf("the length of name %d \n", length);
-
-  if (length_of_l < 0) return -1;
-  buf += length_of_l;
-  len -= length_of_l;
-
-  if ((int)length > len) return -1;  // incomplete name
-
-  name->comps = malloc(10 * sizeof(ndn_name_component_t));
-
-  uint32_t comp_length = 0;
-  int comp_length_of_l = 0;
-  int size = 0;
-  while (*buf == NDN_TLV_NAME_COMPONENT) {
-    buf += 1;
-    len -= 1;
-
-    comp_length_of_l = ndn_block_get_var_number(buf, len, &comp_length);
-    printf("the length of comp-length %d \n", comp_length_of_l);
-    printf("the length of comp %d \n", comp_length);
-
-    buf += comp_length_of_l;
-    len -= comp_length_of_l;
-
-    puts("start");
-    ndn_name_component_t component;
-    uint8_t* comp_buf = (uint8_t*)malloc(comp_length * sizeof(uint8_t));
-    component.buf = comp_buf;
-
-    puts("after assignment");
-    memcpy(comp_buf, buf, comp_length * sizeof(uint8_t));
-    component.len = comp_length;
-
-    name->comps[size] = component;
-
-    puts("end");
-
-    ++size;
-    buf += comp_length;
-    len -= comp_length;
-  }
-
-  name->comps = realloc(name->comps, size * sizeof(uint8_t));
-  name->size = size;
-  return 0;
 }
 
 static inline int _check_hex(char c)
