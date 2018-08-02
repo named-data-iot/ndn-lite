@@ -14,7 +14,7 @@
 #include "nfl-constant.h"
 #include "msg-type.h"
 #include "bootstrap.h"
-
+#include "nfl-block.h"
 #define ENABLE_DEBUG 1
 #include <debug.h>
 #include <thread.h>
@@ -35,25 +35,9 @@ kernel_pid_t nfl_pid = KERNEL_PID_UNDEF;
 kernel_pid_t nfl_bootstrap_pid = KERNEL_PID_UNDEF;
 char bootstrap_stack[THREAD_STACKSIZE_MAIN];
 
-static int nfl_bootstrap_init(void)
-{
-    //these info are static allocated, others all can be deleted after bootstrap
-/*
-    ndn_block_t* m_Certificate = NULL;
-    ndn_block_t* m_anchorCert = NULL;
-    ndn_block_t* m_homePrefix = NULL;
-    ndn_block_t* m_host = NULL;
-    uint8_t BKpub[64];
-    uint8_t BKpri[32];*/
-    //kernel_pid_t nfl_bootstrap_pid = KERNEL_PID_UNDEF;
-    //char bootstrap_stack[THREAD_STACKSIZE_MAIN];
-    return 1;
-}
+//below are the tables and tuples NFL thread need to maintain
+static nfl_bootstrap_tuple_t* bootstrapTuple;
 
-static int nfl_service_discovery_init(void)
-{
-    return 1;
-}
 static int _start_bootstrap(void* ptr)
 {
     //ptr pointed to a struct have three component: BKpub, BKpri, m_host
@@ -69,15 +53,16 @@ static int _start_bootstrap(void* ptr)
     uint32_t seconds = 5;
     xtimer_sleep(seconds); //we need some delay to achieve syc comm
     msg_send_receive(&send, &reply, nfl_bootstrap_pid);
-
-    ndn_block_t* cert = NULL;
+    
+    //store the ipc message in nfl maintained tuple 
+    bootstrapTuple = reply.content.ptr;
+    ndn_block_t* m_cert = bootstrapTuple->anchor_cert;
     ndn_block_t name;
-    cert = reply.content.ptr;
-    ndn_data_get_name(cert, &name);
-    DEBUG("certificate ipc received, name=");
+    ndn_data_get_name(m_cert, &name);
+    DEBUG("anchor certificate received through ipc tunnel, name = ");
     ndn_name_print(&name);
     putchar('\n');
-    return 1;
+    return true;
 }
 
 /* Main event loop for NFL */
@@ -115,21 +100,14 @@ static void *_event_loop(void *args)
                 //ndn_l2_frag_timeout((msg_t*)msg.content.ptr);
                 break;
 
-            case NFL_EXTRACT_ANCHOR_CERT:
+            case NFL_EXTRACT_BOOTSTRAP_TUPLE:
                 DEBUG("NFL: EXTRACT_ANCHOR_CERT message received from pid %"
                       PRIkernel_pid "\n", msg.sender_pid);
-                /*if (ndn_face_table_add(
-                        (kernel_pid_t)msg.content.value, NDN_FACE_APP) != 0) {
-                    DEBUG("ndn: failed to add face id %d\n",
-                          (int)msg.content.value);
-                    reply.content.value = 1;
-                } else {
-                    reply.content.value = 0;  // indicate success
-                }
-                msg_reply(&msg, &reply);*/
+                reply.content.ptr = bootstrapTuple;           
+                msg_reply(&msg, &reply);
                 break;
 
-            case NFL_EXTRACT_M_CERT:
+            case NFL_EXTRACT_SELF_LEARNING_TUPLE:
                 DEBUG("NFL: EXTRACT_M_CERT message received from pid %"
                       PRIkernel_pid "\n", msg.sender_pid);
                 /*if (ndn_face_table_remove(
@@ -186,9 +164,6 @@ static void *_event_loop(void *args)
 
 kernel_pid_t nfl_init(void)
 {
-    nfl_bootstrap_init();
-    nfl_service_discovery_init();
-
     /* check if thread is already running */
     if (nfl_pid == KERNEL_PID_UNDEF) {
         /* start UDP thread */

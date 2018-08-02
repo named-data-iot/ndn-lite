@@ -59,6 +59,7 @@ static ndn_block_t anchor_global;
 static ndn_block_t certificate_global;
 static ndn_block_t home_prefix;
 static ndn_block_t com_cert;
+static nfl_bootstrap_tuple_t tuple;
 
 static uint8_t ecc_key_pri[] = {             
      0x38, 0x67, 0x54, 0x73, 0x8B, 0x72, 0x4C, 0xD6,
@@ -500,7 +501,10 @@ void *ndn_bootstrap(void *ptr)
     while(1){
     msg_receive(&msg);
     DPRINT("nfl-bootstrap: (pid=%" PRIkernel_pid "): ipc request got\n", handle->id);
-    reply.content.ptr = &certificate_global;
+    tuple.m_cert = &certificate_global;
+    tuple.anchor_cert = &anchor_global;
+    tuple.home_prefix = &home_prefix;
+    reply.content.ptr = &tuple;
     msg_reply(&msg, &reply);
     DPRINT("nfl-bootstrap: (pid=%" PRIkernel_pid "): ipc loop quit\n", handle->id);
     break; 
