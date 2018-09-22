@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Wentao Shang
+ * Copyright (C) 2016-2018 Wentao Shang, Zhiyi Zhang
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -16,6 +16,7 @@
  * @brief   NDN name and name component interface.
  *
  * @author  Wentao Shang <wentaoshang@gmail.com>
+ * @author  Zhiyi Zhang <zhiyi@cs.ucla.edu>
  */
 #ifndef NDN_NAME_H_
 #define NDN_NAME_H_
@@ -66,6 +67,16 @@ int ndn_name_component_compare(ndn_name_component_t* lhs, ndn_name_component_t* 
  */
 int ndn_name_component_wire_encode(ndn_name_component_t* comp, uint8_t* buf, int len);
 
+/**
+ * @brief   Decodes a TLV name component into caller-supplied @p comp.
+ *
+ * @param[in]   block     The TLV format ndn name to be decoded
+ * @param[out]  comp      Pointer to the caller-supplied structure.
+ *
+ * @return  0 if success.
+ * @return  -1 if @p block is invalid.
+ */
+int ndn_name_component_wire_decode(ndn_block_t* block, ndn_name_component_t* comp);
 
 /**
  * @brief   Type to represent a name.
@@ -137,6 +148,17 @@ int ndn_name_total_length(ndn_name_t* name);
 int ndn_name_wire_encode(ndn_name_t* name, uint8_t* buf, int len);
 
 /**
+ * @brief   Decodes a TLV ndn name into caller-supplied @p name
+ *
+ * @param[in]   block     The TLV format ndn name to be decoded
+ * @param[out]  name      Pointer to the caller-supplied structure.
+ *
+ * @return  0 if success.
+ * @return  -1 if @p block is invalid.
+ */
+int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t* name);
+
+/**
  * @brief   Creates a TLV-encoded shared name block from a URI string.
  * @details Caller is responsible for releasing the returned shared block.
  *
@@ -155,7 +177,7 @@ ndn_shared_block_t* ndn_name_from_uri(const char* uri, int len);
  * @details Caller is responsible for releasing the returned shared block.
  *
  * @param[in]   block   TLV block of the name to append to.
- * @param[in]   buf     Buffer containing the component to append with.
+ * @param[in]   buf     Buffer containing the component (not TLV, just payload) to append with.
  * @param[in]   len     Size of the component.
  *
  * @return  Shared block of the new name, if success.
