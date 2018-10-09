@@ -97,6 +97,44 @@ int ndn_interest_get_nonce(ndn_block_t* block, uint32_t* nonce);
  */
 int ndn_interest_get_lifetime(ndn_block_t* block, uint32_t* life);
 
+/**
+ * @brief   Creates a shared TLV block that contains the encoded signed 
+ *          Interest packet.
+ *
+ * @param[in]  name       TLV block of the Interest name.
+ * @param[in]  selectors  Selectors of the Interest. Can be NULL if omitted.
+ * @param[in]  lifetime   Lifetime of the Interest.
+ * @param[in]  sig_type   Signature Algorithm (e.g., ECDSA, HMAC)
+ * @param[in]  key_name   Key who sign this interest, can be NULL
+ * @param[in]  key        Key bits
+ * @param[in]  key_len    Key bits length
+ * @param[in]  index      Indicating the index of using ECDSA curve (if using ECDSA to sign)
+ * 
+ * @return  Pointer to the shared block, if success.
+ * @return  -1, if @p name is NULL or invalid.
+ * @return  -1, if out of memory.
+ * @return  NULL, if incorrect sig_type or key_len.
+ */
+ndn_shared_block_t* ndn_signed_interest_create_with_index(ndn_block_t* name, void* selectors,
+                                                uint8_t sig_type, uint32_t lifetime,
+                                                ndn_block_t* key_name,
+                                                const unsigned char* key,
+                                                size_t key_len, int index);
+
+/**
+ * @brief    Verifies the signature of the TLV encoded Interest packet
+ * @details  If the data packet is signed by DigestSha256 algorithm, the key
+ *           is ignored.
+ *
+ * @return  0, if verification succeeds.
+ * @return  -1, if @p block is NULL.
+ * @return  -1, if @p key is NULL or @p key_len <= 0
+ * @return  -1, if verification fails.
+ */
+int ndn_interest_verify_signature_with_index(ndn_block_t* block,
+                              const unsigned char* key,
+                              uint32_t algorithm,
+                              size_t key_len, int index);
 
 #ifdef __cplusplus
 }

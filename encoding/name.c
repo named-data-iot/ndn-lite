@@ -66,31 +66,6 @@ int ndn_name_component_wire_encode(ndn_name_component_t* comp, uint8_t* buf,
     return tl;
 }
 
-int ndn_name_component_wire_decode(ndn_block_t* block, ndn_name_component_t* comp)
-{
-  const uint8_t* buf = block->buf;
-  int len = block->len;
-  uint32_t comp_length;
-  int length_of_l;
-
-  if (*buf != NDN_TLV_NAME_COMPONENT) return -1;
-  buf += 1;
-  len -= 1;
-
-  length_of_l = ndn_block_get_var_number(buf, len, &comp_length);
-  if (length_of_l < 0) return -1;
-  buf += length_of_l;
-  len -= length_of_l;
-
-  uint8_t* comp_buf = (uint8_t*)malloc(comp_length * sizeof(uint8_t));
-  comp.buf = comp_buf;
-
-  memcpy(comp_buf, buf, comp_length * sizeof(uint8_t));
-  comp.len = comp_length;
-
-  return 0;
-}
-
 
 int ndn_name_compare(ndn_name_t* lhs, ndn_name_t* rhs)
 {
@@ -167,66 +142,6 @@ int ndn_name_wire_encode(ndn_name_t* name, uint8_t* buf, int len)
                                                         len - bytes_written);
     }
     return tl;
-}
-
-int ndn_name_wire_decode(ndn_block_t* block, ndn_name_t* name)
-{
-  const uint8_t* buf = block->buf;
-  int len = block->len;
-  uint32_t length;
-  int length_of_l;
-
-  if (*buf != NDN_TLV_NAME) return -1;
-  buf += 1;
-  len -= 1;
-
-  length_of_l = ndn_block_get_var_number(buf, len, &length);
-  printf("the length of name-length %d \n", length_of_l);
-  printf("the length of name %d \n", length);
-
-  if (length_of_l < 0) return -1;
-  buf += length_of_l;
-  len -= length_of_l;
-
-  if ((int)length > len) return -1;  // incomplete name
-
-  name->comps = malloc(10 * sizeof(ndn_name_component_t));
-
-  uint32_t comp_length = 0;
-  int comp_length_of_l = 0;
-  int size = 0;
-  while (*buf == NDN_TLV_NAME_COMPONENT) {
-    buf += 1;
-    len -= 1;
-
-    comp_length_of_l = ndn_block_get_var_number(buf, len, &comp_length);
-    printf("the length of comp-length %d \n", comp_length_of_l);
-    printf("the length of comp %d \n", comp_length);
-
-    buf += comp_length_of_l;
-    len -= comp_length_of_l;
-
-    puts("start");
-    ndn_name_component_t component;
-    uint8_t* comp_buf = (uint8_t*)malloc(comp_length * sizeof(uint8_t));
-    component.buf = comp_buf;
-
-    puts("after assignment");
-    memcpy(comp_buf, buf, comp_length * sizeof(uint8_t));
-    component.len = comp_length;
-
-    name->comps[size] = component;
-
-    puts("end");
-
-    ++size;
-    buf += comp_length;
-    len -= comp_length;
-  }
-
-  name->comps = realloc(name->comps, size * sizeof(uint8_t));
-  name->size = size;
-  return 0;
 }
 
 static inline int _check_hex(char c)
@@ -650,4 +565,56 @@ void ndn_name_print(ndn_block_t* block)
     }
 }
 
+ndn_shared_block_t* ndn_name_append_from_name(ndn_block_t* block, ndn_block_t* block_new)
+{
+    int new_len = ndn_name_get_size_from_block(block_new);
+    ndn_block_t* blockptr = block;
+    ndn_shared_block_t* ptr = NULL; 
+
+    for(int i = 0; i < new_len; ++i){
+        ndn_block_t buffer;
+        ndn_name_get_component_from_block(block_new, i, &buffer);
+    
+        /* skip name header and component header */
+        ptr = ndn_name_append(blockptr, buffer.buf, buffer.len);
+        blockptr = &ptr->block;
+    }
+
+    return ptr;
+}
+
+int ndn_name_wire_decode(ndn_block_t* buf, ndn_name_t* name){
+    int len = ndn_name_get_size_from_block(buf);
+
+    name->comps = malloc(len * sizeof(ndn_block_t));
+    name->size = len;
+
+    for(int i = 0; i < len; ++i) 
+        ndn_name_get_component_from_block(buf, i, &name->comps[i]);
+
+    return true;
+}
+
+//this function would free input block
+ndn_shared_block_t* ndn_name_move_from_comp(ndn_block_t* block){
+
+    /* construct the first component as name TLV */
+    uint8_t* holder = (uint8_t*)malloc(block->len + 4);
+    holder[0] = NDN_TLV_NAME;
+    ndn_block_put_var_number(block->len + 2, holder + 1, block->len + 4 - 1);
+    holder[2] = NDN_TLV_NAME_COMPONENT;
+    ndn_block_put_var_number(block->len, holder + 3, block->len + 4 - 3);
+    memcpy(holder + 4, block->buf, block->len);
+    ndn_block_t temp = { holder, block->len + 4 };
+
+    /* free input block */
+    block->buf = NULL;
+    block->len = 0;
+
+    /* create shared block by move */
+    ndn_shared_block_t* shared = ndn_shared_block_create_by_move(&temp);
+    //free(holder);
+
+    return shared;
+}
 /** @} */

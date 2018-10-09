@@ -1,3 +1,2 @@
-DIRS += encoding
-DIRS += helper
+MODULE = ndn-helper
 include $(RIOTBASE)/Makefile.base

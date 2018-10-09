@@ -21,6 +21,9 @@
 #define NDN_APP_H_
 
 #include "encoding/name.h"
+#include "encoding/block.h"
+#include "encoding/shared-block.h"
+
 #include "forwarding-strategy.h"
 
 #include <kernel_types.h>
@@ -180,6 +183,33 @@ int ndn_app_express_interest(ndn_app_t* handle, ndn_block_t* name,
                              void* selectors, uint32_t lifetime,
                              ndn_app_data_cb_t on_data,
                              ndn_app_timeout_cb_t on_timeout);
+
+/**
+ * @brief   Sends an interest with specified name, selectors, lifetime, signing key
+ *          and callbacks.
+ *
+ * @details This function is reentrant and can be called from multiple threads.
+ *
+ * @param[in]  handle     Handler of the app that calls this function.
+ * @param[in]  name       TLV block of the Interest name.
+ * @param[in]  selectors  Selectors of the Interest. Can be NULL if omitted.
+ * @param[in]  lifetime   Lifetime of the Interest.
+ * @param[in]  sig_type   Signature type
+ * @param[in]  key        Signing key bits
+ * @param[in]  key_len    Key bits length
+ * @param[in]  on_data    Data handler. Can be NULL.
+ * @param[in]  on_timeout Timeout handler. Can be NULL.
+ *
+ * @return  0, if success.
+ * @return  -1, if @p handle or @p name is NULL.
+ * @return  -1, if out of memory when allocating memory for pending interest.
+ */
+int ndn_app_express_signed_interest(ndn_app_t* handle, ndn_block_t* name,
+                                    void* selectors, uint32_t lifetime,
+                                    uint8_t sig_type, const unsigned char* key,
+                                    size_t key_len, 
+                                    ndn_app_data_cb_t on_data,
+                                    ndn_app_timeout_cb_t on_timeout);
 
 /**
  * @brief   Sends an interest with specified name, selectors, lifetime and

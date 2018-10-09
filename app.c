@@ -457,6 +457,51 @@ int ndn_app_express_interest(ndn_app_t* handle, ndn_block_t* name,
     return 0;
 }
 
+int ndn_app_express_signed_interest(ndn_app_t* handle, ndn_block_t* name,
+                                    void* selectors, uint32_t lifetime,
+                                    uint8_t sig_type, const unsigned char* key,
+                                    size_t key_len, 
+                                    ndn_app_data_cb_t on_data,
+                                    ndn_app_timeout_cb_t on_timeout)
+{
+    if (handle == NULL) return -1;
+
+    // create encoded TLV block
+    ndn_shared_block_t* si = ndn_signed_interest_create_with_index(name, selectors, sig_type, lifetime, 
+                                                                   NULL, key, key_len, 0);
+    if (si == NULL) {
+        DEBUG("ndn_app: cannot create interest block (pid=%"
+              PRIkernel_pid ")\n", handle->id);
+        return -1;
+    }
+
+    // add entry to consumer callback table
+    _consumer_cb_entry_t *entry
+        = _add_consumer_cb_entry(handle, si, on_data, on_timeout);
+    if (entry == NULL) {
+        ndn_shared_block_release(si);
+        return -1;
+    }
+
+    // send interest to NDN thread
+    msg_t send;
+    send.type = NDN_APP_MSG_TYPE_INTEREST;
+    send.content.ptr = (void*)si;
+    if (msg_try_send(&send, ndn_pid) < 1) {
+        DEBUG("ndn_app: cannot send interest to NDN thread (pid=%"
+              PRIkernel_pid ")\n", handle->id);
+        ndn_shared_block_release(si);
+        // remove consumer cb entry
+        DL_DELETE(handle->_ccb_table, entry);
+        ndn_shared_block_release(entry->pi);
+        free(entry);
+        return -1;
+    }
+    // NDN thread will own the shared block ptr
+
+    return 0;
+}
+
 int ndn_app_express_interest2(ndn_app_t* handle, ndn_name_t* name,
                               void* selectors, uint32_t lifetime,
                               ndn_app_data_cb_t on_data,
