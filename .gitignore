@@ -47,3 +47,8 @@ Makefile.local
 .ycm_extra_conf.py
 .ycm_extra_conf.pyc
 __pycache__
+
+
+# for MacOS
+.DS*
+*/.DS*
