@@ -41,14 +41,14 @@ static void _finish_sha256(const uECC_HashContext *base, uint8_t *hash_result)
 #endif
 
 //segment for signature and buffer_signature to write, returning the pointer to the buffer
-//this function will automatically skip the NAME header, so just pass the whole NAME TLV 
+//this function will automatically skip the NAME header, so just pass the whole NAME TLV
 int ndn_security_make_signature(uint8_t pri_key[32], ndn_block_t* seg, uint8_t* buf_sig)
 {
     uint32_t num;
     buf_sig[0] = NDN_TLV_SIGNATURE_VALUE;
     ndn_block_put_var_number(64, buf_sig + 1, 66 -1);
     int gl = ndn_block_get_var_number(seg->buf + 1, seg->len - 1, &num);
-    uint8_t h[32] = {0}; 
+    uint8_t h[32] = {0};
 
     sha256(seg->buf + 1 + gl, seg->len - 1 - gl, h);
     uECC_Curve curve = uECC_secp160r1();
@@ -68,7 +68,7 @@ int ndn_security_make_signature(uint8_t pri_key[32], ndn_block_t* seg, uint8_t* 
         DEBUG("ndn_security: Error during signing interest\n");
         return -1;
     }
-       
+
     ctx->uECC.init_hash = &_init_sha256;
     ctx->uECC.update_hash = &_update_sha256;
     ctx->uECC.finish_hash = &_finish_sha256;
@@ -76,7 +76,7 @@ int ndn_security_make_signature(uint8_t pri_key[32], ndn_block_t* seg, uint8_t* 
     ctx->uECC.result_size = 32;
     ctx->uECC.tmp = tmp;
     int res = uECC_sign_deterministic(pri_key, h, sizeof(h), &ctx->uECC,
-                                              buf_sig + 1 + gl, curve); 
+                                              buf_sig + 1 + gl, curve);
     free(ctx);
     free(tmp);
     if (res == 0) {
@@ -87,7 +87,7 @@ int ndn_security_make_signature(uint8_t pri_key[32], ndn_block_t* seg, uint8_t* 
     res = uECC_sign(pri_key, h, sizeof(h), buf_sig + 1 + gl, curve);
     if (res == 0) {
         return -1;
-    }  
+    }
     return 0; //success
 #endif
     return 0; //success

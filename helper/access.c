@@ -27,38 +27,38 @@
 static ndn_app_t* handle = NULL;
 
 static uint8_t anchor_key_pub[] = {
-    0xB2, 0xFC, 0x62, 0x14, 0x78, 0xDC, 0x10, 0xEA, 
+    0xB2, 0xFC, 0x62, 0x14, 0x78, 0xDC, 0x10, 0xEA,
     0x61, 0x42, 0xB9, 0x34, 0x67, 0xE6, 0xDD, 0xE3,
-    0x3D, 0x35, 0xAA, 0x5B, 0xA4, 0x24, 0x6C, 0xD4, 
+    0x3D, 0x35, 0xAA, 0x5B, 0xA4, 0x24, 0x6C, 0xD4,
     0xB4, 0xED, 0xD8, 0xA4, 0x59, 0xA7, 0x32, 0x12,
     0x57, 0x37, 0x90, 0x5D, 0xED, 0x37, 0xC8, 0xE8,
     0x6A, 0x81, 0xE5, 0x8F, 0xBE, 0x6B, 0xD3, 0x27,
-    0x20, 0xBB, 0x16, 0x2A, 0xD3, 0x2F, 0xB5, 0x11, 
+    0x20, 0xBB, 0x16, 0x2A, 0xD3, 0x2F, 0xB5, 0x11,
     0x1B, 0xD1, 0xAF, 0x76, 0xDB, 0xAD, 0xB8, 0xCE
 }; // this is secp160r1 key*/
 
 static uint8_t com_key_pri[] = {
     0x00, 0x79, 0xD8, 0x8A, 0x5E, 0x4A, 0xF3, 0x2D,
-    0x36, 0x03, 0x89, 0xC7, 0x92, 0x3B, 0x2E, 0x50, 
+    0x36, 0x03, 0x89, 0xC7, 0x92, 0x3B, 0x2E, 0x50,
     0x7C, 0xF7, 0x6E, 0x60, 0xB0, 0xAF, 0x26, 0xE4,
-    0x42, 0x9D, 0xC8, 0xCE, 0xF0, 0xDE, 0x75, 0xB3 
+    0x42, 0x9D, 0xC8, 0xCE, 0xF0, 0xDE, 0x75, 0xB3
 };
 
 static uint8_t ace_key_pri[] = {
     0x00, 0x79, 0xD8, 0x8A, 0x5E, 0x4A, 0xF3, 0x2D,
-    0x36, 0x03, 0x89, 0xC7, 0x92, 0x3B, 0x2E, 0x50, 
+    0x36, 0x03, 0x89, 0xC7, 0x92, 0x3B, 0x2E, 0x50,
     0x7C, 0xF7, 0x6E, 0x60, 0xB0, 0xAF, 0x26, 0xE4,
-    0x42, 0x9D, 0xC8, 0xCE, 0xF0, 0xDE, 0x75, 0xB3 
+    0x42, 0x9D, 0xC8, 0xCE, 0xF0, 0xDE, 0x75, 0xB3
 };
 
 static uint8_t ace_key_pub[] = {
-    0xB2, 0xFC, 0x62, 0x14, 0x78, 0xDC, 0x10, 0xEA, 
+    0xB2, 0xFC, 0x62, 0x14, 0x78, 0xDC, 0x10, 0xEA,
     0x61, 0x42, 0xB9, 0x34, 0x67, 0xE6, 0xDD, 0xE3,
-    0x3D, 0x35, 0xAA, 0x5B, 0xA4, 0x24, 0x6C, 0xD4, 
+    0x3D, 0x35, 0xAA, 0x5B, 0xA4, 0x24, 0x6C, 0xD4,
     0xB4, 0xED, 0xD8, 0xA4, 0x59, 0xA7, 0x32, 0x12,
     0x57, 0x37, 0x90, 0x5D, 0xED, 0x37, 0xC8, 0xE8,
     0x6A, 0x81, 0xE5, 0x8F, 0xBE, 0x6B, 0xD3, 0x27,
-    0x20, 0xBB, 0x16, 0x2A, 0xD3, 0x2F, 0xB5, 0x11, 
+    0x20, 0xBB, 0x16, 0x2A, 0xD3, 0x2F, 0xB5, 0x11,
     0x1B, 0xD1, 0xAF, 0x76, 0xDB, 0xAD, 0xB8, 0xCE
 }; // this is secp160r1 key*/
 
@@ -80,7 +80,7 @@ static int on_producer_ace(ndn_block_t* interest, ndn_block_t* data)
     (void)interest;
 
     ndn_block_t name;
-    int r = ndn_data_get_name(data, &name); 
+    int r = ndn_data_get_name(data, &name);
     assert(r == 0);
 
     DPRINT("producer-ace: bootstrap response received, name =");
@@ -111,7 +111,7 @@ static int on_producer_ace(ndn_block_t* interest, ndn_block_t* data)
 
             //skip content length (perhaps > 255 bytes)
             uint32_t num;
-            int cl = ndn_block_get_var_number(buf, len, &num); 
+            int cl = ndn_block_get_var_number(buf, len, &num);
             buf += cl;
             len -= cl;
 
@@ -137,7 +137,7 @@ static int on_producer_ace(ndn_block_t* interest, ndn_block_t* data)
     }
 
     to_helper.content.ptr = NULL;
-    return NDN_APP_STOP;  
+    return NDN_APP_STOP;
 }
 
 static int on_timeout(ndn_block_t* interest)
@@ -183,9 +183,9 @@ static int send_ace_producer_interest(void)
     putchar('\n');
 
     int r = ndn_app_express_signed_interest(handle, &sn->block, NULL, lifetime,
-                                            NDN_SIG_TYPE_ECDSA_SHA256, com_key_pri, 
-                                            sizeof(com_key_pri), on_producer_ace, 
-                                            on_timeout);                             
+                                            NDN_SIG_TYPE_ECDSA_SHA256, com_key_pri,
+                                            sizeof(com_key_pri), on_producer_ace,
+                                            on_timeout);
     ndn_shared_block_release(sn);
     if (r != 0) {
         DPRINT("producer-ace (pid=%" PRIkernel_pid "): failed to express interest\n",
@@ -202,7 +202,7 @@ static int on_consumer_ace(ndn_block_t* interest, ndn_block_t* data)
     (void)interest;
 
     ndn_block_t name;
-    int r = ndn_data_get_name(data, &name); 
+    int r = ndn_data_get_name(data, &name);
     assert(r == 0);
 
     DPRINT("consumer-ace: access application response received, name =");
@@ -233,7 +233,7 @@ static int on_consumer_ace(ndn_block_t* interest, ndn_block_t* data)
 
             //skip content length (perhaps > 255 bytes)
             uint32_t num;
-            int cl = ndn_block_get_var_number(buf, len, &num); 
+            int cl = ndn_block_get_var_number(buf, len, &num);
             buf += cl;
             len -= cl;
 
@@ -281,7 +281,7 @@ static int on_consumer_ace(ndn_block_t* interest, ndn_block_t* data)
             memcpy(producer_key, decrypted_second, NDN_CRYPTO_SYMM_KEY);            
 
             DPRINT("consumer-ace: application response processsed\n");
-            
+
             to_helper.content.ptr = &producer_key;
             msg_reply(&from_helper, &to_helper);
 
@@ -291,10 +291,10 @@ static int on_consumer_ace(ndn_block_t* interest, ndn_block_t* data)
             free(key_1);
             free(key_2);
 
-            return NDN_APP_STOP;  
- 
+            return NDN_APP_STOP;
+
     }
-    
+
     to_helper.content.ptr = NULL;
     return NDN_APP_STOP;
 }
@@ -319,9 +319,9 @@ static int send_ace_consumer_interest(ndn_block_t* option)
 
     uint32_t lifetime = 3000; // 3 second
     int r = ndn_app_express_signed_interest(handle, &sn->block, NULL, lifetime,
-                                            NDN_SIG_TYPE_ECDSA_SHA256, com_key_pri, 
-                                            sizeof(com_key_pri), on_consumer_ace, 
-                                            on_timeout);        
+                                            NDN_SIG_TYPE_ECDSA_SHA256, com_key_pri,
+                                            sizeof(com_key_pri), on_consumer_ace,
+                                            on_timeout);
 
     ndn_shared_block_release(sn);
     if (r != 0) {
@@ -349,12 +349,12 @@ void *ndn_helper_access(void* bootstrapTuple)
     int home_len = ndn_name_get_size_from_block(&home_prefix);
     ndn_block_t host;
     ndn_name_get_component_from_block(&cert_name, home_len, &host);
-                    
+
     /* construct it in name TLV */
-    ndn_shared_block_t* identity_name = ndn_name_move_from_comp(&host);   
+    ndn_shared_block_t* identity_name = ndn_name_move_from_comp(&host);
     DPRINT("ndn-helper-access (pid=%" PRIkernel_pid "): identity name: ",
                thread_getpid());
-    ndn_name_print(&identity_name->block); 
+    ndn_name_print(&identity_name->block);
     putchar('\n');
 
     identity = identity_name->block;
@@ -395,7 +395,7 @@ void *ndn_helper_access(void* bootstrapTuple)
             case NDN_HELPER_ACCESS_CONSUMER:
                 DPRINT("ndn-helper-access (pid=%" PRIkernel_pid "): consumer access control\n",
                         thread_getpid());
-                
+
                 ndn_access_t* ptr_con = from_helper.content.ptr;
                 memcpy(ace_key_pub, ptr_con->ace->pub, NDN_CRYPTO_ASYMM_PUB);
                 memcpy(ace_key_pri, ptr_con->ace->pvt, NDN_CRYPTO_ASYMM_PVT);
