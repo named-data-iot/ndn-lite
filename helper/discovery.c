@@ -1,29 +1,30 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <stdlib.h>
+#include <string.h>
 #include "thread.h"
 #include "random.h"
 #include "xtimer.h"
 #include <hashes/sha256.h>
 #include "../app.h"
 #include "../ndn.h"
+#include "crypto/ciphers.h"
+#include "uECC.h"
 #include "../encoding/name.h"
 #include "../encoding/interest.h"
 #include "../encoding/ndn-constants.h"
+#include "../encoding/block.h"
+#include "../encoding/shared-block.h"
 #include "../ndn.h"
 #include "../encoding/data.h"
 #include "../msg-type.h"
 #include "neighbour-table.h"
-#include "crypto/ciphers.h"
-#include "uECC.h"
-#include <string.h>
-#include "../encoding/block.h"
-#include "../encoding/shared-block.h"
-#include "discovery.h"
 #include "helper-block.h"
-#include "helper-constants.h"
+#include "helper-msg.h"
+#include "discovery.h"
 
-#define DEBUG(...) printf(__VA_ARGS__)
+#define DPRINT(...) printf(__VA_ARGS__)
+
 #define _MSG_QUEUE_SIZE    (8U)
 
 static ndn_app_t* handle = NULL;
@@ -89,7 +90,7 @@ static int ndn_discovery_collect(ndn_block_t* interest){
 
     ndn_identity_entry_t* entry = ndn_neighbour_table_find_identity(&identity_name->block);
     if (entry != NULL){
-        DEBUG("ndn-helper-discovery: received identity exist\n");
+        DPRINT("ndn-helper-discovery: received identity exist\n");
 
         /* recollect service */
         for (int i = 0; i < num; ++i){ //within the service list
@@ -102,7 +103,7 @@ static int ndn_discovery_collect(ndn_block_t* interest){
     }
 
     else{ 
-        DEBUG("ndn-helper-discovery: add received identity to table\n");
+        DPRINT("ndn-helper-discovery: add received identity to table\n");
 
         /* add identity */
         ndn_neighbour_table_add_identity(&identity_name->block);
@@ -133,7 +134,7 @@ static int ndn_discovery_add_subprefix(const char* sub)
     for (int i = 0; i < NDN_SUBPREFIX_ENTRIES_NUMOF; ++i){
         int r = ndn_name_compare_block(&_subprefix_table[i].sub, &sn->block);
         if (r == 0) {
-            DEBUG("ndn-helper-discovery: subprefix entry already exists\n");
+            DPRINT("ndn-helper-discovery: subprefix entry already exists\n");
             return -1;
         }
 
@@ -144,7 +145,7 @@ static int ndn_discovery_add_subprefix(const char* sub)
     }
 
     if (!entry) {
-        DEBUG("ndn-helper-discovery: cannot allocate subprefix entry\n");
+        DPRINT("ndn-helper-discovery: cannot allocate subprefix entry\n");
         return -1;
     }
 
@@ -192,20 +193,19 @@ static int ndn_discovery_make_service_list(void){
 }
             
 
-/* how about we assume less than 10 services ? */
-/* but we must use linked list to store the subprefix */
+/* check if collected such service before */
 static int ndn_discovery_service_check(ndn_block_t* tocheck){
     
     int r = 1; 
     for (int i = 0; i < NDN_SERVICE_ENTRIES_NUMOF && _service_table[i].ser.buf; ++i) {
         r = ndn_name_compare_block(&_service_table[i].ser, tocheck);     
         if (r == 0) {
-            DEBUG("ndn-helper-discovery: find proper service name\n");
+            DPRINT("ndn-helper-discovery: find proper service name\n");
             return 0;// success
         }
     }
     
-    DEBUG("ndn-helper-discovery: no such service name\n");
+    DPRINT("ndn-helper-discovery: no such service name\n");
     return -1;
 }
 
@@ -229,7 +229,7 @@ static int ndn_discovery_service_extract(ndn_block_t* service, ndn_block_t ptr[]
         /* compare it with service */
         r = ndn_name_compare_block(&first_name->block, service);
         if (r == 0) {
-            DEBUG("ndn-helper-discovery: find one subprefix = ");
+            DPRINT("ndn-helper-discovery: find one subprefix = ");
             ndn_name_print(&_subprefix_table[i].sub);
             putchar('\n');
             ptr[i] = _subprefix_table[i].sub;
@@ -257,12 +257,12 @@ static int on_query(ndn_block_t* interest)
 {
     ndn_block_t in;
     if (ndn_interest_get_name(interest, &in) != 0) {
-        DEBUG("ndn-helper-discovery(pid=%" PRIkernel_pid "): cannot get name from interest"
+        DPRINT("ndn-helper-discovery(pid=%" PRIkernel_pid "): cannot get name from interest"
                "\n", handle->id);
         return NDN_APP_ERROR;
     }
 
-    DEBUG("ndn-helper-discovery(pid=%" PRIkernel_pid "): service query received, name =",
+    DPRINT("ndn-helper-discovery(pid=%" PRIkernel_pid "): service query received, name =",
            handle->id);
     ndn_name_print(&in);
     putchar('\n');
@@ -281,7 +281,7 @@ static int on_query(ndn_block_t* interest)
 
     int r = ndn_discovery_service_extract(&service_name->block, ptr);
     if(r == -1){
-        DEBUG("ndn-helper-discovery(pid=%" PRIkernel_pid "): no such service available, name =",
+        DPRINT("ndn-helper-discovery(pid=%" PRIkernel_pid "): no such service available, name =",
             handle->id);
         ndn_name_print(&service_name->block);
         putchar('\n');
@@ -311,13 +311,13 @@ static int on_query(ndn_block_t* interest)
                         NDN_SIG_TYPE_ECDSA_SHA256, NULL, ecc_key_pri, sizeof(ecc_key_pri));
 
     if (data == NULL) {
-        DEBUG("ndn-helper-discovery (pid=%" PRIkernel_pid "): cannot compose Query Response\n",
+        DPRINT("ndn-helper-discovery (pid=%" PRIkernel_pid "): cannot compose Query Response\n",
                handle->id);
         ndn_shared_block_release(data);
         return NDN_APP_ERROR;
     }
 
-    DEBUG("ndn-helper-discovery (pid=%" PRIkernel_pid "): send Query Response to NDN thread, name =",
+    DPRINT("ndn-helper-discovery (pid=%" PRIkernel_pid "): send Query Response to NDN thread, name =",
            handle->id);
     ndn_name_print(&back->block);
     putchar('\n');
@@ -325,7 +325,7 @@ static int on_query(ndn_block_t* interest)
 
     /* pass the packet */
     if (ndn_app_put_data(handle, data) != 0) {
-        DEBUG("ndn-helper-discovery (pid=%" PRIkernel_pid "): cannot put Query Response\n",
+        DPRINT("ndn-helper-discovery (pid=%" PRIkernel_pid "): cannot put Query Response\n",
                handle->id);
         return NDN_APP_ERROR;
     }
@@ -340,7 +340,7 @@ static int on_query_response(ndn_block_t* interest, ndn_block_t* data){
     ndn_block_t name, content;
     ndn_data_get_name(data, &name);
     ndn_data_get_content(data, &content);
-    DEBUG("ndn-helper-discovery (pid=%" PRIkernel_pid "): Query Response received, name =",
+    DPRINT("ndn-helper-discovery (pid=%" PRIkernel_pid "): Query Response received, name =",
            handle->id);
     ndn_name_print(&name);
     putchar('\n');
@@ -359,7 +359,7 @@ static int on_query_timeout(ndn_block_t* interest){
     int r = ndn_interest_get_name(interest, &name);
     assert(r == 0);
 
-    DEBUG("ndn-helper-discovery (pid=%" PRIkernel_pid "): Query timeout, name =",
+    DPRINT("ndn-helper-discovery (pid=%" PRIkernel_pid "): Query timeout, name =",
            handle->id);
     ndn_name_print(&name);
     putchar('\n');
@@ -377,7 +377,7 @@ static int broadcast_timeout(ndn_block_t* interest)
     uint32_t lifetime = 60000; // 1 minute
     ndn_app_express_interest(handle, &name, NULL, lifetime, NULL, broadcast_timeout);
 
-    DEBUG("ndn-helper-discovery (pid=%" PRIkernel_pid "): broadcast name = ",
+    DPRINT("ndn-helper-discovery (pid=%" PRIkernel_pid "): broadcast name = ",
            handle->id);
     ndn_name_print(&name);
     putchar('\n');
@@ -389,12 +389,12 @@ static int on_broadcast(ndn_block_t* interest)
 {
     ndn_block_t in;
     if (ndn_interest_get_name(interest, &in) != 0) {
-        DEBUG("ndn-helper-discovery(pid=%" PRIkernel_pid "): cannot get name from interest"
+        DPRINT("ndn-helper-discovery(pid=%" PRIkernel_pid "): cannot get name from interest"
                "\n", handle->id);
         return NDN_APP_ERROR;
     }
 
-    DEBUG("ndn-helper-discovery(pid=%" PRIkernel_pid "): broadcast received, name =",
+    DPRINT("ndn-helper-discovery(pid=%" PRIkernel_pid "): broadcast received, name =",
            handle->id);
     ndn_name_print(&in);
     putchar('\n');
@@ -430,7 +430,7 @@ void *ndn_helper_discovery(void* bootstrapTuple)
     /* initiate parameters */
     handle = ndn_app_create();
     if (handle == NULL) {
-        DEBUG("ndn-helper-discovery(pid=%" PRIkernel_pid "): cannot create app handle\n",
+        DPRINT("ndn-helper-discovery(pid=%" PRIkernel_pid "): cannot create app handle\n",
                thread_getpid());
         return NULL;
     }
@@ -438,7 +438,7 @@ void *ndn_helper_discovery(void* bootstrapTuple)
     ndn_discovery_subprefix_table_init();
     ndn_discovery_service_table_init();
 
-    DEBUG("ndn-helper-discovery(pid=%" PRIkernel_pid "): init\n", thread_getpid());
+    DPRINT("ndn-helper-discovery(pid=%" PRIkernel_pid "): init\n", thread_getpid());
 
     /* discovery event loop */
     msg_t msg_q[_MSG_QUEUE_SIZE];
@@ -452,7 +452,7 @@ void *ndn_helper_discovery(void* bootstrapTuple)
 
         switch (from_helper.type) {
             case NDN_HELPER_DISCOVERY_START:
-                DEBUG("ndn-helper-discovery(pid=%" PRIkernel_pid "): discovery broadcast\n",
+                DPRINT("ndn-helper-discovery(pid=%" PRIkernel_pid "): discovery broadcast\n",
                         thread_getpid());
 
                 /* make service prefix list*/
@@ -480,7 +480,7 @@ void *ndn_helper_discovery(void* bootstrapTuple)
 
                 uint32_t lifetime = 60000; // 1 minute
                 ndn_app_express_interest(handle, &tosend->block, NULL, lifetime, NULL, broadcast_timeout);
-                DEBUG("ndn-helper-discovery(pid=%" PRIkernel_pid "): broadcast, name =", handle->id);
+                DPRINT("ndn-helper-discovery(pid=%" PRIkernel_pid "): broadcast, name =", handle->id);
                 ndn_name_print(&tosend->block);
                 putchar('\n');
                                 
@@ -495,7 +495,7 @@ void *ndn_helper_discovery(void* bootstrapTuple)
                 break;
 
             case NDN_HELPER_DISCOVERY_REGISTER_PREFIX:
-                DEBUG("ndn-helper-discovery(pid=%" PRIkernel_pid "): register service prefix\n",
+                DPRINT("ndn-helper-discovery(pid=%" PRIkernel_pid "): register service prefix\n",
                         thread_getpid());
 
                 //ptr should point to a string
@@ -506,11 +506,11 @@ void *ndn_helper_discovery(void* bootstrapTuple)
                 break;
 
             case NDN_HELPER_DISCOVERY_QUERY:
-                DEBUG("ndn-helper-discovery(pid=%" PRIkernel_pid "): start discovery query\n",
+                DPRINT("ndn-helper-discovery(pid=%" PRIkernel_pid "): start discovery query\n",
                         thread_getpid());
 
                 /* msg should contain a <id, service> tuple */
-                lifetime = 8000; // 2 seconds
+                lifetime = 8000; // 8 seconds
                 ndn_discovery_t* tuple = from_helper.content.ptr;                    
                 ndn_shared_block_t* toquery = ndn_name_append_from_name(&home_prefix,
                                              tuple->identity);
@@ -522,7 +522,7 @@ void *ndn_helper_discovery(void* bootstrapTuple)
                 toquery = ndn_name_append_from_name(&toquery->block, &host_name);
 
                 ndn_app_express_interest(handle, &toquery->block, NULL, lifetime, on_query_response, on_query_timeout);
-                DEBUG("ndn-helper-discovery(pid=%" PRIkernel_pid "): query, name =", handle->id);
+                DPRINT("ndn-helper-discovery(pid=%" PRIkernel_pid "): query, name =", handle->id);
                 ndn_name_print(&toquery->block);
                 putchar('\n');
                 ndn_app_run(handle);

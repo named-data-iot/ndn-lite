@@ -30,7 +30,6 @@ typedef struct ndn_service_entry{
 
 void *ndn_helper_discovery(void* bootstrapTuple);
 
-
 #ifdef __cplusplus
 }
 #endif

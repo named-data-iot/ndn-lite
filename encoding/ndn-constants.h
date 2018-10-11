@@ -24,6 +24,24 @@
 extern "C" {
 #endif
 
+/* 32 bytes for token bits */
+#define NDN_CRYPTO_TOKEN 32
+
+/* 32 bytes for hash bits */
+#define NDN_CRYPTO_HASH 32
+
+/* common symmetric key size used in NDN */
+#define NDN_CRYPTO_SYMM_KEY 32
+
+/* common asymmetric public key size used in NDN */
+#define NDN_CRYPTO_ASYMM_PUB 64
+
+/* common asymmetric private key size used in NDN */
+#define NDN_CRYPTO_ASYMM_PVT 32
+
+/* AES-128 encryption key size */
+#define NDN_CRYPTO_AES_SIZE 16
+
 enum {
     /* Basic TLVs */
     NDN_TLV_INTEREST         = 5,
@@ -50,6 +68,9 @@ enum {
     /* Signature-related TLVs */
     NDN_TLV_SIGNATURE_TYPE   = 27,
     NDN_TLV_KEY_LOCATOR      = 28,
+    
+    /* Special-used TLVs */
+    NDN_TLV_BLOB = 29,
 };
 
 

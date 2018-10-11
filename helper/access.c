@@ -2,30 +2,29 @@
 #include <inttypes.h>
 #include <string.h>
 #include <stdlib.h>
+#include <hashes/sha256.h>
 #include "thread.h"
 #include "random.h"
 #include "crypto/ciphers.h"
 #include "crypto/modes/cbc.h"
 #include "uECC.h"
-#include <hashes/sha256.h>
 #include "../app.h"
 #include "../ndn.h"
 #include "../encoding/name.h"
 #include "../encoding/interest.h"
 #include "../encoding/data.h"
-#include "helper-constants.h"
-
 #include "../encoding/block.h"
 #include "../encoding/shared-block.h"
-#include "access.h"
 #include "../encoding/ndn-constants.h"
+#include "helper-msg.h"
 #include "helper-block.h"
+#include "access.h"
 
 #define DPRINT(...) printf(__VA_ARGS__)
+
 #define _MSG_QUEUE_SIZE    (8U)
 
 static ndn_app_t* handle = NULL;
-
 
 static uint8_t anchor_key_pub[] = {
     0xB2, 0xFC, 0x62, 0x14, 0x78, 0xDC, 0x10, 0xEA, 
@@ -72,13 +71,12 @@ static uint8_t TEST_1_IV[16] = {
 static ndn_block_t home_prefix;
 static ndn_block_t identity;
 static msg_t to_helper, from_helper;
-static unsigned char acehmac_pro[32] = {0};
-static unsigned char acehmac_con[32] = {0};
-static uint8_t producer_key[32] = {0};
+static unsigned char acehmac_pro[NDN_CRYPTO_SYMM_KEY] = {0};
+static unsigned char acehmac_con[NDN_CRYPTO_SYMM_KEY] = {0};
+static uint8_t producer_key[NDN_CRYPTO_SYMM_KEY] = {0};
 
 static int on_producer_ace(ndn_block_t* interest, ndn_block_t* data)
 {
-
     (void)interest;
 
     ndn_block_t name;
@@ -123,16 +121,19 @@ static int on_producer_ace(ndn_block_t* interest, ndn_block_t* data)
                 curve = uECC_secp160r1();
             #endif
 
-            uint8_t* ace_controller = (uint8_t*)malloc(64);
+            uint8_t* ace_controller = (uint8_t*)malloc(NDN_CRYPTO_ASYMM_PUB);
             const uint8_t* ptr = buf;
-            memcpy(ace_controller, ptr, 64);
+            memcpy(ace_controller, ptr, NDN_CRYPTO_ASYMM_PUB);
+
+            /* negotiate the shared symmetric key */
             uECC_shared_secret(ace_controller, ace_key_pri, acehmac_pro, curve);
+            
             DPRINT("producer-ace: control application processed\n");
             free(ace_controller);
             to_helper.content.ptr = &acehmac_pro;
             msg_reply(&from_helper, &to_helper);
+            
             return NDN_APP_STOP;  
- 
     }
 
     to_helper.content.ptr = NULL;
@@ -164,12 +165,6 @@ static int send_ace_producer_interest(void)
     /* append constant parameters */
     sn = ndn_name_append_from_name(&home_prefix, &sn->block);
     sn = ndn_name_append_from_name(&sn->block, &identity);
-
-    /* parameter convention 
-        1 - controller
-        2 - producer
-        3 - consumer
-    */
 
     /* append ASKpub */
     sn = ndn_name_append_uint8(&sn->block, ACE_PRODUCER);
@@ -248,41 +243,42 @@ static int on_consumer_ace(ndn_block_t* interest, ndn_block_t* data)
                 curve = uECC_secp160r1();
             #endif
 
-            uint8_t* ace_controller = (uint8_t*)malloc(64);
+            uint8_t* ace_controller = (uint8_t*)malloc(NDN_CRYPTO_ASYMM_PUB);
             const uint8_t* ptr = buf;
-            memcpy(ace_controller, ptr, 64);
+            memcpy(ace_controller, ptr, NDN_CRYPTO_ASYMM_PUB);
             putchar('\n');
             uECC_shared_secret(ace_controller, ace_key_pri, acehmac_con, curve);
             free(ace_controller);
             ptr = NULL;
-            buf += 64;
-            len -= 64;
+            buf += NDN_CRYPTO_ASYMM_PUB;
+            len -= NDN_CRYPTO_ASYMM_PUB;
 
             //get the encypted seed
-            uint8_t* encrypted = (uint8_t*)malloc(32);
-            uint8_t* decrypted_first = (uint8_t*)malloc(32);
-            uint8_t* decrypted_second = (uint8_t*)malloc(32);
-            memcpy(encrypted, buf, 32);
+            uint8_t* encrypted = (uint8_t*)malloc(NDN_CRYPTO_SYMM_KEY);
+            uint8_t* decrypted_first = (uint8_t*)malloc(NDN_CRYPTO_SYMM_KEY);
+            uint8_t* decrypted_second = (uint8_t*)malloc(NDN_CRYPTO_SYMM_KEY);
+            memcpy(encrypted, buf, NDN_CRYPTO_SYMM_KEY);
             
             cipher_t cipher;
-            uint8_t* key_1 = (uint8_t*)malloc(16);
-            uint8_t* key_2 = (uint8_t*)malloc(16);
+            uint8_t* key_1 = (uint8_t*)malloc(NDN_CRYPTO_AES_SIZE);
+            uint8_t* key_2 = (uint8_t*)malloc(NDN_CRYPTO_AES_SIZE);
 
-            for(int i = 0; i < 16; ++i) key_1[i] = 0;
-            for(int j = 0; j < 16; ++j) key_1[j] = 0;                        
+            for(int i = 0; i < NDN_CRYPTO_AES_SIZE; ++i) key_1[i] = 0;
+            for(int j = 0; j < NDN_CRYPTO_AES_SIZE; ++j) key_1[j] = 0;                        
 
-            memcpy(key_1, acehmac_con, 16);
-            memcpy(key_2, acehmac_con + 16, 16);
+            memcpy(key_1, acehmac_con, NDN_CRYPTO_AES_SIZE);
+            memcpy(key_2, acehmac_con + NDN_CRYPTO_AES_SIZE, NDN_CRYPTO_AES_SIZE);
 
-            cipher_init(&cipher, CIPHER_AES_128, key_2, 16);
-            cipher_decrypt_cbc(&cipher, TEST_1_IV, encrypted, 32, decrypted_first);
+            cipher_init(&cipher, CIPHER_AES_128, key_2, NDN_CRYPTO_AES_SIZE);
+            cipher_decrypt_cbc(&cipher, TEST_1_IV, encrypted, 
+                                NDN_CRYPTO_SYMM_KEY, decrypted_first);
 
-            cipher_init(&cipher, CIPHER_AES_128, key_1, 16);
+            cipher_init(&cipher, CIPHER_AES_128, key_1, NDN_CRYPTO_AES_SIZE);
             cipher_decrypt_cbc(&cipher, TEST_1_IV, decrypted_first,
-                                                    32, decrypted_second);
+                                NDN_CRYPTO_SYMM_KEY, decrypted_second);
 
 
-            memcpy(producer_key, decrypted_second, 32);            
+            memcpy(producer_key, decrypted_second, NDN_CRYPTO_SYMM_KEY);            
 
             DPRINT("consumer-ace: application response processsed\n");
             
@@ -312,12 +308,6 @@ static int send_ace_consumer_interest(ndn_block_t* option)
     /* append constant parameters */
     sn = ndn_name_append_from_name(&home_prefix, &sn->block);
     sn = ndn_name_append_from_name(&sn->block, &identity);
-
-    /* parameter convention 
-        1 - controller
-        2 - producer
-        3 - consumer
-    */
 
     /* append ASKpub */
     sn = ndn_name_append_uint8(&sn->block, ACE_CONSUMER);
@@ -393,8 +383,8 @@ void *ndn_helper_access(void* bootstrapTuple)
 
                 /* initiate ace key pair */
                 ndn_access_t* ptr_pro = from_helper.content.ptr;
-                memcpy(ace_key_pub, ptr_pro->ace->pub, 64);
-                memcpy(ace_key_pri, ptr_pro->ace->pvt, 32);
+                memcpy(ace_key_pub, ptr_pro->ace->pub, NDN_CRYPTO_ASYMM_PUB);
+                memcpy(ace_key_pri, ptr_pro->ace->pvt, NDN_CRYPTO_ASYMM_PVT);
 
                 send_ace_producer_interest();
                 ndn_app_run(handle); //success if back here
@@ -407,8 +397,8 @@ void *ndn_helper_access(void* bootstrapTuple)
                         thread_getpid());
                 
                 ndn_access_t* ptr_con = from_helper.content.ptr;
-                memcpy(ace_key_pub, ptr_con->ace->pub, 64);
-                memcpy(ace_key_pri, ptr_con->ace->pvt, 32);
+                memcpy(ace_key_pub, ptr_con->ace->pub, NDN_CRYPTO_ASYMM_PUB);
+                memcpy(ace_key_pri, ptr_con->ace->pvt, NDN_CRYPTO_ASYMM_PVT);
 
                 ndn_block_t* option = ptr_con->opt;
 

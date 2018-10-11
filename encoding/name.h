@@ -271,12 +271,45 @@ int ndn_name_compare_block(ndn_block_t* lhs, ndn_block_t* rhs);
  */
 void ndn_name_print(ndn_block_t* block);
 
-
+/**
+ * @brief   Appends a component to the end of a name and creates a new name.
+ * @details Caller is responsible for releasing the returned shared block.
+ *
+ * @param[in]   block       TLV block of the name to append to.
+ * @param[in]   block_new   TLV block of the name to append
+ *
+ * @return  Shared block of the new name, if success.
+ * @return  NULL, if @p block or @p buf is NULL, or if @p len <= 0.
+ * @return  NULL, if @p block is invalid.
+ * @return  NULL, if out of memory.
+ */
 ndn_shared_block_t* ndn_name_append_from_name(ndn_block_t* block, ndn_block_t* block_new);
 
-//caller should free name.comps manually
+/**
+ * @brief   Decodes a caller-supplied TLV wire format block into name component.
+ *
+ * @param[in]  buf      Pointer to the caller-supplied memory buffer.
+ * @param[out] name     Name component to be encoded.
+ *
+ * @return  Number of bytes written to the buffer, if success.
+ * @return  0, if the component is empty.
+ * @return  -1 if the buffer is not big enough to store the decoded name.
+ * @return  -1 if @p comp is invalid.
+ */
 int ndn_name_wire_decode(ndn_block_t* buf, ndn_name_t* name);
 
+/**
+ * @brief    Encode and create shared name TLV block using move semantics.
+ * @details  This function moves the caller-supplied block into the new
+ *           shared block. The pointer in the original block is set to
+ *           NULL.
+ *
+ * @param[in]  block  Block to be shared.
+ *
+ * @return   Shared block pointer, if success.
+ * @return   NULL, if @p block is NULL or invalid.
+ * @return   NULL, if out of memory.
+ */
 ndn_shared_block_t* ndn_name_move_from_comp(ndn_block_t* block);
 
 #ifdef __cplusplus

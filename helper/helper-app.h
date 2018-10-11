@@ -2,11 +2,10 @@
 #include <sys/types.h>
 #include "../encoding/block.h"
 #include "../encoding/shared-block.h"
-#include "helper-constants.h"
+#include "helper-msg.h"
 #include "helper-block.h"
 #include "discovery.h"
 #include "access.h"
-#include "helper-block.h"
 
 #ifndef HELPER_APP_H_
 #define HELPER_APP_H_

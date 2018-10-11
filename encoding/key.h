@@ -13,7 +13,8 @@ extern "C" {
  * @details This structure does not own the memory pointed by 
  *          @p pub and @p pvt. The user must make sure the 
  *          memory blocks pointed by are still valid as long as 
- *          this structure is in use.
+ *          this structure is in use. Typically a ECDSA key pair 
+ *          follows curve secp160r1
  */
 typedef struct ndn_keypair {
     const uint8_t* pub;     

@@ -25,7 +25,6 @@ extern "C" {
 
 void *ndn_helper_access(void* bootstrapTuple);
 
-
 #ifdef __cplusplus
 }
 #endif

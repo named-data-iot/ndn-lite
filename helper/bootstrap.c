@@ -1,30 +1,30 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <stdlib.h>
+#include <string.h>
 #include "thread.h"
 #include "random.h"
 #include "xtimer.h"
 #include <hashes/sha256.h>
+#include "crypto/ciphers.h"
+#include "uECC.h"
 #include "../app.h"
 #include "../ndn.h"
 #include "../encoding/name.h"
 #include "../encoding/interest.h"
 #include "../encoding/data.h"
 #include "../msg-type.h"
-#include "crypto/ciphers.h"
-#include "uECC.h"
-#include <string.h>
-#include "bootstrap.h"
 #include "../security.h"
 #include "helper-block.h"
-#include "helper-constants.h"
+#include "helper-msg.h"
+#include "bootstrap.h"
 
 #define DPRINT(...) printf(__VA_ARGS__)
 
 //ecc key generated for communication use (CK)
 
-static uint8_t anchor_key_pub[64] = {0};
-static ndn_block_t token;
+static uint8_t anchor_key_pub[NDN_CRYPTO_ASYMM_PUB] = {0};
+static ndn_block_t token_receive;
 
 static ndn_app_t* handle = NULL;
 
@@ -32,12 +32,12 @@ static ndn_block_t anchor_global;
 static ndn_block_t certificate_global;
 static ndn_block_t home_prefix;
 
-static uint64_t dh_p = 10000831;
+static uint64_t dh_p = 10000831; //shared_tsk via out-of-band approach
 static uint64_t dh_g = 10000769;
-static uint32_t secrete_1[4];
-static uint64_t bit_1[4];
-static uint64_t bit_2[4];
-static uint64_t shared[4];
+static uint32_t secrete[4];
+static uint64_t dh_send[4];
+static uint64_t dh_receive[4];
+static uint64_t shared_tsk[4];
 
 /*static uint8_t com_key_pri[] = {
     0x00, 0x79, 0xD8, 0x8A, 0x5E, 0x4A, 0xF3, 0x2D,
@@ -58,13 +58,14 @@ static uint8_t com_key_pub[] = {
 }; // this is secp160r1 key
 
 
-static uint8_t ecc_key_pri[32];
-static uint8_t ecc_key_pub[64]; // this is secp160r1 key
+static uint8_t ecc_key_pri[NDN_CRYPTO_ASYMM_PVT];
+static uint8_t ecc_key_pub[NDN_CRYPTO_ASYMM_PUB]; // this is secp160r1 key
 
-static msg_t to_helper, from_helper;
+static msg_t to_helper, from_helper; 
 static ndn_bootstrap_t bootstrapTuple;
 
-static uint64_t Montgomery(uint64_t n, uint32_t p, uint64_t m)     
+/* montgomery algorithm used to do power & mode operation */
+static uint64_t montgomery(uint64_t n, uint32_t p, uint64_t m)     
 {      
     uint64_t r = n % m;     
     uint64_t tmp = 1;     
@@ -86,17 +87,17 @@ static int certificate_timeout(ndn_block_t* interest);
 
 static int on_certificate_response(ndn_block_t* interest, ndn_block_t* data)
 {
-    ndn_block_t name1;
+    ndn_block_t name;
     (void)interest;
 
-    int r = ndn_data_get_name(data, &name1);  //need implementation
+    int r = ndn_data_get_name(data, &name); 
     assert(r == 0);
     DPRINT("ndn-helper-bootstrap: (pid=%" PRIkernel_pid ") Certificate Response received, name =",
             handle->id );
-    ndn_name_print(&name1);
+    ndn_name_print(&name);
     putchar('\n');
 
-    r = ndn_data_verify_signature(data, (uint8_t*)shared, 8 * 4); 
+    r = ndn_data_verify_signature(data, (uint8_t*)shared_tsk, NDN_CRYPTO_SYMM_KEY); 
     if (r != 0)
         DPRINT("ndn-helper-bootstrap: (pid=%" PRIkernel_pid "): fail to verify certificate response, use HMAC\n",
                handle->id);
@@ -132,8 +133,9 @@ static int on_certificate_response(ndn_block_t* interest, ndn_block_t* data)
 
 static int ndn_app_express_certificate_request(void) 
 {
-  // /[home-prefix]/cert/{digest of BKpub}/{CKpub}/{signature of token}/{signature by BKpri}
-
+   /* Outgoing Interest-2: /{home prefix}/cert/{digest of BKpub}/{CKpub}
+    *                      /{signature of Token}/{HMAC signature}
+    */
 
     /* append the "cert" */
     const char* uri = "/cert";  //info from the manufacturer
@@ -142,35 +144,30 @@ static int ndn_app_express_certificate_request(void)
     ndn_shared_block_release(sn_cert);
     
     /* append the digest of BKpub */
-    uint8_t* buf_di = (uint8_t*)malloc(32);  //32 bytes reserved for hash
-    sha256(ecc_key_pub, sizeof(ecc_key_pub), buf_di);                       
-    sn = ndn_name_append(&sn->block, buf_di, 32);   
-    free(buf_di);
-    buf_di = NULL;
+    uint8_t* hash = (uint8_t*)malloc(NDN_CRYPTO_HASH); 
+    sha256(ecc_key_pub, sizeof(ecc_key_pub), hash);                       
+    sn = ndn_name_append(&sn->block, hash, NDN_CRYPTO_HASH);   
+    free(hash);
+    hash = NULL;
 
     /* apppend the CKpub */  
     sn = ndn_name_append(&sn->block, com_key_pub, sizeof(com_key_pub)); 
  
-    /* make the signature of token */
-    /* make a block for token */
-    uint8_t* buf_tk = (uint8_t*)malloc(34); //32 bytes reserved from the value, 2 bytes for header
-    ndn_security_make_hmac_signature((uint8_t*)shared, &token, buf_tk);
+    /* make the signature of token_receive */
+    //32 bytes reserved from the value, 2 bytes for header
+    uint8_t* signed_token = (uint8_t*)malloc(NDN_CRYPTO_TOKEN + 2);
+    
+    ndn_security_make_hmac_signature((uint8_t*)shared_tsk, &token_receive, signed_token);
 
-    /* append the signature of token */
-    sn = ndn_name_append(&sn->block, buf_tk, 34);
-    free((void*)buf_tk);
-    buf_tk = NULL;
+    /* append the signature of token_receive */
+    sn = ndn_name_append(&sn->block, signed_token, NDN_CRYPTO_TOKEN + 2);
+    free((void*)signed_token);
+    signed_token = NULL;
 
-    //append the timestamp
-    sn = ndn_name_append_uint32(&sn->block, xtimer_now_usec());
-
-    //append the random value
-    sn = ndn_name_append_uint32(&sn_cert->block, random_uint32());
-
-    uint32_t lifetime = 3000; 
+    uint32_t lifetime = 3000;  // 3 seconds
     int r = ndn_app_express_signed_interest(handle, &sn->block, NULL, 
                                             lifetime, NDN_SIG_TYPE_HMAC_SHA256,
-                                            (uint8_t*)shared, 32,
+                                            (uint8_t*)shared_tsk, NDN_CRYPTO_SYMM_KEY,
                                             on_certificate_response, 
                                             certificate_timeout); 
     ndn_shared_block_release(sn);
@@ -208,39 +205,26 @@ static int on_bootstrapping_response(ndn_block_t* interest, ndn_block_t* data)
     //skip content length (perhaps > 255 bytes)
     uint32_t num;
     int cl = ndn_block_get_var_number(buf, len, &num); 
-    DPRINT("ndn-helper-bootstrap: (pid=%" PRIkernel_pid ") content L length= %d\n", handle->id, cl);
     buf += cl;
     len -= cl;
 
-    //skip token's TLV (and push it back completely)
-    token.buf = buf;
-    token.len = 34;
+    //skip token_receive's header and process the token_receive bits
+    token_receive.buf = buf;
+    token_receive.len = NDN_CRYPTO_TOKEN + 2;
     buf += 2;
-    len -= 2;//skip header
-    //process the token (4 * uint64_t)
-    memcpy(bit_2, buf, 32); buf += 32; len -= 32;
+    len -= 2;    
+    memcpy(dh_receive, buf, NDN_CRYPTO_TOKEN); 
+    buf += NDN_CRYPTO_TOKEN; 
+    len -= NDN_CRYPTO_TOKEN;
 
-    /*
-    Diffie Hellman
-        Alice and Bob agree to use a modulus p = 23 and base g = 5 (which is a primitive root modulo 23).
-        Alice chooses a secret integer a = 4, then sends Bob A = g^a mod p
-        A = 5^4 mod 23 = 4
-        Bob chooses a secret integer b = 3, then sends Alice B = g^b mod p
-        B = 5^3 mod 23 = 10
-        Alice computes s = B^a mod p
-        s = 10^4 mod 23 = 18
-        Bob computes s = A^b mod p
-        s = 4^3 mod 23 = 18
-    */
+    shared_tsk[0] = montgomery(dh_receive[0], secrete[0], dh_p);
+    shared_tsk[1] = montgomery(dh_receive[1], secrete[1], dh_p);
+    shared_tsk[2] = montgomery(dh_receive[2], secrete[2], dh_p);
+    shared_tsk[3] = montgomery(dh_receive[3], secrete[3], dh_p);
 
-    shared[0] = Montgomery(bit_2[0], secrete_1[0], dh_p);
-    shared[1] = Montgomery(bit_2[1], secrete_1[1], dh_p);
-    shared[2] = Montgomery(bit_2[2], secrete_1[2], dh_p);
-    shared[3] = Montgomery(bit_2[3], secrete_1[3], dh_p);
-
-    //skip 32 bytes of public key's hash (plus 2 types header)
-    buf += 34;
-    len -= 34;
+    //TODO: to verify the BKpub here
+    buf += NDN_CRYPTO_HASH + 2;
+    len -= NDN_CRYPTO_HASH + 2;
 
     //set the anchor certificate
     anchor_global.buf = buf;
@@ -253,10 +237,11 @@ static int on_bootstrapping_response(ndn_block_t* interest, ndn_block_t* data)
     putchar('\n');
 
     //then we need verify anchor's signature
-    ndn_block_t AKpub;
-    ndn_data_get_content(&anchor_global, &AKpub);
+    ndn_block_t anchor_pub;
+    ndn_data_get_content(&anchor_global, &anchor_pub);
 
-    memcpy(&anchor_key_pub, AKpub.buf + 2, 64);//skip the content and pubkey TLV header
+    //skip content header
+    memcpy(&anchor_key_pub, anchor_pub.buf + 2, NDN_CRYPTO_ASYMM_PUB); 
 
     r = ndn_data_verify_signature(&anchor_global, anchor_key_pub, sizeof(anchor_key_pub));
     if (r != 0)
@@ -265,54 +250,43 @@ static int on_bootstrapping_response(ndn_block_t* interest, ndn_block_t* data)
         DPRINT("ndn-helper-bootstrap: (pid=%" PRIkernel_pid ") sign-on response valid\n", handle->id);
         ndn_app_express_certificate_request(); 
     }
+
     return NDN_APP_CONTINUE;  // block forever...
 }
 
 static int ndn_app_express_bootstrapping_request(void)
 {
-     // /ndn/sign-on/{digest of BKpub}/{ECDSA signature by BKpri}
-
+   /* Outgoing Interest-1: /ndn/sign-on/{digest of BKpub}/{Diffie Hellman Token}
+    *                      /{ECDSA signature by BKpri}
+    */
      
     const char* uri = "/ndn/sign-on";   
     ndn_shared_block_t* sn = ndn_name_from_uri(uri, strlen(uri));
     if (sn == NULL) {
         DPRINT("ndn-helper-bootstrap: (pid=%" PRIkernel_pid ") cannot create name from uri ", handle->id);
         return NDN_APP_ERROR;
-    }   //we creat a name first
+    }   
 
-    //making and append the digest of BKpub      //don't have header
-    uint8_t* buf_dibs = (uint8_t*)malloc(32);  
-    sha256(ecc_key_pub, sizeof(ecc_key_pub), buf_dibs);                       
-    sn = ndn_name_append(&sn->block, buf_dibs, 32);   
-    free(buf_dibs);
+    //making and append the digest of BKpub     
+    uint8_t* hash = (uint8_t*)malloc(NDN_CRYPTO_HASH);  
+    sha256(ecc_key_pub, sizeof(ecc_key_pub), hash);                       
+    sn = ndn_name_append(&sn->block, hash, NDN_CRYPTO_HASH);   
+    free(hash);
 
-    //TODO: 256bit Diffie Hellman 
-    secrete_1[0]  = random_uint32();
-    secrete_1[1]  = random_uint32();
-    secrete_1[2]  = random_uint32();
-    secrete_1[3]  = random_uint32();
+    secrete[0]  = random_uint32();
+    secrete[1]  = random_uint32();
+    secrete[2]  = random_uint32();
+    secrete[3]  = random_uint32();
 
-    /*
-        Alice and Bob agree to use a modulus p = 23 and base g = 5 (which is a primitive root modulo 23).
-        Alice chooses a secret integer a = 4, then sends Bob A = g^a mod p
-        A = 5^4 mod 23 = 4
-        Bob chooses a secret integer b = 3, then sends Alice B = g^b mod p
-        B = 5^3 mod 23 = 10
-        Alice computes s = B^a mod p
-        s = 10^4 mod 23 = 18
-        Bob computes s = A^b mod p
-        s = 4^3 mod 23 = 18
-    */
-
-    bit_1[0] = Montgomery(dh_g, secrete_1[0], dh_p);
-    bit_1[1] = Montgomery(dh_g, secrete_1[1], dh_p);
-    bit_1[2] = Montgomery(dh_g, secrete_1[2], dh_p);
-    bit_1[3] = Montgomery(dh_g, secrete_1[3], dh_p);
+    dh_send[0] = montgomery(dh_g, secrete[0], dh_p);
+    dh_send[1] = montgomery(dh_g, secrete[1], dh_p);
+    dh_send[2] = montgomery(dh_g, secrete[2], dh_p);
+    dh_send[3] = montgomery(dh_g, secrete[3], dh_p);
     
-    //append the bit_1
-    uint8_t* buf_dh = (uint8_t*)malloc(8 * 4);
-    memcpy(buf_dh, bit_1, 32);
-    sn = ndn_name_append(&sn->block, buf_dh, 32);
+    //append the dh_send
+    uint8_t* token_send = (uint8_t*)malloc(NDN_CRYPTO_TOKEN);
+    memcpy(token_send, dh_send, NDN_CRYPTO_TOKEN);
+    sn = ndn_name_append(&sn->block, token_send, NDN_CRYPTO_TOKEN);
 
     DPRINT("ndn-helper-bootstrap: (pid=%" PRIkernel_pid ") express bootstrap interest, name =", handle->id);
     ndn_name_print(&sn->block);
@@ -361,8 +335,8 @@ void *ndn_helper_bootstrap(void *ptr)
     ndn_keypair_t* key = NULL;
     key = ptr;
     
-    memcpy(ecc_key_pub, key->pub, 64);
-    memcpy(ecc_key_pri, key->pvt, 32);
+    memcpy(ecc_key_pub, key->pub, NDN_CRYPTO_ASYMM_PUB);
+    memcpy(ecc_key_pri, key->pvt, NDN_CRYPTO_ASYMM_PVT);
     
     handle = ndn_app_create();
     if (handle == NULL) {

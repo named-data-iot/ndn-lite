@@ -12,10 +12,7 @@
 extern "C" {
 #endif
 
-
-
 void* ndn_helper_bootstrap(void *ptr);
-
 
 #ifdef __cplusplus
 }
