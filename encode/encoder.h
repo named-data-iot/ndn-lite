@@ -40,6 +40,8 @@ encoder_probe_block_size(const int type, const size_t payload_size)
 }
 
 // init an encoder
+// To invoke the function, first probe the size of the output block size and
+// create the block
 static inline void
 encoder_init(ndn_encoder_t* encoder, ndn_block_t* output)
 {

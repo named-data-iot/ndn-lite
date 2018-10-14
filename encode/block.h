@@ -16,18 +16,17 @@
 extern "C" {
 #endif
 
+// non-TLV encoded buffer
+typedef struct ndn_buffer {
+  uint8_t* value;
+  size_t size;
+} ndn_buffer_t;
 
-  // non-TLV encoded buffer
-  typedef struct ndn_buffer {
-    uint8_t* value;
-    size_t size;
-  } ndn_buffer_t;
-
-  // TLV encoded block
-  typedef struct ndn_block {
-    uint8_t* value;
-    size_t size;
-  } ndn_block_t;
+// TLV encoded block
+typedef struct ndn_block {
+  uint8_t* value;
+  size_t size;
+} ndn_block_t;
 
 #ifdef __cplusplus
 }
