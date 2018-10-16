@@ -47,8 +47,6 @@ name_component_from_string(name_component_t* component, char* string, uint32_t s
 }
 
 // the function will do memory copy
-// the component must already have been initialized with proper-size uint8_t*
-// use function decoder_probe_value_size to get it
 int
 name_component_from_block(name_component_t* component, name_component_block_t* block);
 
