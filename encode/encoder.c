@@ -12,10 +12,23 @@
 int
 encoder_append_buffer_value(ndn_encoder_t* encoder, ndn_buffer_t* buffer)
 {
-  int rest_size = encoder->output->size - encoder->offset;
-  if (rest_size != (int) buffer->size) {
+  int rest_size = encoder->output_max_size - encoder->offset;
+  if (rest_size < (int) buffer->size) {
     return -1;
   }
-  memcpy(encoder->output->value + encoder->offset, buffer->value, buffer->size);
+  memcpy(encoder->output_value + encoder->offset, buffer->value, buffer->size*sizeof(buffer->value));
+  encoder->offset += buffer->size;
+  return 0;
+}
+
+int
+encoder_append_raw_buffer_value(ndn_encoder_t* encoder, uint8_t* buffer, size_t size)
+{
+  int rest_size = encoder->output_max_size - encoder->offset;
+  if (rest_size < (int) size) {
+    return -1;
+  }
+  memcpy(encoder->output_value + encoder->offset, buffer, size*sizeof(buffer));
+  encoder->offset += size;
   return 0;
 }

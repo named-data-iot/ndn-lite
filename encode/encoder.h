@@ -17,7 +17,8 @@ extern "C" {
 
 // State keeper when doing encode
 typedef struct ndn_encoder {
-  ndn_block_t* output;
+  uint8_t* output_value;
+  uint8_t output_max_size;
   size_t offset;
 } ndn_encoder_t;
 
@@ -43,9 +44,10 @@ encoder_probe_block_size(const int type, const size_t payload_size)
 // To invoke the function, first probe the size of the output block size and
 // create the block
 static inline void
-encoder_init(ndn_encoder_t* encoder, ndn_block_t* output)
+encoder_init(ndn_encoder_t* encoder, uint8_t* block_value, uint32_t block_max_size)
 {
-  encoder->output = output;
+  encoder->output_value = block_value;
+  encoder->output_max_size = block_max_size;
   encoder->offset = 0;
 }
 
@@ -53,23 +55,23 @@ encoder_init(ndn_encoder_t* encoder, ndn_block_t* output)
 static inline int
 encoder_append_var(ndn_encoder_t* encoder, uint32_t var)
 {
-  size_t rest_size = encoder->output->size - encoder->offset;
+  size_t rest_size = encoder->output_max_size - encoder->offset;
   if (var <= 0xFF) {
-    encoder->output->value[encoder->offset] = var & 0xFF;
+    encoder->output_value[encoder->offset] = var & 0xFF;
     encoder->offset += 1;
   }
   else if (var <= 0xFFFF && rest_size >= 3) {
-    encoder->output->value[encoder->offset] = 253;
-    encoder->output->value[encoder->offset + 1] = (var >> 8) & 0xFF;
-    encoder->output->value[encoder->offset + 2] = var & 0xFF;
+    encoder->output_value[encoder->offset] = 253;
+    encoder->output_value[encoder->offset + 1] = (var >> 8) & 0xFF;
+    encoder->output_value[encoder->offset + 2] = var & 0xFF;
     encoder->offset += 3;
   }
   else if (rest_size >= 5) {
-    encoder->output->value[encoder->offset] = 254;
-    encoder->output->value[encoder->offset + 1] = (var >> 24) & 0xFF;
-    encoder->output->value[encoder->offset + 2] = (var >> 16) & 0xFF;
-    encoder->output->value[encoder->offset + 3] = (var >> 8) & 0xFF;
-    encoder->output->value[encoder->offset + 4] = var & 0xFF;
+    encoder->output_value[encoder->offset] = 254;
+    encoder->output_value[encoder->offset + 1] = (var >> 24) & 0xFF;
+    encoder->output_value[encoder->offset + 2] = (var >> 16) & 0xFF;
+    encoder->output_value[encoder->offset + 3] = (var >> 8) & 0xFF;
+    encoder->output_value[encoder->offset + 4] = var & 0xFF;
     encoder->offset += 5;
   }
   else {
@@ -97,6 +99,11 @@ encoder_append_length(ndn_encoder_t* encoder, uint32_t length)
 // the encoder
 int
 encoder_append_buffer_value(ndn_encoder_t* encoder, ndn_buffer_t* buffer);
+
+int
+encoder_append_raw_buffer_value(ndn_encoder_t* encoder, uint8_t* buffer, size_t size);
+
+
 
 #ifdef __cplusplus
 }
