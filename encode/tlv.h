@@ -31,6 +31,7 @@ enum {
   TLV_ForwardingHint = 30,
   TLV_Nounce = 10,
   TLV_InterestLifetime = 12,
+  TLV_HopLimit = 34,
   TLV_Parameters = 35,
 
   // Data packet

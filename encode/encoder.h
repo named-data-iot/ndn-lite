@@ -10,6 +10,7 @@
 #define ENCODING_ENCODER_H
 
 #include "block.h"
+#include "ndn_constants.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,7 +20,7 @@ extern "C" {
 typedef struct ndn_encoder {
   uint8_t* output_value;
   uint8_t output_max_size;
-  size_t offset;
+  uint32_t offset;
 } ndn_encoder_t;
 
 static inline int
@@ -32,11 +33,11 @@ encoder_get_var_size(uint32_t var)
 
 // get the TLV block size before create the block
 // use this function to avoid malloc or other dynamic mem operations
-static inline size_t
-encoder_probe_block_size(const int type, const size_t payload_size)
+static inline uint32_t
+encoder_probe_block_size(const int type, const uint32_t payload_size)
 {
-  int type_size = encoder_get_var_size(type);
-  int length_size = encoder_get_var_size(payload_size);
+  uint32_t type_size = encoder_get_var_size(type);
+  uint32_t length_size = encoder_get_var_size(payload_size);
   return (payload_size + type_size + length_size);
 }
 
@@ -101,9 +102,17 @@ int
 encoder_append_buffer_value(ndn_encoder_t* encoder, ndn_buffer_t* buffer);
 
 int
-encoder_append_raw_buffer_value(ndn_encoder_t* encoder, uint8_t* buffer, size_t size);
+encoder_append_raw_buffer_value(ndn_encoder_t* encoder, uint8_t* buffer, uint32_t size);
 
-
+static inline int
+encoder_append_byte_value(ndn_encoder_t* encoder, uint8_t value)
+{
+  if (encoder->offset + 1 > encoder->output_max_size)
+    return NDN_ERROR_OVERSIZE;
+  encoder->output_value[encoder->offset] = value;
+  encoder->offset += 1;
+  return 0;
+}
 
 #ifdef __cplusplus
 }

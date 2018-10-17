@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2018 Zhiyi Zhang
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
+
 #ifndef ENCODING_NAME_H
 #define ENCODING_NAME_H
 
@@ -40,10 +48,11 @@ name_component_from_buffer(name_component_t* component, uint32_t type, uint8_t* 
 }
 
 // the function will do memory copy
+// please include the last byte of the string, which is \0
 static inline int
 name_component_from_string(name_component_t* component, char* string, uint32_t size)
 {
-  return name_component_from_buffer(component, TLV_GenericNameComponent, (uint8_t*)string, size);
+  return name_component_from_buffer(component, TLV_GenericNameComponent, (uint8_t*)string, size - 1);
 }
 
 // the function will do memory copy
@@ -61,7 +70,7 @@ name_component_probe_block_size(name_component_t* component)
 }
 
 int
-name_component_tlv_encode(name_component_t* component, name_component_block_t* output);
+name_component_tlv_encode(ndn_encoder_t* encoder, name_component_t* component);
 
 // will do memory copy
 int
@@ -70,6 +79,11 @@ ndn_name_init(ndn_name_t *name, name_component_t* components, uint32_t size);
 // will do memory copy
 int
 ndn_name_append_component(ndn_name_t *name, name_component_t* component);
+
+// will do memory copy
+// support regular string; not support URI
+int
+ndn_name_from_string(ndn_name_t *name, char* string, uint32_t size);
 
 static inline uint32_t
 ndn_name_probe_block_size(ndn_name_t *name)
@@ -84,7 +98,7 @@ ndn_name_probe_block_size(ndn_name_t *name)
 // will do memory copy
 // need to call ndn_name_probe_block_size to initialize output block in advance
 int
-ndn_name_tlv_encode(ndn_name_t *name, ndn_block_t* output);
+ndn_name_tlv_encode(ndn_encoder_t* encoder, ndn_name_t *name);
 
 #ifdef __cplusplus
 }

@@ -25,7 +25,8 @@ typedef struct ndn_buffer {
 // TLV encoded block
 typedef struct ndn_block {
   uint8_t* value;
-  size_t size;
+  uint32_t size;
+  uint32_t max_size;
 } ndn_block_t;
 
 #ifdef __cplusplus
