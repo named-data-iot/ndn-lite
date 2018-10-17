@@ -13,18 +13,18 @@ ndn_metainfo_tlv_decode(ndn_metainfo_t* meta, ndn_block_t* block)
     //decode content_type
     decoder_get_type(&decoder, &probe);
     decoder_get_length(&decoder, &probe);
-    decoder_get_integer(&decoder, (uint32_t*)meta->content_type);
+    decoder_get_integer(&decoder, (uint32_t*)&meta->content_type);
 
     //decode freshness
     decoder_get_type(&decoder, &probe);
     decoder_get_length(&decoder, &probe);
-    decoder_get_integer(&decoder, (uint32_t*)meta->freshness);
+    decoder_get_integer(&decoder, (uint32_t*)&meta->freshness);
 
     //decode finalblockid
-    decoder_get_type(&decoder, &probe);
-    decoder_get_length(&decoder, &probe);
     name_component_block_t comp_block;
-    decoder_get_raw_buffer_value(&decoder, comp_block.value, probe);
+    decoder_get_type(&decoder, &probe);
+    decoder_get_length(&decoder, &comp_block.size);
+    decoder_get_raw_buffer_value(&decoder, comp_block.value, comp_block.size);
     name_component_from_block(&meta->finalblock_id, &comp_block);
 
     return 0;
@@ -56,9 +56,7 @@ ndn_metainfo_tlv_encode(ndn_metainfo_t* meta, ndn_block_t* output)
     encoder_append_type(&encoder, TLV_FinalBlockId);
     size_t comp_size = name_component_probe_block_size(&meta->finalblock_id);
     encoder_append_length(&encoder, comp_size);
-    name_component_block_t comp_block;
-    name_component_tlv_encode(&meta->finalblock_id, &comp_block);
-    encoder_append_raw_buffer_value(&encoder, comp_block.value, comp_block.size);
+    name_component_tlv_encode(&encoder, &meta->finalblock_id);
 
     output->size = encoder.offset;
   return 0;
