@@ -122,7 +122,6 @@ signature->enable_keydigest = 0;
             signature->enable_keydigest = 0;
             decoder_move_backward(&decoder, 1);
 
-            // should replace with name tlv decode later
             uint8_t rest[keyname_length];
             memcpy(rest, block->value + decoder.offset, keyname_length);
             decoder_move_forward(&decoder, keyname_length);

@@ -119,9 +119,8 @@ decoder_move_forward(ndn_decoder_t* decoder, uint32_t step){
 
 static inline int
 decoder_move_backward(ndn_decoder_t* decoder, uint32_t step){
-  if (decoder->offset - step < 0)
-  return NDN_ERROR_OVERSIZE;
   decoder->offset -= step;
+  return 0;
 }
 
 #ifdef __cplusplus
