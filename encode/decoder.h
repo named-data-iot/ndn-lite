@@ -74,7 +74,7 @@ decoder_get_length(ndn_decoder_t* decoder, uint32_t* length)
 
 // get the value(V) size from a block
 static inline size_t
-decoder_probe_value_size(uint8_t* block_value, uint32_t block_size)
+decoder_probe_value_size(const uint8_t* block_value, uint32_t block_size)
 {
   ndn_decoder_t decoder;
   decoder_init(&decoder, block_value, block_size);

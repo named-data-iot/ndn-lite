@@ -10,7 +10,7 @@
 #include <memory.h>
 
 int
-encoder_append_buffer_value(ndn_encoder_t* encoder, ndn_buffer_t* buffer)
+encoder_append_buffer_value(ndn_encoder_t* encoder, const ndn_buffer_t* buffer)
 {
   int rest_size = encoder->output_max_size - encoder->offset;
   if (rest_size < (int) buffer->size) {
@@ -22,7 +22,7 @@ encoder_append_buffer_value(ndn_encoder_t* encoder, ndn_buffer_t* buffer)
 }
 
 int
-encoder_append_raw_buffer_value(ndn_encoder_t* encoder, uint8_t* buffer, uint32_t size)
+encoder_append_raw_buffer_value(ndn_encoder_t* encoder, const uint8_t* buffer, uint32_t size)
 {
   int rest_size = encoder->output_max_size - encoder->offset;
   if (rest_size < (int) size) {
