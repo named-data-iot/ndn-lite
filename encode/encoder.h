@@ -119,6 +119,21 @@ encoder_append_byte_value(ndn_encoder_t* encoder, uint8_t value)
   return 0;
 }
 
+static inline int
+encoder_move_forward(ndn_encoder_t* encoder, uint32_t step){
+  if (encoder->offset + step > encoder->output_max_size)
+  return NDN_ERROR_OVERSIZE;
+  encoder->offset += step;
+  return 0;
+}
+
+static inline int
+encoder_move_backward(ndn_encoder_t* encoder, uint32_t step){
+  if (encoder->offset - step < 0)
+  return NDN_ERROR_OVERSIZE;
+  encoder->offset -= step;
+}
+
 #ifdef __cplusplus
 }
 #endif

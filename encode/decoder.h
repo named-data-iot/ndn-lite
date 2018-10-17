@@ -109,6 +109,21 @@ decoder_get_byte_value(ndn_decoder_t* decoder, uint8_t* value)
   return 0;
 }
 
+static inline int
+decoder_move_forward(ndn_decoder_t* decoder, uint32_t step){
+  if (decoder->offset + step > decoder->input_size)
+  return NDN_ERROR_OVERSIZE;
+  decoder->offset += step;
+  return 0;
+}
+
+static inline int
+decoder_move_backward(ndn_decoder_t* decoder, uint32_t step){
+  if (decoder->offset - step < 0)
+  return NDN_ERROR_OVERSIZE;
+  decoder->offset -= step;
+}
+
 #ifdef __cplusplus
 }
 #endif
