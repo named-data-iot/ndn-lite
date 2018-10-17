@@ -99,10 +99,10 @@ encoder_append_length(ndn_encoder_t* encoder, uint32_t length)
 // the buffer size must be equal to the rest size of the output maintained by
 // the encoder
 int
-encoder_append_buffer_value(ndn_encoder_t* encoder, ndn_buffer_t* buffer);
+encoder_append_buffer_value(ndn_encoder_t* encoder, const ndn_buffer_t* buffer);
 
 int
-encoder_append_raw_buffer_value(ndn_encoder_t* encoder, uint8_t* buffer, uint32_t size);
+encoder_append_raw_buffer_value(ndn_encoder_t* encoder, const uint8_t* buffer, uint32_t size);
 
 static inline int
 encoder_append_byte_value(ndn_encoder_t* encoder, uint8_t value)

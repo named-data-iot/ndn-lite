@@ -31,6 +31,7 @@ extern "C" {
 // error messages
 #define NDN_ERROR_OVERSIZE -10
 #define NDN_ERROR_NAME_INVALID_FORMAT -11
+#define NDN_ERROR_WRONG_TLV_TYPE -12
 
 #ifdef __cplusplus
 }

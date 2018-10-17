@@ -10,18 +10,23 @@
 #include <stdio.h>
 
 int
-name_component_from_block(name_component_t* component, name_component_block_t* block)
+name_component_decode(ndn_decoder_t* decoder, name_component_t* component)
 {
-  ndn_decoder_t decoder;
-  decoder_init(&decoder, block->value, block->size);
-  decoder_get_type(&decoder, &component->type);
-  decoder_get_length(&decoder, &component->size);
-  decoder_get_raw_buffer_value(&decoder, component->value, component->size);
-  return 0;
+  decoder_get_type(decoder, &component->type);
+  decoder_get_length(decoder, &component->size);
+  return decoder_get_raw_buffer_value(decoder, component->value, component->size);
 }
 
 int
-name_component_compare(name_component_t* a, name_component_t* b)
+name_component_from_block(name_component_t* component, const name_component_block_t* block)
+{
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, block->value, block->size);
+  return name_component_decode(&decoder, component);
+}
+
+int
+name_component_compare(const name_component_t* a, const name_component_t* b)
 {
   if (a->type != b->type) return -1;
   if (a->size != b->size) return -1;
@@ -33,7 +38,7 @@ name_component_compare(name_component_t* a, name_component_t* b)
 }
 
 int
-name_component_tlv_encode(ndn_encoder_t* encoder, name_component_t* component)
+name_component_tlv_encode(ndn_encoder_t* encoder, const name_component_t* component)
 {
   encoder_append_type(encoder, component->type);
   encoder_append_length(encoder, component->size);
@@ -42,7 +47,7 @@ name_component_tlv_encode(ndn_encoder_t* encoder, name_component_t* component)
 
 
 int
-ndn_name_init(ndn_name_t *name, name_component_t* components, uint32_t size)
+ndn_name_init(ndn_name_t *name, const name_component_t* components, uint32_t size)
 {
   if (size <= NDN_NAME_COMPONENTS_SIZE) {
     memcpy(name->components, components, size * sizeof(name_component_t));
@@ -54,7 +59,44 @@ ndn_name_init(ndn_name_t *name, name_component_t* components, uint32_t size)
 }
 
 int
-ndn_name_append_component(ndn_name_t *name, name_component_t* component)
+ndn_name_decode(ndn_decoder_t* decoder, ndn_name_t* name)
+{
+  uint32_t type;
+  decoder_get_type(decoder, &type);
+  if (type != TLV_Name) {
+    return NDN_ERROR_WRONG_TLV_TYPE;
+  }
+  uint32_t length;
+  decoder_get_length(decoder, &length);
+  int counter = 0;
+  while (decoder->offset < decoder->input_size) {
+    decoder_get_type(decoder, &name->components[counter].type);
+    if (!(name->components[counter].type == TLV_GenericNameComponent
+          || name->components[counter].type == TLV_ImplicitSha256DigestComponent
+          || name->components[counter].type == TLV_ParametersSha256DigestComponent)) {
+      return NDN_ERROR_WRONG_TLV_TYPE;
+    }
+    decoder_get_length(decoder, &name->components[counter].size);
+    int result = decoder_get_raw_buffer_value(decoder, name->components[counter].value, name->components[counter].size);
+    if (result < 0) {
+      return result;
+    }
+    ++counter;
+  }
+  name->components_size = counter;
+  return 0;
+}
+
+int
+ndn_name_from_block(ndn_name_t* name, const uint8_t* block_value, uint32_t block_size)
+{
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, block_value, block_size);
+  return ndn_name_decode(&decoder, name);
+}
+
+int
+ndn_name_append_component(ndn_name_t *name, const name_component_t* component)
 {
   if (name->components_size + 1 <= NDN_NAME_COMPONENTS_SIZE) {
     memcpy(name->components + name->components_size, component, sizeof(name_component_t));
@@ -66,7 +108,7 @@ ndn_name_append_component(ndn_name_t *name, name_component_t* component)
 }
 
 int
-ndn_name_from_string(ndn_name_t *name, char* string, uint32_t size)
+ndn_name_from_string(ndn_name_t *name, const char* string, uint32_t size)
 {
   name->components_size = 0;
 
@@ -92,7 +134,7 @@ ndn_name_from_string(ndn_name_t *name, char* string, uint32_t size)
 }
 
 int
-ndn_name_tlv_encode(ndn_encoder_t* encoder, ndn_name_t *name)
+ndn_name_tlv_encode(ndn_encoder_t* encoder, const ndn_name_t *name)
 {
   int block_sizes[name->components_size];
   encoder_append_type(encoder, TLV_Name);

@@ -49,7 +49,10 @@ ndn_interest_from_name(ndn_interest_t* interest, ndn_name_t* name)
   interest->enable_Parameters = 0;
 }
 
-// return 0 if decoding is successful
+// int
+// ndn_interest_decode(ndn_decoder_t* decoder, ndn_interest_t* interest);
+
+// // return 0 if decoding is successful
 // int
 // ndn_interest_from_block(ndn_interest_t* interest, uint8_t* block_value, uint32_t block_size);
 

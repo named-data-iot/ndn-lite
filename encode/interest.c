@@ -11,8 +11,21 @@
 // int
 // ndn_interest_from_block(ndn_interest_t* interest, uint8_t* block_value, uint32_t block_size)
 // {
-//   interest->nounce = 0;
-//   return 0;
+//   ndn_decoder_t decoder;
+//   decoder_init(&decoder, block_value, block_size);
+//   uint32_t type;
+//   decoder_get_type(&decoder, &type);
+//   if (type != TLV_Interest) {
+//     return NDN_ERROR_WRONG_TLV_TYPE;
+//   }
+//   uint32_t interest_buffer_length;
+//   decoder_get_length(&decoder, &interest_buffer_length);
+
+//   // name
+//   decoder_get_type(&decoder, &type);
+//   if (type != TLV_Name) {
+//     return NDN_ERROR_WRONG_TLV_TYPE;
+//   }
 // }
 
 int
@@ -34,7 +47,6 @@ ndn_interest_encode(ndn_interest_t* interest, uint8_t* block_value, uint8_t bloc
   if (interest->enable_MustBeFresh) {
     encoder_append_type(&encoder, TLV_MustBeFresh);
     encoder_append_length(&encoder, 0);
-    encoder_append_var(&encoder, 0);
   }
   // nounce
   encoder_append_type(&encoder, TLV_Nounce);

@@ -37,7 +37,8 @@ typedef struct ndn_name {
 
 // the function will do memory copy
 static inline int
-name_component_from_buffer(name_component_t* component, uint32_t type, uint8_t* value, uint32_t size)
+name_component_from_buffer(name_component_t* component, uint32_t type,
+                           const uint8_t* value, uint32_t size)
 {
   if (size > NAME_COMPONENT_BUFFER_SIZE)
     return NDN_ERROR_OVERSIZE;
@@ -50,43 +51,53 @@ name_component_from_buffer(name_component_t* component, uint32_t type, uint8_t* 
 // the function will do memory copy
 // please include the last byte of the string, which is \0
 static inline int
-name_component_from_string(name_component_t* component, char* string, uint32_t size)
+name_component_from_string(name_component_t* component, const char* string, uint32_t size)
 {
-  return name_component_from_buffer(component, TLV_GenericNameComponent, (uint8_t*)string, size - 1);
+  return name_component_from_buffer(component, TLV_GenericNameComponent,
+                                    (uint8_t*)string, size - 1);
 }
+
+int
+name_component_decode(ndn_decoder_t* decoder, name_component_t* component);
 
 // the function will do memory copy
 int
-name_component_from_block(name_component_t* component, name_component_block_t* block);
+name_component_from_block(name_component_t* component, const name_component_block_t* block);
 
 // return 0 if two components are the same
 int
-name_component_compare(name_component_t* a, name_component_t* b);
+name_component_compare(const name_component_t* a, const name_component_t* b);
 
 static inline int
-name_component_probe_block_size(name_component_t* component)
+name_component_probe_block_size(const name_component_t* component)
 {
   return encoder_probe_block_size(component->type, component->size);
 }
 
 int
-name_component_tlv_encode(ndn_encoder_t* encoder, name_component_t* component);
+name_component_tlv_encode(ndn_encoder_t* encoder, const name_component_t* component);
 
 // will do memory copy
 int
-ndn_name_init(ndn_name_t *name, name_component_t* components, uint32_t size);
+ndn_name_init(ndn_name_t *name, const name_component_t* components, uint32_t size);
+
+int
+ndn_name_decode(ndn_decoder_t* decoder, ndn_name_t* name);
+
+int
+ndn_name_from_block(ndn_name_t* name, const uint8_t* block_value, uint32_t block_size);
 
 // will do memory copy
 int
-ndn_name_append_component(ndn_name_t *name, name_component_t* component);
+ndn_name_append_component(ndn_name_t *name, const name_component_t* component);
 
 // will do memory copy
 // support regular string; not support URI
 int
-ndn_name_from_string(ndn_name_t *name, char* string, uint32_t size);
+ndn_name_from_string(ndn_name_t *name, const char* string, uint32_t size);
 
 static inline uint32_t
-ndn_name_probe_block_size(ndn_name_t *name)
+ndn_name_probe_block_size(const ndn_name_t *name)
 {
   uint32_t value_size = 0;
   for (uint32_t i = 0; i < name->components_size; i++) {
@@ -98,7 +109,7 @@ ndn_name_probe_block_size(ndn_name_t *name)
 // will do memory copy
 // need to call ndn_name_probe_block_size to initialize output block in advance
 int
-ndn_name_tlv_encode(ndn_encoder_t* encoder, ndn_name_t *name);
+ndn_name_tlv_encode(ndn_encoder_t* encoder, const ndn_name_t *name);
 
 #ifdef __cplusplus
 }
