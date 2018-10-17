@@ -22,6 +22,7 @@ extern "C" {
 
 #define NDN_INTEREST_PARAMS_BUFFER_SIZE 200
 
+#define NDN_SIGNATURE_BUFFER_SIZE 128
 
 // default values
 #define DEFAULT_INTEREST_LIFETIME 4000
@@ -32,6 +33,23 @@ extern "C" {
 #define NDN_ERROR_OVERSIZE -10
 #define NDN_ERROR_NAME_INVALID_FORMAT -11
 #define NDN_ERROR_WRONG_TLV_TYPE -12
+
+/* content type values */
+enum {
+    NDN_CONTENT_TYPE_BLOB = 0,
+    NDN_CONTENT_TYPE_LINK = 1,
+    NDN_CONTENT_TYPE_KEY  = 2,
+    NDN_CONTENT_TYPE_NACK = 3,
+    NDN_CONTENT_TYPE_CCM  = 50,
+};
+
+/* signature type values */
+enum {
+    NDN_SIG_TYPE_DIGEST_SHA256 = 0,
+    NDN_SIG_TYPE_ECDSA_SHA256  = 3,
+    NDN_SIG_TYPE_HMAC_SHA256   = 4,
+    NDN_SIG_TYPE_RSA_SHA256   = 1,
+};
 
 #ifdef __cplusplus
 }
