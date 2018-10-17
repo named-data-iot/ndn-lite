@@ -81,6 +81,11 @@ encoder_append_var(ndn_encoder_t* encoder, uint32_t var)
   return 0;
 }
 
+static inline int
+encoder_append_integer(ndn_encoder_t* encoder, uint32_t var){
+  return encoder_append_var(encoder, var);
+}
+
 // function to set the type (T)
 static inline int
 encoder_append_type(ndn_encoder_t* encoder, uint32_t type)

@@ -60,6 +60,11 @@ decoder_get_var(ndn_decoder_t* decoder, uint32_t* var)
 }
 
 static inline int
+decoder_get_integer(ndn_decoder_t* decoder, uint32_t* var){
+  return decoder_get_var(decoder, var);
+}
+
+static inline int
 decoder_get_type(ndn_decoder_t* decoder, uint32_t* type)
 {
   return decoder_get_var(decoder, type);
