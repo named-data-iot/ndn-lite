@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2018 Zhiyi Zhang
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
+
 #include "name.h"
 #include <stdio.h>
 
@@ -25,15 +33,11 @@ name_component_compare(name_component_t* a, name_component_t* b)
 }
 
 int
-name_component_tlv_encode(name_component_t* component, name_component_block_t* output)
+name_component_tlv_encode(ndn_encoder_t* encoder, name_component_t* component)
 {
-  ndn_encoder_t encoder;
-  encoder_init(&encoder, output->value, NAME_COMPONENT_BLOCK_SIZE);
-  encoder_append_type(&encoder, component->type);
-  encoder_append_length(&encoder, component->size);
-  encoder_append_raw_buffer_value(&encoder, component->value, component->size);
-  output->size = encoder.offset;
-  return 0;
+  encoder_append_type(encoder, component->type);
+  encoder_append_length(encoder, component->size);
+  return encoder_append_raw_buffer_value(encoder, component->value, component->size);
 }
 
 
@@ -58,28 +62,49 @@ ndn_name_append_component(ndn_name_t *name, name_component_t* component)
     return 0;
   }
   else
-    return -1;
+    return NDN_ERROR_OVERSIZE;
 }
 
 int
-ndn_name_tlv_encode(ndn_name_t *name, ndn_block_t* output)
+ndn_name_from_string(ndn_name_t *name, char* string, uint32_t size)
+{
+  name->components_size = 0;
+
+  uint32_t i = 0;
+  uint32_t last_divider = 0;
+  if (string[i] != '/') {
+    return NDN_ERROR_NAME_INVALID_FORMAT;
+  }
+  ++i;
+  while (i < size) {
+    if (string[i] == '/') {
+      name_component_t component;
+      name_component_from_string(&component, &string[last_divider + 1], i - last_divider - 1);
+      int result = ndn_name_append_component(name, &component);
+      if (result < 0) {
+        return result;
+      }
+      last_divider = i;
+    }
+    ++i;
+  }
+  return 0;
+}
+
+int
+ndn_name_tlv_encode(ndn_encoder_t* encoder, ndn_name_t *name)
 {
   int block_sizes[name->components_size];
-
-  ndn_encoder_t encoder;
-  encoder_init(&encoder, output->value, output->size);
-  encoder_append_type(&encoder, TLV_Name);
+  encoder_append_type(encoder, TLV_Name);
   size_t value_size = 0;
   for (size_t i = 0; i < name->components_size; i++) {
     block_sizes[i] = name_component_probe_block_size(&name->components[i]);
     value_size += block_sizes[i];
   }
-  encoder_append_length(&encoder, value_size);
+  encoder_append_length(encoder, value_size);
 
   for (size_t i = 0; i < name->components_size; i++) {
-    name_component_block_t comp_block;
-    name_component_tlv_encode(&name->components[i], &comp_block);
-    int result = encoder_append_raw_buffer_value(&encoder, comp_block.value, comp_block.size);
+    int result = name_component_tlv_encode(encoder, &name->components[i]);
     if (result < 0)
       return result;
   }
