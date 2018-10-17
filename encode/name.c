@@ -61,16 +61,21 @@ ndn_name_init(ndn_name_t *name, const name_component_t* components, uint32_t siz
 int
 ndn_name_decode(ndn_decoder_t* decoder, ndn_name_t* name)
 {
-  uint32_t type;
+  printf("1111111111\n");
+  uint32_t type = 0;
   decoder_get_type(decoder, &type);
   if (type != TLV_Name) {
     return NDN_ERROR_WRONG_TLV_TYPE;
   }
-  uint32_t length;
+  uint32_t length = 0;
   decoder_get_length(decoder, &length);
+  uint32_t start_offset = decoder->offset;
   int counter = 0;
-  while (decoder->offset < decoder->input_size) {
+  while (decoder->offset < start_offset + length) {
     decoder_get_type(decoder, &name->components[counter].type);
+
+    printf("\n get type: %u", name->components[counter].type);
+
     if (!(name->components[counter].type == TLV_GenericNameComponent
           || name->components[counter].type == TLV_ImplicitSha256DigestComponent
           || name->components[counter].type == TLV_ParametersSha256DigestComponent)) {

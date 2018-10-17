@@ -49,12 +49,9 @@ ndn_interest_from_name(ndn_interest_t* interest, ndn_name_t* name)
   interest->enable_Parameters = 0;
 }
 
-// int
-// ndn_interest_decode(ndn_decoder_t* decoder, ndn_interest_t* interest);
-
-// // return 0 if decoding is successful
-// int
-// ndn_interest_from_block(ndn_interest_t* interest, uint8_t* block_value, uint32_t block_size);
+// return 0 if decoding is successful
+int
+ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, uint32_t block_size);
 
 static inline void
 ndn_interest_set_CanBePrefix(ndn_interest_t* interest, uint8_t can_be_prefix)
@@ -83,7 +80,7 @@ ndn_interest_set_Parameters(ndn_interest_t* interest, interest_params_t* paramet
 }
 
 static inline uint32_t
-ndn_interest_probe_block_size(ndn_interest_t* interest)
+ndn_interest_probe_block_size(const ndn_interest_t* interest)
 {
   uint32_t interest_buffer_size = ndn_name_probe_block_size(interest->name);
   if (interest->enable_CanBePrefix)
@@ -101,7 +98,7 @@ ndn_interest_probe_block_size(ndn_interest_t* interest)
 
 // return the length of used block
 int
-ndn_interest_encode(ndn_interest_t* interest, uint8_t* block_value, uint8_t block_max_size);
+ndn_interest_encode(const ndn_interest_t* interest, uint8_t* block_value, uint8_t block_max_size);
 
 #ifdef __cplusplus
 }

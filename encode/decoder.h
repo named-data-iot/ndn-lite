@@ -10,6 +10,7 @@
 #define ENCODING_DECODER_H
 
 #include "block.h"
+#include "ndn_constants.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -97,6 +98,16 @@ decoder_get_buffer_value(ndn_decoder_t* decoder, ndn_buffer_t* value);
 
 int
 decoder_get_raw_buffer_value(ndn_decoder_t* decoder, uint8_t* value, uint32_t size);
+
+static inline int
+decoder_get_byte_value(ndn_decoder_t* decoder, uint8_t* value)
+{
+  if (decoder->offset + 1 > decoder->input_size)
+    return NDN_ERROR_OVERSIZE;
+  *value = decoder->input_value[decoder->offset];
+  decoder->offset += 1;
+  return 0;
+}
 
 #ifdef __cplusplus
 }

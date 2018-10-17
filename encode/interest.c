@@ -7,29 +7,78 @@
  */
 
 #include "interest.h"
-
-// int
-// ndn_interest_from_block(ndn_interest_t* interest, uint8_t* block_value, uint32_t block_size)
-// {
-//   ndn_decoder_t decoder;
-//   decoder_init(&decoder, block_value, block_size);
-//   uint32_t type;
-//   decoder_get_type(&decoder, &type);
-//   if (type != TLV_Interest) {
-//     return NDN_ERROR_WRONG_TLV_TYPE;
-//   }
-//   uint32_t interest_buffer_length;
-//   decoder_get_length(&decoder, &interest_buffer_length);
-
-//   // name
-//   decoder_get_type(&decoder, &type);
-//   if (type != TLV_Name) {
-//     return NDN_ERROR_WRONG_TLV_TYPE;
-//   }
-// }
+#include <stdio.h>
 
 int
-ndn_interest_encode(ndn_interest_t* interest, uint8_t* block_value, uint8_t block_max_size)
+ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, uint32_t block_size)
+{
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, block_value, block_size);
+
+  printf("init decoder\n");
+
+  uint32_t type = 0;
+  decoder_get_type(&decoder, &type);
+  printf("type is %u\n", type);
+  if (type != TLV_Interest) {
+    return NDN_ERROR_WRONG_TLV_TYPE;
+  }
+
+  printf("after get type\n");
+
+  uint32_t interest_buffer_length = 0;
+  decoder_get_length(&decoder, &interest_buffer_length);
+
+  printf("after get length\n");
+
+  // name
+  int result = ndn_name_decode(&decoder, interest->name);
+  if (result < 0) {
+    printf("before go into loop: %d\n", result);
+    return result;
+  }
+
+  printf("after decode name \n");
+
+  while (decoder.offset < block_size) {
+    decoder_get_type(&decoder, &type);
+    printf("\n type: %u", type);
+    uint32_t length = 0;
+    if (type == TLV_CanBePrefix) {
+      interest->enable_CanBePrefix = 1;
+      decoder_get_length(&decoder, &length);
+    }
+    else if (type == TLV_MustBeFresh) {
+      interest->enable_MustBeFresh = 1;
+      decoder_get_length(&decoder, &length);
+    }
+    else if (type == TLV_Nounce) {
+      decoder_get_length(&decoder, &length);
+      decoder_get_raw_buffer_value(&decoder, interest->nounce, length);
+    }
+    else if (type == TLV_InterestLifetime) {
+      decoder_get_length(&decoder, &length);
+      decoder_get_raw_buffer_value(&decoder, interest->lifetime, length);
+    }
+    else if (type == TLV_HopLimit) {
+      interest->enable_HopLimit = 1;
+      decoder_get_length(&decoder, &length);
+      decoder_get_byte_value(&decoder, &interest->hop_limit);
+    }
+    else if (type == TLV_Parameters) {
+      interest->enable_Parameters = 1;
+      decoder_get_length(&decoder, &interest->parameters->size);
+      decoder_get_raw_buffer_value(&decoder, interest->parameters->value,
+                                   interest->parameters->size);
+    }
+    else
+      return NDN_ERROR_WRONG_TLV_TYPE;
+  }
+  return 0;
+}
+
+int
+ndn_interest_encode(const ndn_interest_t* interest, uint8_t* block_value, uint8_t block_max_size)
 {
   ndn_encoder_t encoder;
   encoder_init(&encoder, block_value, block_max_size);
