@@ -51,6 +51,16 @@ enum {
     NDN_SIG_TYPE_RSA_SHA256   = 1,
 };
 
+
+//ecdsa curve type
+enum {
+    NDN_ECDSA_CURVE_SECP160R1 = 11,
+    NDN_ECDSA_CURVE_SECP192R1 = 12,
+    NDN_ECDSA_CURVE_SECP224R1 = 13,
+    NDN_ECDSA_CURVE_SECP256R1 = 14,
+    NDN_ECDSA_CURVE_SECP256K1 = 15,
+};
+
 #ifdef __cplusplus
 }
 #endif

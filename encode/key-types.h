@@ -33,6 +33,25 @@ typedef struct ndn_validityperiod {
   uint32_t notafter; /**< -DBL_MAX for none. */
 }ndn_validityperiod_t;
 
+/**
+ * @brief   Type to represent a block of key pair
+ * @details This structure does not own the memory pointed by 
+ *          @p pub and @p pvt. The user must make sure the 
+ *          memory blocks pointed by are still valid as long as 
+ *          this structure is in use. Typically a ECDSA key pair 
+ *          follows curve secp160r1
+ */
+typedef struct ndn_ecdsa {
+    uint32_t type;
+    uint8_t pub[64];     
+    uint8_t pvt[32];          
+} ndn_ecdsa_t;
+
+typedef struct ndn_hmac {
+    uint32_t size;
+    uint8_t keydata[NDN_SIGNATURE_BUFFER_SIZE];        
+} ndn_hmac_t;
+
 #ifdef __cplusplus
 }
 #endif
