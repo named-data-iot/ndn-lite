@@ -1,63 +1,95 @@
 #include "metainfo.h"
-#include <stdio.h>
 
 int
-ndn_metainfo_tlv_decode(ndn_metainfo_t* meta, ndn_block_t* block)
+ndn_metainfo_tlv_decode(ndn_decoder_t* decoder, ndn_metainfo_t* meta)
 {
-    ndn_decoder_t decoder;
-    uint32_t probe;
-    decoder_init(&decoder, block->value, block->size);
-    decoder_get_type(&decoder, &probe);
-    decoder_get_length(&decoder, &probe);
+  uint32_t probe;
+  decoder_get_type(decoder, &probe);
 
-    //decode content_type
-    decoder_get_type(&decoder, &probe);
-    decoder_get_length(&decoder, &probe);
-    decoder_get_integer(&decoder, (uint32_t*)&meta->content_type);
+  if (probe != TLV_MetaInfo) {
+    if (probe == TLV_Content || probe == TLV_SignatureInfo) {
+      ndn_metainfo_init(meta);
+      return 0;
+    }
+    else
+      return NDN_ERROR_WRONG_TLV_TYPE;
+  }
+  ndn_metainfo_init(meta);
+  decoder_get_length(decoder, &probe);
+  decoder_get_type(decoder, &probe);
 
-    //decode freshness
-    decoder_get_type(&decoder, &probe);
-    decoder_get_length(&decoder, &probe);
-    decoder_get_integer(&decoder, (uint32_t*)&meta->freshness);
+  if (probe == TLV_ContentType) {
+    decoder_get_length(decoder, &probe);
+    decoder_get_byte_value(decoder, &meta->content_type);
+    meta->enable_ContentType = 1;
 
-    //decode finalblockid
-    name_component_block_t comp_block;
-    decoder_get_type(&decoder, &probe);
-    decoder_get_length(&decoder, &comp_block.size);
-    decoder_get_raw_buffer_value(&decoder, comp_block.value, comp_block.size);
-    name_component_from_block(&meta->finalblock_id, &comp_block);
+    decoder_get_type(decoder, &probe);
+  }
 
-    return 0;
+  if (probe == TLV_FreshnessPeriod) {
+    decoder_get_length(decoder, &probe);
+    decoder_get_raw_buffer_value(decoder, meta->freshness_period, 4);
+    meta->enable_FreshnessPeriod = 1;
+
+    decoder_get_type(decoder, &probe);
+  }
+
+  if (probe == TLV_FinalBlockId) {
+    decoder_get_length(decoder, &probe);
+    name_component_tlv_decode(decoder, &meta->final_block_id);
+    meta->enable_FinalBlockId = 1;
+  }
+  return 0;
 }
 
 int
-ndn_metainfo_tlv_encode(ndn_metainfo_t* meta, ndn_block_t* output)
+ndn_metainfo_from_tlv_block(ndn_metainfo_t* meta, const uint8_t* block_value, uint32_t block_size)
 {
-    ndn_encoder_t encoder;
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, block_value, block_size);
+  return ndn_metainfo_tlv_decode(&decoder, meta);
+}
 
-    encoder_init(&encoder, output->value, output->size);
-    encoder_append_type(&encoder, TLV_MetaInfo);
-    size_t estimate = ndn_metainfo_probe_block_size(meta);
-    encoder_append_length(&encoder, estimate);
+int
+ndn_metainfo_tlv_encode(ndn_encoder_t* encoder, const ndn_metainfo_t* meta)
+{
+  uint32_t meta_value_size = 0;
+  uint32_t comp_tlv_size = 0;
+  if (meta->enable_ContentType) {
+    meta_value_size += encoder_probe_block_size(TLV_ContentType, 1);
+  }
+  if (meta->enable_FreshnessPeriod) {
+    meta_value_size += encoder_probe_block_size(TLV_FreshnessPeriod, 4);
+  }
+  if (meta->enable_FinalBlockId) {
+    comp_tlv_size = name_component_probe_block_size(&meta->final_block_id);
+    meta_value_size += encoder_probe_block_size(TLV_FinalBlockId, comp_tlv_size);
+  }
 
-    //encode content_type  
-    encoder_append_type(&encoder, TLV_ContentType);
-    size_t contenttype_var_size = encoder_get_var_size((uint32_t)meta->content_type);
-    encoder_append_length(&encoder, contenttype_var_size);
-    encoder_append_integer(&encoder, (uint32_t)meta->content_type);
+  if (meta_value_size == 0)
+    return 0;
 
-    //encode freshness 
-    encoder_append_type(&encoder, TLV_FreshnessPeriod);
-    size_t freshness_var_size = encoder_get_var_size((uint32_t)meta->freshness);
-    encoder_append_length(&encoder, freshness_var_size);
-    encoder_append_integer(&encoder, (uint32_t)meta->freshness);
+  if (encoder->offset + encoder_probe_block_size(TLV_MetaInfo, meta_value_size)
+      < encoder->output_max_size)
+    return NDN_ERROR_OVERSIZE;
 
-    //encode finalblockid
-    encoder_append_type(&encoder, TLV_FinalBlockId);
-    size_t comp_size = name_component_probe_block_size(&meta->finalblock_id);
-    encoder_append_length(&encoder, comp_size);
-    name_component_tlv_encode(&encoder, &meta->finalblock_id);
+  encoder_append_type(encoder, TLV_MetaInfo);
+  encoder_append_length(encoder, meta_value_size);
 
-    output->size = encoder.offset;
+  if (meta->enable_ContentType) {
+    encoder_append_type(encoder, TLV_ContentType);
+    encoder_append_length(encoder, 1);
+    encoder_append_byte_value(encoder, meta->content_type);
+  }
+  if (meta->enable_FreshnessPeriod) {
+    encoder_append_type(encoder, TLV_FreshnessPeriod);
+    encoder_append_length(encoder, 4);
+    encoder_append_raw_buffer_value(encoder, meta->freshness_period, 4);
+  }
+  if (meta->enable_FinalBlockId) {
+    encoder_append_type(encoder, TLV_FinalBlockId);
+    encoder_append_length(encoder, comp_tlv_size);
+    name_component_tlv_encode(encoder, &meta->final_block_id);
+  }
   return 0;
 }

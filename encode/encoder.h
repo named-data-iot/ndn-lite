@@ -23,6 +23,7 @@ typedef struct ndn_encoder {
   uint32_t offset;
 } ndn_encoder_t;
 
+// only used for type (T) and length (L)
 static inline int
 encoder_get_var_size(uint32_t var)
 {

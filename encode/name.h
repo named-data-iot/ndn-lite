@@ -58,7 +58,7 @@ name_component_from_string(name_component_t* component, const char* string, uint
 }
 
 int
-name_component_decode(ndn_decoder_t* decoder, name_component_t* component);
+name_component_tlv_decode(ndn_decoder_t* decoder, name_component_t* component);
 
 // the function will do memory copy
 int
@@ -82,7 +82,7 @@ int
 ndn_name_init(ndn_name_t *name, const name_component_t* components, uint32_t size);
 
 int
-ndn_name_decode(ndn_decoder_t* decoder, ndn_name_t* name);
+ndn_name_tlv_decode(ndn_decoder_t* decoder, ndn_name_t* name);
 
 int
 ndn_name_from_block(ndn_name_t* name, const uint8_t* block_value, uint32_t block_size);

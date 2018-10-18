@@ -9,7 +9,7 @@
 #include "name.h"
 
 int
-name_component_decode(ndn_decoder_t* decoder, name_component_t* component)
+name_component_tlv_decode(ndn_decoder_t* decoder, name_component_t* component)
 {
   decoder_get_type(decoder, &component->type);
   decoder_get_length(decoder, &component->size);
@@ -21,7 +21,7 @@ name_component_from_block(name_component_t* component, const name_component_bloc
 {
   ndn_decoder_t decoder;
   decoder_init(&decoder, block->value, block->size);
-  return name_component_decode(&decoder, component);
+  return name_component_tlv_decode(&decoder, component);
 }
 
 int
@@ -58,7 +58,7 @@ ndn_name_init(ndn_name_t *name, const name_component_t* components, uint32_t siz
 }
 
 int
-ndn_name_decode(ndn_decoder_t* decoder, ndn_name_t* name)
+ndn_name_tlv_decode(ndn_decoder_t* decoder, ndn_name_t* name)
 {
   uint32_t type = 0;
   decoder_get_type(decoder, &type);
@@ -95,7 +95,7 @@ ndn_name_from_block(ndn_name_t* name, const uint8_t* block_value, uint32_t block
 {
   ndn_decoder_t decoder;
   decoder_init(&decoder, block_value, block_size);
-  return ndn_name_decode(&decoder, name);
+  return ndn_name_tlv_decode(&decoder, name);
 }
 
 int

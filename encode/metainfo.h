@@ -1,74 +1,93 @@
 #ifndef ENCODING_METAINFO_H
 #define ENCODING_METAINFO_H
 
-#include "tlv.h"
-#include "encoder.h"
-#include "decoder.h"
 #include "name.h"
-#include "ndn_constants.h"
-#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * @brief  Type to represent NDN metainfo.
- */
 typedef struct ndn_metainfo {
-    int32_t content_type;    /**< content type; -1 if not present */
-    int32_t freshness;       /**< freshness period; -1 if not present */
-    name_component_t finalblock_id;
+  uint8_t content_type;
+  uint8_t freshness_period[4];
+  name_component_t final_block_id;
+
+  uint8_t enable_ContentType;
+  uint8_t enable_FreshnessPeriod;
+  uint8_t enable_FinalBlockId;
 } ndn_metainfo_t;
 
-// will do memory copy
-static inline int
-ndn_metainfo_init(ndn_metainfo_t *meta, int32_t content_type, int32_t freshness, const name_component_t* finalblock_id){
-    meta->content_type = content_type;
-    meta->freshness = freshness;
-    meta->finalblock_id.size = finalblock_id->size;
-    meta->finalblock_id.type = finalblock_id->type;
-    memcpy(meta->finalblock_id.value, finalblock_id->value, finalblock_id->size);
-    return 0;
+static inline void
+ndn_metainfo_init(ndn_metainfo_t *meta)
+{
+  meta->enable_ContentType = 0;
+  meta->enable_FreshnessPeriod = 0;
+  meta->enable_FinalBlockId = 0;
 }
 
 // will do memory copy
-static inline int
-ndn_metainfo_from_other(ndn_metainfo_t* meta, const ndn_metainfo_t* other){
-    meta->content_type = other->content_type;
-    meta->freshness = other->freshness;
-    meta->finalblock_id.size = other->finalblock_id.size;
-    meta->finalblock_id.type = other->finalblock_id.type;
-    memcpy(meta->finalblock_id.value, other->finalblock_id.value, other->finalblock_id.size);
-    return 0;
+static inline void
+ndn_metainfo_from_other(ndn_metainfo_t* meta, const ndn_metainfo_t* other)
+{
+  memcpy(meta, other, sizeof(ndn_metainfo_t));
 }
 
-  
+int
+ndn_metainfo_tlv_decode(ndn_decoder_t* decoder, ndn_metainfo_t* meta);
+
+// add a _tlv_ to avoid conflicts with the existing encoding
+int
+ndn_metainfo_from_tlv_block(ndn_metainfo_t* meta, const uint8_t* block_value, uint32_t block_size);
+
+static inline void
+ndn_metainfo_set_content_type(ndn_metainfo_t* meta, uint8_t content_type)
+{
+  meta->enable_ContentType = 1;
+  meta->content_type = content_type;
+}
+
+static inline void
+ndn_metainfo_set_freshness_period(ndn_metainfo_t *meta, uint32_t freshness_period)
+{
+  meta->enable_FreshnessPeriod = 1;
+  meta->freshness_period[0] = (freshness_period >> 24) & 0xFF;
+  meta->freshness_period[1] = (freshness_period >> 16) & 0xFF;
+  meta->freshness_period[2] = (freshness_period >> 8) & 0xFF;
+  meta->freshness_period[3] = freshness_period & 0xFF;
+}
+
+static inline void
+ndn_metainfo_set_final_block_id(ndn_metainfo_t *meta, const name_component_t* final_block_id)
+{
+  meta->enable_FinalBlockId = 1;
+  memcpy(&meta->final_block_id, final_block_id, sizeof(name_component_t));
+}
 
 static inline uint32_t
-ndn_metainfo_probe_block_size(ndn_metainfo_t* meta){
-    size_t finalblockid_size = name_component_probe_block_size(&meta->finalblock_id);
-    int contenttype_var_size = encoder_get_var_size((uint32_t)meta->content_type);
-    int freshness_var_size = encoder_get_var_size((uint32_t)meta->freshness);
-    
-    int contenttype_tlv_size = 
-        encoder_probe_block_size(TLV_ContentType, contenttype_var_size);  
-    int freshness_tlv_size = 
-        encoder_probe_block_size(TLV_FreshnessPeriod, freshness_var_size); 
-    int finalblockid_tlv_size = 
-        encoder_probe_block_size(TLV_FinalBlockId, finalblockid_size);                   
+ndn_metainfo_probe_block_size(ndn_metainfo_t* meta)
+{
+  uint32_t meta_value_size = 0;
+  if (meta->enable_ContentType) {
+    meta_value_size += encoder_probe_block_size(TLV_ContentType, 1);
+  }
+  if (meta->enable_FreshnessPeriod) {
+    meta_value_size += encoder_probe_block_size(TLV_FreshnessPeriod, 4);
+  }
+  if (meta->enable_FinalBlockId) {
+    uint32_t comp_tlv_size = name_component_probe_block_size(&meta->final_block_id);
+    meta_value_size += encoder_probe_block_size(TLV_FinalBlockId, comp_tlv_size);
+  }
 
-    int total_value_size = contenttype_tlv_size + freshness_tlv_size
-                        + finalblockid_tlv_size;
-                        
-    return encoder_probe_block_size(TLV_MetaInfo, total_value_size);
+  if (meta_value_size == 0) {
+    return 0;
+  }
+  else {
+    return encoder_probe_block_size(TLV_MetaInfo, meta_value_size);
+  }
 }
 
 int
-ndn_metainfo_tlv_encode(ndn_metainfo_t *meta, ndn_block_t* output);
-
-int
-ndn_metainfo_tlv_decode(ndn_metainfo_t *meta, ndn_block_t* output);
+ndn_metainfo_tlv_encode(ndn_encoder_t* encoder, const ndn_metainfo_t *meta);
 
 #ifdef __cplusplus
 }

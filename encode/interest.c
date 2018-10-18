@@ -22,7 +22,7 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
   decoder_get_length(&decoder, &interest_buffer_length);
 
   // name
-  int result = ndn_name_decode(&decoder, &interest->name);
+  int result = ndn_name_tlv_decode(&decoder, &interest->name);
   if (result < 0) {
     return result;
   }
@@ -63,8 +63,8 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
 }
 
 int
-ndn_interest_encode(const ndn_interest_t* interest, uint8_t* block_value, uint8_t block_max_size,
-                    uint32_t* used_block_size)
+ndn_interest_tlv_encode(const ndn_interest_t* interest, uint8_t* block_value, uint8_t block_max_size,
+                        uint32_t* used_block_size)
 {
   ndn_encoder_t encoder;
   encoder_init(&encoder, block_value, block_max_size);
