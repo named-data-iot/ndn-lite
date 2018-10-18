@@ -1,10 +1,9 @@
 #ifndef NDN_SECURITY_SIGN_VERIFY_H_
 #define NDN_SECURITY_SIGN_VERIFY_H_
 
-#include "encode/block.h"
-#include "encode/key-types.h"
-#include "encode/ndn_constants.h"
-
+#include "../encode/block.h"
+#include "../encode/key-types.h"
+#include "../encode/ndn_constants.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,7 +25,7 @@ ndn_security_ecdsa_sign_value(ndn_block_t* input, ndn_ecdsa_t* key, ndn_buffer_t
 
 static inline int
 ndn_security_ecdsa_verify_value(ndn_block_t* input, ndn_ecdsa_t* key, ndn_buffer_t* value){
-    return security_sign_value(input, key->pub, value, 64, 
+    return security_verify_value(input, key->pub, value, 64, 
                                NDN_SIG_TYPE_ECDSA_SHA256, key->type);
 }
 
@@ -38,7 +37,7 @@ ndn_security_hmac_sign_value(ndn_block_t* input, ndn_hmac_t* key, ndn_buffer_t* 
 
 static inline int
 ndn_security_hmac_verify_value(ndn_block_t* input, ndn_hmac_t* key, ndn_buffer_t* value){
-    return security_sign_value(input, key->keydata, value, key->size, 
+    return security_verify_value(input, key->keydata, value, key->size, 
                                NDN_SIG_TYPE_HMAC_SHA256, 0);
 }
 
@@ -50,7 +49,7 @@ ndn_security_digest_sign_value(ndn_block_t* input, ndn_buffer_t* output){
 
 static inline int
 ndn_security_digest_verify_value(ndn_block_t* input, ndn_buffer_t* value){
-    return security_sign_value(input, NULL, value, 0, 
+    return security_verify_value(input, NULL, value, 0, 
                                NDN_SIG_TYPE_DIGEST_SHA256, 0);
 }
 #ifdef __cplusplus
@@ -58,3 +57,4 @@ ndn_security_digest_verify_value(ndn_block_t* input, ndn_buffer_t* value){
 #endif
 
 #endif /* NDN_SECURITY_SIGN_VERIFY_H_ */
+/** @} */

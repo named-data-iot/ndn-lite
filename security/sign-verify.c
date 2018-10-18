@@ -123,7 +123,7 @@ int security_verify_value(ndn_block_t* input, uint8_t* key_data, ndn_buffer_t* v
             break;
         case NDN_SIG_TYPE_ECDSA_SHA256:
         {
-            if (value->size!= 64) return -1;
+            if (value->size != 64) return -1;
             if (key_data == NULL || key_size != 64) return -1;
             uint8_t h[32] = {0};
             sha256(input->value, input->size, h);
