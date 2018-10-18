@@ -7,42 +7,27 @@
  */
 
 #include "interest.h"
-#include <stdio.h>
 
 int
 ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, uint32_t block_size)
 {
   ndn_decoder_t decoder;
   decoder_init(&decoder, block_value, block_size);
-
-  printf("init decoder\n");
-
   uint32_t type = 0;
   decoder_get_type(&decoder, &type);
-  printf("type is %u\n", type);
   if (type != TLV_Interest) {
     return NDN_ERROR_WRONG_TLV_TYPE;
   }
-
-  printf("after get type\n");
-
   uint32_t interest_buffer_length = 0;
   decoder_get_length(&decoder, &interest_buffer_length);
 
-  printf("after get length\n");
-
   // name
-  int result = ndn_name_decode(&decoder, interest->name);
+  int result = ndn_name_decode(&decoder, &interest->name);
   if (result < 0) {
-    printf("before go into loop: %d\n", result);
     return result;
   }
-
-  printf("after decode name \n");
-
   while (decoder.offset < block_size) {
     decoder_get_type(&decoder, &type);
-    printf("\n type: %u", type);
     uint32_t length = 0;
     if (type == TLV_CanBePrefix) {
       interest->enable_CanBePrefix = 1;
@@ -67,9 +52,9 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
     }
     else if (type == TLV_Parameters) {
       interest->enable_Parameters = 1;
-      decoder_get_length(&decoder, &interest->parameters->size);
-      decoder_get_raw_buffer_value(&decoder, interest->parameters->value,
-                                   interest->parameters->size);
+      decoder_get_length(&decoder, &interest->parameters.size);
+      decoder_get_raw_buffer_value(&decoder, interest->parameters.value,
+                                   interest->parameters.size);
     }
     else
       return NDN_ERROR_WRONG_TLV_TYPE;
@@ -87,7 +72,7 @@ ndn_interest_encode(const ndn_interest_t* interest, uint8_t* block_value, uint8_
   uint32_t interest_block_size = ndn_interest_probe_block_size(interest);
 
   encoder_append_length(&encoder, interest_block_size);
-  ndn_name_tlv_encode(&encoder, interest->name);
+  ndn_name_tlv_encode(&encoder, &interest->name);
 
   if (interest->enable_CanBePrefix) {
     encoder_append_type(&encoder, TLV_CanBePrefix);
@@ -112,8 +97,8 @@ ndn_interest_encode(const ndn_interest_t* interest, uint8_t* block_value, uint8_
   }
   if (interest->enable_Parameters) {
     encoder_append_type(&encoder, TLV_Parameters);
-    encoder_append_length(&encoder, interest->parameters->size);
-    encoder_append_raw_buffer_value(&encoder, interest->parameters->value, interest->parameters->size);
+    encoder_append_length(&encoder, interest->parameters.size);
+    encoder_append_raw_buffer_value(&encoder, interest->parameters.value, interest->parameters.size);
   }
   return 0;
 }

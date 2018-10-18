@@ -11,6 +11,7 @@
 
 #include "block.h"
 #include "ndn_constants.h"
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
