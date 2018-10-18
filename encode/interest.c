@@ -63,7 +63,8 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
 }
 
 int
-ndn_interest_encode(const ndn_interest_t* interest, uint8_t* block_value, uint8_t block_max_size)
+ndn_interest_encode(const ndn_interest_t* interest, uint8_t* block_value, uint8_t block_max_size,
+                    uint32_t* used_block_size)
 {
   ndn_encoder_t encoder;
   encoder_init(&encoder, block_value, block_max_size);
@@ -100,5 +101,6 @@ ndn_interest_encode(const ndn_interest_t* interest, uint8_t* block_value, uint8_
     encoder_append_length(&encoder, interest->parameters.size);
     encoder_append_raw_buffer_value(&encoder, interest->parameters.value, interest->parameters.size);
   }
+  *used_block_size = encoder.offset;
   return 0;
 }

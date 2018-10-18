@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang
+ * Copyright (C) 2018 Zhiyi Zhang, Tianyuan Yu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -20,8 +20,8 @@ extern "C" {
 #define NDN_NAME_COMPONENTS_SIZE 10
 #define NDN_NAME_BLOCK_SIZE 724
 
-#define NDN_INTEREST_PARAMS_BUFFER_SIZE 200
-
+#define NDN_INTEREST_PARAMS_BUFFER_SIZE 256
+#define NDN_CONTENT_BUFFER_SIZE 256
 #define NDN_SIGNATURE_BUFFER_SIZE 128
 
 // default values
