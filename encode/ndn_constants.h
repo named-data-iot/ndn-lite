@@ -34,7 +34,7 @@ extern "C" {
 #define NDN_ERROR_NAME_INVALID_FORMAT -11
 #define NDN_ERROR_WRONG_TLV_TYPE -12
 
-/* content type values */
+// content type values
 enum {
     NDN_CONTENT_TYPE_BLOB = 0,
     NDN_CONTENT_TYPE_LINK = 1,
@@ -43,7 +43,7 @@ enum {
     NDN_CONTENT_TYPE_CCM  = 50,
 };
 
-/* signature type values */
+// signature type values
 enum {
     NDN_SIG_TYPE_DIGEST_SHA256 = 0,
     NDN_SIG_TYPE_ECDSA_SHA256  = 3,
@@ -52,7 +52,7 @@ enum {
 };
 
 
-//ecdsa curve type
+// ecdsa curve type
 enum {
     NDN_ECDSA_CURVE_SECP160R1 = 11,
     NDN_ECDSA_CURVE_SECP192R1 = 12,
