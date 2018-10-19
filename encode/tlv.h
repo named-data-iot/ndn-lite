@@ -6,8 +6,8 @@
  * directory for more details.
  */
 
-#ifndef ENCODING_TLV_H
-#define ENCODING_TLV_H
+#ifndef NDN_ENCODING_TLV_H
+#define NDN_ENCODING_TLV_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,4 +59,4 @@ enum {
 }
 #endif
 
-#endif // ENCODING_TLV_H
+#endif // NDN_ENCODING_TLV_H

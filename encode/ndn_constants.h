@@ -6,8 +6,8 @@
  * directory for more details.
  */
 
-#ifndef ENCODING_NDN_CONSTANTS_H
-#define ENCODING_NDN_CONSTANTS_H
+#ifndef NDN_ENCODING_NDN_CONSTANTS_H
+#define NDN_ENCODING_NDN_CONSTANTS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,11 +28,15 @@ extern "C" {
 #define DEFAULT_INTEREST_LIFETIME 4000
 
 
-
 // error messages
 #define NDN_ERROR_OVERSIZE -10
 #define NDN_ERROR_NAME_INVALID_FORMAT -11
 #define NDN_ERROR_WRONG_TLV_TYPE -12
+
+#define NDN_ERROR_WRONG_KEY_SIZE -22
+#define NDN_ERROR_WRONG_SIG_SIZE -23
+#define NDN_ERROR_CRYPTO_ALGO_FAILURE -24
+#define NDN_ERROR_UNSUPPORT_CRYPTO_ALGO -25
 
 // content type values
 enum {
@@ -65,4 +69,4 @@ enum {
 }
 #endif
 
-#endif // ENCODING_NDN_CONSTANTS_H
+#endif // NDN_ENCODING_NDN_CONSTANTS_H

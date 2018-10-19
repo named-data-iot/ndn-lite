@@ -1,61 +1,69 @@
 #ifndef NDN_SECURITY_SIGN_VERIFY_H_
 #define NDN_SECURITY_SIGN_VERIFY_H_
 
-#include "key-types.h"
+#include "crypto-key.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+typedef struct ndn_signer {
+  const uint8_t* input_value;
+  uint32_t input_size;
+  uint8_t* output_value;
+  uint32_t output_max_size;
+
+  uint32_t output_used_size;
+} ndn_signer_t;
+
+static inline void
+ndn_signer_init(ndn_signer_t* signer, const uint8_t* input_value, uint32_t input_size,
+                    uint8_t* output_value, uint32_t output_max_size)
+{
+  signer->input_value = input_value;
+  signer->input_size = input_size;
+  signer->output_value = output_value;
+  signer->output_max_size = output_max_size;
+  signer->output_used_size = 0;
+}
+
 int
-security_sign_block(const ndn_block_t* input, const uint8_t* key_data, ndn_buffer_t* output,
-                    uint32_t key_size, uint32_t type, uint32_t ecdsa_type);
+ndn_signer_sha256_sign(ndn_signer_t* signer);
 
 int
-security_verify_block(const ndn_block_t* input, const uint8_t* key_data, const ndn_buffer_t* value,
-                      uint32_t key_size, uint32_t type, uint32_t ecdsa_type);
+ndn_signer_ecdsa_sign(ndn_signer_t* signer, const uint8_t* prv_key_value, uint32_t prv_key_size,
+                      uint32_t ecdsa_type);
 
-static inline int
-ndn_security_ecdsa_sign_block(const ndn_block_t* input, const ndn_ecdsa_t* key, ndn_buffer_t* output)
+int
+ndn_signer_hmac_sign(ndn_signer_t* signer, const uint8_t* key_value, uint32_t key_size);
+
+typedef struct ndn_verifier {
+  const uint8_t* sig_value;
+  uint32_t sig_size;
+  const uint8_t* input_value;
+  uint32_t input_size;
+} ndn_verifier_t;
+
+static inline void
+ndn_verifier_init(ndn_verifier_t* verifier, const uint8_t* input_value, uint32_t input_size,
+                  const uint8_t* sig_value, uint32_t sig_size)
 {
-  return security_sign_block(input, key->pvt, output, 32,
-                             NDN_SIG_TYPE_ECDSA_SHA256, key->type);
+  verifier->input_value = input_value;
+  verifier->input_size = input_size;
+  verifier->sig_value = sig_value;
+  verifier->sig_size = sig_size;
 }
 
-static inline int
-ndn_security_ecdsa_verify_block(const ndn_block_t* input, const ndn_ecdsa_t* key, const ndn_buffer_t* value)
-{
-  return security_verify_block(input, key->pub, value, 64,
-                               NDN_SIG_TYPE_ECDSA_SHA256, key->type);
-}
+int
+ndn_verifier_sha256_verify(ndn_verifier_t* verifier);
 
-static inline int
-ndn_security_hmac_sign_block(const ndn_block_t* input, const ndn_hmac_t* key, ndn_buffer_t* output)
-{
-  return security_sign_block(input, key->keydata, output, key->size,
-                             NDN_SIG_TYPE_HMAC_SHA256, 0);
-}
+int
+ndn_verifier_ecdsa_verify(ndn_verifier_t* verifier, const uint8_t* pub_key_value, uint32_t pub_key_size,
+                          uint32_t ecdsa_type);
 
-static inline int
-ndn_security_hmac_verify_block(const ndn_block_t* input, const ndn_hmac_t* key, const ndn_buffer_t* value)
-{
-  return security_verify_block(input, key->keydata, value, key->size,
-                               NDN_SIG_TYPE_HMAC_SHA256, 0);
-}
+int
+ndn_verifier_hmac_verify(ndn_verifier_t* verifier, const uint8_t* key_value, uint32_t key_size);
 
-static inline int
-ndn_security_digest_sign_block(const ndn_block_t* input, ndn_buffer_t* output)
-{
-  return security_sign_block(input, NULL, output, 0,
-                             NDN_SIG_TYPE_DIGEST_SHA256, 0);
-}
-
-static inline int
-ndn_security_digest_verify_block(const ndn_block_t* input, const ndn_buffer_t* value)
-{
-  return security_verify_block(input, NULL, value, 0,
-                               NDN_SIG_TYPE_DIGEST_SHA256, 0);
-}
 
 #ifdef __cplusplus
 }

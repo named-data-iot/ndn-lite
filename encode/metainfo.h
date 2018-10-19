@@ -1,5 +1,5 @@
-#ifndef ENCODING_METAINFO_H
-#define ENCODING_METAINFO_H
+#ifndef NDN_ENCODING_METAINFO_H
+#define NDN_ENCODING_METAINFO_H
 
 #include "name.h"
 
@@ -93,4 +93,4 @@ ndn_metainfo_tlv_encode(ndn_encoder_t* encoder, const ndn_metainfo_t *meta);
 }
 #endif
 
-#endif // ENCODING_NAME_H
+#endif // NDN_ENCODING_NAME_H

@@ -6,8 +6,8 @@
  * directory for more details.
  */
 
-#ifndef ENCODING_INTEREST_H
-#define ENCODING_INTEREST_H
+#ifndef NDN_ENCODING_INTEREST_H
+#define NDN_ENCODING_INTEREST_H
 
 #include "name.h"
 
@@ -105,4 +105,4 @@ ndn_interest_tlv_encode(const ndn_interest_t* interest, uint8_t* block_value, ui
 }
 #endif
 
-#endif // ENCODING_INTEREST_H
+#endif // NDN_ENCODING_INTEREST_H

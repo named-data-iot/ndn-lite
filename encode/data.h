@@ -8,8 +8,8 @@
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
-#ifndef ENCODING_INTEREST_H
-#define ENCODING_INTEREST_H
+#ifndef NDN_ENCODING_INTEREST_H
+#define NDN_ENCODING_INTEREST_H
 
 #include "name.h"
 #include <string.h>
@@ -61,4 +61,4 @@ ndn_data_init(ndn_data_t* data, const ndn_name_t* name, const metainfo* metainfo
 }
 #endif
 
-#endif // ENCODING_INTEREST_H
+#endif // NDN_ENCODING_INTEREST_H

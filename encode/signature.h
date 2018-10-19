@@ -1,5 +1,5 @@
-#ifndef ENCODING_SIGNATURE_H
-#define ENCODING_SIGNATURE_H
+#ifndef NDN_ENCODING_SIGNATURE_H
+#define NDN_ENCODING_SIGNATURE_H
 
 #include "name.h"
 
@@ -17,7 +17,6 @@ typedef struct ndn_validityperiod {
   uint32_t notbefore;
   uint32_t notafter;
 } ndn_validityperiod_t;
-
 
 typedef struct ndn_signature {
   uint32_t type;
@@ -156,4 +155,4 @@ ndn_signature_tlv_decode(ndn_signature_t* signature, ndn_block_t* output);
 }
 #endif
 
-#endif // ENCODING_SIGNATURE_H
+#endif // NDN_ENCODING_SIGNATURE_H

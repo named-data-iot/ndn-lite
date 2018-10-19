@@ -6,8 +6,8 @@
  * directory for more details.
  */
 
-#ifndef ENCODING_BLOCK_H_
-#define ENCODING_BLOCK_H_
+#ifndef NDN_ENCODING_BLOCK_H_
+#define NDN_ENCODING_BLOCK_H_
 
 #include <inttypes.h>
 #include <sys/types.h>
@@ -33,4 +33,4 @@ typedef struct ndn_block {
 }
 #endif
 
-#endif // ENCODING_BLOCK_H
+#endif // NDN_ENCODING_BLOCK_H

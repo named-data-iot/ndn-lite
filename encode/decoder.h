@@ -6,8 +6,8 @@
  * directory for more details.
  */
 
-#ifndef ENCODING_DECODER_H
-#define ENCODING_DECODER_H
+#ifndef NDN_ENCODING_DECODER_H
+#define NDN_ENCODING_DECODER_H
 
 #include "block.h"
 #include "ndn_constants.h"
@@ -127,4 +127,4 @@ decoder_move_backward(ndn_decoder_t* decoder, uint32_t step){
 #ifdef __cplusplus
 }
 #endif
-#endif // ENCODING_DECODER_H
+#endif // NDN_ENCODING_DECODER_H
