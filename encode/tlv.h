@@ -52,7 +52,12 @@ enum {
 
   // Link Object
   TLV_Delegation = 31,
-  TLV_Preference = 30
+  TLV_Preference = 30,
+
+  // Certificate
+  TLV_ValidityPeriod = 253,
+  TLV_NotBefore = 254,
+  TLV_NotAfter = 255
 };
 
 #ifdef __cplusplus

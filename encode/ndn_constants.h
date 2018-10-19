@@ -37,6 +37,7 @@ extern "C" {
 #define NDN_ERROR_NOT_ENABLED_FEATURE -24
 #define NDN_ERROR_CRYPTO_ALGO_FAILURE -25
 #define NDN_ERROR_UNSUPPORT_CRYPTO_ALGO -26
+#define NDN_ERROR_UNSUPPORT_SIGN_TYPE -26
 
 // content type values
 enum {
