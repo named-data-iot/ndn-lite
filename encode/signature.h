@@ -65,37 +65,59 @@ ndn_signature_init(ndn_signature_t* signature, uint32_t type){
 }
 
 // will do memory copy
-static inline void
-ndn_signature_set_signataure_value(ndn_signature_t* signature, ndn_buffer_t* input){
-  signature->signature_value.size = input->size;
-  memcpy(signature->signature_value.value, input->value, input->size);
-}
+static inline int
+ndn_signature_set_signataure_value(ndn_signature_t* signature, uint8_t* input, size_t input_size){
+  if(input_size > NDN_SIGNATURE_BUFFER_SIZE) return NDN_ERROR_OVERSIZE;
 
-static inline void
-ndn_signature_enable_keylocator(ndn_signature_t* signature){
-  signature->enable_keylocator = 1;
-}
+  if(signature->type = NDN_SIG_TYPE_ECDSA_SHA256 && input_size != 64) 
+  return NDN_ERROR_WRONG_SIG_SIZE;
 
-static inline void
-ndn_signature_enable_keylocator_keydigest(ndn_signature_t* signature){
-  signature->enable_keydigest = 1;
-}
+  if(signature->type = NDN_SIG_TYPE_HMAC_SHA256 && input_size != 32) 
+  return NDN_ERROR_WRONG_SIG_SIZE;
 
-static inline void
-ndn_signature_disable_keylocator_keydigest(ndn_signature_t* signature){
-  signature->enable_keydigest = 0;
-}
+  if(signature->type = NDN_SIG_TYPE_DIGEST_SHA256 && input_size != 32) 
+  return NDN_ERROR_WRONG_SIG_SIZE;
 
-static inline void
-ndn_signature_disable_keylocator(ndn_signature_t* signature){
-  signature->enable_keylocator = 0;
-  signature->enable_keydigest = 0;
+  signature->signature_value.size = input_size;
+  memcpy(signature->signature_value.value, input, input_size);
 }
 
 static inline int
+ndn_signature_enable_keylocator(ndn_signature_t* signature){
+  if(signature->type = NDN_SIG_TYPE_DIGEST_SHA256)
+  return NDN_ERROR_NOT_ENABLED_FEATURE;
+  signature->enable_keylocator = 1;
+  return 0;
+}
+
+static inline int
+ndn_signature_enable_keylocator_keydigest(ndn_signature_t* signature){
+  if(signature->enable_keylocator == 0) 
+  return NDN_ERROR_NOT_ENABLED_FEATURE;
+  signature->enable_keydigest = 1;
+  return 0;
+}
+
+static inline int
+ndn_signature_disable_keylocator_keydigest(ndn_signature_t* signature){
+  if(signature->enable_keylocator == 0) 
+  return NDN_ERROR_NOT_ENABLED_FEATURE;
+  signature->enable_keydigest = 0;
+  return 0;
+}
+
+static inline int
+ndn_signature_disable_keylocator(ndn_signature_t* signature){
+  signature->enable_keylocator = 0;
+  signature->enable_keydigest = 0;
+  return 0;
+}
+
+// will do memory copy
+static inline int
 ndn_signature_set_keylocator_keyname(ndn_signature_t* signature, ndn_name_t* input){
-  if(signature->enable_keylocator == 0) return -1;
-  if(signature->enable_keydigest == 1) return -1;
+  if(signature->enable_keylocator == 0) return NDN_ERROR_NOT_ENABLED_FEATURE;
+  if(signature->enable_keydigest == 1) return NDN_ERROR_NOT_ENABLED_FEATURE;
   signature->keylocator.type = -1; //default
   signature->keylocator.keyname = *input;
 
@@ -104,11 +126,12 @@ ndn_signature_set_keylocator_keyname(ndn_signature_t* signature, ndn_name_t* inp
 
 // will do memory copy
 static inline int
-ndn_signature_set_keylocator_keydigest(ndn_signature_t* signature, ndn_buffer_t* input){
-  if(signature->enable_keylocator == 0) return -1;
-  if(signature->enable_keydigest == 0) return -1;
+ndn_signature_set_keylocator_keydigest(ndn_signature_t* signature, uint8_t* input, size_t input_size){
+  if(signature->enable_keylocator == 0) return NDN_ERROR_NOT_ENABLED_FEATURE;
+  if(signature->enable_keydigest == 0) return NDN_ERROR_NOT_ENABLED_FEATURE;
+
   signature->keylocator.type = -1; //default
-  memcpy(signature->keylocator_holder, input->value, input->size);
+  memcpy(signature->keylocator_holder, input, input_size);
   signature->keylocator.keydigest.value = signature->keylocator_holder;
   signature->keylocator.keydigest.size = 32;
 
@@ -146,10 +169,10 @@ ndn_signature_probe_block_size(const ndn_signature_t* signature){
 }
 
 int
-ndn_signature_tlv_encode(ndn_signature_t* signature, ndn_block_t* output);
+ndn_signature_tlv_encode(ndn_signature_t* signature, ndn_encoder_t* encoder);
 
 int
-ndn_signature_tlv_decode(ndn_signature_t* signature, ndn_block_t* output);
+ndn_signature_tlv_decode(ndn_signature_t* signature, ndn_decoder_t* decoder);
 
 #ifdef __cplusplus
 }
