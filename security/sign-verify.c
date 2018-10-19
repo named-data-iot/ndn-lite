@@ -1,14 +1,10 @@
-#include <inttypes.h>
-#include <stdio.h>
+#include "sign-verify.h"
+
 #include <crypto/ciphers.h>
 #include <crypto/modes/ccm.h>
 #include <hashes/sha256.h>
 #include <random.h>
 #include <uECC.h>
-
-#include <stdlib.h>
-#include <string.h>
-#include "sign-verify.h"
 
 #ifndef FEATURE_PERIPH_HWRNG
 typedef struct uECC_SHA256_HashContext {
@@ -52,7 +48,7 @@ ndn_signer_sha256_sign(ndn_signer_t* signer)
 
 int
 ndn_signer_ecdsa_sign(ndn_signer_t* signer, const uint8_t* key_value, uint32_t key_size,
-                      uint32_t ecdsa_type)
+                      uint8_t ecdsa_type)
 {
   if (signer->output_used_size + 64 > signer->output_max_size)
     return NDN_ERROR_OVERSIZE;
@@ -133,7 +129,7 @@ ndn_verifier_sha256_verify(ndn_verifier_t* verifier)
 
 int
 ndn_verifier_ecdsa_verify(ndn_verifier_t* verifier, const uint8_t* key_value, uint32_t key_size,
-                          uint32_t ecdsa_type)
+                          uint8_t ecdsa_type)
 {
   if (verifier->sig_size != 64)
     return NDN_ERROR_WRONG_SIG_SIZE;

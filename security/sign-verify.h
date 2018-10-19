@@ -1,7 +1,7 @@
 #ifndef NDN_SECURITY_SIGN_VERIFY_H_
 #define NDN_SECURITY_SIGN_VERIFY_H_
 
-#include "crypto-key.h"
+#include "../encode/name.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,7 +32,7 @@ ndn_signer_sha256_sign(ndn_signer_t* signer);
 
 int
 ndn_signer_ecdsa_sign(ndn_signer_t* signer, const uint8_t* prv_key_value, uint32_t prv_key_size,
-                      uint32_t ecdsa_type);
+                         uint8_t ecdsa_type);
 
 int
 ndn_signer_hmac_sign(ndn_signer_t* signer, const uint8_t* key_value, uint32_t key_size);
@@ -59,7 +59,7 @@ ndn_verifier_sha256_verify(ndn_verifier_t* verifier);
 
 int
 ndn_verifier_ecdsa_verify(ndn_verifier_t* verifier, const uint8_t* pub_key_value, uint32_t pub_key_size,
-                          uint32_t ecdsa_type);
+                             uint8_t ecdsa_type);
 
 int
 ndn_verifier_hmac_verify(ndn_verifier_t* verifier, const uint8_t* key_value, uint32_t key_size);

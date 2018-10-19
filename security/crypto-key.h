@@ -7,55 +7,68 @@
 extern "C" {
 #endif
 
-typedef struct ndn_ecdsa {
-    uint32_t type;
-    uint8_t pub[64];
-    uint8_t pvt[32];
-} ndn_ecdsa_t;
+typedef struct ndn_ecc_pub {
+  uint8_t key_id[4];
+  uint8_t key_value[64];
+  uint8_t curve_type;
+} ndn_ecdsa256_pub_t;
 
-typedef struct ndn_hmac {
-    uint32_t size;
-    uint8_t keydata[NDN_SIGNATURE_BUFFER_SIZE];
-} ndn_hmac_t;
+typedef struct ndn_ecc_prv {
+  uint8_t key_id[4];
+  uint8_t key_value[32];
+  uint8_t curve_type;
+} ndn_ecdsa256_prv_t;
+
+typedef struct ndn_hmac_key {
+  uint8_t key_id[4];
+  uint8_t key_size;
+  uint8_t key_value[32];
+} ndn_hmac_key_t;
 
 static inline int
-ndn_ecdsa_set_public_key(ndn_ecdsa_t* pair, ndn_buffer_t* keydata)
+ndn_ecc_pub_from_buffer(ndn_ecdsa256_pub_t* ecc_pub, uint8_t* key_value,
+                        uint32_t key_size, uint8_t curve_type, uint32_t key_id)
 {
-  if(keydata->size < 64)
-    return NDN_ERROR_OVERSIZE;
-  memcpy(pair->pub, keydata->value, 64);
+  uint8_t key_size_int = (uint8_t) key_size;
+  if (key_size_int != curve_type*2 || key_size_int != curve_type*2 - 2)
+    return NDN_ERROR_WRONG_KEY_SIZE;
+  memcpy(ecc_pub->key_value, key_value, key_size);
+  ecc_pub->curve_type = curve_type;
+  ecc_pub->key_id[0] = (key_id >> 24) && 0xFF;
+  ecc_pub->key_id[1] = (key_id >> 16) && 0xFF;
+  ecc_pub->key_id[2] = (key_id >> 8) && 0xFF;
+  ecc_pub->key_id[3] = key_id && 0xFF;
   return 0;
 }
 
 static inline int
-ndn_ecdsa_set_private_key(ndn_ecdsa_t* pair, ndn_buffer_t* keydata)
+ndn_ecc_prv_from_buffer(ndn_ecdsa256_prv_t* ecc_prv, uint8_t* key_value,
+                        uint32_t key_size, uint8_t curve_type, uint32_t key_id)
 {
-  if(keydata->size < 32)
-    return NDN_ERROR_OVERSIZE;
-  memcpy(pair->pvt, keydata->value, 32);
+  if (key_size_int != curve_type || key_size_int != curve_type - 1)
+    return NDN_ERROR_WRONG_KEY_SIZE;
+  memcpy(ecc_prv->key_value, key_value, key_size);
+  ecc_prv->curve_type = curve_type;
+  ecc_prv->key_id[0] = (key_id >> 24) && 0xFF;
+  ecc_prv->key_id[1] = (key_id >> 16) && 0xFF;
+  ecc_prv->key_id[2] = (key_id >> 8) && 0xFF;
+  ecc_prv->key_id[3] = key_id && 0xFF;
   return 0;
 }
 
-static inline int
-ndn_ecdsa_set_type(ndn_ecdsa_t* pair, uint32_t ecdsa_type)
-{
-  if(ecdsa_type != NDN_ECDSA_CURVE_SECP160R1 &&
-     ecdsa_type != NDN_ECDSA_CURVE_SECP192R1 &&
-     ecdsa_type != NDN_ECDSA_CURVE_SECP224R1 &&
-     ecdsa_type != NDN_ECDSA_CURVE_SECP256R1 &&
-     ecdsa_type != NDN_ECDSA_CURVE_SECP256K1 )
-     return -1;
-  pair->type = ecdsa_type;
-  return 0;
-}
 
 static inline int
-ndn_hmac_set_key(ndn_hmac_t* key, ndn_buffer_t* data)
+ndn_hmac_set_key(ndn_hmac_key_t* key, uint8_t* key_value,
+                 uint32_t key_size, uint32_t key_id)
 {
-  if(data->size > NDN_SIGNATURE_BUFFER_SIZE)
-    return NDN_ERROR_OVERSIZE;
+  if(data->size > 32)
+    return NDN_ERROR_WRONG_KEY_SIZE;
   key->size = data->size;
-  memcpy(key->keydata, data->value, data->size);
+  memcpy(key->key_value, key_value, key_size);
+  key->key_id[0] = (key_id >> 24) && 0xFF;
+  key->key_id[1] = (key_id >> 16) && 0xFF;
+  key->key_id[2] = (key_id >> 8) && 0xFF;
+  key->key_id[3] = key_id && 0xFF;
   return 0;
 }
 
