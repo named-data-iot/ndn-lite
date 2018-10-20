@@ -11,13 +11,13 @@ typedef struct ndn_ecc_pub {
   uint8_t key_id[4];
   uint8_t key_value[64];
   uint8_t curve_type;
-} ndn_ecdsa256_pub_t;
+} ndn_ecc_pub_t;
 
 typedef struct ndn_ecc_prv {
   uint8_t key_id[4];
   uint8_t key_value[32];
   uint8_t curve_type;
-} ndn_ecdsa256_prv_t;
+} ndn_ecc_prv_t;
 
 typedef struct ndn_hmac_key {
   uint8_t key_id[4];
@@ -26,7 +26,7 @@ typedef struct ndn_hmac_key {
 } ndn_hmac_key_t;
 
 static inline int
-ndn_ecc_pub_from_buffer(ndn_ecdsa256_pub_t* ecc_pub, uint8_t* key_value,
+ndn_ecc_pub_from_buffer(ndn_ecc_pub_t* ecc_pub, uint8_t* key_value,
                         uint32_t key_size, uint8_t curve_type, uint32_t key_id)
 {
   uint8_t key_size_int = (uint8_t) key_size;
@@ -42,7 +42,7 @@ ndn_ecc_pub_from_buffer(ndn_ecdsa256_pub_t* ecc_pub, uint8_t* key_value,
 }
 
 static inline int
-ndn_ecc_prv_from_buffer(ndn_ecdsa256_prv_t* ecc_prv, uint8_t* key_value,
+ndn_ecc_prv_from_buffer(ndn_ecc_prv_t* ecc_prv, uint8_t* key_value,
                         uint32_t key_size, uint8_t curve_type, uint32_t key_id)
 {
   if (key_size_int != curve_type || key_size_int != curve_type - 1)
