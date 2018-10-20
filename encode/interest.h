@@ -98,8 +98,7 @@ ndn_interest_probe_block_size(const ndn_interest_t* interest)
 
 // return the length of used block
 int
-ndn_interest_tlv_encode(const ndn_interest_t* interest, uint8_t* block_value, uint8_t block_max_size,
-                        uint32_t* used_block_size);
+ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest);
 
 #ifdef __cplusplus
 }

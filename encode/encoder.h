@@ -19,7 +19,7 @@ extern "C" {
 // State keeper when doing encode
 typedef struct ndn_encoder {
   uint8_t* output_value;
-  uint8_t output_max_size;
+  uint32_t output_max_size;
   uint32_t offset;
 } ndn_encoder_t;
 
@@ -77,7 +77,7 @@ encoder_append_var(ndn_encoder_t* encoder, uint32_t var)
     encoder->offset += 5;
   }
   else {
-    return -1;
+    return NDN_ERROR_OVERSIZE_VAR;
   }
   return 0;
 }

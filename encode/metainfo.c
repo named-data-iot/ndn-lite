@@ -70,7 +70,7 @@ ndn_metainfo_tlv_encode(ndn_encoder_t* encoder, const ndn_metainfo_t* meta)
     return 0;
 
   if (encoder->offset + encoder_probe_block_size(TLV_MetaInfo, meta_value_size)
-      < encoder->output_max_size)
+      > encoder->output_max_size)
     return NDN_ERROR_OVERSIZE;
 
   encoder_append_type(encoder, TLV_MetaInfo);

@@ -14,7 +14,7 @@ encoder_append_buffer_value(ndn_encoder_t* encoder, const ndn_buffer_t* buffer)
 {
   int rest_size = encoder->output_max_size - encoder->offset;
   if (rest_size < (int) buffer->size) {
-    return -1;
+    return NDN_ERROR_OVERSIZE;
   }
   memcpy(encoder->output_value + encoder->offset, buffer->value, buffer->size);
   encoder->offset += buffer->size;
@@ -26,7 +26,7 @@ encoder_append_raw_buffer_value(ndn_encoder_t* encoder, const uint8_t* buffer, u
 {
   int rest_size = encoder->output_max_size - encoder->offset;
   if (rest_size < (int) size) {
-    return -1;
+    return NDN_ERROR_OVERSIZE;
   }
   memcpy(encoder->output_value + encoder->offset, buffer, size);
   encoder->offset += size;

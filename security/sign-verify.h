@@ -18,7 +18,7 @@ typedef struct ndn_signer {
 
 static inline void
 ndn_signer_init(ndn_signer_t* signer, const uint8_t* input_value, uint32_t input_size,
-                    uint8_t* output_value, uint32_t output_max_size)
+                uint8_t* output_value, uint32_t output_max_size)
 {
   signer->input_value = input_value;
   signer->input_size = input_size;
@@ -32,7 +32,7 @@ ndn_signer_sha256_sign(ndn_signer_t* signer);
 
 int
 ndn_signer_ecdsa_sign(ndn_signer_t* signer, const uint8_t* prv_key_value, uint32_t prv_key_size,
-                         uint8_t ecdsa_type);
+                      uint8_t ecdsa_type);
 
 int
 ndn_signer_hmac_sign(ndn_signer_t* signer, const uint8_t* key_value, uint32_t key_size);

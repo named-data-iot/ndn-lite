@@ -64,7 +64,7 @@ ndn_metainfo_set_final_block_id(ndn_metainfo_t *meta, const name_component_t* fi
 }
 
 static inline uint32_t
-ndn_metainfo_probe_block_size(ndn_metainfo_t* meta)
+ndn_metainfo_probe_block_size(const ndn_metainfo_t* meta)
 {
   uint32_t meta_value_size = 0;
   if (meta->enable_ContentType) {

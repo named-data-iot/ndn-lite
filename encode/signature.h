@@ -26,6 +26,7 @@ typedef struct ndn_signature {
 
 } ndn_signature_t;
 
+// set signature type, signature size, and disable keylocator and validity period by default
 static inline int
 ndn_signature_init(ndn_signature_t* signature, uint8_t type)
 {
