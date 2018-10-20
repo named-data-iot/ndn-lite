@@ -52,7 +52,7 @@ ndn_signer_ecdsa_sign(ndn_signer_t* signer, const uint8_t* key_value, uint32_t k
 {
   if (signer->output_used_size + 64 > signer->output_max_size)
     return NDN_ERROR_OVERSIZE;
-  if (key_size != 32)
+  if (key_size > 32)
     return NDN_ERROR_WRONG_KEY_SIZE;
 
   uint8_t input_hash[32] = {0};
@@ -131,9 +131,9 @@ int
 ndn_verifier_ecdsa_verify(ndn_verifier_t* verifier, const uint8_t* key_value, uint32_t key_size,
                           uint8_t ecdsa_type)
 {
-  if (verifier->sig_size != 64)
+  if (verifier->sig_size > 64)
     return NDN_ERROR_WRONG_SIG_SIZE;
-  if (key_size != 64)
+  if (key_size > 64)
     return NDN_ERROR_WRONG_KEY_SIZE;
 
   uint8_t input_hash[32] = {0};

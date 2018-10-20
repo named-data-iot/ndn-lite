@@ -12,6 +12,7 @@
 #define NDN_ENCODING_DATA_H
 
 #include "signature.h"
+#include "../security/crypto-key.h"
 #include "metainfo.h"
 
 #ifdef __cplusplus
@@ -73,13 +74,15 @@ ndn_data_prepare_unsigned_block(ndn_encoder_t* encoder, const ndn_data_t* data);
 int
 ndn_data_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_data_t* data);
 
-// int
-// ndn_data_tlv_encode_ecdsa_sign(ndn_data_t* data, const ndn_name_t* producer_identity,
-//                                const ndn_ecc_prv_t* prv_key);
+// this function will automatically set signature info and signature value
+int
+ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
+                               const ndn_name_t* producer_identity, const ndn_ecc_prv_t* prv_key);
 
-// int
-// ndn_data_tlv_encode_hmac_sign(ndn_data_t* data, const ndn_name_t* producer_identity,
-//                                const ndn_hmac_key_t* hmac_key);
+// this function will automatically set signature info and signature value
+int
+ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
+                              const ndn_name_t* producer_identity, const ndn_hmac_key_t* hmac_key);
 
 // int
 // ndn_data_tlv_decode(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size);
