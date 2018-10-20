@@ -48,8 +48,12 @@ name_component_from_buffer(name_component_t* component, uint32_t type,
 static inline int
 name_component_from_string(name_component_t* component, const char* string, uint32_t size)
 {
-  return name_component_from_buffer(component, TLV_GenericNameComponent,
-                                    (uint8_t*)string, size - 1);
+  if (string[size - 1] == '\0')
+    return name_component_from_buffer(component, TLV_GenericNameComponent,
+                                      (uint8_t*)string, size - 1);
+  else
+    return name_component_from_buffer(component, TLV_GenericNameComponent,
+                                      (uint8_t*)string, size);
 }
 
 int

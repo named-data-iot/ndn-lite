@@ -16,7 +16,7 @@ typedef struct ndn_validaty_period {
 typedef struct ndn_signature {
   uint8_t sig_type;
   uint8_t sig_value[NDN_SIGNATURE_BUFFER_SIZE];
-  uint8_t sig_size;
+  uint32_t sig_size;
 
   uint8_t enable_KeyLocator;
   uint8_t enable_ValidityPeriod;
@@ -72,12 +72,11 @@ ndn_signature_set_signature(ndn_signature_t* signature, const uint8_t* sig_value
 // will do memory copy
 // This function is NOT recommended.
 // Better to first init signature and init signature.keylocator_name and set enable_KeyLocator = 1
-static inline int
-ndn_signature_set_keylocator(ndn_signature_t* signature, const ndn_name_t* key_name)
+static inline void
+ndn_signature_set_key_locator(ndn_signature_t* signature, const ndn_name_t* key_name)
 {
   signature->enable_KeyLocator = 1;
   memcpy(&signature->key_locator_name, key_name, sizeof(ndn_name_t));
-  return 0;
 }
 
 // not before and not after must be ISO 8601 time format, which is 15 bytes long
@@ -85,6 +84,7 @@ static inline void
 ndn_signature_set_validity_period(ndn_signature_t* signature,
                                   const uint8_t* not_before, const uint8_t* not_after)
 {
+  signature->enable_ValidityPeriod = 1;
   memcpy(signature->validity_period.not_before, not_before, 15);
   memcpy(signature->validity_period.not_after, not_after, 15);
 }
@@ -102,7 +102,7 @@ ndn_signature_info_probe_block_size(const ndn_signature_t* signature)
   if (signature->enable_ValidityPeriod) {
     uint32_t validity_period_buffer_size = encoder_probe_block_size(TLV_NotBefore, 15);
     validity_period_buffer_size += encoder_probe_block_size(TLV_NotAfter, 15);
-    info_buffer_size += encoder_probe_block_size(TLV_KeyLocator, validity_period_buffer_size);
+    info_buffer_size += encoder_probe_block_size(TLV_ValidityPeriod, validity_period_buffer_size);
   }
   return encoder_probe_block_size(TLV_SignatureInfo, info_buffer_size);
 }

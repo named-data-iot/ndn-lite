@@ -94,6 +94,14 @@ ndn_name_from_string(ndn_name_t *name, const char* string, uint32_t size)
       }
       last_divider = i;
     }
+    if (i == size - 1) {
+      name_component_t component;
+      name_component_from_string(&component, &string[last_divider + 1], i - last_divider);
+      int result = ndn_name_append_component(name, &component);
+      if (result < 0) {
+        return result;
+      }
+    }
     ++i;
   }
   return 0;

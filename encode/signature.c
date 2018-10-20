@@ -15,7 +15,7 @@ ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* sig
   if (signature->enable_ValidityPeriod) {
     validity_period_buffer_size = encoder_probe_block_size(TLV_NotBefore, 15);
     validity_period_buffer_size += encoder_probe_block_size(TLV_NotAfter, 15);
-    info_buffer_size += encoder_probe_block_size(TLV_KeyLocator, validity_period_buffer_size);
+    info_buffer_size += encoder_probe_block_size(TLV_ValidityPeriod, validity_period_buffer_size);
   }
 
   // signatureinfo header
@@ -38,9 +38,11 @@ ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* sig
   if (signature->enable_ValidityPeriod) {
     encoder_append_type(encoder, TLV_ValidityPeriod);
     encoder_append_length(encoder, validity_period_buffer_size);
+
     encoder_append_type(encoder, TLV_NotBefore);
     encoder_append_length(encoder, 15);
     encoder_append_raw_buffer_value(encoder, signature->validity_period.not_before, 15);
+
     encoder_append_type(encoder, TLV_NotAfter);
     encoder_append_length(encoder, 15);
     encoder_append_raw_buffer_value(encoder, signature->validity_period.not_after, 15);
@@ -49,7 +51,7 @@ ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* sig
 }
 
 int
-ndn_signature_value_encode(ndn_encoder_t* encoder, const ndn_signature_t* signature)
+ndn_signature_value_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* signature)
 {
   encoder_append_type(encoder, TLV_SignatureValue);
   encoder_append_length(encoder, signature->sig_size);
@@ -84,9 +86,11 @@ ndn_signature_info_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signature
   if (probe == TLV_ValidityPeriod) {
     signature->enable_ValidityPeriod = 1;
     decoder_get_length(decoder, &probe);
+
     decoder_get_type(decoder, &probe);
     decoder_get_length(decoder, &probe);
     decoder_get_raw_buffer_value(decoder, signature->validity_period.not_before, 15);
+
     decoder_get_type(decoder, &probe);
     decoder_get_length(decoder, &probe);
     decoder_get_raw_buffer_value(decoder, signature->validity_period.not_after, 15);
@@ -100,7 +104,7 @@ ndn_signature_value_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signatur
 {
   uint32_t type = 0;
   decoder_get_type(decoder, &type);
-  if (type != TLV_SigantureValue)
+  if (type != TLV_SignatureValue)
     return NDN_ERROR_WRONG_TLV_TYPE;
   decoder_get_length(decoder, &signature->sig_size);
   decoder_get_raw_buffer_value(decoder, signature->sig_value, signature->sig_size);

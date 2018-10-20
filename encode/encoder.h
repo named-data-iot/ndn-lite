@@ -58,7 +58,7 @@ static inline int
 encoder_append_var(ndn_encoder_t* encoder, uint32_t var)
 {
   size_t rest_size = encoder->output_max_size - encoder->offset;
-  if (var <= 0xFF) {
+  if (var < 253) {
     encoder->output_value[encoder->offset] = var & 0xFF;
     encoder->offset += 1;
   }
