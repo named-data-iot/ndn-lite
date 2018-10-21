@@ -15,29 +15,29 @@ ndn_metainfo_tlv_decode(ndn_decoder_t* decoder, ndn_metainfo_t* meta)
       return NDN_ERROR_WRONG_TLV_TYPE;
   }
   ndn_metainfo_init(meta);
-  decoder_get_length(decoder, &probe);
-  decoder_get_type(decoder, &probe);
+  uint32_t buffer_length = 0;
+  decoder_get_length(decoder, &buffer_length);
+  uint32_t value_starting = decoder->offset;
 
-  if (probe == TLV_ContentType) {
-    decoder_get_length(decoder, &probe);
-    decoder_get_byte_value(decoder, &meta->content_type);
-    meta->enable_ContentType = 1;
-
+  while (decoder->offset < value_starting + buffer_length) {
     decoder_get_type(decoder, &probe);
-  }
-
-  if (probe == TLV_FreshnessPeriod) {
-    decoder_get_length(decoder, &probe);
-    decoder_get_raw_buffer_value(decoder, meta->freshness_period, 4);
-    meta->enable_FreshnessPeriod = 1;
-
-    decoder_get_type(decoder, &probe);
-  }
-
-  if (probe == TLV_FinalBlockId) {
-    decoder_get_length(decoder, &probe);
-    name_component_tlv_decode(decoder, &meta->final_block_id);
-    meta->enable_FinalBlockId = 1;
+    if (probe == TLV_ContentType) {
+      decoder_get_length(decoder, &probe);
+      decoder_get_byte_value(decoder, &meta->content_type);
+      meta->enable_ContentType = 1;
+    }
+    else if (probe == TLV_FreshnessPeriod) {
+      decoder_get_length(decoder, &probe);
+      decoder_get_raw_buffer_value(decoder, meta->freshness_period, 4);
+      meta->enable_FreshnessPeriod = 1;
+    }
+    else if (probe == TLV_FinalBlockId) {
+      decoder_get_length(decoder, &probe);
+      name_component_tlv_decode(decoder, &meta->final_block_id);
+      meta->enable_FinalBlockId = 1;
+    }
+    else
+      return NDN_ERROR_WRONG_TLV_TYPE;
   }
   return 0;
 }

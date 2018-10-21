@@ -40,12 +40,6 @@ ndn_data_init(ndn_data_t* data, uint8_t* content_value, uint32_t content_size)
   return 0;
 }
 
-// int
-// ndn_data_hmac_sign(ndn_data_t* data, const uint8_t* prv_key_value, uint32_t prv_key_size);
-
-// int
-// ndn_data_verify(ndn_data_t* data);
-
 // this function should be invoked only after data's signature
 // info (including signature.sig_size) has been initialized
 static inline uint32_t
@@ -84,9 +78,19 @@ int
 ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
                               const ndn_name_t* producer_identity, const ndn_hmac_key_t* hmac_key);
 
-// int
-// ndn_data_tlv_decode(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size);
+int
+ndn_data_tlv_decode_no_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size);
 
+int
+ndn_data_tlv_decode_digest_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size);
+
+int
+ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size,
+                                 const ndn_ecc_pub_t* pub_key);
+
+int
+ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size,
+                                const ndn_hmac_key_t* hmac_key);
 
 #ifdef __cplusplus
 }
