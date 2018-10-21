@@ -172,11 +172,158 @@ ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
   return 0;
 }
 
-// int
-// ndn_data_tlv_decode(const ndn_data_t* data, const uint8_t* block_value, uint32_t block_size)
-// {
-//   ndn_decoder_t decoder;
-//   decoder_init(&decoder, block_value, block_size);
+int
+ndn_data_tlv_decode_no_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size)
+{
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, block_value, block_size);
 
-//   return 0;
-// }
+  uint32_t probe;
+  decoder_get_type(&decoder, &probe);
+  decoder_get_length(&decoder, &probe);
+
+  // name
+  ndn_name_tlv_decode(&decoder, &data->name);
+
+  // meta info
+  ndn_metainfo_tlv_decode(&decoder, &data->metainfo);
+
+  // content
+  decoder_get_type(&decoder, &probe);
+  decoder_get_length(&decoder, &data->content_size);
+  decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+
+  // signature info
+  ndn_signature_info_tlv_decode(&decoder, &data->signature);
+
+  // signature value
+  int result = ndn_signature_value_tlv_decode(&decoder, &data->signature);
+  if (result < 0)
+    return result;
+  else
+    return 0;
+}
+
+
+int
+ndn_data_tlv_decode_digest_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size)
+{
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, block_value, block_size);
+
+  uint32_t probe;
+  decoder_get_type(&decoder, &probe);
+  decoder_get_length(&decoder, &probe);
+  uint32_t input_starting = decoder.offset;
+
+  // name
+  ndn_name_tlv_decode(&decoder, &data->name);
+
+  // meta info
+  ndn_metainfo_tlv_decode(&decoder, &data->metainfo);
+
+  // content
+  decoder_get_type(&decoder, &probe);
+  decoder_get_length(&decoder, &data->content_size);
+  decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+
+  // signature info
+  ndn_signature_info_tlv_decode(&decoder, &data->signature);
+  uint32_t input_ending = decoder.offset;
+
+  // signature value
+  ndn_signature_value_tlv_decode(&decoder, &data->signature);
+
+  ndn_verifier_t verifier;
+  ndn_verifier_init(&verifier, decoder.input_value + input_starting,
+                    input_ending - input_starting,
+                    data->signature.sig_value, data->signature.sig_size);
+  int result = ndn_verifier_sha256_verify(&verifier);
+  if (result == 0)
+    return 0;
+  else
+    return result;
+}
+
+int
+ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size,
+                                 const ndn_ecc_pub_t* pub_key)
+{
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, block_value, block_size);
+
+  uint32_t probe;
+  decoder_get_type(&decoder, &probe);
+  decoder_get_length(&decoder, &probe);
+  uint32_t input_starting = decoder.offset;
+
+  // name
+  ndn_name_tlv_decode(&decoder, &data->name);
+
+  // meta info
+  ndn_metainfo_tlv_decode(&decoder, &data->metainfo);
+
+  // content
+  decoder_get_type(&decoder, &probe);
+  decoder_get_length(&decoder, &data->content_size);
+  decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+
+  // signature info
+  ndn_signature_info_tlv_decode(&decoder, &data->signature);
+  uint32_t input_ending = decoder.offset;
+
+  // signature value
+  ndn_signature_value_tlv_decode(&decoder, &data->signature);
+
+  ndn_verifier_t verifier;
+  ndn_verifier_init(&verifier, decoder.input_value + input_starting,
+                    input_ending - input_starting,
+                    data->signature.sig_value, data->signature.sig_size);
+  int result = ndn_verifier_ecdsa_verify(&verifier, pub_key->key_value,
+                                         pub_key->key_size, pub_key->curve_type);
+  if (result == 0)
+    return 0;
+  else
+    return result;
+}
+
+int
+ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size,
+                                const ndn_hmac_key_t* hmac_key)
+{
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, block_value, block_size);
+
+  uint32_t probe;
+  decoder_get_type(&decoder, &probe);
+  decoder_get_length(&decoder, &probe);
+  uint32_t input_starting = decoder.offset;
+
+  // name
+  ndn_name_tlv_decode(&decoder, &data->name);
+
+  // meta info
+  ndn_metainfo_tlv_decode(&decoder, &data->metainfo);
+
+  // content
+  decoder_get_type(&decoder, &probe);
+  decoder_get_length(&decoder, &data->content_size);
+  decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+
+  // signature info
+  ndn_signature_info_tlv_decode(&decoder, &data->signature);
+  uint32_t input_ending = decoder.offset;
+
+  // signature value
+  ndn_signature_value_tlv_decode(&decoder, &data->signature);
+
+  ndn_verifier_t verifier;
+  ndn_verifier_init(&verifier, decoder.input_value + input_starting,
+                    input_ending - input_starting,
+                    data->signature.sig_value, data->signature.sig_size);
+  int result = ndn_verifier_hmac_verify(&verifier, hmac_key->key_value, hmac_key->key_size);
+  if (result == 0)
+    return 0;
+  else
+    return result;
+}
