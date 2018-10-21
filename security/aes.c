@@ -1,13 +1,19 @@
-#include "aes.h"
+/*
+ * Copyright (C) 2018 Tianyuan Yu
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
 
-#include <crypto/ciphers.h>
+#include "aes.h"
 #include <crypto/modes/cbc.h>
 #include <hashes/sha256.h>
 #include <random.h>
 
-uint32_t 
+uint32_t
 ndn_encrypter_encrypt(ndn_encrypter_t* encrypter, uint8_t* aes_iv,
-                      uint8_t* input_value, uint32_t input_size, 
+                      uint8_t* input_value, uint32_t input_size,
                       uint8_t* output_value)
 {
   encrypter->input_value = input_value;
@@ -19,9 +25,9 @@ ndn_encrypter_encrypt(ndn_encrypter_t* encrypter, uint8_t* aes_iv,
   return encrypter->input_size;
 }
 
-uint32_t 
+uint32_t
 ndn_decrypter_decrypt(ndn_decrypter_t* decrypter, uint8_t* aes_iv,
-                      uint8_t* input_value, uint32_t input_size, 
+                      uint8_t* input_value, uint32_t input_size,
                       uint8_t* output_value)
 {
   decrypter->output_value = output_value;

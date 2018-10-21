@@ -1,8 +1,17 @@
+/*
+ * Copyright (C) 2018 Tianyuan Yu
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
+
 #ifndef NDN_SECURITY_AES_H_
 #define NDN_SECURITY_AES_H_
 
 #include "../encode/name.h"
 #include "../encode/ndn_constants.h"
+#include <crypto/ciphers.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,9 +31,9 @@ ndn_encrypter_init(ndn_encrypter_t* encrypter, const uint8_t* key_value, uint32_
 }
 
 // call this function after init the encrypter/decrypter
-uint32_t 
+uint32_t
 ndn_encrypter_encrypt(ndn_encrypter_t* encrypter, uint8_t* aes_iv,
-                      uint8_t* input_value, uint32_t input_size, 
+                      uint8_t* input_value, uint32_t input_size,
                       uint8_t* output_value);
 
 typedef struct ndn_decrypter {
@@ -41,9 +50,9 @@ ndn_decrypter_init(ndn_decrypter_t* decrypter, const uint8_t* key_value, uint32_
 }
 
 // call this function after init the encrypter/decrypter
-uint32_t 
+uint32_t
 ndn_decrypter_decrypt(ndn_decrypter_t* decrypter, uint8_t* aes_iv,
-                      uint8_t* input_value, uint32_t input_size, 
+                      uint8_t* input_value, uint32_t input_size,
                       uint8_t* output_value);
 
 // call this function before encryption operation
@@ -62,7 +71,7 @@ encrypter_get_padding_size(ndn_encrypter_t* encrypter, uint32_t input_size)
 
 // call this after decryption operation
 // using ISO/IEC 7816-4
-static inline uint32_t 
+static inline uint32_t
 decrypter_unpadding(ndn_decrypter_t* decrypter, uint8_t* after_padding, uint32_t after_padding_size)
 {
   uint32_t offset = after_padding_size;
