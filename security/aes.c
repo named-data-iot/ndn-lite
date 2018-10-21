@@ -7,22 +7,22 @@
 
 uint32_t 
 ndn_encrypter_encrypt(ndn_encrypter_t* encrypter, uint8_t* aes_iv,
-                      const uint8_t* input_value, uint32_t input_size, 
-                      const uint8_t* output_value);
+                      uint8_t* input_value, uint32_t input_size, 
+                      uint8_t* output_value)
 {
   encrypter->input_value = input_value;
   encrypter->input_size = input_size;
   uint8_t after_padding[encrypter->after_padding_size];
   encrypter_padding(encrypter, after_padding, encrypter->after_padding_size);
   cipher_encrypt_cbc(&encrypter->cipher, aes_iv, after_padding,
-                     after_padding_size, output_value);
+                     encrypter->after_padding_size, output_value);
   return encrypter->input_size;
 }
 
 uint32_t 
 ndn_decrypter_decrypt(ndn_decrypter_t* decrypter, uint8_t* aes_iv,
-                      const uint8_t* input_value, uint32_t input_size, 
-                      const uint8_t* output_value);
+                      uint8_t* input_value, uint32_t input_size, 
+                      uint8_t* output_value)
 {
   decrypter->output_value = output_value;
   uint8_t after_padding[input_size];

@@ -9,7 +9,8 @@ extern "C" {
 #endif
 
 typedef struct ndn_encrypter {
-  uint8_t* output_value;
+  uint8_t* input_value;
+  uint8_t input_size;
   uint32_t after_padding_size;
   cipher_t cipher;
 } ndn_encrypter_t;
@@ -20,13 +21,15 @@ ndn_encrypter_init(ndn_encrypter_t* encrypter, const uint8_t* key_value, uint32_
   cipher_init(&encrypter->cipher, CIPHER_AES_128, key_value, key_size);
 }
 
+// call this function after init the encrypter/decrypter
 uint32_t 
 ndn_encrypter_encrypt(ndn_encrypter_t* encrypter, uint8_t* aes_iv,
-                      const uint8_t* input_value, uint32_t input_size, 
-                      const uint8_t* output_value);
+                      uint8_t* input_value, uint32_t input_size, 
+                      uint8_t* output_value);
 
 typedef struct ndn_decrypter {
-  const uint8_t* output_value;
+  uint8_t* output_value;
+  uint32_t output_size;
   uint8_t* after_padding_value;
   cipher_t cipher;
 } ndn_decrypter_t;
@@ -37,11 +40,13 @@ ndn_decrypter_init(ndn_decrypter_t* decrypter, const uint8_t* key_value, uint32_
   cipher_init(&decrypter->cipher, CIPHER_AES_128, key_value, key_size);
 }
 
+// call this function after init the encrypter/decrypter
 uint32_t 
-ndn_decrypter_decrypt(ndn_encrypter_t* decrypter, uint8_t* aes_iv,
-                      const uint8_t* input_value, uint32_t input_size, 
-                      const uint8_t* output_value);
+ndn_decrypter_decrypt(ndn_decrypter_t* decrypter, uint8_t* aes_iv,
+                      uint8_t* input_value, uint32_t input_size, 
+                      uint8_t* output_value);
 
+// call this function before encryption operation
 static inline uint32_t
 encrypter_get_padding_size(ndn_encrypter_t* encrypter, uint32_t input_size)
 {
@@ -71,12 +76,12 @@ decrypter_unpadding(ndn_decrypter_t* decrypter, uint8_t* after_padding, uint32_t
 }
 
 // using ISO/IEC 7816-4
-static inline int
+static inline void
 encrypter_padding(ndn_encrypter_t* encrypter, uint8_t* after_padding, uint32_t after_padding_size)
 {
   memset(after_padding, 0, after_padding_size);
-  memcpy(encrypter->input_value, after_padding, encrypter->input_size);
-  after_padding[input_size] = 0x80;
+  memcpy(after_padding, encrypter->input_value, encrypter->input_size);
+  after_padding[encrypter->input_size] = 0x80;
 }
 #ifdef __cplusplus
 }
