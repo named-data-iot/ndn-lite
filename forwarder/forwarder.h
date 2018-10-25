@@ -9,13 +9,19 @@
 #ifndef FORWARDER_FOWARDER_H_
 #define FORWARDER_FOWARDER_H_
 
+#include "pit.h"
+#include "fib.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-  typedef struct ndn_forwarder {
-    uint8_t holder;
-  } ndn_forwarder_t;
+typedef struct ndn_forwarder {
+  ndn_fib_t fib;
+  ndn_pit_t pit;
+  ndn_face_table_t face_table;
+
+} ndn_forwarder_t;
 
 #ifdef __cplusplus
 }
