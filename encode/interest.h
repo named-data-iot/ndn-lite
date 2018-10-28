@@ -35,7 +35,6 @@ typedef struct ndn_interest {
   uint8_t enable_MustBeFresh;
   uint8_t enable_HopLimit;
   uint8_t enable_Parameters;
-  uint8_t enable_Signature; 
 
   interest_params_t parameters;
   ndn_signature_t signature;
@@ -54,9 +53,6 @@ ndn_interest_from_name(ndn_interest_t* interest, const ndn_name_t* name)
   interest->enable_MustBeFresh = 0;
   interest->enable_HopLimit = 0;
   interest->enable_Parameters = 0;
-  interest->enable_Signature = 0;
-
-  // /timestamp/nonce/signatureinfo/signaturevalue
 }
 
 // return 0 if decoding is successful
@@ -89,21 +85,6 @@ ndn_interest_set_Parameters(ndn_interest_t* interest, const interest_params_t* p
   interest->parameters = *parameters;
 }
 
-static inline void
-ndn_interest_set_Signature(ndn_interest_t* interest, uint8_t* timestamp, uint8_t* nounce)
-{
-  interest->enable_Signature = (signature > 0 ? 1 : 0);
-  if (interest->enable_Signature)
-  {
-    name_component_t signature_timestamp;
-
-    name_component_t signature_nounce;
-  }
-ndn_name_append_component(interest->name, const name_component_t* component)
-  uint8_t Signature_timestamp[15];
-  uint8_t Signature_nounce[4];
-}
-
 static inline uint32_t
 ndn_interest_probe_block_size(const ndn_interest_t* interest)
 {
@@ -128,7 +109,7 @@ ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest);
 // this function should be invoked only after interest's signature
 // info has been initialized
 int
-ndn_interest_prepare_unsigned_block(ndn_encoder_t* encoder, const ndn_interest_t interest);
+ndn_interest_prepare_unsigned_block(ndn_encoder_t* encoder, ndn_interest_t* interest);
 
 // this function will automatically set signature info and signature value
 int
@@ -137,26 +118,23 @@ ndn_interest_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_interest_t* data
 // this function will automatically set signature info and signature value
 int
 ndn_interest_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_interest_t* data,
-                               const ndn_name_t* producer_identity, const ndn_ecc_prv_t* prv_key);
+                                   const ndn_name_t* producer_identity, const ndn_ecc_prv_t* prv_key);
 
 // this function will automatically set signature info and signature value
 int
 ndn_interest_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_interest_t* data,
-                              const ndn_name_t* producer_identity, const ndn_hmac_key_t* hmac_key);
-
-int
-ndn_interest_tlv_decode_no_verify(ndn_interest_t* data, const uint8_t* block_value, uint32_t block_size);
+                                  const ndn_name_t* producer_identity, const ndn_hmac_key_t* hmac_key);
 
 int
 ndn_interest_tlv_decode_digest_verify(ndn_interest_t* data, const uint8_t* block_value, uint32_t block_size);
 
 int
 ndn_interest_tlv_decode_ecdsa_verify(ndn_interest_t* data, const uint8_t* block_value, uint32_t block_size,
-                                 const ndn_ecc_pub_t* pub_key);
+                                     const ndn_ecc_pub_t* pub_key);
 
 int
 ndn_interest_tlv_decode_hmac_verify(ndn_interest_t* data, const uint8_t* block_value, uint32_t block_size,
-                                const ndn_hmac_key_t* hmac_key);
+                                    const ndn_hmac_key_t* hmac_key);
 
 #ifdef __cplusplus
 }
