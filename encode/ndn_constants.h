@@ -16,8 +16,8 @@ extern "C" {
 // buffer and block memory allocation
 #define NAME_COMPONENT_BUFFER_SIZE 72
 #define NAME_COMPONENT_BLOCK_SIZE 74
-#define NDN_NAME_COMPONENTS_SIZE 10
-#define NDN_NAME_BLOCK_SIZE 724
+#define NDN_NAME_COMPONENTS_SIZE 12
+#define NDN_NAME_BLOCK_SIZE 891
 #define NDN_AES_BLOCK_SIZE 16
 
 #define NDN_INTEREST_PARAMS_BUFFER_SIZE 256
@@ -44,6 +44,11 @@ extern "C" {
 #define NDN_ERROR_CRYPTO_ALGO_FAILURE -25
 #define NDN_ERROR_UNSUPPORT_CRYPTO_ALGO -26
 #define NDN_ERROR_UNSUPPORT_SIGN_TYPE -26
+
+
+// flag messages
+#define NDN_FLAG_WHEN_ENCODING -30
+#define NDN_FLAG_WHEN_DECODING -31
 
 // content type values
 enum {

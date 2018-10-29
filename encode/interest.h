@@ -10,7 +10,6 @@
 #define NDN_ENCODING_INTEREST_H
 
 #include "name.h"
-#include "name-component.h"
 #include "signature.h"
 #include "../security/crypto-key.h"
 
@@ -108,32 +107,36 @@ ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest);
 
 // this function should be invoked only after interest's signature
 // info has been initialized
+
+uint32_t
+ndn_interest_probe_unsigned_block_size(ndn_interest_t* interest, int flag);
+
 int
-ndn_interest_prepare_unsigned_block(ndn_encoder_t* encoder, ndn_interest_t* interest);
+ndn_interest_prepare_unsigned_block(ndn_encoder_t* encoder, ndn_interest_t* interest, int flag);
 
 // this function will automatically set signature info and signature value
 int
-ndn_interest_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_interest_t* data);
+ndn_interest_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_interest_t* interest);
 
 // this function will automatically set signature info and signature value
 int
-ndn_interest_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_interest_t* data,
+ndn_interest_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_interest_t* interest,
                                    const ndn_name_t* producer_identity, const ndn_ecc_prv_t* prv_key);
 
 // this function will automatically set signature info and signature value
 int
-ndn_interest_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_interest_t* data,
+ndn_interest_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_interest_t* interest,
                                   const ndn_name_t* producer_identity, const ndn_hmac_key_t* hmac_key);
 
 int
-ndn_interest_tlv_decode_digest_verify(ndn_interest_t* data, const uint8_t* block_value, uint32_t block_size);
+ndn_interest_tlv_decode_digest_verify(ndn_interest_t* interest, const uint8_t* block_value, uint32_t block_size);
 
 int
-ndn_interest_tlv_decode_ecdsa_verify(ndn_interest_t* data, const uint8_t* block_value, uint32_t block_size,
+ndn_interest_tlv_decode_ecdsa_verify(ndn_interest_t* interest, const uint8_t* block_value, uint32_t block_size,
                                      const ndn_ecc_pub_t* pub_key);
 
 int
-ndn_interest_tlv_decode_hmac_verify(ndn_interest_t* data, const uint8_t* block_value, uint32_t block_size,
+ndn_interest_tlv_decode_hmac_verify(ndn_interest_t* interest, const uint8_t* block_value, uint32_t block_size,
                                     const ndn_hmac_key_t* hmac_key);
 
 #ifdef __cplusplus
