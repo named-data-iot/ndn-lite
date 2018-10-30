@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2018 Zhiyi Zhang, Tianyuan Yu
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
+
 #ifndef NDN_SECURITY_SIGN_VERIFY_H_
 #define NDN_SECURITY_SIGN_VERIFY_H_
 

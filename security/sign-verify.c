@@ -1,22 +1,26 @@
-#include "sign-verify.h"
+/*
+ * Copyright (C) 2018 Zhiyi Zhang, Tianyuan Yu
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
 
-#include <crypto/ciphers.h>
-#include <crypto/modes/ccm.h>
-#include <hashes/sha256.h>
-#include <random.h>
+#include "sign-verify.h"
 #include "micro-ecc/uECC.h"
+#include "tinycrypt/hmac.h"
 
 #ifndef FEATURE_PERIPH_HWRNG
 typedef struct uECC_SHA256_HashContext {
   uECC_HashContext uECC;
-  sha256_context_t ctx;
+  struct tc_sha256_state_struct ctx;
 } uECC_SHA256_HashContext;
 
 static void
 _init_sha256(const uECC_HashContext *base)
 {
   uECC_SHA256_HashContext *context = (uECC_SHA256_HashContext*)base;
-  sha256_init(&context->ctx);
+  tc_sha256_init(&context->ctx);
 }
 
 static void
@@ -25,16 +29,38 @@ _update_sha256(const uECC_HashContext *base,
                unsigned message_size)
 {
   uECC_SHA256_HashContext *context = (uECC_SHA256_HashContext*)base;
-  sha256_update(&context->ctx, message, message_size);
+  tc_sha256_update(&context->ctx, message, message_size);
 }
 
 static void
 _finish_sha256(const uECC_HashContext *base, uint8_t *hash_result)
 {
   uECC_SHA256_HashContext *context = (uECC_SHA256_HashContext*)base;
-  sha256_final(&context->ctx, hash_result);
+  tc_sha256_final(hash_result, &context->ctx);
 }
 #endif
+
+static void
+sha256(const uint8_t* data, size_t datalen, uint8_t* hash_result)
+{
+  struct tc_sha256_state_struct s;
+  (void)tc_sha256_init(&s);
+  tc_sha256_update(&s, data, datalen);
+  (void)tc_sha256_final(hash_result, &s);
+}
+
+static void
+hmac_sha256(const uint8_t* key, unsigned int key_size,
+            const void* data, unsigned int data_length,
+            uint8_t* hmac_result)
+{
+  struct tc_hmac_state_struct h;
+  (void)memset(&h, 0x00, sizeof(h));
+  (void)tc_hmac_set_key(&h, key, key_size);
+  (void)tc_hmac_init(&h);
+  (void)tc_hmac_update(&h, data, data_length);
+  (void)tc_hmac_final(hmac_result, TC_SHA256_DIGEST_SIZE, &h);
+}
 
 int
 ndn_signer_sha256_sign(ndn_signer_t* signer)

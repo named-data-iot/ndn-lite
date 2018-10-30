@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2018 Zhiyi Zhang, Tianyuan Yu
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
+
 #ifndef NDN_SECURITY_CRYPTO_KEY_H
 #define NDN_SECURITY_CRYPTO_KEY_H
 
