@@ -4,7 +4,7 @@
 #include <crypto/modes/ccm.h>
 #include <hashes/sha256.h>
 #include <random.h>
-#include <uECC.h>
+#include "micro-ecc/uECC.h"
 
 #ifndef FEATURE_PERIPH_HWRNG
 typedef struct uECC_SHA256_HashContext {

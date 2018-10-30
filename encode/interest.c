@@ -107,27 +107,19 @@ ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest)
 uint32_t
 ndn_interest_probe_unsigned_block_size(ndn_interest_t* interest, int flag)
 {
-  if (flag == NDN_FLAG_WHEN_ENCODING)
-  {
-    uint32_t tlv_total_size = 0;
-    int block_sizes[interest->name.components_size];
+  uint32_t tlv_total_size = 0;
+  if (flag == NDN_FLAG_WHEN_ENCODING) {
     for (size_t i = 0; i < interest->name.components_size; i++) {
-      block_sizes[i] = name_component_probe_block_size(&interest->name.components[i]);
-      tlv_total_size += block_sizes[i];
+      tlv_total_size += name_component_probe_block_size(&interest->name.components[i]);
     }
     return tlv_total_size;
   }
-  if (flag == NDN_FLAG_WHEN_DECODING)
-  {
-    uint32_t tlv_total_size = 0;
-    int block_sizes[interest->name.components_size - 1];
+  if (flag == NDN_FLAG_WHEN_DECODING) {
     for (size_t i = 0; i < interest->name.components_size - 1; i++) {
-      block_sizes[i] = name_component_probe_block_size(&interest->name.components[i]);
-      tlv_total_size += block_sizes[i];
+      tlv_total_size += name_component_probe_block_size(&interest->name.components[i]);
     }
     return tlv_total_size;
   }
-
   return -1; //error
 }
 
@@ -142,7 +134,7 @@ ndn_interest_prepare_unsigned_block(ndn_encoder_t* encoder, ndn_interest_t* inte
       if (result < 0)
         return result;
     }
-    return 0;    
+    return 0;
   }
   if (flag == NDN_FLAG_WHEN_DECODING)
   {
@@ -150,7 +142,7 @@ ndn_interest_prepare_unsigned_block(ndn_encoder_t* encoder, ndn_interest_t* inte
       int result = name_component_tlv_encode(encoder, &interest->name.components[i]);
       if (result < 0)
         return result;
-    }    
+    }
     return 0;
   }
 
@@ -187,7 +179,7 @@ ndn_interest_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_interest_t* inter
                             interest->Signature_nounce, 4);
   ndn_name_append_component(&interest->name, &signature_nounce);
 
-  // signature info  
+  // signature info
   name_component_t signature_info;
   uint8_t buffer_info[info_size];
   encoder_init(&temp_encoder, buffer_info, info_size);
@@ -202,11 +194,11 @@ ndn_interest_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_interest_t* inter
   uint8_t buffer_unsigned[unsigned_size];
   encoder_init(&temp_encoder, buffer_unsigned, unsigned_size);
   ndn_interest_prepare_unsigned_block(&temp_encoder, interest, NDN_FLAG_WHEN_ENCODING);
-  
+
   ndn_signer_t signer;
   ndn_signer_init(&signer, temp_encoder.output_value,
                   temp_encoder.offset,
-                  interest->signature.sig_value, interest->signature.sig_size);               
+                  interest->signature.sig_value, interest->signature.sig_size);
   int result = ndn_signer_ecdsa_sign(&signer, prv_key->key_value,
                                      prv_key->key_size, prv_key->curve_type);
   if (result < 0)
@@ -254,7 +246,7 @@ ndn_interest_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_interest_t* intere
                             interest->Signature_nounce, 4);
   ndn_name_append_component(&interest->name, &signature_nounce);
 
-  // signature info  
+  // signature info
   name_component_t signature_info;
   uint8_t buffer_info[info_size];
   encoder_init(&temp_encoder, buffer_info, info_size);
@@ -269,11 +261,11 @@ ndn_interest_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_interest_t* intere
   uint8_t buffer_unsigned[unsigned_size];
   encoder_init(&temp_encoder, buffer_unsigned, unsigned_size);
   ndn_interest_prepare_unsigned_block(&temp_encoder, interest, NDN_FLAG_WHEN_ENCODING);
-  
+
   ndn_signer_t signer;
   ndn_signer_init(&signer, temp_encoder.output_value,
                   temp_encoder.offset,
-                  interest->signature.sig_value, interest->signature.sig_size);               
+                  interest->signature.sig_value, interest->signature.sig_size);
   int result = ndn_signer_hmac_sign(&signer, hmac_key->key_value, hmac_key->key_size);
   if (result < 0)
     return result;
@@ -310,7 +302,7 @@ ndn_interest_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_interest_t* inte
                             interest->Signature_nounce, 4);
   ndn_name_append_component(&interest->name, &signature_nounce);
 
-  // signature info  
+  // signature info
   name_component_t signature_info;
   uint8_t buffer_info[info_size];
   encoder_init(&temp_encoder, buffer_info, info_size);
@@ -325,11 +317,11 @@ ndn_interest_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_interest_t* inte
   uint8_t buffer_unsigned[unsigned_size];
   encoder_init(&temp_encoder, buffer_unsigned, unsigned_size);
   ndn_interest_prepare_unsigned_block(&temp_encoder, interest, NDN_FLAG_WHEN_ENCODING);
-  
+
   ndn_signer_t signer;
   ndn_signer_init(&signer, temp_encoder.output_value,
                   temp_encoder.offset,
-                  interest->signature.sig_value, interest->signature.sig_size);               
+                  interest->signature.sig_value, interest->signature.sig_size);
   int result = ndn_signer_sha256_sign(&signer);
   if (result < 0)
     return result;

@@ -101,13 +101,12 @@ ndn_interest_probe_block_size(const ndn_interest_t* interest)
   return encoder_probe_block_size(TLV_Interest, interest_buffer_size);
 }
 
-// return the length of used block
 int
 ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest);
 
+
 // this function should be invoked only after interest's signature
 // info has been initialized
-
 uint32_t
 ndn_interest_probe_unsigned_block_size(ndn_interest_t* interest, int flag);
 
