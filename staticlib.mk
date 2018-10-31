@@ -37,12 +37,20 @@ INCUDE_FOLDERS += \
 CLFAGS = -Wall
 
 CC = arm-none-eabi-gcc
+AR = arm-none-eabi-ar
 
 all: $(TARGET)
 
 $(TARGET): $(OBJECT_FILES)
-	ar rcs $@ $^
+	$(AR) rcs $@ $^
 
 %.o : %.c
 	echo "now compile $<"
-	$(CC) -c $(CFLAGS) $(INCUDE_FOLDERS) $< -o $@
+	$(CC) --specs=nosys.specs -c $(CFLAGS) $(INCUDE_FOLDERS) $< -o $@
+
+clean:
+	rm *.a
+	rm security/*.o
+	rm encode/*.o
+	rm security/tinycrypt/*.o
+	rm security/micro-ecc/*.o
