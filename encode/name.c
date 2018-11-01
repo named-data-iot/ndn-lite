@@ -33,7 +33,7 @@ ndn_name_tlv_decode(ndn_decoder_t* decoder, ndn_name_t* name)
   uint32_t start_offset = decoder->offset;
   int counter = 0;
   while (decoder->offset < start_offset + length) {
-    uint32_t comp_type;
+    uint32_t comp_type = 0;
     decoder_get_type(decoder, &comp_type);
     name->components[counter].type = comp_type;
     if (!(name->components[counter].type == TLV_GenericNameComponent

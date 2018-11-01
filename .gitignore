@@ -1,5 +1,9 @@
 # Object files
 *.o
+
+# static lib
+*.a
+
 # Documentation artifacts
 doc/doxygen/html
 doc/doxygen/latex

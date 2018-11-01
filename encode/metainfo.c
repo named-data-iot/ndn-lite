@@ -3,7 +3,7 @@
 int
 ndn_metainfo_tlv_decode(ndn_decoder_t* decoder, ndn_metainfo_t* meta)
 {
-  uint32_t probe;
+  uint32_t probe = 0;
   decoder_get_type(decoder, &probe);
 
   if (probe != TLV_MetaInfo) {

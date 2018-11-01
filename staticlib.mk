@@ -1,4 +1,4 @@
-TARGET = ndn-standalone.a
+TARGET = ndn_standalone.a
 TARGET_DIR = build
 
 SRC_FILES += \

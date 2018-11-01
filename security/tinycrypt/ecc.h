@@ -78,11 +78,11 @@ extern "C" {
 #endif
 
 /* Word size (4 bytes considering 32-bits architectures) */
-#define uECC_WORD_SIZE 4
+#define tc_uECC_WORD_SIZE 4
 
 /* setting max number of calls to prng: */
-#ifndef uECC_RNG_MAX_TRIES
-#define uECC_RNG_MAX_TRIES 64
+#ifndef tc_uECC_RNG_MAX_TRIES
+#define tc_uECC_RNG_MAX_TRIES 64
 #endif
 
 /* defining data types to store word and bit counts: */
@@ -91,36 +91,36 @@ typedef int16_t bitcount_t;
 /* defining data type for comparison result: */
 typedef int8_t cmpresult_t;
 /* defining data type to store ECC coordinate/point in 32bits words: */
-typedef unsigned int uECC_word_t;
+typedef unsigned int tc_uECC_word_t;
 /* defining data type to store an ECC coordinate/point in 64bits words: */
-typedef uint64_t uECC_dword_t;
+typedef uint64_t tc_uECC_dword_t;
 
 /* defining masks useful for ecc computations: */
 #define HIGH_BIT_SET 0x80000000
-#define uECC_WORD_BITS 32
-#define uECC_WORD_BITS_SHIFT 5
-#define uECC_WORD_BITS_MASK 0x01F
+#define tc_uECC_WORD_BITS 32
+#define tc_uECC_WORD_BITS_SHIFT 5
+#define tc_uECC_WORD_BITS_MASK 0x01F
 
 /* Number of words of 32 bits to represent an element of the the curve p-256: */
 #define NUM_ECC_WORDS 8
 /* Number of bytes to represent an element of the the curve p-256: */
-#define NUM_ECC_BYTES (uECC_WORD_SIZE*NUM_ECC_WORDS)
+#define NUM_ECC_BYTES (tc_uECC_WORD_SIZE*NUM_ECC_WORDS)
 
 /* structure that represents an elliptic curve (e.g. p256):*/
-struct uECC_Curve_t;
-typedef const struct uECC_Curve_t * uECC_Curve;
-struct uECC_Curve_t {
+struct tc_uECC_Curve_t;
+typedef const struct tc_uECC_Curve_t * tc_uECC_Curve;
+struct tc_uECC_Curve_t {
   wordcount_t num_words;
   wordcount_t num_bytes;
   bitcount_t num_n_bits;
-  uECC_word_t p[NUM_ECC_WORDS];
-  uECC_word_t n[NUM_ECC_WORDS];
-  uECC_word_t G[NUM_ECC_WORDS * 2];
-  uECC_word_t b[NUM_ECC_WORDS];
-  void (*double_jacobian)(uECC_word_t * X1, uECC_word_t * Y1, uECC_word_t * Z1,
-	uECC_Curve curve);
-  void (*x_side)(uECC_word_t *result, const uECC_word_t *x, uECC_Curve curve);
-  void (*mmod_fast)(uECC_word_t *result, uECC_word_t *product);
+  tc_uECC_word_t p[NUM_ECC_WORDS];
+  tc_uECC_word_t n[NUM_ECC_WORDS];
+  tc_uECC_word_t G[NUM_ECC_WORDS * 2];
+  tc_uECC_word_t b[NUM_ECC_WORDS];
+  void (*double_jacobian)(tc_uECC_word_t * X1, tc_uECC_word_t * Y1, tc_uECC_word_t * Z1,
+	tc_uECC_Curve curve);
+  void (*x_side)(tc_uECC_word_t *result, const tc_uECC_word_t *x, tc_uECC_Curve curve);
+  void (*mmod_fast)(tc_uECC_word_t *result, tc_uECC_word_t *product);
 };
 
 /*
@@ -130,8 +130,8 @@ struct uECC_Curve_t {
  * @param Z1 IN/OUT -- z coordinate
  * @param curve IN -- elliptic curve
  */
-void double_jacobian_default(uECC_word_t * X1, uECC_word_t * Y1,
-			     uECC_word_t * Z1, uECC_Curve curve);
+void double_jacobian_default(tc_uECC_word_t * X1, tc_uECC_word_t * Y1,
+			     tc_uECC_word_t * Z1, tc_uECC_Curve curve);
 
 /*
  * @brief Computes x^3 + ax + b. result must not overlap x.
@@ -139,8 +139,8 @@ void double_jacobian_default(uECC_word_t * X1, uECC_word_t * Y1,
  * @param x IN -- value of x
  * @param curve IN -- elliptic curve
  */
-void x_side_default(uECC_word_t *result, const uECC_word_t *x,
-		    uECC_Curve curve);
+void x_side_default(tc_uECC_word_t *result, const tc_uECC_word_t *x,
+		    tc_uECC_Curve curve);
 
 /*
  * @brief Computes result = product % curve_p
@@ -154,11 +154,11 @@ void vli_mmod_fast_secp256r1(unsigned int *result, unsigned int *product);
 #define BYTES_TO_WORDS_8(a, b, c, d, e, f, g, h) 0x##d##c##b##a, 0x##h##g##f##e
 #define BYTES_TO_WORDS_4(a, b, c, d) 0x##d##c##b##a
 #define BITS_TO_WORDS(num_bits) \
-	((num_bits + ((uECC_WORD_SIZE * 8) - 1)) / (uECC_WORD_SIZE * 8))
+	((num_bits + ((tc_uECC_WORD_SIZE * 8) - 1)) / (tc_uECC_WORD_SIZE * 8))
 #define BITS_TO_BYTES(num_bits) ((num_bits + 7) / 8)
 
 /* definition of curve NIST p-256: */
-static const struct uECC_Curve_t curve_secp256r1 = {
+static const struct tc_uECC_Curve_t curve_secp256r1 = {
 	NUM_ECC_WORDS,
 	NUM_ECC_BYTES,
 	256, /* num_n_bits */ {
@@ -192,7 +192,7 @@ static const struct uECC_Curve_t curve_secp256r1 = {
         &vli_mmod_fast_secp256r1
 };
 
-uECC_Curve uECC_secp256r1(void);
+tc_uECC_Curve tc_uECC_secp256r1(void);
 
 /*
  * @brief Generates a random integer in the range 0 < random < top.
@@ -202,27 +202,27 @@ uECC_Curve uECC_secp256r1(void);
  * @param num_words IN -- number of words
  * @return a random integer in the range 0 < random < top
  */
-int uECC_generate_random_int(uECC_word_t *random, const uECC_word_t *top,
+int tc_uECC_generate_random_int(tc_uECC_word_t *random, const tc_uECC_word_t *top,
 			     wordcount_t num_words);
 
 
-/* uECC_RNG_Function type
+/* tc_uECC_RNG_Function type
  * The RNG function should fill 'size' random bytes into 'dest'. It should
  * return 1 if 'dest' was filled with random data, or 0 if the random data could
  * not be generated. The filled-in values should be either truly random, or from
  * a cryptographically-secure PRNG.
  *
- * A correctly functioning RNG function must be set (using uECC_set_rng())
- * before calling uECC_make_key() or uECC_sign().
+ * A correctly functioning RNG function must be set (using tc_uECC_set_rng())
+ * before calling tc_uECC_make_key() or tc_uECC_sign().
  *
  * Setting a correctly functioning RNG function improves the resistance to
- * side-channel attacks for uECC_shared_secret().
+ * side-channel attacks for tc_uECC_shared_secret().
  *
  * A correct RNG function is set by default. If you are building on another
  * POSIX-compliant system that supports /dev/random or /dev/urandom, you can
- * define uECC_POSIX to use the predefined RNG.
+ * define tc_uECC_POSIX to use the predefined RNG.
  */
-typedef int(*uECC_RNG_Function)(uint8_t *dest, unsigned int size);
+typedef int(*tc_uECC_RNG_Function)(uint8_t *dest, unsigned int size);
 
 /*
  * @brief Set the function that will be used to generate random bytes. The RNG
@@ -230,31 +230,31 @@ typedef int(*uECC_RNG_Function)(uint8_t *dest, unsigned int size);
  * data could not be generated.
  *
  * @note On platforms where there is no predefined RNG function, this must be
- * called before uECC_make_key() or uECC_sign() are used.
+ * called before tc_uECC_make_key() or tc_uECC_sign() are used.
  *
  * @param rng_function IN -- function that will be used to generate random bytes
  */
-void uECC_set_rng(uECC_RNG_Function rng_function);
+void tc_uECC_set_rng(tc_uECC_RNG_Function rng_function);
 
 /*
- * @brief provides current uECC_RNG_Function.
+ * @brief provides current tc_uECC_RNG_Function.
  * @return Returns the function that will be used to generate random bytes.
  */
-uECC_RNG_Function uECC_get_rng(void);
+tc_uECC_RNG_Function tc_uECC_get_rng(void);
 
 /*
  * @brief computes the size of a private key for the curve in bytes.
  * @param curve IN -- elliptic curve
  * @return size of a private key for the curve in bytes.
  */
-int uECC_curve_private_key_size(uECC_Curve curve);
+int tc_uECC_curve_private_key_size(tc_uECC_Curve curve);
 
 /*
  * @brief computes the size of a public key for the curve in bytes.
  * @param curve IN -- elliptic curve
  * @return the size of a public key for the curve in bytes.
  */
-int uECC_curve_public_key_size(uECC_Curve curve);
+int tc_uECC_curve_public_key_size(tc_uECC_Curve curve);
 
 /*
  * @brief Compute the corresponding public key for a private key.
@@ -263,8 +263,8 @@ int uECC_curve_public_key_size(uECC_Curve curve);
  * @param curve
  * @return Returns 1 if key was computed successfully, 0 if an error occurred.
  */
-int uECC_compute_public_key(const uint8_t *private_key,
-			    uint8_t *public_key, uECC_Curve curve);
+int tc_uECC_compute_public_key(const uint8_t *private_key,
+			    uint8_t *public_key, tc_uECC_Curve curve);
 
 /*
  * @brief Compute public-key.
@@ -273,8 +273,8 @@ int uECC_compute_public_key(const uint8_t *private_key,
  * @param private_key IN -- private-key
  * @param curve IN -- elliptic curve
  */
-uECC_word_t EccPoint_compute_public_key(uECC_word_t *result,
-					uECC_word_t *private_key, uECC_Curve curve);
+tc_uECC_word_t EccPoint_compute_public_key(tc_uECC_word_t *result,
+					tc_uECC_word_t *private_key, tc_uECC_Curve curve);
 
 /*
  * @brief Regularize the bitcount for the private key so that attackers cannot
@@ -285,8 +285,8 @@ uECC_word_t EccPoint_compute_public_key(uECC_word_t *result,
  * @param k1 IN/OUT -- regularized k
  * @param curve IN -- elliptic curve
  */
-uECC_word_t regularize_k(const uECC_word_t * const k, uECC_word_t *k0,
-			 uECC_word_t *k1, uECC_Curve curve);
+tc_uECC_word_t regularize_k(const tc_uECC_word_t * const k, tc_uECC_word_t *k0,
+			 tc_uECC_word_t *k1, tc_uECC_Curve curve);
 
 /*
  * @brief Point multiplication algorithm using Montgomery's ladder with co-Z
@@ -299,9 +299,9 @@ uECC_word_t regularize_k(const uECC_word_t * const k, uECC_word_t *k0,
  * @param num_bits IN -- number of bits in scalar
  * @param curve IN -- elliptic curve
  */
-void EccPoint_mult(uECC_word_t * result, const uECC_word_t * point,
-		   const uECC_word_t * scalar, const uECC_word_t * initial_Z,
-		   bitcount_t num_bits, uECC_Curve curve);
+void EccPoint_mult(tc_uECC_word_t * result, const tc_uECC_word_t * point,
+		   const tc_uECC_word_t * scalar, const tc_uECC_word_t * initial_Z,
+		   bitcount_t num_bits, tc_uECC_Curve curve);
 
 /*
  * @brief Constant-time comparison to zero - secure way to compare long integers
@@ -309,7 +309,7 @@ void EccPoint_mult(uECC_word_t * result, const uECC_word_t * point,
  * @param num_words IN -- number of words in the vli
  * @return 1 if vli == 0, 0 otherwise.
  */
-uECC_word_t uECC_vli_isZero(const uECC_word_t *vli, wordcount_t num_words);
+tc_uECC_word_t tc_uECC_vli_isZero(const tc_uECC_word_t *vli, wordcount_t num_words);
 
 /*
  * @brief Check if 'point' is the point at infinity
@@ -317,7 +317,7 @@ uECC_word_t uECC_vli_isZero(const uECC_word_t *vli, wordcount_t num_words);
  * @param curve IN -- elliptic curve
  * @return if 'point' is the point at infinity, 0 otherwise.
  */
-uECC_word_t EccPoint_isZero(const uECC_word_t *point, uECC_Curve curve);
+tc_uECC_word_t EccPoint_isZero(const tc_uECC_word_t *point, tc_uECC_Curve curve);
 
 /*
  * @brief computes the sign of left - right, in constant time.
@@ -326,7 +326,7 @@ uECC_word_t EccPoint_isZero(const uECC_word_t *point, uECC_Curve curve);
  * @param num_words IN -- number of words
  * @return the sign of left - right
  */
-cmpresult_t uECC_vli_cmp(const uECC_word_t *left, const uECC_word_t *right,
+cmpresult_t tc_uECC_vli_cmp(const tc_uECC_word_t *left, const tc_uECC_word_t *right,
 			 wordcount_t num_words);
 
 /*
@@ -337,7 +337,7 @@ cmpresult_t uECC_vli_cmp(const uECC_word_t *left, const uECC_word_t *right,
  * @param num_words IN -- number of words
  * @return the sign of left - right
  */
-cmpresult_t uECC_vli_cmp_unsafe(const uECC_word_t *left, const uECC_word_t *right,
+cmpresult_t tc_uECC_vli_cmp_unsafe(const tc_uECC_word_t *left, const tc_uECC_word_t *right,
 				wordcount_t num_words);
 
 /*
@@ -350,8 +350,8 @@ cmpresult_t uECC_vli_cmp_unsafe(const uECC_word_t *left, const uECC_word_t *righ
  * @param mod IN -- mod
  * @param num_words IN -- number of words
  */
-void uECC_vli_modSub(uECC_word_t *result, const uECC_word_t *left,
-		     const uECC_word_t *right, const uECC_word_t *mod,
+void tc_uECC_vli_modSub(tc_uECC_word_t *result, const tc_uECC_word_t *left,
+		     const tc_uECC_word_t *right, const tc_uECC_word_t *mod,
 		     wordcount_t num_words);
 
 /*
@@ -364,8 +364,8 @@ void uECC_vli_modSub(uECC_word_t *result, const uECC_word_t *left,
  * @param Y2 IN -- y coordinate of Q
  * @param curve IN -- elliptic curve
  */
-void XYcZ_add(uECC_word_t * X1, uECC_word_t * Y1, uECC_word_t * X2,
-	      uECC_word_t * Y2, uECC_Curve curve);
+void XYcZ_add(tc_uECC_word_t * X1, tc_uECC_word_t * Y1, tc_uECC_word_t * X2,
+	      tc_uECC_word_t * Y2, tc_uECC_Curve curve);
 
 /*
  * @brief Computes (x1 * z^2, y1 * z^3)
@@ -374,8 +374,8 @@ void XYcZ_add(uECC_word_t * X1, uECC_word_t * Y1, uECC_word_t * X2,
  * @param Z IN -- z value
  * @param curve IN -- elliptic curve
  */
-void apply_z(uECC_word_t * X1, uECC_word_t * Y1, const uECC_word_t * const Z,
-	     uECC_Curve curve);
+void apply_z(tc_uECC_word_t * X1, tc_uECC_word_t * Y1, const tc_uECC_word_t * const Z,
+	     tc_uECC_Curve curve);
 
 /*
  * @brief Check if bit is set.
@@ -384,9 +384,9 @@ void apply_z(uECC_word_t * X1, uECC_word_t * Y1, const uECC_word_t * const Z,
  * boundaries of the word-array 'vli'.
  * @note The bit ordering layout assumed for vli is: {31, 30, ..., 0},
  * {63, 62, ..., 32}, {95, 94, ..., 64}, {127, 126,..., 96} for a vli consisting
- * of 4 uECC_word_t elements.
+ * of 4 tc_uECC_word_t elements.
  */
-uECC_word_t uECC_vli_testBit(const uECC_word_t *vli, bitcount_t bit);
+tc_uECC_word_t tc_uECC_vli_testBit(const tc_uECC_word_t *vli, bitcount_t bit);
 
 /*
  * @brief Computes result = product % mod, where product is 2N words long.
@@ -395,8 +395,8 @@ uECC_word_t uECC_vli_testBit(const uECC_word_t *vli, bitcount_t bit);
  * @param num_words IN -- number of words
  * @warning Currently only designed to work for curve_p or curve_n.
  */
-void uECC_vli_mmod(uECC_word_t *result, uECC_word_t *product,
-		   const uECC_word_t *mod, wordcount_t num_words);
+void tc_uECC_vli_mmod(tc_uECC_word_t *result, tc_uECC_word_t *product,
+		   const tc_uECC_word_t *mod, wordcount_t num_words);
 
 /*
  * @brief Computes modular product (using curve->mmod_fast)
@@ -405,8 +405,8 @@ void uECC_vli_mmod(uECC_word_t *result, uECC_word_t *product,
  * @param right IN -- right term in product
  * @param curve IN -- elliptic curve
  */
-void uECC_vli_modMult_fast(uECC_word_t *result, const uECC_word_t *left,
-			   const uECC_word_t *right, uECC_Curve curve);
+void tc_uECC_vli_modMult_fast(tc_uECC_word_t *result, const tc_uECC_word_t *left,
+			   const tc_uECC_word_t *right, tc_uECC_Curve curve);
 
 /*
  * @brief Computes result = left - right.
@@ -417,8 +417,8 @@ void uECC_vli_modMult_fast(uECC_word_t *result, const uECC_word_t *left,
  * @param num_words IN -- number of words
  * @return borrow
  */
-uECC_word_t uECC_vli_sub(uECC_word_t *result, const uECC_word_t *left,
-			 const uECC_word_t *right, wordcount_t num_words);
+tc_uECC_word_t tc_uECC_vli_sub(tc_uECC_word_t *result, const tc_uECC_word_t *left,
+			 const tc_uECC_word_t *right, wordcount_t num_words);
 
 /*
  * @brief Constant-time comparison function(secure way to compare long ints)
@@ -427,7 +427,7 @@ uECC_word_t uECC_vli_sub(uECC_word_t *result, const uECC_word_t *left,
  * @param num_words IN -- number of words
  * @return Returns 0 if left == right, 1 otherwise.
  */
-uECC_word_t uECC_vli_equal(const uECC_word_t *left, const uECC_word_t *right,
+tc_uECC_word_t tc_uECC_vli_equal(const tc_uECC_word_t *left, const tc_uECC_word_t *right,
 			   wordcount_t num_words);
 
 /*
@@ -438,8 +438,8 @@ uECC_word_t uECC_vli_equal(const uECC_word_t *left, const uECC_word_t *right,
  * @param mod IN -- mod
  * @param num_words IN -- number of words
  */
-void uECC_vli_modMult(uECC_word_t *result, const uECC_word_t *left,
-		      const uECC_word_t *right, const uECC_word_t *mod,
+void tc_uECC_vli_modMult(tc_uECC_word_t *result, const tc_uECC_word_t *left,
+		      const tc_uECC_word_t *right, const tc_uECC_word_t *mod,
 	              wordcount_t num_words);
 
 /*
@@ -451,8 +451,8 @@ void uECC_vli_modMult(uECC_word_t *result, const uECC_word_t *left,
  * @param mod IN -- mod
  * @param num_words -- number of words
  */
-void uECC_vli_modInv(uECC_word_t *result, const uECC_word_t *input,
-		     const uECC_word_t *mod, wordcount_t num_words);
+void tc_uECC_vli_modInv(tc_uECC_word_t *result, const tc_uECC_word_t *input,
+		     const tc_uECC_word_t *mod, wordcount_t num_words);
 
 /*
  * @brief Sets dest = src.
@@ -460,7 +460,7 @@ void uECC_vli_modInv(uECC_word_t *result, const uECC_word_t *input,
  * @param src IN --  origin buffer
  * @param num_words IN -- number of words
  */
-void uECC_vli_set(uECC_word_t *dest, const uECC_word_t *src,
+void tc_uECC_vli_set(tc_uECC_word_t *dest, const tc_uECC_word_t *src,
 		  wordcount_t num_words);
 
 /*
@@ -473,8 +473,8 @@ void uECC_vli_set(uECC_word_t *dest, const uECC_word_t *src,
  * @param mod IN -- mod
  * @param num_words IN -- number of words
  */
-void uECC_vli_modAdd(uECC_word_t *result,  const uECC_word_t *left,
-    		     const uECC_word_t *right, const uECC_word_t *mod,
+void tc_uECC_vli_modAdd(tc_uECC_word_t *result,  const tc_uECC_word_t *left,
+    		     const tc_uECC_word_t *right, const tc_uECC_word_t *mod,
    		     wordcount_t num_words);
 
 /*
@@ -483,7 +483,7 @@ void uECC_vli_modAdd(uECC_word_t *result,  const uECC_word_t *left,
  * @param max_words IN -- number of words
  * @return number of bits in given vli
  */
-bitcount_t uECC_vli_numBits(const uECC_word_t *vli, 
+bitcount_t tc_uECC_vli_numBits(const tc_uECC_word_t *vli,
 			    const wordcount_t max_words);
 
 /*
@@ -491,7 +491,7 @@ bitcount_t uECC_vli_numBits(const uECC_word_t *vli,
  * @param vli IN -- very long integer
  * @param num_words IN -- number of words
  */
-void uECC_vli_clear(uECC_word_t *vli, wordcount_t num_words);
+void tc_uECC_vli_clear(tc_uECC_word_t *vli, wordcount_t num_words);
 
 /*
  * @brief check if it is a valid point in the curve
@@ -502,7 +502,7 @@ void uECC_vli_clear(uECC_word_t *vli, wordcount_t num_words);
  * @exception returns -2 if x or y is smaller than p,
  * @exception returns -3 if y^2 != x^3 + ax + b.
  */
-int uECC_valid_point(const uECC_word_t *point, uECC_Curve curve);
+int tc_uECC_valid_point(const tc_uECC_word_t *point, tc_uECC_Curve curve);
 
 /*
  * @brief Check if a public key is valid.
@@ -514,28 +514,28 @@ int uECC_valid_point(const uECC_word_t *point, uECC_Curve curve);
  * @exception returns -4 if public key is the group generator.
  *
  * @note Note that you are not required to check for a valid public key before
- * using any other uECC functions. However, you may wish to avoid spending CPU
+ * using any other tc_uECC functions. However, you may wish to avoid spending CPU
  * time computing a shared secret or verifying a signature using an invalid
  * public key.
  */
-int uECC_valid_public_key(const uint8_t *public_key, uECC_Curve curve);
+int tc_uECC_valid_public_key(const uint8_t *public_key, tc_uECC_Curve curve);
 
  /*
-  * @brief Converts an integer in uECC native format to big-endian bytes.
+  * @brief Converts an integer in tc_uECC native format to big-endian bytes.
   * @param bytes OUT -- bytes representation
   * @param num_bytes IN -- number of bytes
-  * @param native IN -- uECC native representation
+  * @param native IN -- tc_uECC native representation
   */
-void uECC_vli_nativeToBytes(uint8_t *bytes, int num_bytes,
+void tc_uECC_vli_nativeToBytes(uint8_t *bytes, int num_bytes,
     			    const unsigned int *native);
 
 /*
- * @brief Converts big-endian bytes to an integer in uECC native format.
- * @param native OUT -- uECC native representation
+ * @brief Converts big-endian bytes to an integer in tc_uECC native format.
+ * @param native OUT -- tc_uECC native representation
  * @param bytes IN -- bytes representation
  * @param num_bytes IN -- number of bytes
  */
-void uECC_vli_bytesToNative(unsigned int *native, const uint8_t *bytes,
+void tc_uECC_vli_bytesToNative(unsigned int *native, const uint8_t *bytes,
 			    int num_bytes);
 
 #ifdef __cplusplus

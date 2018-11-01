@@ -60,17 +60,17 @@
 #include <string.h>
 
 #if default_RNG_defined
-static uECC_RNG_Function g_rng_function = &default_CSPRNG;
+static tc_uECC_RNG_Function g_rng_function = &default_CSPRNG;
 #else
-static uECC_RNG_Function g_rng_function = 0;
+static tc_uECC_RNG_Function g_rng_function = 0;
 #endif
 
-int uECC_make_key_with_d(uint8_t *public_key, uint8_t *private_key,
-			 unsigned int *d, uECC_Curve curve)
+int tc_uECC_make_key_with_d(uint8_t *public_key, uint8_t *private_key,
+			 unsigned int *d, tc_uECC_Curve curve)
 {
 
-	uECC_word_t _private[NUM_ECC_WORDS];
-	uECC_word_t _public[NUM_ECC_WORDS * 2];
+	tc_uECC_word_t _private[NUM_ECC_WORDS];
+	tc_uECC_word_t _public[NUM_ECC_WORDS * 2];
 
 	/* This function is designed for test purposes-only (such as validating NIST
 	 * test vectors) as it uses a provided value for d instead of generating
@@ -81,13 +81,13 @@ int uECC_make_key_with_d(uint8_t *public_key, uint8_t *private_key,
 	if (EccPoint_compute_public_key(_public, _private, curve)) {
 
 		/* Converting buffers to correct bit order: */
-		uECC_vli_nativeToBytes(private_key,
+		tc_uECC_vli_nativeToBytes(private_key,
 				       BITS_TO_BYTES(curve->num_n_bits),
 				       _private);
-		uECC_vli_nativeToBytes(public_key,
+		tc_uECC_vli_nativeToBytes(public_key,
 				       curve->num_bytes,
 				       _public);
-		uECC_vli_nativeToBytes(public_key + curve->num_bytes,
+		tc_uECC_vli_nativeToBytes(public_key + curve->num_bytes,
 				       curve->num_bytes,
 				       _public + curve->num_words);
 
@@ -99,36 +99,36 @@ int uECC_make_key_with_d(uint8_t *public_key, uint8_t *private_key,
 	return 0;
 }
 
-int uECC_make_key(uint8_t *public_key, uint8_t *private_key, uECC_Curve curve)
+int tc_uECC_make_key(uint8_t *public_key, uint8_t *private_key, tc_uECC_Curve curve)
 {
 
-	uECC_word_t _random[NUM_ECC_WORDS * 2];
-	uECC_word_t _private[NUM_ECC_WORDS];
-	uECC_word_t _public[NUM_ECC_WORDS * 2];
-	uECC_word_t tries;
+	tc_uECC_word_t _random[NUM_ECC_WORDS * 2];
+	tc_uECC_word_t _private[NUM_ECC_WORDS];
+	tc_uECC_word_t _public[NUM_ECC_WORDS * 2];
+	tc_uECC_word_t tries;
 
-	for (tries = 0; tries < uECC_RNG_MAX_TRIES; ++tries) {
+	for (tries = 0; tries < tc_uECC_RNG_MAX_TRIES; ++tries) {
 		/* Generating _private uniformly at random: */
-		uECC_RNG_Function rng_function = uECC_get_rng();
+		tc_uECC_RNG_Function rng_function = tc_uECC_get_rng();
 		if (!rng_function ||
-			!rng_function((uint8_t *)_random, 2 * NUM_ECC_WORDS*uECC_WORD_SIZE)) {
+			!rng_function((uint8_t *)_random, 2 * NUM_ECC_WORDS*tc_uECC_WORD_SIZE)) {
         		return 0;
 		}
 
 		/* computing modular reduction of _random (see FIPS 186.4 B.4.1): */
-		uECC_vli_mmod(_private, _random, curve->n, BITS_TO_WORDS(curve->num_n_bits));
+		tc_uECC_vli_mmod(_private, _random, curve->n, BITS_TO_WORDS(curve->num_n_bits));
 
 		/* Computing public-key from private: */
 		if (EccPoint_compute_public_key(_public, _private, curve)) {
 
 			/* Converting buffers to correct bit order: */
-			uECC_vli_nativeToBytes(private_key,
+			tc_uECC_vli_nativeToBytes(private_key,
 					       BITS_TO_BYTES(curve->num_n_bits),
 					       _private);
-			uECC_vli_nativeToBytes(public_key,
+			tc_uECC_vli_nativeToBytes(public_key,
 					       curve->num_bytes,
 					       _public);
-			uECC_vli_nativeToBytes(public_key + curve->num_bytes,
+			tc_uECC_vli_nativeToBytes(public_key + curve->num_bytes,
  					       curve->num_bytes,
 					       _public + curve->num_words);
 
@@ -141,29 +141,29 @@ int uECC_make_key(uint8_t *public_key, uint8_t *private_key, uECC_Curve curve)
 	return 0;
 }
 
-int uECC_shared_secret(const uint8_t *public_key, const uint8_t *private_key,
-		       uint8_t *secret, uECC_Curve curve)
+int tc_uECC_shared_secret(const uint8_t *public_key, const uint8_t *private_key,
+		       uint8_t *secret, tc_uECC_Curve curve)
 {
 
-	uECC_word_t _public[NUM_ECC_WORDS * 2];
-	uECC_word_t _private[NUM_ECC_WORDS];
+	tc_uECC_word_t _public[NUM_ECC_WORDS * 2];
+	tc_uECC_word_t _private[NUM_ECC_WORDS];
 
-	uECC_word_t tmp[NUM_ECC_WORDS];
-	uECC_word_t *p2[2] = {_private, tmp};
-	uECC_word_t *initial_Z = 0;
-	uECC_word_t carry;
+	tc_uECC_word_t tmp[NUM_ECC_WORDS];
+	tc_uECC_word_t *p2[2] = {_private, tmp};
+	tc_uECC_word_t *initial_Z = 0;
+	tc_uECC_word_t carry;
 	wordcount_t num_words = curve->num_words;
 	wordcount_t num_bytes = curve->num_bytes;
 	int r;
 
 	/* Converting buffers to correct bit order: */
-	uECC_vli_bytesToNative(_private,
+	tc_uECC_vli_bytesToNative(_private,
       			       private_key,
 			       BITS_TO_BYTES(curve->num_n_bits));
-	uECC_vli_bytesToNative(_public,
+	tc_uECC_vli_bytesToNative(_public,
       			       public_key,
 			       num_bytes);
-	uECC_vli_bytesToNative(_public + num_words,
+	tc_uECC_vli_bytesToNative(_public + num_words,
 			       public_key + num_bytes,
 			       num_bytes);
 
@@ -174,7 +174,7 @@ int uECC_shared_secret(const uint8_t *public_key, const uint8_t *private_key,
 	/* If an RNG function was specified, try to get a random initial Z value to
 	 * improve protection against side-channel attacks. */
 	if (g_rng_function) {
-		if (!uECC_generate_random_int(p2[carry], curve->p, num_words)) {
+		if (!tc_uECC_generate_random_int(p2[carry], curve->p, num_words)) {
 			r = 0;
 			goto clear_and_out;
     		}
@@ -184,7 +184,7 @@ int uECC_shared_secret(const uint8_t *public_key, const uint8_t *private_key,
 	EccPoint_mult(_public, _public, p2[!carry], initial_Z, curve->num_n_bits + 1,
 		      curve);
 
-	uECC_vli_nativeToBytes(secret, num_bytes, _public);
+	tc_uECC_vli_nativeToBytes(secret, num_bytes, _public);
 	r = !EccPoint_isZero(_public, curve);
 
 clear_and_out:

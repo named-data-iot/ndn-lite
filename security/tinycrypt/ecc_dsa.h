@@ -96,23 +96,23 @@ extern "C" {
  * at least 2 * curve size long (for secp256r1, signature must be 64 bytes long).
  *
  * @warning A cryptographically-secure PRNG function must be set (using
- * uECC_set_rng()) before calling uECC_sign().
+ * tc_uECC_set_rng()) before calling tc_uECC_sign().
  * @note Usage: Compute a hash of the data you wish to sign (SHA-2 is
  * recommended) and pass it in to this function along with your private key.
  * @note side-channel countermeasure: algorithm strengthened against timing
  * attack.
  */
-int uECC_sign(const uint8_t *p_private_key, const uint8_t *p_message_hash,
-	      unsigned p_hash_size, uint8_t *p_signature, uECC_Curve curve);
+int tc_uECC_sign(const uint8_t *p_private_key, const uint8_t *p_message_hash,
+	      unsigned p_hash_size, uint8_t *p_signature, tc_uECC_Curve curve);
 
 #ifdef ENABLE_TESTS
 /*
  * THIS FUNCTION SHOULD BE CALLED FOR TEST PURPOSES ONLY.
- * Refer to uECC_sign() function for real applications.
+ * Refer to tc_uECC_sign() function for real applications.
  */
-int uECC_sign_with_k(const uint8_t *private_key, const uint8_t *message_hash,
-		     unsigned int hash_size, uECC_word_t *k, uint8_t *signature,
-		     uECC_Curve curve);
+int tc_uECC_sign_with_k(const uint8_t *private_key, const uint8_t *message_hash,
+		     unsigned int hash_size, tc_uECC_word_t *k, uint8_t *signature,
+		     tc_uECC_Curve curve);
 #endif
 
 /**
@@ -129,8 +129,8 @@ int uECC_sign_with_k(const uint8_t *private_key, const uint8_t *message_hash,
  * signer and pass it to this function along with the signer's public key and
  * the signature values (hash_size and signature).
  */
-int uECC_verify(const uint8_t *p_public_key, const uint8_t *p_message_hash,
-		unsigned int p_hash_size, const uint8_t *p_signature, uECC_Curve curve);
+int tc_uECC_verify(const uint8_t *p_public_key, const uint8_t *p_message_hash,
+		unsigned int p_hash_size, const uint8_t *p_signature, tc_uECC_Curve curve);
 
 #ifdef __cplusplus
 }
