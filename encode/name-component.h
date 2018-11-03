@@ -12,7 +12,7 @@
 #include "tlv.h"
 #include "encoder.h"
 #include "decoder.h"
-#include "ndn_constants.h"
+#include "ndn-constants.h"
 #include <string.h>
 
 #ifdef __cplusplus
@@ -29,6 +29,14 @@ typedef struct name_component_block {
   uint8_t value[NAME_COMPONENT_BLOCK_SIZE];
   uint32_t size;
 } name_component_block_t;
+
+static inline void
+name_component_init(name_component_t* component, uint32_t type)
+{
+  component->type = type;
+  if (type == TLV_ImplicitSha256DigestComponent || type == TLV_ParametersSha256DigestComponent)
+    component->size = 32;
+}
 
 // the function will do memory copy
 static inline int

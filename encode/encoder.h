@@ -121,9 +121,34 @@ encoder_append_byte_value(ndn_encoder_t* encoder, uint8_t value)
 }
 
 static inline int
+encoder_append_uint16_value(ndn_encoder_t* encoder, uint16_t value)
+{
+  if (encoder->offset + 2 > encoder->output_max_size)
+    return NDN_ERROR_OVERSIZE;
+  encoder->output_value[encoder->offset] = (value >> 8) & 0xFF;
+  encoder->output_value[encoder->offset + 1] = value & 0xFF;
+  encoder->offset += 2;
+  return 0;
+}
+
+
+static inline int
+encoder_append_uint32_value(ndn_encoder_t* encoder, uint32_t value)
+{
+  if (encoder->offset + 4 > encoder->output_max_size)
+    return NDN_ERROR_OVERSIZE;
+  encoder->output_value[encoder->offset] = (value >> 24) & 0xFF;
+  encoder->output_value[encoder->offset + 1] = (value >> 16) & 0xFF;
+  encoder->output_value[encoder->offset + 2] = (value >> 8) & 0xFF;
+  encoder->output_value[encoder->offset + 3] = value & 0xFF;
+  encoder->offset += 4;
+  return 0;
+}
+
+static inline int
 encoder_move_forward(ndn_encoder_t* encoder, uint32_t step){
   if (encoder->offset + step > encoder->output_max_size)
-  return NDN_ERROR_OVERSIZE;
+    return NDN_ERROR_OVERSIZE;
   encoder->offset += step;
   return 0;
 }

@@ -20,6 +20,7 @@ extern "C" {
 typedef struct ndn_buffer {
   uint8_t* value;
   size_t size;
+  uint32_t max_size;
 } ndn_buffer_t;
 
 // TLV encoded block

@@ -63,18 +63,17 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
 {
   // set signature info
   ndn_signature_init(&data->signature, NDN_SIG_TYPE_ECDSA_SHA256);
+  ndn_signature_set_key_locator(data->signature, producer_identity);
 
-  data->signature.enable_KeyLocator = 1;
-  data->signature.key_locator_name = *producer_identity;
-  name_component_t key_component;
   char key_comp_string[] = "KEY";
-  name_component_from_string(&key_component, key_comp_string, sizeof(key_comp_string));
-  name_component_t key_id_component;
-  name_component_from_buffer(&key_id_component, TLV_GenericNameComponent, prv_key->key_id, 4);
-  ndn_name_append_component(&data->signature.key_locator_name, &key_component);
-  ndn_name_append_component(&data->signature.key_locator_name, &key_id_component);
-
+  name_component_from_string(&data->signature.key_locator_name.components[components_size],
+                             key_comp_string, sizeof(key_comp_string));
+  interest->signature.key_locator_name.components_size++;
+  name_component_from_buffer(&data->signature.key_locator_name.components[components_size],
+                             TLV_GenericNameComponent, prv_key->key_id, 4);
+  interest->signature.key_locator_name.components_size++;
   uint32_t data_buffer_size = ndn_name_probe_block_size(&data->name);
+
   // meta info
   data_buffer_size += ndn_metainfo_probe_block_size(&data->metainfo);
   // content
@@ -121,18 +120,17 @@ ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
 {
   // set signature info
   ndn_signature_init(&data->signature, NDN_SIG_TYPE_HMAC_SHA256);
+  ndn_signature_set_key_locator(data->signature, producer_identity);
 
-  data->signature.enable_KeyLocator = 1;
-  data->signature.key_locator_name = *producer_identity;
-  name_component_t key_component;
   char key_comp_string[] = "KEY";
-  name_component_from_string(&key_component, key_comp_string, sizeof(key_comp_string));
-  name_component_t key_id_component;
-  name_component_from_buffer(&key_id_component, TLV_GenericNameComponent, hmac_key->key_id, 4);
-  ndn_name_append_component(&data->signature.key_locator_name, &key_component);
-  ndn_name_append_component(&data->signature.key_locator_name, &key_id_component);
-
+  name_component_from_string(&data->signature.key_locator_name.components[components_size],
+                             key_comp_string, sizeof(key_comp_string));
+  interest->signature.key_locator_name.components_size++;
+  name_component_from_buffer(&data->signature.key_locator_name.components[components_size],
+                             TLV_GenericNameComponent, prv_key->key_id, 4);
+  interest->signature.key_locator_name.components_size++;
   uint32_t data_buffer_size = ndn_name_probe_block_size(&data->name);
+
   // meta info
   data_buffer_size += ndn_metainfo_probe_block_size(&data->metainfo);
   // content

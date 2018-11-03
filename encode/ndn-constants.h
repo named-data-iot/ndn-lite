@@ -14,20 +14,30 @@ extern "C" {
 #endif
 
 // buffer and block memory allocation
-#define NAME_COMPONENT_BUFFER_SIZE 72
-#define NAME_COMPONENT_BLOCK_SIZE 74
-#define NDN_NAME_COMPONENTS_SIZE 12
-#define NDN_NAME_BLOCK_SIZE 891
-#define NDN_AES_BLOCK_SIZE 16
 
-#define NDN_INTEREST_PARAMS_BUFFER_SIZE 256
+// name and name component
+#define NAME_COMPONENT_BUFFER_SIZE 36
+#define NAME_COMPONENT_BLOCK_SIZE 38
+#define NDN_NAME_COMPONENTS_SIZE 10
+#define NDN_NAME_MAX_BLOCK_SIZE 384
+
+// interest
+#define NDN_INTEREST_PARAMS_BUFFER_SIZE 248
+#define NDN_SIGNED_INTEREST_PARAMS_MAX_SIZE 680
+
+// data
 #define NDN_CONTENT_BUFFER_SIZE 256
+
+// signature
 #define NDN_SIGNATURE_BUFFER_SIZE 128
 
+// forwarder
 #define NDN_FIB_MAX_SIZE 20
-#define NDN_PIT_MAX_SIZE 128
+#define NDN_PIT_MAX_SIZE 32
 #define NDN_CS_MAX_SIZE 10
 #define NDN_FACE_TABLE_MAX_SIZE 10
+
+#define NDN_AES_BLOCK_SIZE 16
 
 // default values
 #define DEFAULT_INTEREST_LIFETIME 4000

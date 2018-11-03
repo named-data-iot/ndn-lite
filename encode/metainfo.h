@@ -18,7 +18,7 @@ typedef struct ndn_metainfo {
 } ndn_metainfo_t;
 
 static inline void
-ndn_metainfo_init(ndn_metainfo_t *meta)
+ndn_metainfo_init(ndn_metainfo_t* meta)
 {
   meta->enable_ContentType = 0;
   meta->enable_FreshnessPeriod = 0;

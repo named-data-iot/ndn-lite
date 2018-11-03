@@ -57,7 +57,11 @@ enum {
   // Certificate
   TLV_ValidityPeriod = 253,
   TLV_NotBefore = 254,
-  TLV_NotAfter = 255
+  TLV_NotAfter = 255,
+
+  // Command Interest
+  TLV_SignedInterestParameters = 60,
+  TLV_SignedInterestTimestamp = 61
 };
 
 #ifdef __cplusplus
