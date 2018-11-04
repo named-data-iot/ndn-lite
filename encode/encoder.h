@@ -9,12 +9,18 @@
 #ifndef NDN_ENCODING_ENCODER_H
 #define NDN_ENCODING_ENCODER_H
 
-#include "block.h"
-#include "ndn_constants.h"
+#include <inttypes.h>
+#include "ndn-constants.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct ndn_buffer {
+  uint8_t* value;
+  uint32_t size;
+  uint32_t max_size;
+} ndn_buffer_t;
 
 // State keeper when doing encode
 typedef struct ndn_encoder {
@@ -57,7 +63,7 @@ encoder_init(ndn_encoder_t* encoder, uint8_t* block_value, uint32_t block_max_si
 static inline int
 encoder_append_var(ndn_encoder_t* encoder, uint32_t var)
 {
-  size_t rest_size = encoder->output_max_size - encoder->offset;
+  uint32_t rest_size = encoder->output_max_size - encoder->offset;
   if (var < 253) {
     encoder->output_value[encoder->offset] = var & 0xFF;
     encoder->offset += 1;

@@ -10,7 +10,7 @@
 #define NDN_SECURITY_AES_H_
 
 #include "../encode/name.h"
-#include "../encode/ndn_constants.h"
+#include "../encode/ndn-constants.h"
 #include <crypto/ciphers.h>
 
 #ifdef __cplusplus

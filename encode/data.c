@@ -1,10 +1,15 @@
 #include "data.h"
 #include "../security/sign-verify.h"
 
-#include <stdio.h>
+/************************************************************/
+/*  Helper functions for signed interest APIs               */
+/*  Not supposed to be used by library users                */
+/************************************************************/
 
-int
-ndn_data_prepare_unsigned_block(ndn_encoder_t* encoder, const ndn_data_t* data)
+// this function should be invoked only after data's signature
+// info has been initialized
+static int
+_ndn_data_prepare_unsigned_block(ndn_encoder_t* encoder, const ndn_data_t* data)
 {
   // name
   ndn_name_tlv_encode(encoder, &data->name);
@@ -18,6 +23,29 @@ ndn_data_prepare_unsigned_block(ndn_encoder_t* encoder, const ndn_data_t* data)
   ndn_signature_info_tlv_encode(encoder, &data->signature);
   return 0;
 }
+
+static void
+_prepare_signature_info(ndn_data_t* data, uint8_t signature_type,
+                        const ndn_name_t* producer_identity, const uint8_t* key_id)
+{
+  ndn_signature_init(&data->signature, signature_type);
+  ndn_signature_set_key_locator(&data->signature, producer_identity);
+
+  // append /KEY and /<KEY-ID> in key locator name
+  char key_comp_string[] = "KEY";
+  int pos = data->signature.key_locator_name.components_size;
+  name_component_from_string(&data->signature.key_locator_name.components[pos],
+                             key_comp_string, sizeof(key_comp_string));
+  data->signature.key_locator_name.components_size++;
+  pos = data->signature.key_locator_name.components_size;
+  name_component_from_buffer(&data->signature.key_locator_name.components[pos],
+                             TLV_GenericNameComponent, key_id, 4);
+  data->signature.key_locator_name.components_size++;
+}
+
+/************************************************************/
+/*  Definition of signed interest APIs                      */
+/************************************************************/
 
 int
 ndn_data_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_data_t* data)
@@ -40,7 +68,7 @@ ndn_data_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_data_t* data)
   encoder_append_length(encoder, data_buffer_size);
 
   uint32_t sign_input_starting = encoder->offset;
-  ndn_data_prepare_unsigned_block(encoder, data);
+  _ndn_data_prepare_unsigned_block(encoder, data);
   uint32_t sign_input_ending = encoder->offset;
 
   // sign data
@@ -62,16 +90,7 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
                                const ndn_name_t* producer_identity, const ndn_ecc_prv_t* prv_key)
 {
   // set signature info
-  ndn_signature_init(&data->signature, NDN_SIG_TYPE_ECDSA_SHA256);
-  ndn_signature_set_key_locator(data->signature, producer_identity);
-
-  char key_comp_string[] = "KEY";
-  name_component_from_string(&data->signature.key_locator_name.components[components_size],
-                             key_comp_string, sizeof(key_comp_string));
-  interest->signature.key_locator_name.components_size++;
-  name_component_from_buffer(&data->signature.key_locator_name.components[components_size],
-                             TLV_GenericNameComponent, prv_key->key_id, 4);
-  interest->signature.key_locator_name.components_size++;
+  _prepare_signature_info(data, NDN_SIG_TYPE_ECDSA_SHA256, producer_identity, prv_key->key_id);
   uint32_t data_buffer_size = ndn_name_probe_block_size(&data->name);
 
   // meta info
@@ -85,16 +104,11 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
 
   // data T and L
   encoder_append_type(encoder, TLV_Data);
-  printf("encoder offset: %d\n", (int) encoder->offset);
-
   encoder_append_length(encoder, data_buffer_size);
-  printf("encoder offset: %d\n", (int) encoder->offset);
 
   uint32_t sign_input_starting = encoder->offset;
-  ndn_data_prepare_unsigned_block(encoder, data);
+  _ndn_data_prepare_unsigned_block(encoder, data);
   uint32_t sign_input_ending = encoder->offset;
-
-  printf("encoder offset: %d\n", (int) encoder->offset);
 
   // sign data
   ndn_signer_t signer;
@@ -103,14 +117,11 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
                   data->signature.sig_value, data->signature.sig_size);
   int result = ndn_signer_ecdsa_sign(&signer, prv_key->key_value,
                                      prv_key->key_size, prv_key->curve_type);
-  printf("sign result %d\n", result);
   if (result < 0)
     return result;
 
   // finish encoding
   ndn_signature_value_tlv_encode(encoder, &data->signature);
-  printf("encoder offset: %d\n", (int) encoder->offset);
-
   return 0;
 }
 
@@ -119,16 +130,7 @@ ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
                               const ndn_name_t* producer_identity, const ndn_hmac_key_t* hmac_key)
 {
   // set signature info
-  ndn_signature_init(&data->signature, NDN_SIG_TYPE_HMAC_SHA256);
-  ndn_signature_set_key_locator(data->signature, producer_identity);
-
-  char key_comp_string[] = "KEY";
-  name_component_from_string(&data->signature.key_locator_name.components[components_size],
-                             key_comp_string, sizeof(key_comp_string));
-  interest->signature.key_locator_name.components_size++;
-  name_component_from_buffer(&data->signature.key_locator_name.components[components_size],
-                             TLV_GenericNameComponent, prv_key->key_id, 4);
-  interest->signature.key_locator_name.components_size++;
+  _prepare_signature_info(data, NDN_SIG_TYPE_HMAC_SHA256, producer_identity, hmac_key->key_id);
   uint32_t data_buffer_size = ndn_name_probe_block_size(&data->name);
 
   // meta info
@@ -142,16 +144,12 @@ ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
 
   // data T and L
   encoder_append_type(encoder, TLV_Data);
-  printf("encoder offset: %d\n", (int) encoder->offset);
-
   encoder_append_length(encoder, data_buffer_size);
-  printf("encoder offset: %d\n", (int) encoder->offset);
 
   uint32_t sign_input_starting = encoder->offset;
-  ndn_data_prepare_unsigned_block(encoder, data);
+  _ndn_data_prepare_unsigned_block(encoder, data);
   uint32_t sign_input_ending = encoder->offset;
 
-  printf("encoder offset: %d\n", (int) encoder->offset);
 
   // sign data
   ndn_signer_t signer;
@@ -159,13 +157,11 @@ ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
                   sign_input_ending - sign_input_starting,
                   data->signature.sig_value, data->signature.sig_size);
   int result = ndn_signer_hmac_sign(&signer, hmac_key->key_value, hmac_key->key_size);
-  printf("sign result %d\n", result);
   if (result < 0)
     return result;
 
   // finish encoding
   ndn_signature_value_tlv_encode(encoder, &data->signature);
-  printf("encoder offset: %d\n", (int) encoder->offset);
 
   return 0;
 }

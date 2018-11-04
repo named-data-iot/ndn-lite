@@ -25,8 +25,8 @@ typedef struct interest_params {
 
 typedef struct ndn_interest {
   ndn_name_t name;
-  uint8_t nounce[4];
-  uint8_t lifetime[2];
+  uint32_t nounce;
+  uint16_t lifetime;
 
   uint8_t enable_CanBePrefix;
   uint8_t enable_MustBeFresh;
@@ -35,21 +35,45 @@ typedef struct ndn_interest {
 
   interest_params_t parameters;
   uint8_t hop_limit;
+
+  uint8_t is_SignedInterest;
+  uint32_t signature_timestamp;
+  uint32_t signature_nounce;
+  ndn_signature_t signature;
 } ndn_interest_t;
 
+static inline void
+ndn_interest_init(ndn_interest_t* interest)
+{
+  interest->enable_CanBePrefix = 0;
+  interest->enable_MustBeFresh = 0;
+  interest->enable_HopLimit = 0;
+  interest->enable_Parameters = 0;
+  interest->is_SignedInterest = 0;
+
+  interest->nounce = 0;
+  interest->lifetime = DEFAULT_INTEREST_LIFETIME;
+  interest->hop_limit = 0;
+  interest->signature_timestamp = 0;
+  interest->signature_nounce = 0;
+}
 
 static inline void
 ndn_interest_from_name(ndn_interest_t* interest, const ndn_name_t* name)
 {
   interest->name = *name;
-  interest->lifetime[0] = (DEFAULT_INTEREST_LIFETIME >> 8) & 0xFF;
-  interest->lifetime[1] = DEFAULT_INTEREST_LIFETIME & 0xFF;
 
   interest->enable_CanBePrefix = 0;
   interest->enable_MustBeFresh = 0;
   interest->enable_HopLimit = 0;
   interest->enable_Parameters = 0;
-  interest->enable_Signature = 0;
+  interest->is_SignedInterest = 0;
+
+  interest->nounce = 0;
+  interest->lifetime = DEFAULT_INTEREST_LIFETIME;
+  interest->hop_limit = 0;
+  interest->signature_timestamp = 0;
+  interest->signature_nounce = 0;
 }
 
 // return 0 if decoding is successful
@@ -82,6 +106,7 @@ ndn_interest_set_Parameters(ndn_interest_t* interest, const interest_params_t* p
   interest->parameters = *parameters;
 }
 
+// used only for unsigned Interest
 static inline uint32_t
 ndn_interest_probe_block_size(const ndn_interest_t* interest)
 {
@@ -99,6 +124,7 @@ ndn_interest_probe_block_size(const ndn_interest_t* interest)
   return encoder_probe_block_size(TLV_Interest, interest_buffer_size);
 }
 
+// used only for unsigned Interest
 int
 ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest);
 
