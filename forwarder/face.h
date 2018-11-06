@@ -30,8 +30,8 @@ typedef struct ndn_face {
   uint8_t state;
   uint8_t type;
 
-  uint32_t local_uri;
-  uint32_t remote_uri;
+  uint8_t local_uri[10];
+  uint8_t remote_uri[10];
 } ndn_face_t;
 
 typedef ndn_face_t[NDN_FACE_TABLE_MAX_SIZE] ndn_face_table_t;

@@ -11,10 +11,15 @@
 
 #include "../encoding/interest.h"
 
+typedef int (*ndn_on_interest_callback_t)(uint8_t* interest, uint32_t interest_size);
+
+
 typedef struct ndn_fib_entry {
   ndn_name_t name_prefix;
   ndn_face_t next_hop;
   uint8_t cost;
+
+  ndn_on_interest_callback_t on_interest;
 } ndn_fib_entry_t;
 
 typedef ndn_fib_entry_t[NDN_FIB_MAX_SIZE] ndn_fib_t;

@@ -11,6 +11,12 @@
 
 #include "../encoding/interest.h"
 
+typedef int (*ndn_on_data_callback_t)(uint8_t* interest, uint32_t interest_size,
+                                      uint8_t* data, uint32_t interest_size);
+
+typedef int (*ndn_interest_timeout_callback_t)(uint8_t* interest, uint32_t interest_size);
+
+
 typedef struct ndn_pit_entry {
   ndn_name_t interest_name;
 
@@ -20,6 +26,9 @@ typedef struct ndn_pit_entry {
   uint8_t outgoing_face_size;
 
   uint32_t timestamp;
+
+  ndn_on_data_callback_t on_data;
+  ndn_interest_timeout_callback_t on_timeout;
 } ndn_pit_entry_t;
 
 typedef ndn_pit_entry_t[NDN_PIT_MAX_SIZE] ndn_pit_t;

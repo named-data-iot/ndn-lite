@@ -19,8 +19,6 @@ extern "C" {
 typedef struct ndn_forwarder {
   ndn_fib_t fib;
   ndn_pit_t pit;
-  ndn_face_table_t face_table;
-
 } ndn_forwarder_t;
 
 #ifdef __cplusplus
