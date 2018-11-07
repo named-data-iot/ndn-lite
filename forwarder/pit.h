@@ -12,7 +12,7 @@
 #include "../encoding/interest.h"
 
 typedef int (*ndn_on_data_callback_t)(uint8_t* interest, uint32_t interest_size,
-                                      uint8_t* data, uint32_t interest_size);
+                                      uint8_t* data, uint32_t data_size);
 
 typedef int (*ndn_interest_timeout_callback_t)(uint8_t* interest, uint32_t interest_size);
 
