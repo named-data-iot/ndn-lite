@@ -8,8 +8,9 @@
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
-#include "nrf52840-ndn.h"
-#include <forwarder/forwarder.h>
+#include "ndn-nrf52840.h"
+#include <encode/data.h>
+#include <stdio.h>
 
 static ndn_nrf52840_context_t m_context;
 
@@ -27,6 +28,9 @@ ndn_nrf52840_init_802154_radio(const uint8_t* extended_address, const uint8_t* p
     nrf_802154_promiscuous_set(true);
   nrf_802154_tx_power_set(-20);
   nrf_802154_channel_set(NDN_NRF52840_802154_CHANNEL);
+#if NRF_802154_ACK_TIMEOUT_ENABLED
+  nrf_802154_ack_timeout_set(100);
+#endif // NRF_802154_ACK_TIMEOUT_ENABLED
   nrf_802154_receive();
 
   printf("TX power currently set to %ddBm\r\n", (int)nrf_802154_tx_power_get());
@@ -39,13 +43,13 @@ ndn_nrf52840_init_802154_radio(const uint8_t* extended_address, const uint8_t* p
   m_context.short_address[1] = *(short_address + 1);
   m_context.packet_id = 0;
   m_context.tx_errorcode = 0;
-  m_context.event_size = 0;
+  m_context.events_size = 0;
 }
 
 void
 ndn_nrf52840_init_802154_packet(uint8_t* message)
 {
-  bzero(message, NDN_NRF52840_802154_MAX_MESSAGE_SIZE);
+  memset(message, 0, NDN_NRF52840_802154_MAX_MESSAGE_SIZE);
 
   // frame header:
   message[0] = 0x41; // FCF, valued 0x9841
@@ -71,70 +75,63 @@ ndn_nrf52840_init_802154_packet(uint8_t* message)
   // end of header
 }
 
-// typedef struct send_interest_event {
-//   uint8_t* interest_block;
-//   uint32_t block_size;
-//   ndn_on_data_callback_t on_data;
-//   ndn_interest_timeout_callback_t on_timeout;
-// } send_interest_event_t;
-// typedef struct ndn_nrf52840_context {
-//   bool tx_done;
-//   bool tx_failed;
-//   nrf_802154_tx_error_t tx_errorcode;
-
-//   send_interest_event_t send_interest_events[5];
-//   uint8_t events_size;
-// } ndn_nrf52840_context_t;
-
-
 void
 ndn_nrf52840_802154_express_interest(ndn_interest_t* interest,
                                      ndn_on_data_callback_t on_data,
-                                     ndn_interest_timeout_callback_t on_timeout)
+                                     ndn_interest_timeout_callback_t on_timeout,
+                                     ndn_on_error_callback_t on_error)
 {
   // create a new send event
   send_interest_event_t send_event = {
-    .interest_block = interest_block,
-    .block_size = block_size,
+    .name = interest->name,
     .on_data = on_data,
     .on_timeout = on_timeout
   };
-  m_context.send_interest_events[m_context.events_size] = send_event;
-  m_context.events_size++;
 
-  // init header
   uint8_t packet_block[NDN_NRF52840_802154_MAX_MESSAGE_SIZE];
   int packet_block_size = 0;
+
+  // init header
   ndn_nrf52840_init_802154_packet(packet_block);
   packet_block[2] = m_context.packet_id&0xff;
 
   // init payload
   uint32_t block_size = ndn_interest_probe_block_size(interest);
   if (block_size <= NDN_NRF52840_802154_MAX_PAYLOAD_SIZE) {
-    encoder_t encoder;
-    encoder_init(&packet_block[9], NDN_NRF52840_802154_MAX_MESSAGE_SIZE - 8);
+    ndn_encoder_t encoder;
+    encoder_init(&encoder, &packet_block[9], NDN_NRF52840_802154_MAX_MESSAGE_SIZE - 8);
     ndn_interest_tlv_encode(&encoder, interest);
     packet_block_size = 8 + encoder.offset;
+    on_error(2);
   }
   else {
     // TBD
   }
 
   // send out the packet
-  if (nrf_802154_transmit(message, packet_block_size, true)) {
-    while(!m_context.m_tx_done && !m_context.m_tx_failed) {
-      // intended loop
+  if (nrf_802154_transmit(packet_block, packet_block_size, true)) {
+    int delay_loops = 0;
+    while(!m_context.tx_done && !m_context.tx_failed && (delay_loops < 4)) {
+      for(uint32_t i = 0; i < 0x500000; ++i)
+        __asm__ __volatile__("nop":::);
+      ++delay_loops;
     }
-    if (m_context.m_tx_done) {
+    if (m_context.tx_done) {
       printf("TX finished.\r\n");
+
+      m_context.send_interest_events[m_context.events_size] = send_event;
+      m_context.events_size++;
       m_context.packet_id++;
+      on_error(1);
     }
-    else if(m_tx_failed) {
+    else if(m_context.tx_failed) {
       printf("TX failed due to busy: %u\r\n",
-             (unsigned)m_context.m_tx_errorcode);
+             (unsigned)m_context.tx_errorcode);
+      on_error(2);
     }
     else {
       printf("TX TIMEOUT!\r\n");
+      on_error(3);
     }
   }
 }
@@ -145,10 +142,10 @@ void
 nrf_802154_transmitted(const uint8_t * p_frame, uint8_t * p_ack,
                        uint8_t length, int8_t power, uint8_t lqi)
 {
-  (void) p_frame;
-  (void) length;
-  (void) power;
-  (void) lqi;
+  (void)p_frame;
+  (void)length;
+  (void)power;
+  (void)lqi;
 
   m_context.tx_done = true;
 
@@ -167,15 +164,33 @@ nrf_802154_transmit_failed(const uint8_t * p_frame, nrf_802154_tx_error_t error)
 }
 
 void
-nrf_802154_received(uint8_t * p_data, uint8_t length, int8_t power, uint8_t lqi)
+nrf_802154_received(uint8_t* p_data, uint8_t length, int8_t power, uint8_t lqi)
 {
   printf("RX frame, power %d, lqi %u, payload len %u: ",
          (int) power, (unsigned) lqi, (unsigned) length);
-  for(int i = 0; i < length; ++i)
-    printf("%02x ", p_data[i]);
-  if(length == MAX_MESSAGE_SIZE+2)
-    printf("-- temp: %5.2fC", (*(uint32_t*)&p_data[13])/4.);
-  printf("\r\n");
 
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, p_data, length);
+  uint32_t probe = 0;
+  decoder_get_type(&decoder, probe);
+  if (probe == TLV_Data) {
+    ndn_data_t data;
+    ndn_data_tlv_decode_no_verify(&data, p_data, length);
+    for (uint8_t counter = 0; counter < m_context.events_size; counter++) {
+      if (ndn_name_compare(data.name, m_context.send_interest_events[counter].name) == 0) {
+        m_context.send_interest_events[counter].on_data(&data);
+        // delete pit
+        for (uint8_t c = counter; c < m_context.events_size - 1; c++)
+          m_context.send_interest_events[c] = m_context.send_interest_events[c + 1];
+        m_context.events_size--;
+      }
+    }
+  }
+  else if (probe == TLV_Interest) {
+    // TBD
+  }
+  else {
+    // ignore
+  }
   nrf_802154_buffer_free(p_data);
 }

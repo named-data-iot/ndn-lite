@@ -6,22 +6,29 @@
  * directory for more details.
  */
 
-#ifndef FORWARDER_PIT_H_
-#define FORWARDER_PIT_H_
+#ifndef FORWARDER_FIB_H_
+#define FORWARDER_FIB_H_
 
-#include "../encoding/interest.h"
+#include "../encode/interest.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef int (*ndn_on_interest_callback_t)(uint8_t* interest, uint32_t interest_size);
 
-
 typedef struct ndn_fib_entry {
   ndn_name_t name_prefix;
-  ndn_face_t next_hop;
+  // ndn_face_t next_hop;
   uint8_t cost;
 
   ndn_on_interest_callback_t on_interest;
 } ndn_fib_entry_t;
 
-typedef ndn_fib_entry_t[NDN_FIB_MAX_SIZE] ndn_fib_t;
+typedef ndn_fib_entry_t ndn_fib_t[NDN_FIB_MAX_SIZE];
 
-#endif FORWARDER_PIT_H
+#ifdef __cplusplus
+}
+#endif
+
+#endif // FORWARDER_FIB_H

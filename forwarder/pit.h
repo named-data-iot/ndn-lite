@@ -9,10 +9,13 @@
 #ifndef FORWARDER_PIT_H_
 #define FORWARDER_PIT_H_
 
-#include "../encoding/interest.h"
+#include "../encode/interest.h"
 
-typedef int (*ndn_on_data_callback_t)(uint8_t* interest, uint32_t interest_size,
-                                      uint8_t* data, uint32_t data_size);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef int (*ndn_on_data_callback_t)(uint8_t* data, uint32_t data_size);
 
 typedef int (*ndn_interest_timeout_callback_t)(uint8_t* interest, uint32_t interest_size);
 
@@ -20,10 +23,10 @@ typedef int (*ndn_interest_timeout_callback_t)(uint8_t* interest, uint32_t inter
 typedef struct ndn_pit_entry {
   ndn_name_t interest_name;
 
-  ndn_face_t[3] incoming_face;
-  uint8_t incoming_face_size;
-  ndn_face_t[3] outgoing_face;
-  uint8_t outgoing_face_size;
+  // ndn_face_t[3] incoming_face;
+  // uint8_t incoming_face_size;
+  // ndn_face_t[3] outgoing_face;
+  // uint8_t outgoing_face_size;
 
   uint32_t timestamp;
 
@@ -31,7 +34,10 @@ typedef struct ndn_pit_entry {
   ndn_interest_timeout_callback_t on_timeout;
 } ndn_pit_entry_t;
 
-typedef ndn_pit_entry_t[NDN_PIT_MAX_SIZE] ndn_pit_t;
+typedef ndn_pit_entry_t ndn_pit_t[NDN_PIT_MAX_SIZE];
 
+#ifdef __cplusplus
+}
+#endif
 
-#endif FORWARDER_PIT_H
+#endif // FORWARDER_PIT_H

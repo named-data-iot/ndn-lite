@@ -12,6 +12,7 @@
 #define NDN_ADAPTATION_NDN_NRF52840_H
 
 #include <nrf_802154.h>
+#include <encode/interest.h>
 #include <forwarder/forwarder.h>
 
 #define NDN_NRF52840_802154_MAX_MESSAGE_SIZE 127
@@ -19,8 +20,7 @@
 #define NDN_NRF52840_802154_CHANNEL 23
 
 typedef struct send_interest_event {
-  uint8_t* interest_block;
-  uint32_t block_size;
+  ndn_name_t name;
   ndn_on_data_callback_t on_data;
   ndn_interest_timeout_callback_t on_timeout;
 } send_interest_event_t;
@@ -39,12 +39,13 @@ typedef struct ndn_nrf52840_context {
   uint8_t events_size;
 } ndn_nrf52840_context_t;
 
+typedef void (*ndn_on_error_callback_t)(int error_code);
+
 void
 ndn_nrf52840_init_802154_radio(const uint8_t* extended_address, const uint8_t* pan_id,
                                const uint8_t* short_address, bool promisc);
 void
-ndn_nrf52840_init_802154_packet(uint8_t* message, const uint8_t* pan_id,
-                                const uint8_t* short_address);
+ndn_nrf52840_init_802154_packet(uint8_t* message);
 
 // void
 // ndn_nrf52840_802154_register_prefix();
@@ -52,7 +53,8 @@ ndn_nrf52840_init_802154_packet(uint8_t* message, const uint8_t* pan_id,
 void
 ndn_nrf52840_802154_express_interest(ndn_interest_t* interest,
                                      ndn_on_data_callback_t on_data,
-                                     ndn_interest_timeout_callback_t on_timeout);
+                                     ndn_interest_timeout_callback_t on_timeout,
+                                     ndn_on_error_callback_t on_error);
 
 
 #endif // NDN_ADAPTATION_NDN_NRF52840_H

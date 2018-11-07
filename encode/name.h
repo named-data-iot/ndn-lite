@@ -32,12 +32,16 @@ ndn_name_from_block(ndn_name_t* name, const uint8_t* block_value, uint32_t block
 
 // will do memory copy
 int
-ndn_name_append_component(ndn_name_t *name, const name_component_t* component);
+ndn_name_append_component(ndn_name_t* name, const name_component_t* component);
 
 // will do memory copy
 // support regular string; not support URI
 int
-ndn_name_from_string(ndn_name_t *name, const char* string, uint32_t size);
+ndn_name_from_string(ndn_name_t* name, const char* string, uint32_t size);
+
+// return 0 if two names are the same
+int
+ndn_name_compare(ndn_name_t* a, ndn_name_t* b);
 
 static inline uint32_t
 ndn_name_probe_block_size(const ndn_name_t *name)
