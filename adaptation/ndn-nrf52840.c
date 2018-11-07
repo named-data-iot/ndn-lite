@@ -99,9 +99,9 @@ ndn_nrf52840_802154_express_interest(ndn_interest_t* interest,
   uint32_t block_size = ndn_interest_probe_block_size(interest);
   if (block_size <= NDN_NRF52840_802154_MAX_PAYLOAD_SIZE) {
     ndn_encoder_t encoder;
-    encoder_init(&encoder, &packet_block[9], NDN_NRF52840_802154_MAX_MESSAGE_SIZE - 8);
+    encoder_init(&encoder, &packet_block[9], NDN_NRF52840_802154_MAX_MESSAGE_SIZE - 9);
     ndn_interest_tlv_encode(&encoder, interest);
-    packet_block_size = 8 + encoder.offset;
+    packet_block_size = 9 + encoder.offset;
     on_error(2);
   }
   else {
@@ -170,15 +170,16 @@ nrf_802154_received(uint8_t* p_data, uint8_t length, int8_t power, uint8_t lqi)
          (int) power, (unsigned) lqi, (unsigned) length);
 
   ndn_decoder_t decoder;
-  decoder_init(&decoder, p_data, length);
+  decoder_init(&decoder, &p_data[9], length - 9);
   uint32_t probe = 0;
-  decoder_get_type(&decoder, probe);
+  decoder_get_type(&decoder, &probe);
   if (probe == TLV_Data) {
-    ndn_data_t data;
-    ndn_data_tlv_decode_no_verify(&data, p_data, length);
+    decoder_get_length(&decoder, &probe);
+    ndn_name_t data_name;
+    ndn_name_tlv_decode(&decoder, &data_name);
     for (uint8_t counter = 0; counter < m_context.events_size; counter++) {
-      if (ndn_name_compare(data.name, m_context.send_interest_events[counter].name) == 0) {
-        m_context.send_interest_events[counter].on_data(&data);
+      if (ndn_name_compare(&data_name, &m_context.send_interest_events[counter].name) == 0) {
+        m_context.send_interest_events[counter].on_data(&p_data[9], length - 9);
         // delete pit
         for (uint8_t c = counter; c < m_context.events_size - 1; c++)
           m_context.send_interest_events[c] = m_context.send_interest_events[c + 1];
