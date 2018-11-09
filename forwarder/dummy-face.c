@@ -1,10 +1,10 @@
-//
-//  dummy_face.c
-//  riot-forwarder
-//
-//  Created by UCLA on 10/31/18.
-//  Copyright © 2018 UCLA. All rights reserved.
-//
+/*
+ * Copyright (C) 2018 Zhiyi Zhang, Xinyu Ma
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
 
 #include "dummy-face.h"
 #include <stdlib.h>
@@ -17,8 +17,6 @@ typedef struct ndn_dummy_face_extension{
   uint8_t buf[NDN_DUMMY_FACE_BUFFER_SIZE];
 } ndn_dummy_face_extension_t;
 
-static uint8_t dummy_face_errno;
-
 int
 dummy_face_send(struct ndn_face* self, const uint8_t* packet, uint32_t size);
 
@@ -29,7 +27,6 @@ void
 dummy_face_destroy(ndn_face_t* self);
 
 const ndn_iface_t ndn_dummy_face_klass = {
-  sizeof(ndn_dummy_face_extension_t),
   dummy_face_send,
   dummy_face_close,
   dummy_face_destroy
@@ -50,13 +47,13 @@ dummy_face_init(ndn_face_t* self)
   self->klass = NDN_KLASS_DUMMY_FACE;
   // NOTE: We don't include dummy face in the real forwarder
   // It's okay to allocate memory in Tests without freeing them.
-  self->extension = malloc(NDN_KLASS_DUMMY_FACE->size);
+  self->extension = malloc(sizeof(ndn_dummy_face_extension_t));
 }
 
 int
 dummy_face_close(struct ndn_face* self)
 {
-  self->state = NDN_FACE_CLOSED;
+  //self->state = NDN_FACE_CLOSED;
   return 0;
 }
 

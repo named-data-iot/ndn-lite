@@ -10,6 +10,7 @@
 #define FORWARDER_FIB_H_
 
 #include "../encode/interest.h"
+#include "face.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,13 +20,16 @@ typedef int (*ndn_on_interest_callback_t)(uint8_t* interest, uint32_t interest_s
 
 typedef struct ndn_fib_entry {
   ndn_name_t name_prefix;
-  // ndn_face_t next_hop;
+  ndn_face_t *next_hop;
   uint8_t cost;
 
-  ndn_on_interest_callback_t on_interest;
+  //ndn_on_interest_callback_t on_interest;
 } ndn_fib_entry_t;
 
 typedef ndn_fib_entry_t ndn_fib_t[NDN_FIB_MAX_SIZE];
+
+ndn_fib_entry_t*
+fib_lookup(const ndn_fib_t* self, ndn_name_t* name);
 
 #ifdef __cplusplus
 }
