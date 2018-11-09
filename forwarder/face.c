@@ -7,24 +7,25 @@
  */
 
 #include "face.h"
+#include "../encode/decoder.h"
+#include "../encode/tlv.h"
+#include "../encode/name.h"
+#include "../encode/data.h"
+#include "forwarder.h"
 
 int
 ndn_face_receive(ndn_face_t* self, const uint8_t* packet, uint32_t size)
 {
-  (void)self;
-
   ndn_decoder_t decoder;
-  decoder_init(&decoder, &packet[9], size);
   uint32_t probe = 0;
+  
+  decoder_init(&decoder, packet, size);
   decoder_get_type(&decoder, &probe);
   if (probe == TLV_Data) {
-    decoder_get_length(&decoder, &probe);
-    ndn_name_t data_name;
-    ndn_name_tlv_decode(&decoder, &data_name);
-    // check against PIT and trigger callbacks
+    return forwarder_on_incoming_data(forwarder_get_instance(), self, NULL, packet, size);
   }
   else if (probe == TLV_Interest) {
-    // TBD
+    return forwarder_on_incoming_interest(forwarder_get_instance(), self, NULL, packet, size);
   }
   else {
     // ignore

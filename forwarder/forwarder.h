@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang
+ * Copyright (C) 2018 Xinyu Ma, Zhiyi Zhang
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -11,6 +11,7 @@
 
 #include "pit.h"
 #include "fib.h"
+#include "face.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,6 +21,24 @@ typedef struct ndn_forwarder {
   ndn_fib_t fib;
   ndn_pit_t pit;
 } ndn_forwarder_t;
+
+// Get a running instance of current system
+ndn_forwarder_t*
+forwarder_get_instance(void);
+
+// Recv data packet
+// name [optional] Decoded data name if it's ready,
+//                 then forwarder won't decode name again
+int
+forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_t* face, ndn_name_t *name,
+                           const uint8_t *raw_data, uint32_t size);
+
+// Recv interest packet
+// name [optional] Decoded interest name if it's ready,
+//                 then forwarder won't decode name again
+int
+forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_t* face, ndn_name_t *name,
+                               const uint8_t *raw_interest, uint32_t size);
 
 #ifdef __cplusplus
 }

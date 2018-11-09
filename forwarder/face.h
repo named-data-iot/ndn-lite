@@ -10,7 +10,10 @@
 #define FORWARDER_FACE_H_
 
 #include "../encode/ndn_constants.h"
+#include "../encode/data.h"
+#include "../encode/interest.h"
 #include <inttypes.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,7 +24,7 @@ typedef int(*ndn_iface_send_func)(struct ndn_face* self, const uint8_t* packet, 
 typedef int(*ndn_iface_close_func)(struct ndn_face* self);
 typedef void(*ndn_iface_destructor)(struct ndn_face* self);
 typedef struct ndn_iface{
-  size_t size;
+  // Abstract methods
   ndn_iface_send_func send;
   ndn_iface_close_func close;
   ndn_iface_destructor destroy;

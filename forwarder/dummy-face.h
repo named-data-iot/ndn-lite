@@ -1,10 +1,10 @@
-//
-//  dummy_face.h
-//  riot-forwarder
-//
-//  Created by UCLA on 10/31/18.
-//  Copyright © 2018 UCLA. All rights reserved.
-//
+/*
+ * Copyright (C) 2018 Zhiyi Zhang, Xinyu Ma
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
 
 #ifndef dummy_face_h
 #define dummy_face_h
