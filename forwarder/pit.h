@@ -11,6 +11,7 @@
 
 #include "../encode/interest.h"
 #include "face.h"
+#include "error_code.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,7 +63,7 @@ pit_first_match(const ndn_pit_t* pit, ndn_name_t* name)
 static inline ndn_pit_entry_t*
 pit_delete(ndn_pit_t* pit, ndn_pit_entry_t* iterator)
 {
-  iterator->interest_name.components_size = -1;
+  iterator->interest_name.components_size = NDN_FWD_INVALID_NAME_SIZE;
   return iterator;
 }
 

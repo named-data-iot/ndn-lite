@@ -22,10 +22,10 @@ ndn_face_receive(ndn_face_t* self, const uint8_t* packet, uint32_t size)
   decoder_init(&decoder, packet, size);
   decoder_get_type(&decoder, &probe);
   if (probe == TLV_Data) {
-    forwarder_on_incoming_data(forwarder_get_instance(), self, NULL, packet, size);
+    return forwarder_on_incoming_data(forwarder_get_instance(), self, NULL, packet, size);
   }
   else if (probe == TLV_Interest) {
-    forwarder_on_incoming_interest(forwarder_get_instance(), self, NULL, packet, size);
+    return forwarder_on_incoming_interest(forwarder_get_instance(), self, NULL, packet, size);
   }
   else {
     // ignore

@@ -10,6 +10,7 @@
 #define FORWARDER_FIB_H_
 
 #include "../encode/interest.h"
+#include "error_code.h"
 #include "face.h"
 
 #ifdef __cplusplus
@@ -29,7 +30,22 @@ typedef struct ndn_fib_entry {
 typedef ndn_fib_entry_t ndn_fib_t[NDN_FIB_MAX_SIZE];
 
 ndn_fib_entry_t*
-fib_lookup(const ndn_fib_t* self, ndn_name_t* name);
+fib_lookup(ndn_fib_t* self, const ndn_name_t* name);
+
+ndn_fib_entry_t*
+fib_lookup_by_face(ndn_fib_t* self, const ndn_face_t* face);
+
+int
+fib_init(ndn_fib_t* self);
+
+bool
+fib_insert(ndn_fib_t* self, ndn_name_t* name_prefix, ndn_face_t* face, uint8_t cost);
+
+static inline void
+fib_delete(ndn_fib_t* self, ndn_fib_entry_t* entry)
+{
+  entry->name_prefix.components_size = NDN_FWD_INVALID_NAME_SIZE;
+}
 
 #ifdef __cplusplus
 }

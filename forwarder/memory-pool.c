@@ -25,8 +25,7 @@ static uint8_t memory_pool_first;
 int
 ndn_memory_pool_init()
 {
-  if(NDN_POOL_BLOCK_SIZE < sizeof(ndn_interest_t) ||
-     NDN_POOL_BLOCK_SIZE < sizeof(ndn_data_t))
+  if(NDN_POOL_BLOCK_SIZE < sizeof(ndn_name_t))
   {
     return -1;
   }

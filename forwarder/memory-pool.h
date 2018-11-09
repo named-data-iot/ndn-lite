@@ -9,9 +9,11 @@
 #ifndef memory_pool_h
 #define memory_pool_h
 
+#include "../encode/name.h"
+
 // This value should be larger than Data and Interest
-#define NDN_POOL_BLOCK_SIZE 2560
-#define NDN_POOL_BLOCK_CNT 3
+#define NDN_POOL_BLOCK_SIZE (sizeof(ndn_name_t))
+#define NDN_POOL_BLOCK_CNT 4
 
 // Memory pool deals with temp large memory like Interest and Data.
 // Memory blocks are allocated in fixed size

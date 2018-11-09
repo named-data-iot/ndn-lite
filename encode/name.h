@@ -10,6 +10,7 @@
 #define NDN_ENCODING_NAME_H
 
 #include "name-component.h"
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,6 +58,9 @@ ndn_name_probe_block_size(const ndn_name_t *name)
 // need to call ndn_name_probe_block_size to initialize output block in advance
 int
 ndn_name_tlv_encode(ndn_encoder_t* encoder, const ndn_name_t *name);
+
+bool
+ndn_name_is_prefix_of(const ndn_name_t* prefix, const ndn_name_t* name);
 
 #ifdef __cplusplus
 }

@@ -27,15 +27,17 @@ ndn_forwarder_t*
 forwarder_get_instance(void);
 
 // Recv data packet
-// data [optional] Decoded data packet, used by bypass
+// name [optional] Decoded data name if it's ready,
+//                 then forwarder won't decode name again
 int
-forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_t* face, ndn_data_t *data,
+forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_t* face, ndn_name_t *name,
                            const uint8_t *raw_data, uint32_t size);
 
 // Recv interest packet
-// interest [optional] Decoded interest packet, used by bypass
+// name [optional] Decoded interest name if it's ready,
+//                 then forwarder won't decode name again
 int
-forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_t* face, ndn_interest_t *interest,
+forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_t* face, ndn_name_t *name,
                                const uint8_t *raw_interest, uint32_t size);
 
 #ifdef __cplusplus

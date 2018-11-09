@@ -73,3 +73,6 @@ dummy_face_send(struct ndn_face* self, const uint8_t* packet, uint32_t size)
   
   return 0;
 }
+
+// express interest
+// send data
