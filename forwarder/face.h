@@ -9,7 +9,7 @@
 #ifndef FORWARDER_FACE_H_
 #define FORWARDER_FACE_H_
 
-#include "../encode/ndn_constants.h"
+#include "../encode/ndn-constants.h"
 #include "../encode/data.h"
 #include "../encode/interest.h"
 #include <inttypes.h>
@@ -28,6 +28,12 @@ typedef struct ndn_iface{
   ndn_iface_send_func send;
   ndn_iface_close_func close;
   ndn_iface_destructor destroy;
+
+  // Abstract methods (implementation optional)
+  // For internal & application faces only
+  // We don't want to waste time to decode again
+  ndn_iface_data_bypass_func data_bypass;
+  ndn_iface_interest_bypass_func interest_bypass;
 } ndn_iface_t;
 
 typedef struct ndn_face {
