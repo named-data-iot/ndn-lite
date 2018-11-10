@@ -55,10 +55,10 @@ extern "C" {
 #define NDN_ERROR_UNSUPPORT_CRYPTO_ALGO -26
 #define NDN_ERROR_UNSUPPORT_SIGN_TYPE -26
 
+#define NDN_ERROR_FRAG_OUT_OF_ORDER -27
+#define NDN_ERROR_FRAG_NOT_ENOUGH_MEM -28
+#define NDN_ERROR_FRAG_WRONG_IDENTIFIER -29
 
-// flag messages
-#define NDN_FLAG_WHEN_ENCODING -30
-#define NDN_FLAG_WHEN_DECODING -31
 
 // content type values
 enum {
