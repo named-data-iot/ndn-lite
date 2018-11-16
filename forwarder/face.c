@@ -19,10 +19,10 @@ ndn_face_receive(ndn_face_intf_t* self, const uint8_t* packet, uint32_t size)
   decoder_init(&decoder, packet, size);
   decoder_get_type(&decoder, &probe);
   if (probe == TLV_Data) {
-    return forwarder_on_incoming_data(forwarder_get_instance(), self, NULL, packet, size);
+    return ndn_forwarder_on_incoming_data(ndn_forwarder_get_instance(), self, NULL, packet, size);
   }
   else if (probe == TLV_Interest) {
-    return forwarder_on_incoming_interest(forwarder_get_instance(), self, NULL, packet, size);
+    return ndn_forwarder_on_incoming_interest(ndn_forwarder_get_instance(), self, NULL, packet, size);
   }
   else {
     // TODO: fragmentation support

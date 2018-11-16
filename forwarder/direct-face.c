@@ -9,6 +9,10 @@
 #include "direct-face.h"
 #include "error-code.h"
 
+/************************************************************/
+/*  Inherit Face Interfaces                                 */
+/************************************************************/
+
 int
 ndn_direct_face_up(struct ndn_face_intf* self)
 {

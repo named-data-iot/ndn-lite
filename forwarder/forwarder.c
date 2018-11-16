@@ -15,7 +15,7 @@
 static ndn_forwarder_t instance;
 
 ndn_forwarder_t*
-forwarder_get_instance()
+ndn_forwarder_get_instance()
 {
   return &instance;
 }
@@ -99,16 +99,16 @@ fib_table_find_by_face(const ndn_face_intf_t* face)
 
 // Send data packet out
 static int
-forwarder_on_outgoing_data(ndn_face_intf_t* face, const ndn_name_t* name,
-                           const uint8_t* raw_data, uint32_t size)
+ndn_forwarder_on_outgoing_data(ndn_face_intf_t* face, const ndn_name_t* name,
+                               const uint8_t* raw_data, uint32_t size)
 {
   return ndn_face_send(face, name, raw_data, size);
 }
 
 // Send interest packet out
 static int
-forwarder_on_outgoing_interest(ndn_face_intf_t* face, const ndn_name_t* name,
-                               const uint8_t* raw_interest, uint32_t size)
+ndn_forwarder_on_outgoing_interest(ndn_face_intf_t* face, const ndn_name_t* name,
+                                   const uint8_t* raw_interest, uint32_t size)
 {
   return ndn_face_send(face, name, raw_interest, size);
 }
@@ -145,8 +145,8 @@ ndn_forwarder_fib_insert(ndn_name_t* name_prefix,
 }
 
 int
-forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn_name_t *name,
-                           const uint8_t* raw_data, uint32_t size)
+ndn_forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn_name_t *name,
+                               const uint8_t* raw_data, uint32_t size)
 {
   (void)face;
   ndn_pit_entry_t* pit_entry;
@@ -181,7 +181,7 @@ forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn_nam
     if (ndn_name_compare(&self->pit[i].interest_name, name) == 0) {
       // Send out data
       for (i = 0; i < pit_entry->incoming_face_size; i ++) {
-        forwarder_on_outgoing_data(pit_entry->incoming_face[i], name, raw_data, size);
+        ndn_forwarder_on_outgoing_data(pit_entry->incoming_face[i], name, raw_data, size);
       }
       // Delete PIT Entry
       pit_entry_delete(&self->pit[i]);
@@ -198,9 +198,10 @@ forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn_nam
 }
 
 int
-forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn_name_t* name,
-                               const uint8_t* raw_interest, uint32_t size)
+ndn_forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn_name_t* name,
+                                   const uint8_t* raw_interest, uint32_t size)
 {
+  (void)self;
   ndn_pit_entry_t *pit_entry;
   int ret;
   bool bypass = (name != NULL);
@@ -264,7 +265,7 @@ forwarder_multicast_strategy(ndn_face_intf_t* face, ndn_name_t* name,
   ndn_fib_entry_t* fib_entry;
   fib_entry = fib_table_find(name);
   if(fib_entry && fib_entry->next_hop) {
-    forwarder_on_outgoing_interest(fib_entry->next_hop, name, raw_interest, size);
+    ndn_forwarder_on_outgoing_interest(fib_entry->next_hop, name, raw_interest, size);
   }
   else {
     // TODO: Send Nack
