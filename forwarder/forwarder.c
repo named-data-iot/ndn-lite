@@ -10,16 +10,10 @@
 #include "../encode/name.h"
 #include "../encode/data.h"
 #include "memory-pool.h"
-#include "error_code.h"
+#include "error-code.h"
 
-// NOTE: Change the implementation if necessary
-// This is only used for test.
 static ndn_forwarder_t instance;
 
-// NOTE: As is discussed, the main loop of forwarder should be in adapter.
-// So the instance may also depend on the platform.
-// It is expected to be a singleton in embedded environment, I think.
-// Maybe we can make it weak to link, or in the adapter.
 ndn_forwarder_t*
 forwarder_get_instance()
 {
@@ -27,96 +21,184 @@ forwarder_get_instance()
 }
 
 static int
-forwarder_multicast_strategy(ndn_forwarder_t* self, ndn_face_t* face, ndn_name_t* name,
+forwarder_multicast_strategy(ndn_face_intf_t* face, ndn_name_t* name,
                              const uint8_t* raw_interest, uint32_t size,
                              const ndn_pit_entry_t* pit_entry);
 
-//////////////////////
+/************************************************************/
+/*  Definition of PIT table APIs                            */
+/************************************************************/
+
+static void
+pit_table_init(void)
+{
+  for (uint8_t i = 0; i < NDN_PIT_MAX_SIZE; i++) {
+    instance.pit[i].interest_name.components_size = NDN_FWD_INVALID_NAME_SIZE;
+  }
+}
+
+static ndn_pit_entry_t*
+pit_table_find_or_insert(ndn_name_t* name)
+{
+  // Find
+  for (uint8_t i = 0; i < NDN_PIT_MAX_SIZE; i++) {
+    if (ndn_name_compare(&instance.pit[i].interest_name, name) == 0) {
+      return &instance.pit[i];
+    }
+  }
+
+  // Insert
+  for (uint8_t i = 0; i < NDN_PIT_MAX_SIZE; i++) {
+    if (instance.pit[i].interest_name.components_size == NDN_FWD_INVALID_NAME_SIZE) {
+      instance.pit[i].interest_name = *name;
+      instance.pit[i].incoming_face_size = 0;
+      return &instance.pit[i];
+    }
+  }
+  return NULL;
+}
+
+/************************************************************/
+/*  Definition of FIB table APIs                            */
+/************************************************************/
+
+static void
+fib_table_init(void)
+{
+  for (uint8_t i = 0; i < NDN_FIB_MAX_SIZE; i++) {
+    instance.fib[i].name_prefix.components_size = NDN_FWD_INVALID_NAME_SIZE;
+  }
+}
+
+static ndn_fib_entry_t*
+fib_table_find(const ndn_name_t* name)
+{
+  for (uint8_t i = 0; i < NDN_FIB_MAX_SIZE; i++) {
+    if (ndn_name_is_prefix_of(&instance.fib[i].name_prefix, name) == 0) {
+      return &instance.fib[i];
+    }
+  }
+  return NULL;
+}
+
+static ndn_fib_entry_t*
+fib_table_find_by_face(const ndn_face_intf_t* face)
+{
+  for (uint8_t i = 0; i < NDN_FIB_MAX_SIZE; i++) {
+    if (instance.fib[i].name_prefix.components_size != NDN_FWD_INVALID_NAME_SIZE
+        && instance.fib[i].next_hop == face) {
+      return &instance.fib[i];
+    }
+  }
+  return NULL;
+}
+
+/************************************************************/
+/*  Definition of forwarder APIs                            */
+/************************************************************/
 
 // Send data packet out
-static inline int
-forwarder_on_outgoing_data(ndn_forwarder_t* self, ndn_face_t* face,
+static int
+forwarder_on_outgoing_data(ndn_face_intf_t* face, const ndn_name_t* name,
                            const uint8_t* raw_data, uint32_t size)
 {
-  // TODO Do we need to care mtu and fragment?
-  return ndn_face_send(face, raw_data, size);
+  return ndn_face_send(face, name, raw_data, size);
 }
 
 // Send interest packet out
-static inline int
-forwarder_on_outgoing_interest(ndn_forwarder_t* self, ndn_face_t* face,
+static int
+forwarder_on_outgoing_interest(ndn_face_intf_t* face, const ndn_name_t* name,
                                const uint8_t* raw_interest, uint32_t size)
 {
-  return ndn_face_send(face, raw_interest, size);
+  return ndn_face_send(face, name, raw_interest, size);
+}
+
+ndn_forwarder_t*
+ndn_forwarder_init(void)
+{
+  pit_table_init();
+  fib_table_init();
+  return &instance;
 }
 
 int
-forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_t* face, ndn_name_t *name,
+ndn_forwarder_fib_insert(ndn_name_t* name_prefix,
+                         ndn_face_intf_t* face, uint8_t cost)
+{
+  // already exists
+  for (uint8_t i = 0; i < NDN_FIB_MAX_SIZE; i++) {
+    if (ndn_name_compare(&instance.fib[i].name_prefix, name_prefix) == 0
+        && instance.fib[i].next_hop == face)
+      return 0;
+  }
+
+  // find an unused fib entry
+  for (uint8_t i = 0; i < NDN_FIB_MAX_SIZE; i++) {
+    if (instance.fib[i].name_prefix.components_size == NDN_FWD_INVALID_NAME_SIZE) {
+      instance.fib[i].name_prefix = *name_prefix;
+      instance.fib[i].next_hop = face;
+      instance.fib[i].cost = cost;
+      return 0;
+    }
+  }
+  return NDN_FWD_ERROR_FIB_FULL;
+}
+
+int
+forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn_name_t *name,
                            const uint8_t* raw_data, uint32_t size)
 {
-  ndn_pit_entry_t *pit_entry;
-  int ret, i;
+  (void)face;
+  ndn_pit_entry_t* pit_entry;
+  int ret = 0;
   bool bypass = (name != NULL);
   ndn_decoder_t decoder;
-  uint32_t probe;
-  
+  uint32_t probe = 0;
+
   // If no bypass data, we need to decode it manually
-  if(!bypass) {
+  if (!bypass) {
     // Allocate memory
     // A name is expensive, don't want to do it on stack
     name = (ndn_name_t*)ndn_memory_pool_alloc();
-    if(!name) {
+    if (!name) {
       return NDN_FWD_ERROR_INSUFFICIENT_MEMORY;
     }
-    
+
     // Decode name only
     ret = 0;
     decoder_init(&decoder, raw_data, size);
     ret = decoder_get_type(&decoder, &probe);
-    if(ret == 0){
-      // ASSERT(probe == TLV_Data);
-    }
-    if(ret == 0) {
-      ret = decoder_get_length(&decoder, &probe);
-    }
-    if(ret == 0) {
-      ret = ndn_name_tlv_decode(&decoder, name);
-    }
-    if(ret < 0) {
+    ret = decoder_get_length(&decoder, &probe);
+    ret = ndn_name_tlv_decode(&decoder, name);
+    if (ret < 0) {
       ndn_memory_pool_free(name);
       return ret;
     }
   }
-  
+
   // Match with pit
-  for(pit_entry = pit_first_match(&self->pit, name);
-      pit_entry;
-      pit_entry = pit_next_match(&self->pit, name, pit_entry)) {
-    if(ndn_name_compare(&pit_entry->interest_name, name) == 0) {
+  for (uint8_t i = 0; i < NDN_PIT_MAX_SIZE; i++) {
+    if (ndn_name_compare(&self->pit[i].interest_name, name) == 0) {
       // Send out data
-      for(i = 0; i < pit_entry->incoming_face_size; i ++) {
-        if(pit_entry->incoming_face[i] == face) {
-          continue;
-        }
-        // TODO: We ignored any error here currently.
-        forwarder_on_outgoing_data(self, pit_entry->incoming_face[i], raw_data, size);
+      for (i = 0; i < pit_entry->incoming_face_size; i ++) {
+        forwarder_on_outgoing_data(pit_entry->incoming_face[i], name, raw_data, size);
       }
-      
       // Delete PIT Entry
-      pit_entry = pit_delete(&self->pit, pit_entry);
+      pit_entry_delete(&self->pit[i]);
+      break;
     }
   }
-  
+
   // Free memory
-  if(!bypass) {
+  if (!bypass) {
     ndn_memory_pool_free(name);
   }
-  
+
   return 0;
 }
 
 int
-forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_t* face, ndn_name_t *name,
+forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn_name_t* name,
                                const uint8_t* raw_interest, uint32_t size)
 {
   ndn_pit_entry_t *pit_entry;
@@ -126,52 +208,46 @@ forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_t* face, ndn_name
   uint32_t probe;
 
   // If no bypass interest, we need to decode it manually
-  if(!bypass) {
+  if (!bypass) {
     // Allocate memory
     // A name is expensive, don't want to do it on stack
     name = (ndn_name_t*)ndn_memory_pool_alloc();
-    if(!name) {
+    if (!name) {
       return NDN_FWD_ERROR_INSUFFICIENT_MEMORY;
     }
-    
+
     // Decode name only
     ret = 0;
     decoder_init(&decoder, raw_interest, size);
     ret = decoder_get_type(&decoder, &probe);
-    if(ret == 0){
-      // ASSERT(probe == TLV_Interest);
-    }
-    if(ret == 0) {
-      ret = decoder_get_length(&decoder, &probe);
-    }
-    if(ret == 0) {
-      ret = ndn_name_tlv_decode(&decoder, name);
-    }
-    if(ret < 0) {
+    ret = decoder_get_length(&decoder, &probe);
+    ret = ndn_name_tlv_decode(&decoder, name);
+    if (ret != 0) {
       ndn_memory_pool_free(name);
       return ret;
     }
   }
 
   // Insert into PIT
-  pit_entry = pit_find_or_insert(&self->pit, name);
-  if(!pit_entry || !pit_add_incoming_face(pit_entry, face)) {
-    if(!bypass) {
+  pit_entry = pit_table_find_or_insert(name);
+  if (pit_entry == NULL) {
+    if (!bypass) {
       ndn_memory_pool_free(name);
     }
     return NDN_FWD_ERROR_PIT_FULL;
   }
-  
+  pit_entry_add_incoming_face(pit_entry, face);
+
   // Multicast Strategy
-  ret = forwarder_multicast_strategy(self, face, name, raw_interest, size, pit_entry);
-  
+  ret = forwarder_multicast_strategy(face, name, raw_interest, size, pit_entry);
+
   // Reject PIT
-  if(ret != 0) {
-    pit_delete(&self->pit, pit_entry);
+  if (ret != 0) {
+    pit_entry_delete(pit_entry);
   }
 
   // Free memory
-  if(!bypass) {
+  if (!bypass) {
     ndn_memory_pool_free(name);
   }
 
@@ -179,20 +255,20 @@ forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_t* face, ndn_name
 }
 
 static int
-forwarder_multicast_strategy(ndn_forwarder_t* self, ndn_face_t* face, ndn_name_t* name,
+forwarder_multicast_strategy(ndn_face_intf_t* face, ndn_name_t* name,
                              const uint8_t* raw_interest, uint32_t size,
                              const ndn_pit_entry_t* pit_entry)
 {
+  (void)face;
+  (void)pit_entry;
   ndn_fib_entry_t* fib_entry;
-
-  fib_entry = fib_lookup(&self->fib, name);
-  if(fib_entry && fib_entry->next_hop /* && fib_entry->next_hop->state != DOWN*/) {
-    // TODO: We ignored any error here currently.
-    forwarder_on_outgoing_interest(self, fib_entry->next_hop, raw_interest, size);
-  } else {
+  fib_entry = fib_table_find(name);
+  if(fib_entry && fib_entry->next_hop) {
+    forwarder_on_outgoing_interest(fib_entry->next_hop, name, raw_interest, size);
+  }
+  else {
     // TODO: Send Nack
     return NDN_FWD_ERROR_INTEREST_REJECTED;
   }
-  
   return 0;
 }

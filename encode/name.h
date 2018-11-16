@@ -59,7 +59,8 @@ ndn_name_probe_block_size(const ndn_name_t *name)
 int
 ndn_name_tlv_encode(ndn_encoder_t* encoder, const ndn_name_t *name);
 
-bool
+// return 0 if prefix is the prefix of name
+int
 ndn_name_is_prefix_of(const ndn_name_t* prefix, const ndn_name_t* name);
 
 #ifdef __cplusplus

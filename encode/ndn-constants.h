@@ -9,10 +9,6 @@
 #ifndef NDN_ENCODING_NDN_CONSTANTS_H
 #define NDN_ENCODING_NDN_CONSTANTS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 // buffer and block memory allocation
 
 // name and name component
@@ -20,6 +16,7 @@ extern "C" {
 #define NAME_COMPONENT_BLOCK_SIZE 38
 #define NDN_NAME_COMPONENTS_SIZE 10
 #define NDN_NAME_MAX_BLOCK_SIZE 384
+#define NDN_FWD_INVALID_NAME_SIZE ((uint32_t)(-1))
 
 // interest
 #define NDN_INTEREST_PARAMS_BUFFER_SIZE 248
@@ -60,6 +57,19 @@ extern "C" {
 #define NDN_ERROR_FRAG_NOT_ENOUGH_MEM -29
 #define NDN_ERROR_FRAG_WRONG_IDENTIFIER -30
 
+// face state
+enum {
+  NDN_FACE_STATE_DOWN = 0,
+  NDN_FACE_STATE_UP = 1,
+  NDN_FACE_STATE_DESTROYED = 2,
+};
+
+// face type
+enum {
+  NDN_FACE_TYPE_UNDEFINED = 0,
+  NDN_FACE_TYPE_APP = 1,
+  NDN_FACE_TYPE_NET = 2,
+};
 
 // content type values
 enum {
@@ -86,9 +96,5 @@ enum {
   NDN_ECDSA_CURVE_SECP256R1 = 32,
   NDN_ECDSA_CURVE_SECP256K1 = 33,
 };
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // NDN_ENCODING_NDN_CONSTANTS_H

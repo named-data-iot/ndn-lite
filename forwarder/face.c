@@ -7,18 +7,15 @@
  */
 
 #include "face.h"
-#include "../encode/decoder.h"
-#include "../encode/tlv.h"
-#include "../encode/name.h"
 #include "../encode/data.h"
 #include "forwarder.h"
 
 int
-ndn_face_receive(ndn_face_t* self, const uint8_t* packet, uint32_t size)
+ndn_face_receive(ndn_face_intf_t* self, const uint8_t* packet, uint32_t size)
 {
   ndn_decoder_t decoder;
   uint32_t probe = 0;
-  
+
   decoder_init(&decoder, packet, size);
   decoder_get_type(&decoder, &probe);
   if (probe == TLV_Data) {
@@ -28,7 +25,7 @@ ndn_face_receive(ndn_face_t* self, const uint8_t* packet, uint32_t size)
     return forwarder_on_incoming_interest(forwarder_get_instance(), self, NULL, packet, size);
   }
   else {
-    // ignore
+    // TODO: fragmentation support
   }
   return 0;
 }

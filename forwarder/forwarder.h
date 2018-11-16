@@ -6,8 +6,8 @@
  * directory for more details.
  */
 
-#ifndef FORWARDER_FOWARDER_H_
-#define FORWARDER_FOWARDER_H_
+#ifndef FORWARDER_FOWARDER_H
+#define FORWARDER_FOWARDER_H
 
 #include "pit.h"
 #include "fib.h"
@@ -24,24 +24,33 @@ typedef struct ndn_forwarder {
 
 // Get a running instance of current system
 ndn_forwarder_t*
-forwarder_get_instance(void);
+ndn_forwarder_get_instance(void);
+
+ndn_forwarder_t*
+ndn_forwarder_init(void);
+
+int
+ndn_forwarder_fib_insert(ndn_name_t* name_prefix,
+                         ndn_face_intf_t* face, uint8_t cost);
 
 // Recv data packet
 // name [optional] Decoded data name if it's ready,
 //                 then forwarder won't decode name again
+// Supposed to be invoked by face ONLY
 int
-forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_t* face, ndn_name_t *name,
-                           const uint8_t *raw_data, uint32_t size);
+ndn_forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn_name_t *name,
+                               const uint8_t *raw_data, uint32_t size);
 
 // Recv interest packet
 // name [optional] Decoded interest name if it's ready,
 //                 then forwarder won't decode name again
+// Supposed to be invoked by face ONLY
 int
-forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_t* face, ndn_name_t *name,
-                               const uint8_t *raw_interest, uint32_t size);
+ndn_forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn_name_t *name,
+                                   const uint8_t *raw_interest, uint32_t size);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // FORWARDER_FOWARDER_H_
+#endif // FORWARDER_FOWARDER_H

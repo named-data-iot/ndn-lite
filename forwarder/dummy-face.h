@@ -13,7 +13,7 @@
 
 #define NDN_DUMMY_FACE_BUFFER_SIZE 512
 
-extern const ndn_iface_t ndn_dummy_face_klass;
+extern const ndn_face_intf_t ndn_dummy_face_klass;
 #define NDN_KLASS_DUMMY_FACE  (&ndn_dummy_face_klass)
 
 void

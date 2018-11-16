@@ -141,20 +141,21 @@ ndn_name_tlv_encode(ndn_encoder_t* encoder, const ndn_name_t *name)
   return 0;
 }
 
-bool
+int
 ndn_name_is_prefix_of(const ndn_name_t* prefix, const ndn_name_t* name)
 {
   int result = 0;
   uint8_t i;
 
   if (prefix->components_size > name->components_size) {
-    return false;
-  } else {
+    return 1;
+  }
+  else {
     result = 0;
     for (i = 0; i < prefix->components_size; i++) {
       result = name_component_compare(&prefix->components[i], &name->components[i]);
-      if (result != 0) return false;
+      if (result != 0) return 1;
     }
-    return true;
+    return 0;
   }
 }
