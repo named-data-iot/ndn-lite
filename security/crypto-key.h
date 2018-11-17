@@ -40,7 +40,7 @@ ndn_ecc_pub_init(ndn_ecc_pub_t* ecc_pub, uint8_t* key_value,
                  uint32_t key_size, uint8_t curve_type, uint32_t key_id)
 {
   if (key_size > 64)
-    return NDN_ERROR_WRONG_KEY_SIZE;
+    return NDN_SEC_WRONG_KEY_SIZE;
   memcpy(ecc_pub->key_value, key_value, key_size);
   ecc_pub->key_size = key_size;
   ecc_pub->curve_type = curve_type;
@@ -56,7 +56,7 @@ ndn_ecc_prv_init(ndn_ecc_prv_t* ecc_prv, uint8_t* key_value,
                  uint32_t key_size, uint8_t curve_type, uint32_t key_id)
 {
   if (key_size > 32)
-    return NDN_ERROR_WRONG_KEY_SIZE;
+    return NDN_SEC_WRONG_KEY_SIZE;
   memcpy(ecc_prv->key_value, key_value, key_size);
   ecc_prv->key_size = key_size;
   ecc_prv->curve_type = curve_type;
@@ -73,7 +73,7 @@ ndn_hmac_key_init(ndn_hmac_key_t* key, uint8_t* key_value,
                   uint32_t key_size, uint32_t key_id)
 {
   if (key_size > 32)
-    return NDN_ERROR_WRONG_KEY_SIZE;
+    return NDN_SEC_WRONG_KEY_SIZE;
   key->key_size = key_size;
   memcpy(key->key_value, key_value, key_size);
   key->key_id[0] = (key_id >> 24) & 0xFF;

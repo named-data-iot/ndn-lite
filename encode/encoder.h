@@ -9,8 +9,10 @@
 #ifndef NDN_ENCODING_ENCODER_H
 #define NDN_ENCODING_ENCODER_H
 
+#include "../ndn-constants.h"
+#include "../ndn-error-code.h"
+#include "../ndn-enums.h"
 #include <inttypes.h>
-#include "ndn-constants.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,7 +85,7 @@ encoder_append_var(ndn_encoder_t* encoder, uint32_t var)
     encoder->offset += 5;
   }
   else {
-    return NDN_ERROR_OVERSIZE_VAR;
+    return NDN_OVERSIZE_VAR;
   }
   return 0;
 }
@@ -120,7 +122,7 @@ static inline int
 encoder_append_byte_value(ndn_encoder_t* encoder, uint8_t value)
 {
   if (encoder->offset + 1 > encoder->output_max_size)
-    return NDN_ERROR_OVERSIZE;
+    return NDN_OVERSIZE;
   encoder->output_value[encoder->offset] = value;
   encoder->offset += 1;
   return 0;
@@ -130,7 +132,7 @@ static inline int
 encoder_append_uint16_value(ndn_encoder_t* encoder, uint16_t value)
 {
   if (encoder->offset + 2 > encoder->output_max_size)
-    return NDN_ERROR_OVERSIZE;
+    return NDN_OVERSIZE;
   encoder->output_value[encoder->offset] = (value >> 8) & 0xFF;
   encoder->output_value[encoder->offset + 1] = value & 0xFF;
   encoder->offset += 2;
@@ -142,7 +144,7 @@ static inline int
 encoder_append_uint32_value(ndn_encoder_t* encoder, uint32_t value)
 {
   if (encoder->offset + 4 > encoder->output_max_size)
-    return NDN_ERROR_OVERSIZE;
+    return NDN_OVERSIZE;
   encoder->output_value[encoder->offset] = (value >> 24) & 0xFF;
   encoder->output_value[encoder->offset + 1] = (value >> 16) & 0xFF;
   encoder->output_value[encoder->offset + 2] = (value >> 8) & 0xFF;
@@ -154,7 +156,7 @@ encoder_append_uint32_value(ndn_encoder_t* encoder, uint32_t value)
 static inline int
 encoder_move_forward(ndn_encoder_t* encoder, uint32_t step){
   if (encoder->offset + step > encoder->output_max_size)
-    return NDN_ERROR_OVERSIZE;
+    return NDN_OVERSIZE;
   encoder->offset += step;
   return 0;
 }

@@ -6,7 +6,7 @@
  * directory for more details.
  */
 
-#include "../encode/ndn-constants.h"
+#include "../ndn-constants.h"
 #include "../encode/interest.h"
 #include "../encode/data.h"
 #include "memory-pool.h"

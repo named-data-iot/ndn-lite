@@ -10,9 +10,7 @@
 #define NDN_ENCODING_NAME_COMPONENT_H
 
 #include "tlv.h"
-#include "encoder.h"
 #include "decoder.h"
-#include "ndn-constants.h"
 #include <string.h>
 
 #ifdef __cplusplus
@@ -21,12 +19,12 @@ extern "C" {
 
 typedef struct name_component {
   uint32_t type;
-  uint8_t value[NAME_COMPONENT_BUFFER_SIZE];
+  uint8_t value[NDN_NAME_COMPONENT_BUFFER_SIZE];
   uint32_t size;
 } name_component_t;
 
 typedef struct name_component_block {
-  uint8_t value[NAME_COMPONENT_BLOCK_SIZE];
+  uint8_t value[NDN_NAME_COMPONENT_BLOCK_SIZE];
   uint32_t size;
 } name_component_block_t;
 
@@ -43,8 +41,8 @@ static inline int
 name_component_from_buffer(name_component_t* component, uint32_t type,
                            const uint8_t* value, uint32_t size)
 {
-  if (size > NAME_COMPONENT_BUFFER_SIZE)
-    return NDN_ERROR_OVERSIZE;
+  if (size > NDN_NAME_COMPONENT_BUFFER_SIZE)
+    return NDN_OVERSIZE;
   component->type = type;
   memcpy(component->value, value, size);
   component->size = size;

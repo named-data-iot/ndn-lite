@@ -12,8 +12,8 @@
 #define NDN_ENCODING_DATA_H
 
 #include "signature.h"
-#include "../security/crypto-key.h"
 #include "metainfo.h"
+#include "../security/crypto-key.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -12,7 +12,7 @@ ndn_metainfo_tlv_decode(ndn_decoder_t* decoder, ndn_metainfo_t* meta)
       return 0;
     }
     else
-      return NDN_ERROR_WRONG_TLV_TYPE;
+      return NDN_WRONG_TLV_TYPE;
   }
   ndn_metainfo_init(meta);
   uint32_t buffer_length = 0;
@@ -37,7 +37,7 @@ ndn_metainfo_tlv_decode(ndn_decoder_t* decoder, ndn_metainfo_t* meta)
       meta->enable_FinalBlockId = 1;
     }
     else
-      return NDN_ERROR_WRONG_TLV_TYPE;
+      return NDN_WRONG_TLV_TYPE;
   }
   return 0;
 }
@@ -71,7 +71,7 @@ ndn_metainfo_tlv_encode(ndn_encoder_t* encoder, const ndn_metainfo_t* meta)
 
   if (encoder->offset + encoder_probe_block_size(TLV_MetaInfo, meta_value_size)
       > encoder->output_max_size)
-    return NDN_ERROR_OVERSIZE;
+    return NDN_OVERSIZE;
 
   encoder_append_type(encoder, TLV_MetaInfo);
   encoder_append_length(encoder, meta_value_size);

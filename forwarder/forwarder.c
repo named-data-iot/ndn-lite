@@ -7,10 +7,9 @@
  */
 
 #include "forwarder.h"
+#include "memory-pool.h"
 #include "../encode/name.h"
 #include "../encode/data.h"
-#include "memory-pool.h"
-#include "error-code.h"
 
 static ndn_forwarder_t instance;
 
@@ -145,7 +144,7 @@ ndn_forwarder_fib_insert(const ndn_name_t* name_prefix,
       return 0;
     }
   }
-  return NDN_FWD_ERROR_FIB_FULL;
+  return NDN_FWD_FIB_FULL;
 }
 
 int
@@ -165,7 +164,7 @@ ndn_forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn
     // A name is expensive, don't want to do it on stack
     name = (ndn_name_t*)ndn_memory_pool_alloc();
     if (!name) {
-      return NDN_FWD_ERROR_INSUFFICIENT_MEMORY;
+      return NDN_FWD_INSUFFICIENT_MEMORY;
     }
 
     // Decode name only
@@ -218,7 +217,7 @@ ndn_forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face,
     // A name is expensive, don't want to do it on stack
     name = (ndn_name_t*)ndn_memory_pool_alloc();
     if (!name) {
-      return NDN_FWD_ERROR_INSUFFICIENT_MEMORY;
+      return NDN_FWD_INSUFFICIENT_MEMORY;
     }
 
     // Decode name only
@@ -239,7 +238,7 @@ ndn_forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face,
     if (!bypass) {
       ndn_memory_pool_free(name);
     }
-    return NDN_FWD_ERROR_PIT_FULL;
+    return NDN_FWD_PIT_FULL;
   }
   pit_entry_add_incoming_face(pit_entry, face);
 
@@ -273,7 +272,7 @@ forwarder_multicast_strategy(ndn_face_intf_t* face, ndn_name_t* name,
   }
   else {
     // TODO: Send Nack
-    return NDN_FWD_ERROR_INTEREST_REJECTED;
+    return NDN_FWD_INTEREST_REJECTED;
   }
   return 0;
 }

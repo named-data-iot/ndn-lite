@@ -19,7 +19,7 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
   uint32_t type = 0;
   decoder_get_type(&decoder, &type);
   if (type != TLV_Interest) {
-    return NDN_ERROR_WRONG_TLV_TYPE;
+    return NDN_WRONG_TLV_TYPE;
   }
   uint32_t interest_buffer_length = 0;
   decoder_get_length(&decoder, &interest_buffer_length);
@@ -86,7 +86,7 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
       ndn_signature_value_tlv_decode(&decoder, &interest->signature);
     }
     else
-      return NDN_ERROR_WRONG_TLV_TYPE;
+      return NDN_WRONG_TLV_TYPE;
   }
   return 0;
 }

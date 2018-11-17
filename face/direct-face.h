@@ -9,8 +9,7 @@
 #ifndef FORWARDER_DIRECT_FACE_H_
 #define FORWARDER_DIRECT_FACE_H_
 
-#include "face.h"
-#include <inttypes.h>
+#include "../forwarder/face.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -8,13 +8,13 @@
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
-#include "ndn-nrf52840.h"
-#include <encode/data.h>
+#include "ndn-nrf-802154-face.h"
+#include "../encode/data.h"
 #include <stdio.h>
 
-static ndn_nrf52840_802154_face_t nrf52840_802154_face;
+static ndn_nrf_802154_face_t nrf52840_802154_face;
 
-ndn_nrf52840_802154_face_t*
+ndn_nrf_802154_face_t*
 ndn_nrf52840_init_802154_get_face_instance()
 {
   return &nrf52840_802154_face;
@@ -60,7 +60,6 @@ ndn_nrf52840_init_802154_packet(uint8_t* message)
 int
 ndn_nrf52840_802154_face_up(struct ndn_face_intf* self)
 {
-  nrf52840_802154_face.on_error(2);
   self->state = NDN_FACE_STATE_UP;
   nrf_802154_receive();
   return 0;
@@ -70,7 +69,6 @@ int
 ndn_nrf52840_802154_face_send(struct ndn_face_intf* self, const ndn_name_t* name,
                               const uint8_t* packet, uint32_t size)
 {
-  nrf52840_802154_face.on_error(3);
   (void)self;
   (void)name;
   uint8_t packet_block[NDN_NRF52840_802154_MAX_MESSAGE_SIZE];
@@ -91,7 +89,7 @@ ndn_nrf52840_802154_face_send(struct ndn_face_intf* self, const ndn_name_t* name
   // send out the packet
   if (nrf_802154_transmit(packet_block, packet_block_size, true)) {
     int delay_loops = 0;
-    nrf52840_802154_face.on_error(2);
+    nrf52840_802154_face.on_error(3);
     while (!nrf52840_802154_face.tx_done
            && !nrf52840_802154_face.tx_failed && (delay_loops < 4)) {
       for(uint32_t i = 0; i < 0x500000; ++i)
@@ -101,7 +99,7 @@ ndn_nrf52840_802154_face_send(struct ndn_face_intf* self, const ndn_name_t* name
     if (nrf52840_802154_face.tx_done) {
       printf("TX finished.\r\n");
       nrf52840_802154_face.packet_id++;
-      nrf52840_802154_face.on_error(3);
+      nrf52840_802154_face.on_error(4);
       return 0;
     }
     else if (nrf52840_802154_face.tx_failed) {
@@ -111,7 +109,6 @@ ndn_nrf52840_802154_face_send(struct ndn_face_intf* self, const ndn_name_t* name
     }
     else {
       printf("TX TIMEOUT!\r\n");
-      nrf52840_802154_face.on_error(4);
       return -2;
     }
   }
@@ -133,7 +130,7 @@ ndn_nrf52840_802154_face_destroy(struct ndn_face_intf* self)
   return;
 }
 
-ndn_nrf52840_802154_face_t*
+ndn_nrf_802154_face_t*
 ndn_nrf52840_802154_face_construct(uint16_t face_id,
                                    const uint8_t* extended_address, const uint8_t* pan_id,
                                    const uint8_t* short_address, bool promisc,
@@ -170,7 +167,6 @@ ndn_nrf52840_802154_face_construct(uint16_t face_id,
   nrf52840_802154_face.packet_id = 0;
   nrf52840_802154_face.on_error = error_callback;
 
-  nrf52840_802154_face.on_error(1);
   return &nrf52840_802154_face;
 }
 
@@ -184,7 +180,7 @@ nrf_802154_transmitted(const uint8_t * p_frame, uint8_t * p_ack,
   (void)power;
   (void)lqi;
 
-  nrf52840_802154_face.on_error(1);
+  nrf52840_802154_face.on_error(2);
   nrf52840_802154_face.tx_done = true;
 
   if (p_ack != NULL) {

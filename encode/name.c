@@ -17,7 +17,7 @@ ndn_name_init(ndn_name_t *name, const name_component_t* components, uint32_t siz
     return 0;
   }
   else
-    return -1;
+    return NDN_OVERSIZE;
 }
 
 int
@@ -26,7 +26,7 @@ ndn_name_tlv_decode(ndn_decoder_t* decoder, ndn_name_t* name)
   uint32_t type = 0;
   decoder_get_type(decoder, &type);
   if (type != TLV_Name) {
-    return NDN_ERROR_WRONG_TLV_TYPE;
+    return NDN_WRONG_TLV_TYPE;
   }
   uint32_t length = 0;
   decoder_get_length(decoder, &length);
@@ -39,7 +39,7 @@ ndn_name_tlv_decode(ndn_decoder_t* decoder, ndn_name_t* name)
     if (!(name->components[counter].type == TLV_GenericNameComponent
           || name->components[counter].type == TLV_ImplicitSha256DigestComponent
           || name->components[counter].type == TLV_ParametersSha256DigestComponent)) {
-      return NDN_ERROR_WRONG_TLV_TYPE;
+      return NDN_WRONG_TLV_TYPE;
     }
     decoder_get_length(decoder, &name->components[counter].size);
     int result = decoder_get_raw_buffer_value(decoder, name->components[counter].value,
@@ -70,7 +70,7 @@ ndn_name_append_component(ndn_name_t *name, const name_component_t* component)
     return 0;
   }
   else
-    return NDN_ERROR_OVERSIZE;
+    return NDN_OVERSIZE;
 }
 
 int
@@ -81,7 +81,7 @@ ndn_name_from_string(ndn_name_t *name, const char* string, uint32_t size)
   uint32_t i = 0;
   uint32_t last_divider = 0;
   if (string[i] != '/') {
-    return NDN_ERROR_NAME_INVALID_FORMAT;
+    return NDN_NAME_INVALID_FORMAT;
   }
   ++i;
   while (i < size) {

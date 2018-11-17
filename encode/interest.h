@@ -52,7 +52,7 @@ ndn_interest_init(ndn_interest_t* interest)
   interest->is_SignedInterest = 0;
 
   interest->nounce = 0;
-  interest->lifetime = DEFAULT_INTEREST_LIFETIME;
+  interest->lifetime = NDN_DEFAULT_INTEREST_LIFETIME;
   interest->hop_limit = 0;
   interest->signature_timestamp = 0;
   interest->signature_nounce = 0;
@@ -70,7 +70,7 @@ ndn_interest_from_name(ndn_interest_t* interest, const ndn_name_t* name)
   interest->is_SignedInterest = 0;
 
   interest->nounce = 0;
-  interest->lifetime = DEFAULT_INTEREST_LIFETIME;
+  interest->lifetime = NDN_DEFAULT_INTEREST_LIFETIME;
   interest->hop_limit = 0;
   interest->signature_timestamp = 0;
   interest->signature_nounce = 0;

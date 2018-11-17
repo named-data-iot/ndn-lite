@@ -25,19 +25,13 @@
  *    9th to 24th bit: identification (2-byte random number)
  */
 
-#include "ndn-constants.h"
+#include "../ndn-constants.h"
 #include <inttypes.h>
 #include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define NDN_FRAG_HDR_LEN 3 // Size of the NDN L2 fragmentation header
-#define NDN_FRAG_HB_MASK 0x80 // 1000 0000
-#define NDN_FRAG_MF_MASK 0x20 // 0010 0000
-#define NDN_FRAG_SEQ_MASK 0x1F // 0001 1111
-#define NDN_FRAG_MAX_SEQ_NUM 30
 
 typedef struct ndn_fragmenter {
   const uint8_t* original;

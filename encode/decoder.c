@@ -14,7 +14,7 @@ decoder_get_buffer_value(ndn_decoder_t* decoder, ndn_buffer_t* buffer)
 {
   int rest_size = decoder->input_size - decoder->offset;
   if (rest_size < (int) buffer->size) {
-    return -1;
+    return NDN_OVERSIZE;
   }
   memcpy(buffer->value, decoder->input_value + decoder->offset, buffer->size);
   decoder->offset += buffer->size;
@@ -26,7 +26,7 @@ decoder_get_raw_buffer_value(ndn_decoder_t* decoder, uint8_t* value, uint32_t si
 {
   int rest_size = decoder->input_size - decoder->offset;
   if (rest_size < (int) size) {
-    return -1;
+    return NDN_OVERSIZE;
   }
   memcpy(value, decoder->input_value + decoder->offset, size);
   decoder->offset += size;

@@ -41,7 +41,7 @@ ndn_signature_init(ndn_signature_t* signature, uint8_t type)
     signature->sig_size = 32;
     break;
   default:
-    return NDN_ERROR_UNSUPPORT_SIGN_TYPE;
+    return NDN_SEC_UNSUPPORT_SIGN_TYPE;
   }
   signature->enable_KeyLocator = 0;
   signature->enable_ValidityPeriod = 0;
@@ -54,16 +54,16 @@ static inline int
 ndn_signature_set_signature(ndn_signature_t* signature, const uint8_t* sig_value, size_t sig_size)
 {
   if (sig_size > NDN_SIGNATURE_BUFFER_SIZE)
-    return NDN_ERROR_OVERSIZE;
+    return NDN_OVERSIZE;
 
   if (signature->sig_type == NDN_SIG_TYPE_ECDSA_SHA256 && sig_size != 64)
-    return NDN_ERROR_WRONG_SIG_SIZE;
+    return NDN_SEC_WRONG_SIG_SIZE;
 
   if (signature->sig_type == NDN_SIG_TYPE_HMAC_SHA256 && sig_size != 32)
-    return NDN_ERROR_WRONG_SIG_SIZE;
+    return NDN_SEC_WRONG_SIG_SIZE;
 
   if (signature->sig_type == NDN_SIG_TYPE_DIGEST_SHA256 && sig_size != 32)
-    return NDN_ERROR_WRONG_SIG_SIZE;
+    return NDN_SEC_WRONG_SIG_SIZE;
 
   signature->sig_size = sig_size;
   memcpy(signature->sig_value, sig_value, sig_size);

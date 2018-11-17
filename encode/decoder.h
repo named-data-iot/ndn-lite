@@ -54,7 +54,7 @@ decoder_get_var(ndn_decoder_t* decoder, uint32_t* var)
     decoder->offset += 5;
   }
   else {
-    return -1;
+    return NDN_OVERSIZE_VAR;
   }
   return 0;
 }
@@ -102,7 +102,7 @@ static inline int
 decoder_get_byte_value(ndn_decoder_t* decoder, uint8_t* value)
 {
   if (decoder->offset + 1 > decoder->input_size)
-    return NDN_ERROR_OVERSIZE;
+    return NDN_OVERSIZE;
   *value = decoder->input_value[decoder->offset];
   decoder->offset += 1;
   return 0;
@@ -112,7 +112,7 @@ static inline int
 decoder_get_uint32_value(ndn_decoder_t* decoder, uint32_t* value)
 {
   if (decoder->offset + 4 > decoder->input_size)
-    return NDN_ERROR_OVERSIZE;
+    return NDN_OVERSIZE;
 
   *value = ((uint32_t)decoder->input_value[decoder->offset] << 24)
     + ((uint32_t)decoder->input_value[decoder->offset + 1] << 16)
@@ -126,7 +126,7 @@ static inline int
 decoder_get_uint16_value(ndn_decoder_t* decoder, uint16_t* value)
 {
   if (decoder->offset + 2 > decoder->input_size)
-    return NDN_ERROR_OVERSIZE;
+    return NDN_OVERSIZE;
 
   *value = ((uint16_t)decoder->input_value[decoder->offset] << 8)
     + decoder->input_value[decoder->offset + 1];
@@ -137,7 +137,7 @@ decoder_get_uint16_value(ndn_decoder_t* decoder, uint16_t* value)
 static inline int
 decoder_move_forward(ndn_decoder_t* decoder, uint32_t step){
   if (decoder->offset + step > decoder->input_size)
-    return NDN_ERROR_OVERSIZE;
+    return NDN_OVERSIZE;
   decoder->offset += step;
   return 0;
 }

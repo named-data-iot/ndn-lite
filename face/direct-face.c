@@ -7,8 +7,7 @@
  */
 
 #include "direct-face.h"
-#include "forwarder.h"
-#include "error-code.h"
+#include "../forwarder/forwarder.h"
 
 static ndn_direct_face_t direct_face;
 

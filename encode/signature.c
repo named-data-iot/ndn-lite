@@ -65,7 +65,7 @@ ndn_signature_info_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signature
   uint32_t probe = 0;
   decoder_get_type(decoder, &probe);
   if (probe != TLV_SignatureInfo)
-    return NDN_ERROR_WRONG_TLV_TYPE;
+    return NDN_WRONG_TLV_TYPE;
   uint32_t value_length = 0;
   decoder_get_length(decoder, &value_length);
   uint32_t value_starting = decoder->offset;
@@ -95,7 +95,7 @@ ndn_signature_info_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signature
       decoder_get_raw_buffer_value(decoder, signature->validity_period.not_after, 15);
     }
     else
-      return NDN_ERROR_WRONG_TLV_TYPE;
+      return NDN_WRONG_TLV_TYPE;
   }
   return 0;
 }
@@ -106,7 +106,7 @@ ndn_signature_value_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signatur
   uint32_t type = 0;
   decoder_get_type(decoder, &type);
   if (type != TLV_SignatureValue)
-    return NDN_ERROR_WRONG_TLV_TYPE;
+    return NDN_WRONG_TLV_TYPE;
   decoder_get_length(decoder, &signature->sig_size);
   decoder_get_raw_buffer_value(decoder, signature->sig_value, signature->sig_size);
   return 0;
