@@ -128,8 +128,11 @@ ndn_forwarder_fib_insert(const ndn_name_t* name_prefix,
   // already exists
   for (uint8_t i = 0; i < NDN_FIB_MAX_SIZE; i++) {
     if (ndn_name_compare(&instance.fib[i].name_prefix, name_prefix) == 0
-        && instance.fib[i].next_hop == face)
+        && instance.fib[i].next_hop == face) {
+      if (face->state != NDN_FACE_STATE_UP)
+        ndn_face_up(face);
       return 0;
+    }
   }
 
   // find an unused fib entry
@@ -138,6 +141,7 @@ ndn_forwarder_fib_insert(const ndn_name_t* name_prefix,
       instance.fib[i].name_prefix = *name_prefix;
       instance.fib[i].next_hop = face;
       instance.fib[i].cost = cost;
+      ndn_face_up(face);
       return 0;
     }
   }
@@ -264,7 +268,7 @@ forwarder_multicast_strategy(ndn_face_intf_t* face, ndn_name_t* name,
   (void)pit_entry;
   ndn_fib_entry_t* fib_entry;
   fib_entry = fib_table_find(name);
-  if(fib_entry && fib_entry->next_hop) {
+  if (fib_entry && fib_entry->next_hop) {
     ndn_forwarder_on_outgoing_interest(fib_entry->next_hop, name, raw_interest, size);
   }
   else {

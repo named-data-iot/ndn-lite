@@ -98,18 +98,19 @@ ndn_direct_face_construct(uint16_t face_id)
 }
 
 int
-ndn_direct_face_express_interest(ndn_direct_face_t* self, const ndn_name_t* interest_name,
+ndn_direct_face_express_interest(const ndn_name_t* interest_name,
                                  uint8_t* interest, uint32_t interest_size,
                                  ndn_on_data_callback on_data, ndn_interest_timeout_callback on_interest_timeout)
 {
   for (int i = 0; i < NDN_DIRECT_FACE_CB_ENTRY_SIZE; i++) {
-    if (self->cb_entries[i].interest_name.components_size == NDN_FWD_INVALID_NAME_SIZE) {
-      self->cb_entries[i].interest_name = *interest_name;
-      self->cb_entries[i].is_prefix = 0;
-      self->cb_entries[i].on_data = on_data;
-      self->cb_entries[i].on_timeout = on_interest_timeout;
-      self->cb_entries[i].on_interest = NULL;
-      ndn_face_receive(&self->intf, interest, interest_size);
+    if (direct_face.cb_entries[i].interest_name.components_size == NDN_FWD_INVALID_NAME_SIZE) {
+      direct_face.cb_entries[i].interest_name = *interest_name;
+      direct_face.cb_entries[i].is_prefix = 0;
+      direct_face.cb_entries[i].on_data = on_data;
+      direct_face.cb_entries[i].on_timeout = on_interest_timeout;
+      direct_face.cb_entries[i].on_interest = NULL;
+
+      ndn_face_receive(&direct_face.intf, interest, interest_size);
       return 0;
     }
   }
@@ -117,18 +118,18 @@ ndn_direct_face_express_interest(ndn_direct_face_t* self, const ndn_name_t* inte
 }
 
 int
-ndn_direct_face_register_prefix(ndn_direct_face_t* self, const ndn_name_t* prefix_name,
+ndn_direct_face_register_prefix(const ndn_name_t* prefix_name,
                                 ndn_on_interest_callback on_interest)
 {
   for (int i = 0; i < NDN_DIRECT_FACE_CB_ENTRY_SIZE; i++) {
-    if (self->cb_entries[i].interest_name.components_size == NDN_FWD_INVALID_NAME_SIZE) {
-      self->cb_entries[i].interest_name = *prefix_name;
-      self->cb_entries[i].is_prefix = 1;
-      self->cb_entries[i].on_data = NULL;
-      self->cb_entries[i].on_timeout = NULL;
-      self->cb_entries[i].on_interest = on_interest;
+    if (direct_face.cb_entries[i].interest_name.components_size == NDN_FWD_INVALID_NAME_SIZE) {
+      direct_face.cb_entries[i].interest_name = *prefix_name;
+      direct_face.cb_entries[i].is_prefix = 1;
+      direct_face.cb_entries[i].on_data = NULL;
+      direct_face.cb_entries[i].on_timeout = NULL;
+      direct_face.cb_entries[i].on_interest = on_interest;
 
-      ndn_forwarder_fib_insert(prefix_name, &self->intf, NDN_FACE_DEFUALT_COST);
+      ndn_forwarder_fib_insert(prefix_name, &direct_face.intf, NDN_FACE_DEFUALT_COST);
       return 0;
     }
   }

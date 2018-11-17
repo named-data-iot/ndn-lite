@@ -64,13 +64,13 @@ ndn_direct_face_t*
 ndn_direct_face_construct(uint16_t face_id);
 
 int
-ndn_direct_face_express_interest(ndn_direct_face_t* self, const ndn_name_t* prefix_name,
+ndn_direct_face_express_interest(const ndn_name_t* prefix_name,
                                  uint8_t* interest, uint32_t interest_size,
                                  ndn_on_data_callback on_data,
                                  ndn_interest_timeout_callback on_interest_timeout);
 
 int
-ndn_direct_face_register_prefix(ndn_direct_face_t* self, const ndn_name_t* interest_name,
+ndn_direct_face_register_prefix(const ndn_name_t* interest_name,
                                 ndn_on_interest_callback on_interest);
 
 #ifdef __cplusplus
