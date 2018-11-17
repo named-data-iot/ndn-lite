@@ -9,9 +9,7 @@
 #ifndef FORWARDER_DIRECT_FACE_H_
 #define FORWARDER_DIRECT_FACE_H_
 
-#include "../encode/ndn-constants.h"
-#include "../encode/data.h"
-#include "../encode/interest.h"
+#include "face.h"
 #include <inttypes.h>
 
 #ifdef __cplusplus
@@ -62,8 +60,8 @@ typedef struct ndn_direct_face {
   ndn_face_cb_entry_t cb_entries[NDN_DIRECT_FACE_CB_ENTRY_SIZE];
 } ndn_direct_face_t;
 
-void
-ndn_direct_face_construct(ndn_direct_face_t* self, uint16_t face_id);
+ndn_direct_face_t*
+ndn_direct_face_construct(uint16_t face_id);
 
 int
 ndn_direct_face_express_interest(ndn_direct_face_t* self, const ndn_name_t* prefix_name,

@@ -122,7 +122,7 @@ ndn_forwarder_init(void)
 }
 
 int
-ndn_forwarder_fib_insert(ndn_name_t* name_prefix,
+ndn_forwarder_fib_insert(const ndn_name_t* name_prefix,
                          ndn_face_intf_t* face, uint8_t cost)
 {
   // already exists

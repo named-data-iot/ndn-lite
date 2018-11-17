@@ -108,20 +108,6 @@ ndn_name_from_string(ndn_name_t *name, const char* string, uint32_t size)
 }
 
 int
-ndn_name_compare(ndn_name_t* a, ndn_name_t* b)
-{
-  if (a->components_size != b->components_size) return -1;
-  else {
-    int result = 0;
-    for (uint8_t i = 0; i < a->components_size; i++) {
-      result = name_component_compare(&a->components[i], &b->components[i]);
-      if (result != 0) return -1;
-    }
-    return 0;
-  }
-}
-
-int
 ndn_name_tlv_encode(ndn_encoder_t* encoder, const ndn_name_t *name)
 {
   int block_sizes[name->components_size];
@@ -139,6 +125,20 @@ ndn_name_tlv_encode(ndn_encoder_t* encoder, const ndn_name_t *name)
       return result;
   }
   return 0;
+}
+
+int
+ndn_name_compare(const ndn_name_t* a, const ndn_name_t* b)
+{
+  if (a->components_size != b->components_size) return -1;
+  else {
+    int result = 0;
+    for (uint8_t i = 0; i < a->components_size; i++) {
+      result = name_component_compare(&a->components[i], &b->components[i]);
+      if (result != 0) return -1;
+    }
+    return 0;
+  }
 }
 
 int

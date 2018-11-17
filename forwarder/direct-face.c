@@ -7,7 +7,10 @@
  */
 
 #include "direct-face.h"
+#include "forwarder.h"
 #include "error-code.h"
+
+static ndn_direct_face_t direct_face;
 
 /************************************************************/
 /*  Inherit Face Interfaces                                 */
@@ -23,12 +26,10 @@ ndn_direct_face_up(struct ndn_face_intf* self)
 void
 ndn_direct_face_destroy(struct ndn_face_intf* self)
 {
-  ndn_direct_face_t* direct_face;
-  direct_face = container_of(self, ndn_direct_face_t, intf);
   for (int i = 0; i < NDN_DIRECT_FACE_CB_ENTRY_SIZE; i++) {
-    direct_face->cb_entries[i].interest_name.components_size = NDN_FWD_INVALID_NAME_SIZE;
+    direct_face.cb_entries[i].interest_name.components_size = NDN_FWD_INVALID_NAME_SIZE;
   }
-  self->intf.state = NDN_FACE_STATE_DESTORYED;
+  self->state = NDN_FACE_STATE_DESTROYED;
   return;
 }
 
@@ -43,6 +44,7 @@ int
 ndn_direct_face_send(struct ndn_face_intf* self, const ndn_name_t* name,
                      const uint8_t* packet, uint32_t size)
 {
+  (void)self;
   ndn_decoder_t decoder;
   uint32_t probe = 0;
   uint8_t isInterest = 0;
@@ -67,33 +69,32 @@ ndn_direct_face_send(struct ndn_face_intf* self, const ndn_name_t* name,
     return 1;
   }
 
-  ndn_direct_face_t* direct_face;
-  direct_face = container_of(self, ndn_direct_face_t, intf);
   for (int i = 0; i < NDN_DIRECT_FACE_CB_ENTRY_SIZE; i++) {
-    if (direct_face->cb_entries[i].is_prefix == isInterest && isInterest == 0
-        && ndn_name_compare(direct_face->cb_entries[i].interest_name, name) == 0) {
-      direct_face->cb_entries[i].on_data(packet, size);
+    if (direct_face.cb_entries[i].is_prefix == isInterest && isInterest == 0
+        && ndn_name_compare(&direct_face.cb_entries[i].interest_name, name) == 0) {
+      direct_face.cb_entries[i].on_data(packet, size);
       return 0;
     }
-    if (direct_face->cb_entries[i].is_prefix == isInterest && isInterest == 1
-        && ndn_name_is_prefix(direct_face->cb_entries[i].interest_name, name) == 0) {
-      direct_face->cb_entries[i].on_interest(packet, size);
+    if (direct_face.cb_entries[i].is_prefix == isInterest && isInterest == 1
+        && ndn_name_is_prefix_of(&direct_face.cb_entries[i].interest_name, name) == 0) {
+      direct_face.cb_entries[i].on_interest(packet, size);
       return 0;
     }
   }
   return NDN_FWD_NO_MATCHED_CALLBACK;
 }
 
-void
-ndn_direct_face_construct(ndn_direct_face_t* self, uint16_t face_id)
+ndn_direct_face_t*
+ndn_direct_face_construct(uint16_t face_id)
 {
-  self->intf.up = ndn_direct_face_up;
-  self->intf.send = ndn_direct_face_send;
-  self->intf.down = ndn_direct_face_down;
-  self->intf.destroy = ndn_direct_face_destroy;
-  self->intf.face_id = face_id;
-  self->intf.state = NDN_FACE_STATE_DESTORYED;
-  self->intf.type = NDN_FACE_TYPE_APP;
+  direct_face.intf.up = ndn_direct_face_up;
+  direct_face.intf.send = ndn_direct_face_send;
+  direct_face.intf.down = ndn_direct_face_down;
+  direct_face.intf.destroy = ndn_direct_face_destroy;
+  direct_face.intf.face_id = face_id;
+  direct_face.intf.state = NDN_FACE_STATE_DESTROYED;
+  direct_face.intf.type = NDN_FACE_TYPE_APP;
+  return &direct_face;
 }
 
 int
@@ -103,12 +104,12 @@ ndn_direct_face_express_interest(ndn_direct_face_t* self, const ndn_name_t* inte
 {
   for (int i = 0; i < NDN_DIRECT_FACE_CB_ENTRY_SIZE; i++) {
     if (self->cb_entries[i].interest_name.components_size == NDN_FWD_INVALID_NAME_SIZE) {
-      self->cb_entries[i].interest_name = interest_name;
+      self->cb_entries[i].interest_name = *interest_name;
       self->cb_entries[i].is_prefix = 0;
       self->cb_entries[i].on_data = on_data;
       self->cb_entries[i].on_timeout = on_interest_timeout;
       self->cb_entries[i].on_interest = NULL;
-      ndn_face_receive(self->intf, interest, interest_size);
+      ndn_face_receive(&self->intf, interest, interest_size);
       return 0;
     }
   }
@@ -121,11 +122,13 @@ ndn_direct_face_register_prefix(ndn_direct_face_t* self, const ndn_name_t* prefi
 {
   for (int i = 0; i < NDN_DIRECT_FACE_CB_ENTRY_SIZE; i++) {
     if (self->cb_entries[i].interest_name.components_size == NDN_FWD_INVALID_NAME_SIZE) {
-      self->cb_entries[i].interest_name = prefix_name;
+      self->cb_entries[i].interest_name = *prefix_name;
       self->cb_entries[i].is_prefix = 1;
       self->cb_entries[i].on_data = NULL;
       self->cb_entries[i].on_timeout = NULL;
       self->cb_entries[i].on_interest = on_interest;
+
+      ndn_forwarder_fib_insert(prefix_name, &self->intf, NDN_FACE_DEFUALT_COST);
       return 0;
     }
   }

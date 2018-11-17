@@ -40,10 +40,6 @@ ndn_name_append_component(ndn_name_t* name, const name_component_t* component);
 int
 ndn_name_from_string(ndn_name_t* name, const char* string, uint32_t size);
 
-// return 0 if two names are the same
-int
-ndn_name_compare(ndn_name_t* a, ndn_name_t* b);
-
 static inline uint32_t
 ndn_name_probe_block_size(const ndn_name_t *name)
 {
@@ -58,6 +54,10 @@ ndn_name_probe_block_size(const ndn_name_t *name)
 // need to call ndn_name_probe_block_size to initialize output block in advance
 int
 ndn_name_tlv_encode(ndn_encoder_t* encoder, const ndn_name_t *name);
+
+// return 0 if two names are the same
+int
+ndn_name_compare(const ndn_name_t* a, const ndn_name_t* b);
 
 // return 0 if prefix is the prefix of name
 int
