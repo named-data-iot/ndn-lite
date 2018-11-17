@@ -80,17 +80,17 @@ fib_table_find(const ndn_name_t* name)
   return NULL;
 }
 
-static ndn_fib_entry_t*
-fib_table_find_by_face(const ndn_face_intf_t* face)
-{
-  for (uint8_t i = 0; i < NDN_FIB_MAX_SIZE; i++) {
-    if (instance.fib[i].name_prefix.components_size != NDN_FWD_INVALID_NAME_SIZE
-        && instance.fib[i].next_hop == face) {
-      return &instance.fib[i];
-    }
-  }
-  return NULL;
-}
+// static ndn_fib_entry_t*
+// fib_table_find_by_face(const ndn_face_intf_t* face)
+// {
+//   for (uint8_t i = 0; i < NDN_FIB_MAX_SIZE; i++) {
+//     if (instance.fib[i].name_prefix.components_size != NDN_FWD_INVALID_NAME_SIZE
+//         && instance.fib[i].next_hop == face) {
+//       return &instance.fib[i];
+//     }
+//   }
+//   return NULL;
+// }
 
 /************************************************************/
 /*  Definition of forwarder APIs                            */
@@ -152,23 +152,19 @@ ndn_forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn
                                const uint8_t* raw_data, uint32_t size)
 {
   (void)face;
-  ndn_pit_entry_t* pit_entry;
-  int ret = 0;
   bool bypass = (name != NULL);
-  ndn_decoder_t decoder;
-  uint32_t probe = 0;
 
   // If no bypass data, we need to decode it manually
   if (!bypass) {
     // Allocate memory
-    // A name is expensive, don't want to do it on stack
     name = (ndn_name_t*)ndn_memory_pool_alloc();
     if (!name) {
       return NDN_FWD_INSUFFICIENT_MEMORY;
     }
-
     // Decode name only
-    ret = 0;
+    ndn_decoder_t decoder;
+    uint32_t probe = 0;
+    int ret = 0;
     decoder_init(&decoder, raw_data, size);
     ret = decoder_get_type(&decoder, &probe);
     ret = decoder_get_length(&decoder, &probe);
@@ -183,8 +179,8 @@ ndn_forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn
   for (uint8_t i = 0; i < NDN_PIT_MAX_SIZE; i++) {
     if (ndn_name_compare(&self->pit[i].interest_name, name) == 0) {
       // Send out data
-      for (i = 0; i < pit_entry->incoming_face_size; i ++) {
-        ndn_forwarder_on_outgoing_data(pit_entry->incoming_face[i], name, raw_data, size);
+      for (uint8_t j = 0; j < self->pit[i].incoming_face_size; j++) {
+        ndn_forwarder_on_outgoing_data(self->pit[i].incoming_face[j], name, raw_data, size);
       }
       // Delete PIT Entry
       pit_entry_delete(&self->pit[i]);
