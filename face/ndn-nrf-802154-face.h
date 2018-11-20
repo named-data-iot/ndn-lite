@@ -27,9 +27,9 @@
 extern "C" {
 #endif
 
-#define NDN_NRF52840_802154_MAX_MESSAGE_SIZE 127
-#define NDN_NRF52840_802154_MAX_PAYLOAD_SIZE 102
-#define NDN_NRF52840_802154_CHANNEL 23
+#define NDN_NRF_802154_MAX_MESSAGE_SIZE 127
+#define NDN_NRF_802154_MAX_PAYLOAD_SIZE 102
+#define NDN_NRF_802154_CHANNEL 23
 
 typedef void (*ndn_on_error_callback_t)(int error_code);
 
@@ -47,10 +47,10 @@ typedef struct ndn_nrf_802154_face {
   ndn_on_error_callback_t on_error;
 } ndn_nrf_802154_face_t;
 
-// there should be only one nrf52840_802154 face
+// there should be only one nrf_802154 face
 // use this function to get the singleton instance
 // if the instance has not been initialized,
-// use ndn_nrf52840_802154_face_construct instead
+// use ndn_nrf_802154_face_construct instead
 ndn_nrf_802154_face_t*
 ndn_nrf_init_802154_get_face_instance();
 
