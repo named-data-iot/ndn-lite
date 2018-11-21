@@ -17,16 +17,16 @@ ndn_face_receive(ndn_face_intf_t* self, const uint8_t* packet, uint32_t size)
   ndn_decoder_t decoder;
   uint32_t probe = 0;
 
-  printf("face receive packet\n");
+  printf("face receive packet---");
 
   decoder_init(&decoder, packet, size);
   decoder_get_type(&decoder, &probe);
   if (probe == TLV_Data) {
-    printf("face receive data packet\n");
+    printf("data packet\n");
     return ndn_forwarder_on_incoming_data(ndn_forwarder_get_instance(), self, NULL, packet, size);
   }
   else if (probe == TLV_Interest) {
-    printf("face receive interest packet\n");
+    printf("interest packet\n");
     return ndn_forwarder_on_incoming_interest(ndn_forwarder_get_instance(), self, NULL, packet, size);
   }
   else {

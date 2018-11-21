@@ -144,7 +144,7 @@ ndn_forwarder_fib_insert(const ndn_name_t* name_prefix,
       instance.fib[i].cost = cost;
       ndn_face_up(face);
 
-      printf("Forwarder: successfully insert FIB");
+      printf("Forwarder: successfully insert FIB\n");
 
       return 0;
     }
@@ -205,7 +205,7 @@ int
 ndn_forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn_name_t* name,
                                    const uint8_t* raw_interest, uint32_t size)
 {
-  printf("Forwarder: on Interest");
+  printf("Forwarder: on Interest\n");
 
   (void)self;
   int ret = 0;
@@ -264,11 +264,10 @@ forwarder_multicast_strategy(ndn_face_intf_t* face, ndn_name_t* name,
                              const uint8_t* raw_interest, uint32_t size,
                              const ndn_pit_entry_t* pit_entry)
 {
-  (void)face;
   (void)pit_entry;
   ndn_fib_entry_t* fib_entry;
   fib_entry = fib_table_find(name);
-  if (fib_entry && fib_entry->next_hop) {
+  if (fib_entry && fib_entry->next_hop && fib_entry->next_hop != face) {
     ndn_forwarder_on_outgoing_interest(fib_entry->next_hop, name, raw_interest, size);
   }
   else {
