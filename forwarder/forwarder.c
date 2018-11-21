@@ -11,6 +11,8 @@
 #include "../encode/name.h"
 #include "../encode/data.h"
 
+#include <stdio.h>
+
 static ndn_forwarder_t instance;
 
 ndn_forwarder_t*
@@ -141,6 +143,9 @@ ndn_forwarder_fib_insert(const ndn_name_t* name_prefix,
       instance.fib[i].next_hop = face;
       instance.fib[i].cost = cost;
       ndn_face_up(face);
+
+      printf("Forwarder: successfully insert FIB");
+
       return 0;
     }
   }
@@ -200,12 +205,11 @@ int
 ndn_forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn_name_t* name,
                                    const uint8_t* raw_interest, uint32_t size)
 {
+  printf("Forwarder: on Interest");
+
   (void)self;
-  ndn_pit_entry_t *pit_entry;
-  int ret;
+  int ret = 0;
   bool bypass = (name != NULL);
-  ndn_decoder_t decoder;
-  uint32_t probe;
 
   // If no bypass interest, we need to decode it manually
   if (!bypass) {
@@ -217,7 +221,8 @@ ndn_forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face,
     }
 
     // Decode name only
-    ret = 0;
+    uint32_t probe = 0;
+    ndn_decoder_t decoder;
     decoder_init(&decoder, raw_interest, size);
     ret = decoder_get_type(&decoder, &probe);
     ret = decoder_get_length(&decoder, &probe);
@@ -229,7 +234,7 @@ ndn_forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face,
   }
 
   // Insert into PIT
-  pit_entry = pit_table_find_or_insert(name);
+  ndn_pit_entry_t* pit_entry = pit_table_find_or_insert(name);
   if (pit_entry == NULL) {
     if (!bypass) {
       ndn_memory_pool_free(name);

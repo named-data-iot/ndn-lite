@@ -93,6 +93,12 @@ ndn_direct_face_construct(uint16_t face_id)
   direct_face.intf.face_id = face_id;
   direct_face.intf.state = NDN_FACE_STATE_DESTROYED;
   direct_face.intf.type = NDN_FACE_TYPE_APP;
+
+  // init call back entries
+  for (int i = 0; i < NDN_DIRECT_FACE_CB_ENTRY_SIZE; i++) {
+    direct_face.cb_entries[i].interest_name.components_size = NDN_FWD_INVALID_NAME_SIZE;
+  }
+
   return &direct_face;
 }
 

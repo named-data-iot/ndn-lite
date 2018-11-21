@@ -27,7 +27,7 @@ typedef struct ndn_dummy_face {
 } ndn_dummy_face_t;
 
 ndn_dummy_face_t*
-ndn_dummy_face_construct(uint16_t face_id);
+ndn_dummy_face_construct(ndn_dummy_face_t* face, uint16_t face_id);
 
 #ifdef __cplusplus
 }

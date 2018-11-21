@@ -8,7 +8,7 @@
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
-#include "ndn-dummy-face.h"
+#include "dummy-face.h"
 #include "../encode/data.h"
 #include <stdio.h>
 
@@ -33,6 +33,7 @@ ndn_dummy_face_send(struct ndn_face_intf* self, const ndn_name_t* name,
   (void)packet;
   (void)size;
   printf("Dummy Face UP send packet\n");
+  return 0;
 }
 
 
@@ -55,12 +56,12 @@ ndn_dummy_face_destroy(struct ndn_face_intf* self)
 ndn_dummy_face_t*
 ndn_dummy_face_construct(ndn_dummy_face_t* face, uint16_t face_id)
 {
-  face.intf.up = ndn_dummy_face_up;
-  face.intf.send = ndn_dummy_face_send;
-  face.intf.down = ndn_dummy_face_down;
-  face.intf.destroy = ndn_dummy_face_destroy;
-  face.intf.face_id = face_id;
-  face.intf.state = NDN_FACE_STATE_DESTROYED;
-  face.intf.type = NDN_FACE_TYPE_NET;
+  face->intf.up = ndn_dummy_face_up;
+  face->intf.send = ndn_dummy_face_send;
+  face->intf.down = ndn_dummy_face_down;
+  face->intf.destroy = ndn_dummy_face_destroy;
+  face->intf.face_id = face_id;
+  face->intf.state = NDN_FACE_STATE_DESTROYED;
+  face->intf.type = NDN_FACE_TYPE_NET;
   return face;
 }

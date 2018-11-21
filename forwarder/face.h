@@ -10,7 +10,6 @@
 #define FORWARDER_FACE_H_
 
 #include "../encode/name.h"
-#include <inttypes.h>
 
 #define container_of(ptr, type, member) ({                      \
       const typeof( ((type *)0)->member ) *__mptr = (ptr);      \
@@ -54,7 +53,7 @@ ndn_face_up(ndn_face_intf_t* self)
   return 0;
 }
 
-
+// send Interest from Forwarder
 static inline int
 ndn_face_send(ndn_face_intf_t* self, const ndn_name_t* name, const uint8_t* packet, uint32_t size)
 {
@@ -77,6 +76,7 @@ ndn_face_destroy(ndn_face_intf_t* self)
   self->destroy(self);
 }
 
+// send Interest to Forwarder (Forwarder receives)
 // supposed to be invoked by face itself ONLY
 int
 ndn_face_receive(ndn_face_intf_t* self, const uint8_t* packet, uint32_t size);
