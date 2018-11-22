@@ -24,7 +24,7 @@ ndn_nrf_802154_face_get_instance()
 /*  Adaptation Helper Functions                             */
 /************************************************************/
 
-void
+static void
 ndn_nrf_init_802154_packet(uint8_t* message)
 {
   memset(message, 0, NDN_NRF_802154_MAX_MESSAGE_SIZE);
@@ -53,6 +53,25 @@ ndn_nrf_init_802154_packet(uint8_t* message)
   // end of header
 }
 
+static void
+ndn_nrf_init_802154_radio(const uint8_t* extended_address, const uint8_t* pan_id,
+                          const uint8_t* short_address, bool promisc)
+{
+  printf("\r\ninit 802.15.4 driver\r\n");
+
+  nrf_802154_init();
+  nrf_802154_short_address_set(short_address);
+  nrf_802154_extended_address_set(extended_address);
+  nrf_802154_pan_id_set(pan_id);
+  if(promisc)
+    nrf_802154_promiscuous_set(true);
+  nrf_802154_tx_power_set(-20);
+  nrf_802154_channel_set(NDN_NRF_802154_CHANNEL);
+  nrf_802154_receive();
+
+  printf("TX power currently set to %ddBm\r\n", (int)nrf_802154_tx_power_get());
+}
+
 /************************************************************/
 /*  Inherit Face Interfaces                                 */
 /************************************************************/
@@ -61,18 +80,16 @@ int
 ndn_nrf_802154_face_up(struct ndn_face_intf* self)
 {
   self->state = NDN_FACE_STATE_UP;
-  nrf_802154_receive();
   return 0;
 }
 
 int
 ndn_nrf_802154_face_send(struct ndn_face_intf* self, const ndn_name_t* name,
-                              const uint8_t* packet, uint32_t size)
+                         const uint8_t* packet, uint32_t size)
 {
   (void)self;
   (void)name;
   uint8_t packet_block[NDN_NRF_802154_MAX_MESSAGE_SIZE];
-  int packet_block_size = 0;
 
   // init header
   ndn_nrf_init_802154_packet(packet_block);
@@ -80,18 +97,20 @@ ndn_nrf_802154_face_send(struct ndn_face_intf* self, const ndn_name_t* name,
 
   // init payload
   if (size <= NDN_NRF_802154_MAX_PAYLOAD_SIZE) {
-    memcpy(&packet_block[9], packet, NDN_NRF_802154_MAX_MESSAGE_SIZE - 9);
+    memcpy(&packet_block[9], packet, size);
   }
   else {
     // TBD
+    return -1;
   }
 
   // send out the packet
-  if (nrf_802154_transmit(packet_block, packet_block_size, true)) {
+  if (nrf_802154_transmit(packet_block, size + 9, true)) {
+    nrf_802154_face.tx_done = false;
+    nrf_802154_face.tx_failed = false;
     int delay_loops = 0;
-    nrf_802154_face.on_error(3);
     while (!nrf_802154_face.tx_done
-           && !nrf_802154_face.tx_failed && (delay_loops < 4)) {
+           && !nrf_802154_face.tx_failed && (delay_loops < 8)) {
       for(uint32_t i = 0; i < 0x500000; ++i)
         __asm__ __volatile__("nop":::);
       ++delay_loops;
@@ -99,16 +118,18 @@ ndn_nrf_802154_face_send(struct ndn_face_intf* self, const ndn_name_t* name,
     if (nrf_802154_face.tx_done) {
       printf("TX finished.\r\n");
       nrf_802154_face.packet_id++;
-      nrf_802154_face.on_error(4);
+      nrf_802154_face.on_error(3);
       return 0;
     }
     else if (nrf_802154_face.tx_failed) {
       printf("TX failed due to busy: %u\r\n",
              (unsigned)nrf_802154_face.tx_errorcode);
+      nrf_802154_face.on_error(4);
       return -1;
     }
     else {
       printf("TX TIMEOUT!\r\n");
+      nrf_802154_face.on_error(1);
       return -2;
     }
   }
@@ -132,23 +153,10 @@ ndn_nrf_802154_face_destroy(struct ndn_face_intf* self)
 
 ndn_nrf_802154_face_t*
 ndn_nrf_802154_face_construct(uint16_t face_id,
-                                   const uint8_t* extended_address, const uint8_t* pan_id,
-                                   const uint8_t* short_address, bool promisc,
-                                   ndn_on_error_callback_t error_callback)
+                              const uint8_t* extended_address, const uint8_t* pan_id,
+                              const uint8_t* short_address, bool promisc,
+                              ndn_on_error_callback_t error_callback)
 {
-  printf("\r\ninit 802.15.4 driver\r\n");
-  nrf_802154_init();
-  nrf_802154_short_address_set(short_address);
-  nrf_802154_extended_address_set(extended_address);
-  nrf_802154_pan_id_set(pan_id);
-  if(promisc)
-    nrf_802154_promiscuous_set(true);
-  nrf_802154_tx_power_set(-20);
-  nrf_802154_channel_set(NDN_NRF_802154_CHANNEL);
-#if NRF_802154_ACK_TIMEOUT_ENABLED
-  nrf_802154_ack_timeout_set(100);
-#endif // NRF_802154_ACK_TIMEOUT_ENABLED
-
   nrf_802154_face.intf.up = ndn_nrf_802154_face_up;
   nrf_802154_face.intf.send = ndn_nrf_802154_face_send;
   nrf_802154_face.intf.down = ndn_nrf_802154_face_down;
@@ -167,6 +175,10 @@ ndn_nrf_802154_face_construct(uint16_t face_id,
   nrf_802154_face.packet_id = 0;
   nrf_802154_face.on_error = error_callback;
 
+  ndn_nrf_init_802154_radio(extended_address, pan_id, short_address, promisc);
+
+  nrf_802154_face.on_error(1);
+
   return &nrf_802154_face;
 }
 
@@ -180,7 +192,6 @@ nrf_802154_transmitted(const uint8_t * p_frame, uint8_t * p_ack,
   (void)power;
   (void)lqi;
 
-  nrf_802154_face.on_error(2);
   nrf_802154_face.tx_done = true;
 
   if (p_ack != NULL) {
@@ -200,6 +211,7 @@ nrf_802154_transmit_failed(const uint8_t * p_frame, nrf_802154_tx_error_t error)
 void
 nrf_802154_received(uint8_t* p_data, uint8_t length, int8_t power, uint8_t lqi)
 {
+  nrf_802154_face.on_error(2);
   printf("RX frame, power %d, lqi %u, payload len %u: ",
          (int) power, (unsigned) lqi, (unsigned) length);
 

@@ -57,7 +57,7 @@ ndn_face_up(ndn_face_intf_t* self)
 static inline int
 ndn_face_send(ndn_face_intf_t* self, const ndn_name_t* name, const uint8_t* packet, uint32_t size)
 {
-  if (self->state == NDN_FACE_STATE_DOWN)
+  if (self->state != NDN_FACE_STATE_UP)
     self->up(self);
   return self->send(self, name, packet, size);
 }
