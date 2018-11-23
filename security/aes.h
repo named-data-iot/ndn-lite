@@ -10,8 +10,13 @@
 #define NDN_SECURITY_AES_H_
 
 #include "../encode/name.h"
-#include "../encode/ndn-constants.h"
-#include <crypto/ciphers.h>
+#include "../ndn-constants.h"
+#include "tinycrypt/cbc_mode.h"
+#include "tinycrypt/constants.h"
+
+
+#include <stdio.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,78 +25,93 @@ extern "C" {
 typedef struct ndn_encrypter {
   uint8_t* input_value;
   uint8_t input_size;
-  uint32_t after_padding_size;
-  cipher_t cipher;
+  uint8_t* output_value;
+  uint8_t output_size;
+  //uint32_t after_padding_size;
+  //cipher_t cipher;
+  struct tc_aes_key_sched_struct cipher;
 } ndn_encrypter_t;
 
-static inline void
-ndn_encrypter_init(ndn_encrypter_t* encrypter, const uint8_t* key_value, uint32_t key_size)
-{
-  cipher_init(&encrypter->cipher, CIPHER_AES_128, key_value, key_size);
-}
-
-// call this function after init the encrypter/decrypter
-uint32_t
-ndn_encrypter_encrypt(ndn_encrypter_t* encrypter, uint8_t* aes_iv,
-                      uint8_t* input_value, uint32_t input_size,
-                      uint8_t* output_value);
-
 typedef struct ndn_decrypter {
+  uint8_t* input_value;
+  uint8_t input_size;
   uint8_t* output_value;
-  uint32_t output_size;
-  uint8_t* after_padding_value;
-  cipher_t cipher;
+  uint8_t output_size;
+  //uint32_t after_padding_size;
+  //cipher_t cipher;
+  struct tc_aes_key_sched_struct cipher;
 } ndn_decrypter_t;
 
 static inline void
-ndn_decrypter_init(ndn_decrypter_t* decrypter, const uint8_t* key_value, uint32_t key_size)
+ndn_encrypter_init(ndn_encrypter_t* encrypter, const uint8_t* key_value)
 {
-  cipher_init(&decrypter->cipher, CIPHER_AES_128, key_value, key_size);
+  //cipher_init(&encrypter->cipher, CIPHER_AES_128, key_value, key_size);
+  tc_aes128_set_encrypt_key(&encrypter->cipher, key_value);  //key_size should be 16?
 }
 
-// call this function after init the encrypter/decrypter
-uint32_t
-ndn_decrypter_decrypt(ndn_decrypter_t* decrypter, uint8_t* aes_iv,
-                      uint8_t* input_value, uint32_t input_size,
-                      uint8_t* output_value);
-
-// call this function before encryption operation
-static inline uint32_t
-encrypter_get_padding_size(ndn_encrypter_t* encrypter, uint32_t input_size)
+static inline int
+ndn_encrypter_cbc_set_buffer(ndn_encrypter_t* encrypter, uint8_t* input_value, uint8_t input_size, 
+                         uint8_t* output_value, uint8_t output_size)
 {
-  uint32_t extra = input_size % NDN_AES_BLOCK_SIZE;
-  if (extra != 0) {
-    encrypter->after_padding_size = input_size + NDN_AES_BLOCK_SIZE - input_size % NDN_AES_BLOCK_SIZE;
+  // check output_size, return error code
+  if (input_size + TC_AES_BLOCK_SIZE != output_size)
+  {
+    return NDN_SEC_WRONG_AES_SIZE;
   }
-  else {
-    encrypter->after_padding_size = input_size;
-  }
-  return encrypter->after_padding_size;
+  encrypter->input_value = input_value;
+  encrypter->input_size = input_size;
+  encrypter->output_value = output_value;
+  encrypter->output_size = output_size;
+  return 0;
 }
 
-// call this after decryption operation
-// using ISO/IEC 7816-4
-static inline uint32_t
-decrypter_unpadding(ndn_decrypter_t* decrypter, uint8_t* after_padding, uint32_t after_padding_size)
+static inline int
+ndn_decrypter_cbc_set_buffer(ndn_decrypter_t* decrypter, uint8_t* input_value, uint8_t input_size, 
+                         uint8_t* output_value, uint8_t output_size)
 {
-  uint32_t offset = after_padding_size;
-  uint8_t* tail = after_padding + after_padding_size;
-  while (*tail == 0x00){
-    tail -= 1;
-    offset -= 1;
+  if (output_size != input_size) 
+  {
+    return NDN_SEC_WRONG_AES_SIZE;
   }
-  memcpy(decrypter->output_value, after_padding, offset - 1);
-  return offset - 1;
+  decrypter->input_value = input_value;
+  decrypter->input_size = input_size;
+  decrypter->output_value = output_value;
+  decrypter->output_size = output_size;
+  return 0;
 }
 
-// using ISO/IEC 7816-4
 static inline void
-encrypter_padding(ndn_encrypter_t* encrypter, uint8_t* after_padding, uint32_t after_padding_size)
+ndn_decrypter_init(ndn_decrypter_t* decrypter, const uint8_t* key_value)
 {
-  memset(after_padding, 0, after_padding_size);
-  memcpy(after_padding, encrypter->input_value, encrypter->input_size);
-  after_padding[encrypter->input_size] = 0x80;
+  tc_aes128_set_decrypt_key(&decrypter->cipher, key_value);  //key_size should be 16?
 }
+
+int
+ndn_encrypter_cbc_encrypt(ndn_encrypter_t* encrypter, uint8_t* aes_iv)
+{
+  // do we need check output_size is valid? 
+  if (tc_cbc_mode_encrypt(encrypter->output_value, encrypter->input_size + TC_AES_BLOCK_SIZE,
+			encrypter->input_value, encrypter->input_size, aes_iv, &encrypter->cipher) == 0)
+  {
+    return NDN_SEC_WRONG_AES_SIZE;
+	}
+  return 0; 
+}
+
+int
+ndn_decrypter_cbc_decrypt(ndn_decrypter_t* decrypter, uint8_t* aes_iv)
+{
+  uint8_t* input_start = decrypter->input_value + TC_AES_BLOCK_SIZE;
+ 	if (tc_cbc_mode_decrypt(decrypter->output_value, decrypter->output_size, 
+      input_start, decrypter->input_size, aes_iv, &decrypter->cipher) == 0) 
+  {
+    return NDN_SEC_WRONG_AES_SIZE;
+	}
+  return 0;
+}
+
+
+
 #ifdef __cplusplus
 }
 #endif
