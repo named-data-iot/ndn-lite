@@ -37,8 +37,7 @@ typedef struct ndn_decrypter {
 static inline void
 ndn_encrypter_init(ndn_encrypter_t* encrypter, const uint8_t* key_value, const uint8_t key_size)
 {
-  if (key_size < 16)
-  {
+  if (key_size < 16) {
     return NDN_SEC_WRONG_AES_SIZE;
   }
   tc_aes128_set_encrypt_key(&encrypter->cipher, key_value);
@@ -46,12 +45,10 @@ ndn_encrypter_init(ndn_encrypter_t* encrypter, const uint8_t* key_value, const u
 }
 
 static inline int
-ndn_encrypter_set_buffer(ndn_encrypter_t* encrypter, uint8_t* input_value, uint8_t input_size, 
+ndn_encrypter_set_buffer(ndn_encrypter_t* encrypter, uint8_t* input_value, uint8_t input_size,
                          uint8_t* output_value, uint8_t output_size)
 {
-  if (input_size != TC_AES_BLOCK_SIZE  ||
-      output_size != TC_AES_BLOCK_SIZE)
-  {
+  if (input_size != TC_AES_BLOCK_SIZE || output_size != TC_AES_BLOCK_SIZE) {
     return NDN_SEC_WRONG_AES_SIZE;
   }
   encrypter->input_value = input_value;
@@ -62,11 +59,10 @@ ndn_encrypter_set_buffer(ndn_encrypter_t* encrypter, uint8_t* input_value, uint8
 }
 
 static inline int
-ndn_encrypter_cbc_set_buffer(ndn_encrypter_t* encrypter, uint8_t* input_value, uint8_t input_size, 
-                         uint8_t* output_value, uint8_t output_size)
+ndn_encrypter_cbc_set_buffer(ndn_encrypter_t* encrypter, uint8_t* input_value, uint8_t input_size,
+                             uint8_t* output_value, uint8_t output_size)
 {
-  if (input_size + TC_AES_BLOCK_SIZE != output_size)
-  {
+  if (input_size + TC_AES_BLOCK_SIZE != output_size) {
     return NDN_SEC_WRONG_AES_SIZE;
   }
   encrypter->input_value = input_value;
@@ -79,29 +75,26 @@ ndn_encrypter_cbc_set_buffer(ndn_encrypter_t* encrypter, uint8_t* input_value, u
 int
 ndn_encrypter_encrypt(ndn_encrypter_t* encrypter)
 {
-  if (tc_aes_encrypt(encrypter->output_value, encrypter->input_value, &encrypter->cipher) == 0)
-  {
+  if (tc_aes_encrypt(encrypter->output_value, encrypter->input_value, &encrypter->cipher) == 0) {
     return NDN_SEC_WRONG_AES_SIZE;
   }
-  return 0; 
+  return 0;
 }
 
 int
 ndn_encrypter_cbc_encrypt(ndn_encrypter_t* encrypter, uint8_t* aes_iv)
 {
   if (tc_cbc_mode_encrypt(encrypter->output_value, encrypter->input_size + TC_AES_BLOCK_SIZE,
-      encrypter->input_value, encrypter->input_size, aes_iv, &encrypter->cipher) == 0)
-  {
+                          encrypter->input_value, encrypter->input_size, aes_iv, &encrypter->cipher) == 0) {
     return NDN_SEC_WRONG_AES_SIZE;
   }
-  return 0; 
+  return 0;
 }
 
 static inline int
 ndn_decrypter_init(ndn_decrypter_t* decrypter, const uint8_t* key_value, const uint8_t key_size)
 {
-  if (key_size < 16)
-  {
+  if (key_size < 16) {
     return NDN_SEC_WRONG_AES_SIZE;
   }
   tc_aes128_set_encrypt_key(&decrypter->cipher, key_value);
@@ -109,12 +102,10 @@ ndn_decrypter_init(ndn_decrypter_t* decrypter, const uint8_t* key_value, const u
 }
 
 static inline int
-ndn_decrypter_set_buffer(ndn_decrypter_t* decrypter, uint8_t* input_value, uint8_t input_size, 
+ndn_decrypter_set_buffer(ndn_decrypter_t* decrypter, uint8_t* input_value, uint8_t input_size,
                          uint8_t* output_value, uint8_t output_size)
 {
-  if (input_size != TC_AES_BLOCK_SIZE  ||
-      output_size != TC_AES_BLOCK_SIZE)
-  {
+  if (input_size != TC_AES_BLOCK_SIZE || output_size != TC_AES_BLOCK_SIZE) {
     return NDN_SEC_WRONG_AES_SIZE;
   }
   decrypter->input_value = input_value;
@@ -125,11 +116,10 @@ ndn_decrypter_set_buffer(ndn_decrypter_t* decrypter, uint8_t* input_value, uint8
 }
 
 static inline int
-ndn_decrypter_cbc_set_buffer(ndn_decrypter_t* decrypter, uint8_t* input_value, uint8_t input_size, 
-                         uint8_t* output_value, uint8_t output_size)
+ndn_decrypter_cbc_set_buffer(ndn_decrypter_t* decrypter, uint8_t* input_value, uint8_t input_size,
+                             uint8_t* output_value, uint8_t output_size)
 {
-  if (output_size != input_size) 
-  {
+  if (output_size != input_size) {
     return NDN_SEC_WRONG_AES_SIZE;
   }
   decrypter->input_value = input_value;
@@ -142,20 +132,18 @@ ndn_decrypter_cbc_set_buffer(ndn_decrypter_t* decrypter, uint8_t* input_value, u
 int
 ndn_decrypter_decrypt(ndn_decrypter_t* decrypter)
 {
-  if (tc_aes_decrypt(decrypter->output_value, decrypter->input_value, &decrypter->cipher) == 0)
-  {
+  if (tc_aes_decrypt(decrypter->output_value, decrypter->input_value, &decrypter->cipher) == 0) {
     return NDN_SEC_WRONG_AES_SIZE;
   }
-  return 0; 
+  return 0;
 }
 
 int
 ndn_decrypter_cbc_decrypt(ndn_decrypter_t* decrypter, uint8_t* aes_iv)
 {
   uint8_t* input_start = decrypter->input_value + TC_AES_BLOCK_SIZE;
-  if (tc_cbc_mode_decrypt(decrypter->output_value, decrypter->output_size, 
-      input_start, decrypter->input_size, aes_iv, &decrypter->cipher) == 0) 
-  {
+  if (tc_cbc_mode_decrypt(decrypter->output_value, decrypter->output_size,
+                          input_start, decrypter->input_size, aes_iv, &decrypter->cipher) == 0) {
     return NDN_SEC_WRONG_AES_SIZE;
   }
   return 0;
