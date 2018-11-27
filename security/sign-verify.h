@@ -66,8 +66,8 @@ int
 ndn_verifier_sha256_verify(ndn_verifier_t* verifier);
 
 int
-ndn_verifier_ecdsa_verify(ndn_verifier_t* verifier, const uint8_t* pub_key_value, uint32_t pub_key_size,
-                             uint8_t ecdsa_type);
+ndn_verifier_ecdsa_verify(ndn_verifier_t* verifier, const uint8_t* pub_key_value,
+                          uint32_t pub_key_size, uint8_t ecdsa_type);
 
 int
 ndn_verifier_hmac_verify(ndn_verifier_t* verifier, const uint8_t* key_value, uint32_t key_size);
