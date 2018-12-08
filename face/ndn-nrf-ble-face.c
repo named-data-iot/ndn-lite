@@ -1,3 +1,12 @@
+/*
+ * Copyright (C) Edward Lu
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ *
+ * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
+ */
 
 #include "ndn-nrf-ble-face.h"
 #include "../encode/data.h"
@@ -24,7 +33,7 @@ ndn_nrf_ble_face_up(struct ndn_face_intf* self)
 
 int
 ndn_nrf_ble_face_send(struct ndn_face_intf* self, const ndn_name_t* name,
-                         const uint8_t* packet, uint32_t size)
+                      const uint8_t* packet, uint32_t size)
 {
 
   (void)self;
@@ -86,11 +95,10 @@ ndn_nrf_ble_face_construct(uint16_t face_id)
 //================================================================
 
 void
-ndn_nrf_ble_received(const uint8_t *p_data, uint8_t length) {
-
+ndn_nrf_ble_received(const uint8_t *p_data, uint8_t length)
+{
   printf("RX frame, payload len %u: \n", (unsigned) length);
 
-  ndn_face_receive(&nrf_ble_face.intf, p_data + NDN_NRF_BLE_ADV_PAYLOAD_HEADER_LENGTH, 
-    length - NDN_NRF_BLE_ADV_PAYLOAD_HEADER_LENGTH);
-
+  ndn_face_receive(&nrf_ble_face.intf, p_data + NDN_NRF_BLE_ADV_PAYLOAD_HEADER_LENGTH,
+                   length - NDN_NRF_BLE_ADV_PAYLOAD_HEADER_LENGTH);
 }

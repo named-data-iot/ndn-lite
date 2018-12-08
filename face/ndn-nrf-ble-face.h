@@ -1,10 +1,18 @@
+/*
+ * Copyright (C) Edward Lu
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ *
+ * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
+ */
 
 #ifndef NDN_NRF_BLE_FACE_H
 #define NDN_NRF_BLE_FACE_H
 
 #include "../forwarder/forwarder.h"
-
-#include "../adaptation/nrf-sdk-ble.h"
+#include "../adaptation/ndn-nrf-sdk-ble.h"
 
 #ifdef __cplusplus
 extern "C" {
