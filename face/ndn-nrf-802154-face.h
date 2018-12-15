@@ -27,8 +27,8 @@
 extern "C" {
 #endif
 
-#define NDN_NRF_802154_MAX_MESSAGE_SIZE 127
-#define NDN_NRF_802154_MAX_PAYLOAD_SIZE 102
+#define NDN_NRF_802154_MAX_MESSAGE_SIZE 50
+#define NDN_NRF_802154_MAX_PAYLOAD_SIZE 50
 #define NDN_NRF_802154_CHANNEL 23
 
 typedef void (*ndn_on_error_callback_t)(int error_code);
