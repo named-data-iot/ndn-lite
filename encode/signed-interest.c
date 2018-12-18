@@ -201,7 +201,7 @@ ndn_signed_interest_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_interest_t*
     return NDN_OVERSIZE;
 
   // set signature info
-  _prepare_signature_info(interest, NDN_SIG_TYPE_ECDSA_SHA256, producer_identity, hmac_key->key_id);
+  _prepare_signature_info(interest, NDN_SIG_TYPE_HMAC_SHA256, producer_identity, hmac_key->key_id);
 
   // encode signed interest parameter block
   uint8_t params_block_value[NDN_SIGNED_INTEREST_PARAMS_MAX_SIZE] = {0};

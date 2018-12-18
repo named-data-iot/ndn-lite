@@ -9,7 +9,6 @@
  */
 
 #include "service-discovery.h"
-#include "stdbool.h"
 
 static ndn_sd_context_t sd_context;
 
