@@ -100,10 +100,12 @@ ndn_interest_set_HopLimit(ndn_interest_t* interest, uint8_t hop)
 }
 
 static inline void
-ndn_interest_set_Parameters(ndn_interest_t* interest, const interest_params_t* parameters)
+ndn_interest_set_Parameters(ndn_interest_t* interest,
+                            const uint8_t* params_value, uint32_t params_size)
 {
   interest->enable_Parameters = 1;
-  interest->parameters = *parameters;
+  memcpy(interest->parameters.value, params_value, params_size);
+  interest->parameters.size = params_size;
 }
 
 // used only for unsigned Interest

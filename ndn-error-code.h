@@ -41,4 +41,7 @@
 // Face Error
 #define NDN_FWD_APP_FACE_CB_TABLE_FULL -50
 
+// Service Discovery
+#define NDN_SD_NO_MATCH_SERVCE -51
+
 #endif // NDN_ERROR_CODE_H
