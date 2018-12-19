@@ -61,8 +61,23 @@ enum {
 
   // Command Interest
   TLV_SignedInterestParameters = 60,
-  TLV_SignedInterestTimestamp = 61
+  TLV_SignedInterestTimestamp = 61,
 };
+
+enum {
+  // access control
+  TLV_AC_KEY_TYPE_TYPE = 128,
+  TLV_ECDH_PUB_TYPE = 129,
+  TLV_SALT_TYPE = 130,
+  TLV_AC_KEY_LIFETIME_TYPE = 131,
+  TLV_CIPHER_DK_TYPE = 132,
+  TLV_ENCRYPTED_CONTENT = 133,
+  TLV_AES_IV_TYPE = 134,
+  TLV_ENCRYPTED_PAYLOAD_TYPE = 135,
+
+  // service discovery
+  TLV_SD_STATUS_TYPE = 136
+}
 
 #ifdef __cplusplus
 }
