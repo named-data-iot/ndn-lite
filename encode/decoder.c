@@ -7,7 +7,9 @@
  */
 
 #include "decoder.h"
-#include <memory.h>
+//#include <memory.h>
+
+#include <string.h>
 
 int
 decoder_get_buffer_value(ndn_decoder_t* decoder, ndn_buffer_t* buffer)

@@ -7,7 +7,9 @@
  */
 
 #include "encoder.h"
-#include <memory.h>
+//#include <memory.h>
+
+#include <string.h>
 
 int
 encoder_append_buffer_value(ndn_encoder_t* encoder, const ndn_buffer_t* buffer)

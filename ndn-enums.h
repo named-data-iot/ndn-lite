@@ -10,7 +10,7 @@
 #define NDN_ENUMS_H
 
 // face state
-enum {
+;enum {
   NDN_FACE_STATE_DOWN = 0,
   NDN_FACE_STATE_UP = 1,
   NDN_FACE_STATE_DESTROYED = 2,
