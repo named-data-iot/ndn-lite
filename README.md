@@ -14,9 +14,20 @@ Fundamental NDN Features provided by ndn-lite
 * lightweight NDN forwarding module realization
 
 Application Support Features provided by ndn-lite
-* Ease-of-use Security Bootstrapping Module to achieve efficient and secured trust anchor installation and identity certificate issuance
-* Lightweight Name-based Access Control to provide data confidentiality and control of access to data
-* Lightweight Service Discovery Protocol Module to enable an application provide services to the network or utilize existing services in the network system
+* Ease-of-use Security Bootstrapping Module to achieve efficient and secured trust anchor installation and identity certificate issuance.
+* Lightweight Name-based Access Control to provide data confidentiality and control of access to data. Check the protocol details at [here](https://github.com/Zhiyi-Zhang/ndn_standalone/wiki/Access-Control)
+* Lightweight Service Discovery Protocol Module to enable an application provide services to the network or utilize existing services in the network system. Check the protocol details at [here](https://github.com/Zhiyi-Zhang/ndn_standalone/wiki/Service-Discovery)
+
+Code Base Structure
+-----------------
+
+* `./encode` directory: NDN packet encoding and decoding.
+* `./forwarder` directory: NDN lightweight forwarder implementation and Network Face abstraction.
+* `./face` directory: The implementation of network face and application face. Each face instance may require the support from the hardware/OS adaptation
+* `./security` directory: Security support. We have integrated tinycrypt and micro-ecc into this directory.
+* `./app-support` directory: Access Control, Service Discovery, and other high-level modules that can facilitate application development.
+* `./adaptation` directory: Hardware/OS adaptation. When using NDN-Lite, developers are supposed to select one or more adaptations for the platform/OS they are using for their application development.
+
 
 Integrating ndn-lite Into Your Project
 --------------------------------------
@@ -39,7 +50,7 @@ Adding the root directory into your compiler's include search path.
 For example,
 ```
 # In the MakeFile
-CFLAGS += /path/to/ndn-lite
+CFLAGS += -I/path/to/ndn-lite
 ```
 
 #### Step 3 ####
