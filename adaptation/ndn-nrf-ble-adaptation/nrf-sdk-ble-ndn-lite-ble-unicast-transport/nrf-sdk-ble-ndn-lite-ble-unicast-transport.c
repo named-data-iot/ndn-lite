@@ -24,7 +24,7 @@
 #include "../nrf-sdk-ble-error-check.h"
 #include "../nrf-sdk-ble-consts.h"
 
-#include "../../../logger.h"
+#include "../logger.h"
 
 NRF_BLE_QWR_DEF(m_qwr); /**< Context for the Queued Write module.*/
 uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID; /**< Handle of the current connection. */

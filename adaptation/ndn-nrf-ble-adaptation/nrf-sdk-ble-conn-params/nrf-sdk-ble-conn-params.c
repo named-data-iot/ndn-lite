@@ -18,7 +18,7 @@
 #include "../nrf-sdk-ble-consts.h"
 #include "../nrf-sdk-ble-error-check.h"
 
-#include "../../../logger.h"
+#include "../logger.h"
 
 void conn_params_error_handler(uint32_t nrf_error)
 {

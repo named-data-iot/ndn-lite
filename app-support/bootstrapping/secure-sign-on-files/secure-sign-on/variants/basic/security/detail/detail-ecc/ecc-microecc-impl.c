@@ -18,7 +18,7 @@
 
 #include "../detail-ecc/ecc-nrf-crypto-impl.h"
 
-#include "../../../../../../../../../logger.h"
+#include "../../../../../../../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
 
 #include <uECC.h>
 

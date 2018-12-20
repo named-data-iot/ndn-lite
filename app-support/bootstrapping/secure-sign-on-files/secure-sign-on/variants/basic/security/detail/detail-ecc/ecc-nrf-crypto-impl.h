@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <uECC.h>
 
-#include "../../../../../../../../../logger.h"
+#include "../../../../../../../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
 
 // Includes from the "ecdsa" example of the SDK
 //**************************************//

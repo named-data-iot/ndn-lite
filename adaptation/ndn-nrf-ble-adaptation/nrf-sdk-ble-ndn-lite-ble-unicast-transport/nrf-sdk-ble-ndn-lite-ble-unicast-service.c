@@ -15,7 +15,7 @@
 
 #include "../../../../sdk_config.h"
 #include "nrf-sdk-ble-ndn-lite-ble-unicast-service.h"
-#include "../../../logger.h"
+#include "../logger.h"
 
 static const uint8_t DataTransferCharName[] = "Data Transfer";
 

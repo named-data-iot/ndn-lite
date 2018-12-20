@@ -13,7 +13,7 @@
 #include "../secure-sign-on/variants/basic/sign-on-basic-client.h"
 #include "../../../../adaptation/ndn-nrf-ble-adaptation/nrf-sdk-ble-consts.h"
 
-#include "../../../../logger.h"
+#include "../../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
 
 #define TEMP_BUF_LENGTH 500
 

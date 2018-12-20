@@ -19,7 +19,7 @@
 #include "nrf_sdh_ble.h"
 #include "nrf_sdh_soc.h"
 
-#include "../../../logger.h"
+#include "../logger.h"
 #include "../nrf-sdk-ble-consts.h"
 #include "../nrf-sdk-ble-error-check.h"
 

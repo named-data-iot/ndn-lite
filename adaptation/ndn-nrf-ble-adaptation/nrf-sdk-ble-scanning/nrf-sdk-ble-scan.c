@@ -17,7 +17,7 @@
 
 #include "../nrf-sdk-ble-consts.h"
 
-#include "../../../logger.h"
+#include "../logger.h"
 
 NRF_BLE_SCAN_DEF(m_scan); /**< Scanning module instance. */
 void (*m_on_scan)(const uint8_t *scan_data, uint8_t scan_data_len) = NULL; /**< Callback function for scan events. */

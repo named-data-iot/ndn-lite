@@ -17,7 +17,7 @@
 
 #include "../nrf-sdk-ble-consts.h"
 
-#include "../../../logger.h"
+#include "../logger.h"
 
 #define TEMP_BUF_LENGTH 500
 

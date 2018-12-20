@@ -19,7 +19,7 @@
 #include "variants/ecc_256/sign-on-basic-ecc-256-consts.h"
 
 #include "../../tlv/sign-on-basic-tlv-helpers.h"
-#include "../../../../../../logger.h"
+#include "../../../../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
 
 enum sign_on_basic_client_init_result sign_on_basic_client_init(
     uint8_t variant,

@@ -11,7 +11,7 @@
 #ifndef NRF_SDK_BLE_ERROR_CHECK_H
 #define NRF_SDK_BLE_ERROR_CHECK_H
 
-#include "../../logger.h"
+#include "logger.h"
 #include "app_error.h"
 
 /**@brief Macro for calling error handler function if supplied error code any other than NRF_SUCCESS or NRF_ERROR_INVALID_STATE
