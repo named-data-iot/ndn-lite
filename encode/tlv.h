@@ -64,20 +64,20 @@ enum {
   TLV_SignedInterestTimestamp = 61,
 };
 
+// App Support Specific
 enum {
-  // access control
-  TLV_AC_KEY_TYPE_TYPE = 128,
-  TLV_ECDH_PUB_TYPE = 129,
-  TLV_SALT_TYPE = 130,
-  TLV_AC_KEY_LIFETIME_TYPE = 131,
-  TLV_CIPHER_DK_TYPE = 132,
-  TLV_ENCRYPTED_CONTENT = 133,
-  TLV_AES_IV_TYPE = 134,
-  TLV_ENCRYPTED_PAYLOAD_TYPE = 135,
+  TLV_AC_KEY_TYPE = 128,
+  TLV_AC_KEY_ID = 128,
+  TLV_AC_ECDH_PUB = 130,
+  TLV_AC_SALT = 131,
+  TLV_AC_KEY_LIFETIME = 132,
+  TLV_AC_CIPHER_DK = 133,
+  TLV_AC_ENCRYPTED_CONTENT = 134,
+  TLV_AC_AES_IV = 135,
+  TLV_AC_ENCRYPTED_PAYLOAD = 136,
 
-  // service discovery
-  TLV_SD_STATUS_TYPE = 136
-}
+  TLV_SD_STATUS = 137,
+};
 
 #ifdef __cplusplus
 }

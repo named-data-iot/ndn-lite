@@ -139,7 +139,6 @@ encoder_append_uint16_value(ndn_encoder_t* encoder, uint16_t value)
   return 0;
 }
 
-
 static inline int
 encoder_append_uint32_value(ndn_encoder_t* encoder, uint32_t value)
 {
@@ -165,6 +164,11 @@ static inline int
 encoder_move_backward(ndn_encoder_t* encoder, uint32_t step){
   encoder->offset -= step;
   return 0;
+}
+
+static inline uint32_t
+encoder_get_offset(ndn_encoder_t* encoder){
+  return encoder->offset;
 }
 
 #ifdef __cplusplus

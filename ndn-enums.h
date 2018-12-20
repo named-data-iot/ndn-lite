@@ -42,11 +42,17 @@ enum {
 
 // ecdsa curve type
 enum {
-  NDN_ECDSA_CURVE_SECP160R1 = 20,
+  NDN_ECDSA_CURVE_SECP160R1 = 21,
   NDN_ECDSA_CURVE_SECP192R1 = 24,
   NDN_ECDSA_CURVE_SECP224R1 = 28,
   NDN_ECDSA_CURVE_SECP256R1 = 32,
   NDN_ECDSA_CURVE_SECP256K1 = 33,
+};
+
+// access control key type
+enum {
+  NDN_AC_EK = 0,
+  NDN_AC_DK = 1,
 };
 
 #endif // NDN_ENUMS_H

@@ -242,7 +242,8 @@ ndn_sd_on_advertisement_process(const ndn_interest_t* interest)
   name_component_t toDecode;
   for (;decoder.input_size - decoder.offset > 0;) {
     name_component_tlv_decode(&decoder, &toDecode);
-    _neighbor_add_update_service(entry, toDecode.value, toDecode.size, NDN_APPSUPPORT_SERVICE_AVIALABLE);
+    _neighbor_add_update_service(entry, toDecode.value, toDecode.size,
+                                 NDN_APPSUPPORT_SERVICE_AVIALABLE);
   }
   return 0;
 }
@@ -268,7 +269,7 @@ ndn_sd_on_query_process(const ndn_interest_t* interest, ndn_data_t* response)
     uint8_t buffer[3];
     ndn_encoder_t encoder;
     encoder_init(&encoder, buffer, sizeof(buffer));
-    encoder_append_type(&encoder, TLV_SD_STATUS_TYPE);
+    encoder_append_type(&encoder, TLV_SD_STATUS);
     encoder_append_length(&encoder, 1);
     encoder_append_byte_value(&encoder, entry->status);
 

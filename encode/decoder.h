@@ -148,6 +148,10 @@ decoder_move_backward(ndn_decoder_t* decoder, uint32_t step){
   return 0;
 }
 
+static inline uint32_t
+decoder_get_offset(ndn_decoder_t* decoder){
+  return decoder->offset;
+}
 #ifdef __cplusplus
 }
 #endif

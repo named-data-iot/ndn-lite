@@ -133,8 +133,6 @@ ndn_signer_hmac_sign(ndn_signer_t* signer, const uint8_t* key_value, uint32_t ke
 {
   if (signer->output_used_size + 32 > signer->output_max_size)
     return NDN_OVERSIZE;
-  if (key_size != 32)
-    return NDN_SEC_WRONG_KEY_SIZE;
   hmac_sha256(key_value, key_size, signer->input_value, signer->input_size, signer->output_value);
   signer->output_used_size += 32;
   return 0;
@@ -196,8 +194,6 @@ ndn_verifier_hmac_verify(ndn_verifier_t* verifier, const uint8_t* key_value, uin
 {
   if (verifier->sig_size != 32)
     return NDN_SEC_WRONG_SIG_SIZE;
-  if (key_size != 32)
-    return NDN_SEC_WRONG_KEY_SIZE;
 
   uint8_t input_hmac[32] = {0};
   hmac_sha256(key_value, key_size, verifier->input_value, verifier->input_size, input_hmac);

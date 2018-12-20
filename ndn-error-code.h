@@ -44,4 +44,7 @@
 // Service Discovery
 #define NDN_SD_NO_MATCH_SERVCE -51
 
+// Access Control
+#define NDN_AC_UNRECOGNIZE_KEY_REQUEST -52
+
 #endif // NDN_ERROR_CODE_H

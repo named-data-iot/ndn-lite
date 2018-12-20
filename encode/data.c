@@ -26,8 +26,14 @@ _ndn_data_prepare_unsigned_block(ndn_encoder_t* encoder, const ndn_data_t* data)
 
 static void
 _prepare_signature_info(ndn_data_t* data, uint8_t signature_type,
-                        const ndn_name_t* producer_identity, const uint8_t* key_id)
+                        const ndn_name_t* producer_identity, uint32_t key_id)
 {
+  uint8_t raw_key_id[4] = {0};
+  raw_key_id[0] = (key_id >> 24) & 0xFF;
+  raw_key_id[1] = (key_id >> 16) & 0xFF;
+  raw_key_id[2] = (key_id >> 8) & 0xFF;
+  raw_key_id[3] = key_id & 0xFF;
+
   ndn_signature_init(&data->signature, signature_type);
   ndn_signature_set_key_locator(&data->signature, producer_identity);
 
@@ -39,7 +45,7 @@ _prepare_signature_info(ndn_data_t* data, uint8_t signature_type,
   data->signature.key_locator_name.components_size++;
   pos = data->signature.key_locator_name.components_size;
   name_component_from_buffer(&data->signature.key_locator_name.components[pos],
-                             TLV_GenericNameComponent, key_id, 4);
+                             TLV_GenericNameComponent, raw_key_id, 4);
   data->signature.key_locator_name.components_size++;
 }
 
