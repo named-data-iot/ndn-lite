@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang
+ * Copyright (C) 2018 Zhiyi Zhang, Tianyuan Yu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -26,6 +26,7 @@
  */
 
 #include "../ndn-constants.h"
+#include "../ndn-error-code.h"
 #include <inttypes.h>
 #include <string.h>
 
@@ -73,11 +74,11 @@ static inline int
 ndn_fragmenter_fragment(ndn_fragmenter_t* fragmenter, uint8_t* fragmented)
 {
   if (fragmenter->counter == fragmenter->total_frag_num)
-    return NDN_ERROR_FRAG_NO_MORE_FRAGS;
+    return NDN_FRAG_NO_MORE_FRAGS;
 
   memset(fragmented, 0, fragmenter->fragment_max_size);
 
-  uint8_t is_last = (fragmenter->counter == fragmenter->total_frag_num - 1)? 1:0;
+  uint8_t is_last = (fragmenter->counter == fragmenter->total_frag_num - 1)? 1 : 0;
   uint8_t seq = fragmenter->counter % (NDN_FRAG_MAX_SEQ_NUM + 1);
 
   // header
@@ -127,7 +128,7 @@ ndn_frag_assembler_assemble_frag(ndn_frag_assembler_t* assembler, uint8_t* frag,
   // get seq
   uint8_t seq = frag[0] & NDN_FRAG_SEQ_MASK;
   if (seq != assembler->seq)
-    return NDN_ERROR_FRAG_OUT_OF_ORDER;
+    return NDN_FRAG_OUT_OF_ORDER;
   assembler->seq += 1;
   if (assembler->seq == NDN_FRAG_MAX_SEQ_NUM + 1)
     assembler->seq = 0;
@@ -135,12 +136,12 @@ ndn_frag_assembler_assemble_frag(ndn_frag_assembler_t* assembler, uint8_t* frag,
   // get identifier
   uint16_t id = ((uint16_t)frag[1] << 8) + (uint16_t)frag[2];
   if (assembler->frag_identifier != id && first_time == 0)
-    return NDN_ERROR_FRAG_WRONG_IDENTIFIER;
+    return NDN_FRAG_WRONG_IDENTIFIER;
   if (first_time)
     assembler->frag_identifier = id;
 
   if (assembler->original_max_size < assembler->offset + fra_size - 3)
-    return NDN_ERROR_OVERSIZE;
+    return NDN_OVERSIZE;
 
   memcpy(&assembler->original[assembler->offset], &frag[3], fra_size - 3);
   assembler->offset += fra_size - 3;
