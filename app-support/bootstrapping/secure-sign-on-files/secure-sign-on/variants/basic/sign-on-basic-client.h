@@ -18,29 +18,34 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/**@brief Generic function interface for generating a sha256 hash. Returns SEC_OP_SUCCESS on success,
- *          SEC_OP_FAILURE on failure.
+/**@brief Generic function interface for generating a sha256 hash.
  *
  * @param[in]   payload                    Payload to be hashed.
  * @param[in]   payload_len                Length of payload to be hashed.
  * @param[in]   output                     Buffer where hash will be outputted. Hash will be of length 
  *                                           SIGN_ON_BASIC_SHA256_HASH_SIZE.
  *
+ * @return Returns SEC_OP_SUCCESS on success, SEC_OP_FAILURE on failure.
+ *
  */
 typedef int (*sign_on_basic_sec_gen_sha256_hash)(const uint8_t *payload, uint16_t payload_len, 
                                                      uint8_t *output);
 
-/**@brief Generic function interface for generating the N1 keypair. Returns SEC_OP_SUCCESS on success,
- *          SEC_OP_FAILURE on failure.
+/**@brief Generic function interface for generating the N1 keypair. Specific details regarding the keys
+ *          of the N1 key pair are described in the sign on basic variant implementation.
  *
- * @param[in]   pub_key_buf                Pre-allocated buffer where generated public key will be stored.
- * @param[in]   pub_key_buf_len            Length of pub_key_buf.
- * @param[in]   pub_key_output_len         Variable where length of public key will be stored, if generation
- *                                           is successful.
- * @param[in]   pri_key_buf                Pre-allocated buffer where generated private key will be stored.
- * @param[in]   pri_key_buf_len            Length of pri_key_buf.
- * @param[in]   pri_key_output_len         Variable where length of private key will be stored, if generation
- *                                           is successful.
+ * @param[in]   N1_pub_key_buf             Pre-allocated buffer where generated N1 key pair public key
+ *                                           will be stored.
+ * @param[in]   N1_pub_key_buf_len         Length of N1_pub_key_buf.
+ * @param[in]   N1_pub_key_output_len      Variable where length of N1 key pair public key will be stored, 
+ *                                           if generation is successful.
+ * @param[in]   N1_pri_key_buf             Pre-allocated buffer where generated N1 key pair private key 
+ *                                           will be stored.
+ * @param[in]   N1_pri_key_buf_len         Length of N1_pri_key_buf.
+ * @param[in]   N1_pri_key_output_len      Variable where length of N1 key pair private key will be stored, 
+ *                                           if generation is successful.
+ *
+ * @return Returns SEC_OP_SUCCESS on success, SEC_OP_FAILURE on failure.
  *
  */
 typedef int (*sign_on_basic_sec_gen_n1_keypair)(uint8_t *pub_key_buf, uint16_t pub_key_buf_len, 
@@ -49,111 +54,161 @@ typedef int (*sign_on_basic_sec_gen_n1_keypair)(uint8_t *pub_key_buf, uint16_t p
                                                  uint16_t *pri_key_output_len);
 
 
-/**@brief Generic function interface for generating KT. Returns SEC_OP_SUCCESS on success,
- *          SEC_OP_FAILURE on failure.
+/**@brief Generic function interface for generating KT. Specific details regarding the keys that are
+ *          used to derive KT are described in the sign on basic variant implementation.
  *
- * @param[in]   pub_key                    Payload to be hashed.
- * @param[in]   pub_key_len                Length of payload to be hashed.
- * @param[in]   pri_key                    Payload to be hashed.
- * @param[in]   pri_key_len                Length of payload to be hashed.
+ * @param[in]   N2_pub_key                 N2 key pair public key.
+ * @param[in]   N2_pub_key_len             Length of N2 key pair public key.
+ * @param[in]   N1_pri_key                 N1 key pair private key.
+ * @param[in]   N1_pri_key_len             Length of N1 key pair private key.
  * @param[in]   output_buf                 Pre-allocated buffer where the generated KT will be stored.
  * @param[in]   output_buf_len             Length of output_buf.
  * @param[in]   output_len                 Where the length of KT will be stored upon successful 
  *                                           generation.
  *
+ * @return Returns SEC_OP_SUCCESS on success, SEC_OP_FAILURE on failure.
+ *
  */
-typedef int (*sign_on_basic_sec_gen_kt)(const uint8_t *pub_key, uint16_t pub_key_len,
-                                                    const uint8_t *pri_key, uint16_t pri_key_len,
+typedef int (*sign_on_basic_sec_gen_kt)(const uint8_t *N2_pub_key, uint16_t N2_pub_key_len,
+                                                    const uint8_t *N1_pri_key, uint16_t N1_pri_key_len,
                                                     uint8_t *output_buf, uint16_t output_buf_len, 
                                                     uint16_t *output_len);
 
-/**@brief Generic function interface for generating signature of bootstrapping request.
+/**@brief Generic function interface for generating signature of bootstrapping request. Specific details
+ *          regarding the signature of the bootstrapping request are described in the sign on basic
+ *          variant implementation.
  *
- * @param[in]   pri_key                    Private key used to generate signature.
- * @param[in]   payload                    Payload to be signed.
+ * @param[in]   KS_pri_p                   Pointer to KS private key, which will be used to generate 
+ *                                           signature.
+ * @param[in]   payload                    Payload to be signed. Currently, this is all of the bytes
+ *                                           of the bootstrapping request, excluding the packet header
+ *                                           (as in, excluding the bootstrapping request tlv type and 
+ *                                           length) and the signature tlv block (as in, excluding
+ *                                           the signature tlv, type, length, and value).
  * @param[in]   payload_len                Length of payload to be signed.
  * @param[in]   output_buf                 Pre-allocated buffer where generated signature will be stored.
  * @param[in]   output_buf_len             Length of output_buf.
  * @param[in]   output_len                 Variable where length of generated signature will be stored
  *                                           if signature generation is successful.
  *
+ * @return Returns SEC_OP_SUCCESS on success, SEC_OP_FAILURE on failure.
+ *
  */
-typedef int (*sign_on_basic_sec_gen_btstrp_rqst_sig)(const uint8_t *pri_key, const uint8_t *payload, 
+typedef int (*sign_on_basic_sec_gen_btstrp_rqst_sig)(const uint8_t *KS_pri_p, const uint8_t *payload, 
                                                    uint16_t payload_len, uint8_t *output_buf,  
                                                    uint16_t output_buf_len, uint16_t *output_len);
 
-/**@brief Generic function interface for verifying signature of bootstrapping request response.
+/**@brief Generic function interface for verifying signature of bootstrapping request response. Specific
+ *          details regarding the signature of the bootstrapping request are described in the sign on
+ *          basic variant implementation.
  *
- * @param[in]   payload                    Payload over which signature will be verified.
+ * @param[in]   payload                    Payload over which signature will be verified. Currently, this  
+ *                                           is all of the bytes of the bootstrapping request response, 
+ *                                           excluding the packet header (as in, excluding the bootstrapping 
+ *                                           request response tlv type and length) and the signature tlv  
+ *                                           block (as in, excluding the signature tlv, type, length, and 
+ *                                           value).
  * @param[in]   payload_len                Length of payload.
  * @param[in]   sig                        Signature to verify.
  * @param[in]   sig_len                    Length of signature to verify.
- * @param[in]   key                        Key to use in verifying signature.
- * @param[in]   key_len                    Length of key.
+ * @param[in]   secure_sign_on_code_p      Pointer to secure sign on code, which will be used to verify
+ *                                           the signature.
+ * @param[in]   secure_sign_on_code_len    Length of secure sign on code.
+ *
+ * @return Returns SEC_OP_SUCCESS on success, SEC_OP_FAILURE on failure.
  *
  */
 typedef int (*sign_on_basic_sec_vrfy_btstrp_rqst_rspns_sig)(const uint8_t *payload, uint16_t payload_len,
                                                                 const uint8_t *sig, uint16_t sig_len,
-                                                                const uint8_t *key, uint16_t key_len);
+                                                                const uint8_t *secure_sign_on_code_p, 
+                                                                uint16_t secure_sign_on_code_len);
 
-/**@brief Generic function interface for generating signature of certificate request.
+/**@brief Generic function interface for generating signature of certificate request. Specific details
+ *          regarding the signatuer of the certificate request are described in the sign on basic
+ *          variant implementation.
  *
- * @param[in]   pri_key                    Private key used to generate signature.
- * @param[in]   payload                    Payload to be signed.
+ * @param[in]   KS_pri_p                   Pointer to KS private key, which will be used to generate 
+ *                                           signature.
+ * @param[in]   payload                    Payload to be signed. Currently, this is all of the bytes 
+ *                                           of the certificate request,  excluding the packet header 
+ *                                           (as in, excluding the certificate request tlv type
+ *                                           and length) and the signature tlv block (as in, excluding
+ *                                           the signature tlv, type, length, and value).
  * @param[in]   payload_len                Length of payload to be signed.
  * @param[in]   output_buf                 Pre-allocated buffer where generated signature will be stored.
  * @param[in]   output_buf_len             Length of output_buf.
  * @param[in]   output_len                 Variable where length of generated signature will be stored
  *                                           if signature generation is successful.
  *
+ * @return Returns SEC_OP_SUCCESS on success, SEC_OP_FAILURE on failure.
+ *
  */
-typedef int (*sign_on_basic_sec_gen_cert_rqst_sig)(const uint8_t *pri_key, const uint8_t *payload, 
+typedef int (*sign_on_basic_sec_gen_cert_rqst_sig)(const uint8_t *KS_pri_p, const uint8_t *payload, 
                                                    uint16_t payload_len, uint8_t *output_buf,  
                                                    uint16_t output_buf_len, uint16_t *output_len);
 
-/**@brief Generic function interface for verifying signature of certificate request response.
+/**@brief Generic function interface for verifying signature of certificate request response. Specific
+ *          details regarding the certificate request response signature are described in the sign on
+ *          basic variant implementation.
  *
- * @param[in]   payload                    Payload over which signature will be verified.
+ * @param[in]   payload                    Payload over which signature will be verified. Currently, this  
+ *                                           is all of the bytes of the certificate request response, 
+ *                                           excluding the packet header (as in, excluding the certificate 
+ *                                           request response tlv type and length) and the signature tlv  
+ *                                           block (as in, excluding the signature tlv, type, length, and 
+ *                                           value).
  * @param[in]   payload_len                Length of payload.
  * @param[in]   sig                        Signature to verify.
  * @param[in]   sig_len                    Length of signature to verify.
- * @param[in]   key                        Key to use in verifying signature.
- * @param[in]   key_len                    Length of key.
+ * @param[in]   KT_p                       Pointer to KT, which will be used to verify the signature.
+ * @param[in]   KT_len                     Length of KT.
+ *
+ * @return Returns SEC_OP_SUCCESS on success, SEC_OP_FAILURE on failure.
  *
  */
 typedef int (*sign_on_basic_sec_vrfy_cert_rqst_rspns_sig)(const uint8_t *payload, uint16_t payload_len,
                                                                 const uint8_t *sig, uint16_t sig_len,
-                                                                const uint8_t *key, uint16_t key_len);
+                                                                const uint8_t *KT_p, uint16_t KT_len);
 
 /**@brief Generic function interface for decrypting the encrypted KD private key in the certificate request 
- *          response. Returns SEC_OP_SUCCESS on success, SEC_OP_FAILURE on failure.
+ *          response. Specific details regarding the encrypted KD private key are described in the sign on
+ *          basic variant implementation.
  *
- * @param[in]   key                        Key to use for decryption.
- * @param[in]   key_len                    Length of decryption key.
+ * @param[in]   KT_p                       Pointer to KT, which will be used for decryption.
+ * @param[in]   KT_len                     Length of KT.
  * @param[in]   encrypted_payload          Encrypted payload to be decrypted. 
  * @param[in]   decrypted_payload          Buffer where decrypted payload will be stored.
  * @param[in]   decrypted_payload_len      Pointer to variable that will be filled with size of decrypted
  *                                           payload upon successful decryption.
  *
+ * @return Returns SEC_OP_SUCCESS on success, SEC_OP_FAILURE on failure.
  */
-typedef int (*sign_on_basic_sec_decrypt_kd_pri)(uint8_t *key, uint16_t key_len, 
+typedef int (*sign_on_basic_sec_decrypt_kd_pri)(uint8_t *KT_p, uint16_t KT_len, 
                                                               const uint8_t *encrypted_kd_pri, 
                                                               uint16_t encrypted_kd_pri_len,
                                                               uint8_t *decrypted_kd_pri, 
                                                               uint16_t *decrypted_kd_pri_len);
 
-/**@brief Generic function interface for generating signature of finish message.
- *
- * @param[in]   pri_key                    Private key used to generate signature.
- * @param[in]   payload                    Payload to be signed.
+/**@brief Generic function interface for generating signature of finish message. Specific details regarding
+ *          the signature of the finish message are described in the sign on basic variant implementation.
+ * 
+ * @param[in]   KS_pri_p                   Pointer to KS private key, which will be used to generate 
+ *                                           signature.
+ * @param[in]   payload                    Payload to be signed. Currently, this is all of the bytes
+ *                                           of the finish message, excluding the packet header (as
+ *                                           in, excluding the finish message tlv type and length)
+ *                                           and the signature tlv block (as in, excluding the 
+ *                                           signature tlv, type, length, and value).
  * @param[in]   payload_len                Length of payload to be signed.
  * @param[in]   output_buf                 Pre-allocated buffer where generated signature will be stored.
  * @param[in]   output_buf_len             Length of output_buf.
  * @param[in]   output_len                 Variable where length of generated signature will be stored
  *                                           if signature generation is successful.
  *
+ * @return Returns SEC_OP_SUCCESS on success, SEC_OP_FAILURE on failure.
+ *
  */
-typedef int (*sign_on_basic_sec_gen_fin_msg_sig)(const uint8_t *pri_key, const uint8_t *payload, 
+typedef int (*sign_on_basic_sec_gen_fin_msg_sig)(const uint8_t *KS_pri_p, const uint8_t *payload, 
                                                    uint16_t payload_len, uint8_t *output_buf,  
                                                    uint16_t output_buf_len, uint16_t *output_len);
 
@@ -306,7 +361,7 @@ enum sign_on_basic_client_init_result {
   SIGN_ON_BASIC_CLIENT_INIT_FAILED_TO_SET_SEC_INTF,
 };
 
-/**@brief Function to initialize state for a sign_on_basic_client_t. All buffers passed 
+/**@brief Initialize state for a sign_on_basic_client_t. All buffers passed 
  *        in will be copied into the sign_on_basic_client basic client.
  *
  * @param[in]   variant                    This is the variant of the Sign-On basic protocol that you
@@ -346,7 +401,7 @@ enum cnstrct_btstrp_rqst_result {
   CNSTRCT_BTSTRP_RQST_FAILED_TO_GENERATE_SIG,
 };
 
-/**@brief Function to construct a bootstrapping request.
+/**@brief Construct a bootstrapping request.
  *        For a given sign on exchange:
  *          Should be called after sign_on_basic_client_init. 
  *          Should be called before prcs_btstrp_rqst_rspns, cnstrct_cert_rqst, and prcs_cert_rqst_rspns.
@@ -373,7 +428,7 @@ enum prcs_btstrp_rqst_rspns_result {
   PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GENERATE_KT,
 };
 
-/**@brief Function to process a bootstrapping request response. 
+/**@brief Process a bootstrapping request response. 
  *        For a given sign on exchange:
  *          Should be called after sign_on_basic_client_init and prcs_btstrp_rqst_rspns. 
  *          Should be called before cnstrct_cert_rqst, and prcs_cert_rqst_rspns.
@@ -400,7 +455,7 @@ enum cnstrct_cert_rqst_result {
   CNSTRCT_CERT_RQST_FAILED_TO_GENERATE_SIG,
 };
 
-/**@brief Function to construct a certificate request.
+/**@brief Construct a certificate request.
  *        For a given sign on exchange:
  *          Should be called after sign_on_basic_client_init, and prcs_btstrp_rqst_rspns.
  *          Should be called before prcs_cert_rqst_rspns.
@@ -425,7 +480,7 @@ enum prcs_cert_rqst_rspns_result {
   PRCS_CERT_RQST_RSPNS_FAILED_TO_DECRYPT_KD_PRI
 };
 
-/**@brief Function to process a certificate request response. 
+/**@brief Process a certificate request response. 
  *        For a given sign on exchange:
  *          Should be called after sign_on_basic_client_init, prcs_btstrp_rqst_rspns, and cnstrct_cert_rqst.
  *          Should be called before cnstrct_fin_msg.
@@ -450,7 +505,7 @@ enum cnstrct_fin_msg_result {
   CNSTRCT_FIN_MSG_FAILED_TO_GENERATE_SIG,
 };
 
-/**@brief Function to construct a sign-on basic finish message (this lets the controller know sign-on was completed
+/**@brief Construct a sign-on basic finish message (this lets the controller know sign-on was completed
  *          successfully.
  *        For a given sign on exchange:
  *          Should be called after sign_on_basic_client_init, prcs_btstrp_rqst_rspns, cnstrct_cert_rqst,

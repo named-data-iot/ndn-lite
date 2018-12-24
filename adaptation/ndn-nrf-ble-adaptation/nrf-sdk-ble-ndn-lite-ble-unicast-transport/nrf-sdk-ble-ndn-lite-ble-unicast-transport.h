@@ -46,6 +46,10 @@ typedef void (*on_hvn_tx_complete)(uint16_t conn_handle);
  */
 typedef void (*on_recvd_data)(const uint8_t *payload, uint16_t payload_len);
 
+/**@brief Callback function for an advertising stopped event.
+ */
+typedef void (*on_adv_stopped)();
+
 /**@brief Structure for callback functions for an observer of the nrf sdk ble ndn-lite
             ble unicast transport.
  *
@@ -61,6 +65,7 @@ typedef struct nrf_sdk_ble_ndn_lite_ble_unicast_transport_observer_intf {
   on_disconnected on_disconnected;
   on_hvn_tx_complete on_hvn_tx_complete;
   on_recvd_data on_recvd_data;
+  on_adv_stopped on_adv_stopped;
 } nrf_sdk_ble_ndn_lite_ble_unicast_transport_observer_t ;
 
 /**@brief Initialize the transport.

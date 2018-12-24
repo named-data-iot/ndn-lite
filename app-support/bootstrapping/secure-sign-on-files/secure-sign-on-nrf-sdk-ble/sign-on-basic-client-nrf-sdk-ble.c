@@ -38,6 +38,12 @@ void m_on_transport_hvn_tx_complete(uint16_t conn_handle) {
 
 }
 
+void m_on_transport_adv_stopped() {
+  APP_LOG("in sign-on-basic-client-ble.c, m_on_transport_adv_stopped got called\n");
+
+  nrf_sdk_ble_ndn_lite_ble_unicast_transport_adv_start();
+}
+
 void m_on_transport_mtu_rqst() {
   // after the central is done negotiating its MTU with us, we send our bootstrapping request
 
@@ -195,6 +201,7 @@ enum sign_on_basic_client_nrf_sdk_ble_construct_result sign_on_basic_client_nrf_
   observer.on_mtu_rqst = m_on_transport_mtu_rqst;
   observer.on_hvn_tx_complete = m_on_transport_hvn_tx_complete;
   observer.on_recvd_data = m_on_recvd_data_callback;
+  observer.on_adv_stopped = m_on_transport_adv_stopped;
   nrf_sdk_ble_ndn_lite_ble_unicast_transport_add_observer(observer);
 
   enum sign_on_basic_client_init_result sign_on_client_init_result;

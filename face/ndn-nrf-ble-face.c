@@ -112,6 +112,7 @@ void ndn_nrf_ble_face_destroy(struct ndn_face_intf *self) {
 
 void ndn_nrf_ble_recvd_data_ext_adv(const uint8_t *p_data, uint8_t length);
 void ndn_nrf_ble_recvd_data_unicast(const uint8_t *p_data, uint16_t length);
+void ndn_nrf_ble_legacy_adv_stopped();
 
 ndn_nrf_ble_face_t *
 ndn_nrf_ble_face_construct(uint16_t face_id) {
@@ -128,6 +129,7 @@ ndn_nrf_ble_face_construct(uint16_t face_id) {
   observer.on_hvn_tx_complete = ndn_nrf_ble_unicast_hvn_tx_complete;
   observer.on_mtu_rqst = ndn_nrf_ble_unicast_on_mtu_rqst;
   observer.on_recvd_data = ndn_nrf_ble_recvd_data_unicast;
+  observer.on_adv_stopped = ndn_nrf_ble_legacy_adv_stopped;
   nrf_sdk_ble_ndn_lite_ble_unicast_transport_add_observer(observer);
 
   nrf_ble_face.intf.up = ndn_nrf_ble_face_up;
@@ -142,6 +144,10 @@ ndn_nrf_ble_face_construct(uint16_t face_id) {
 }
 
 //================================================================
+
+void ndn_nrf_ble_legacy_adv_stopped() {
+  printf("ndn_nrf_ble_legacy_adv_stopped got called.\n");
+}
 
 void ndn_nrf_ble_unicast_on_mtu_rqst(uint16_t conn_handle) {
   printf("ndn_nrf_ble_unicast_on_mtu_rqst got called.\n");

@@ -41,6 +41,10 @@ ret_code_t sendPacket(uint16_t conn_handle, nrf_sdk_ble_ndn_lite_ble_unicast_ser
 
 void on_advertising_stopped(void) {
   APP_LOG("on_advertising_stopped in nrf-sdk-ble-transport got called\n");
+
+  for (int i = 0; i < m_num_nrf_sdk_ble_ndn_lite_ble_unicast_transport_observers; i++) {
+    m_nrf_sdk_ble_ndn_lite_ble_unicast_transport_observers[i].on_adv_stopped();
+  }
 }
 
 int nrf_sdk_ble_ndn_lite_ble_unicast_transport_adv_start() {

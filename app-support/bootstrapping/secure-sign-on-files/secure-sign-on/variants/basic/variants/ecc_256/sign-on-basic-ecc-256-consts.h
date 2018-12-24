@@ -11,8 +11,6 @@
 #ifndef SIGN_ON_BASIC_ECC_256_CONSTS_H
 #define SIGN_ON_BASIC_ECC_256_CONSTS_H
 
-#include <uECC.h>
-
 // I will just put a description of the ECC_256 variant of the sign-on protocol below:
 //
 //The main variance in the sign-on protocol comes from the different possible security implementations.

@@ -14,6 +14,8 @@
 #include "secure-sign-on/variants/basic/sign-on-basic-client-consts.h"
 #include "secure-sign-on/variants/basic/variants/ecc_256/sign-on-basic-ecc-256-consts.h"
 
+#include <stdint.h>
+
 extern const uint8_t DEVICE_IDENTIFIER[SIGN_ON_BASIC_CLIENT_DEVICE_IDENTIFIER_MAX_LENGTH];
 
 extern const uint8_t DEVICE_CAPABILITIES[SIGN_ON_BASIC_CLIENT_DEVICE_CAPABILITIES_MAX_LENGTH];
