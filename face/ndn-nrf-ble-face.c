@@ -149,6 +149,7 @@ void ndn_nrf_ble_unicast_hvn_tx_complete(uint16_t conn_handle) {
   // if current_packet_block_to_send_p isn't NULL, then that means that this notification transmission complete
   // event was due to a call to ndn_nrf_ble_face_send, rather than the sign on basic client
   if (current_packet_block_to_send_p != NULL) {
+    printf("in ndn_nrf_ble_unicast_hvn_tx_complete, current_packet_block_to_send_p wasn't NULL.\n");
     if (nrf_sdk_ble_ndn_lite_ble_unicast_transport_disconnect(ndn_nrf_ble_unicast_disconnected) == NRF_BLE_OP_FAILURE) {
       printf("nrf_sdk_ble_adv_start is being called within ndn_nrf_ble_unicast_hvn_tx_complete\n");
       // if this call fails, that means we weren't connected, so we can send right away
@@ -166,6 +167,9 @@ void ndn_nrf_ble_unicast_hvn_tx_complete(uint16_t conn_handle) {
       // to wait for the on disconnect callback
       printf("in ndn_nrf_ble_unicast_hvn_tx_complete, ndn_lite_ble_unicast_transport_disconnect returned NRF_BLE_OP_SUCCESS\n");
     }
+  }
+  else {
+    printf("in ndn_nrf_ble_unicast_hvn_tx_complete, current_packet_block_to_send_p was NULL.\n");
   }
 }
 

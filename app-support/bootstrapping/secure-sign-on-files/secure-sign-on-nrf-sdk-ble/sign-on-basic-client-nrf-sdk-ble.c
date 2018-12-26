@@ -47,6 +47,17 @@ void m_on_transport_mtu_rqst() {
 
   APP_LOG("in sign-on-basic-client-ble.c, m_on_transport_mtu_rqst got called\n");
 
+  if (m_sign_on_basic_client.status == SIGN_ON_BASIC_CLIENT_GENERATED_FINISH_MESSAGE) {
+    APP_LOG("In sign-on-basic-client-ble, saw that sign on client had already successfully "
+             "generated finish message; ignoring this mtu rqst.\n");
+    return;
+  }
+  else {
+    APP_LOG("In sign-on-basic-client-ble, got notification of mtu rqst; current state of "
+            "sign on basic client: %d\n",
+            m_sign_on_basic_client.status);
+  }
+
   ret_code_t err_code;
 
   uint16_t bootstrappingRequestBufLength = TEMP_BUF_LENGTH;
