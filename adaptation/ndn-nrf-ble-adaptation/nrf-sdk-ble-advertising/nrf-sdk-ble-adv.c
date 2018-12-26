@@ -71,7 +71,6 @@ int nrf_sdk_ble_adv_stop() {
     if (ret != NRF_ERROR_INVALID_STATE) {
       m_on_adv_stop();
     }
-    m_on_adv_stop = NULL;
   }
 
   return NRF_BLE_OP_SUCCESS;
@@ -94,9 +93,7 @@ int nrf_sdk_ble_adv_start(const uint8_t *payload, uint32_t payload_len, ble_uuid
     return NRF_BLE_OP_FAILURE;
   }
 
-  if (on_adv_stop != NULL) {
-    m_on_adv_stop = on_adv_stop;
-  }
+  m_on_adv_stop = on_adv_stop;
 
   if (advertising_init(payload, payload_len, adv_uuid, extended) != NRF_BLE_OP_SUCCESS) {
     APP_LOG("in nrf_sdk_ble_adv_start, advertising_init failed.\n");

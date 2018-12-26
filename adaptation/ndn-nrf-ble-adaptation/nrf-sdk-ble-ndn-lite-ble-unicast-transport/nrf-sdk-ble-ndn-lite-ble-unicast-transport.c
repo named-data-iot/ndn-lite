@@ -51,7 +51,9 @@ int nrf_sdk_ble_ndn_lite_ble_unicast_transport_adv_start() {
   m_ndn_lite_ble_unicast_service_uuid.uuid = 0x0000;
   m_ndn_lite_ble_unicast_service_uuid.type = m_nrf_sdk_ble_ndn_lite_ble_unicast_service.uuid_type;
 
-  return nrf_sdk_ble_adv_start(NULL, 0, m_ndn_lite_ble_unicast_service_uuid, false, 100, on_advertising_stopped);
+  return nrf_sdk_ble_adv_start(NULL, 0, m_ndn_lite_ble_unicast_service_uuid, false, 
+                               NRF_SDK_BLE_NDN_LITE_BLE_UNICAST_TRANSPORT_ADV_START_NUM_ADVS, 
+                               on_advertising_stopped);
 }
 
 void recvd_data_callback(const uint8_t *data_recvd_p, uint16_t data_recvd_len) {

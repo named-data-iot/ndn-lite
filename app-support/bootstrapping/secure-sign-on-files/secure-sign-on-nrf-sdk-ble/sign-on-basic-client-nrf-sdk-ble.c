@@ -40,8 +40,6 @@ void m_on_transport_hvn_tx_complete(uint16_t conn_handle) {
 
 void m_on_transport_adv_stopped() {
   APP_LOG("in sign-on-basic-client-ble.c, m_on_transport_adv_stopped got called\n");
-
-  nrf_sdk_ble_ndn_lite_ble_unicast_transport_adv_start();
 }
 
 void m_on_transport_mtu_rqst() {
