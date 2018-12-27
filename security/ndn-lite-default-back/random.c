@@ -8,6 +8,7 @@
 
 #include "../random.h"
 #include "tinycrypt/hmac_prng.h"
+#include "../sign-verify.h"
 
 int
 ndn_random_hkdf(const uint8_t* input_value, uint32_t input_size,
@@ -55,7 +56,18 @@ ndn_random_hmacprng(const uint8_t* input_value, uint32_t input_size,
 {
   struct tc_hmac_prng_struct h;
   tc_hmac_prng_init(&h, input_value, input_size);
-  tc_hmac_prng_reseed(&h, seed_value, seed_size, additional_value, additional_size);
-  tc_hmac_prng_generate(output_value, output_size, &h);
+
+  if (seed_size < 32)
+  {
+    uint8_t min_seed[32] = {0};
+    memcpy(min_seed, seed_value, seed_size);
+    tc_hmac_prng_reseed(&h, min_seed, sizeof(min_seed), additional_value, additional_size);
+    tc_hmac_prng_generate(output_value, output_size, &h);
+  }
+  else
+  {
+    tc_hmac_prng_reseed(&h, seed_value, seed_size, additional_value, additional_size);
+    tc_hmac_prng_generate(output_value, output_size, &h);
+  }
   return 0;
 }
