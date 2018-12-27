@@ -10,7 +10,6 @@
 #define NDN_SECURITY_RANDOM_H_
 
 #include "../encode/name.h"
-#include "sign-verify.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,8 +30,8 @@ ndn_random_hkdf(const uint8_t* input_value, uint32_t input_size,
 // @param input_size -- personalization length in bytes
 // @param output_value -- buffer to receive output
 // @param output_size -- size of the output buffer
-// @param seed_value -- entropy to mix into the prng
-// @param seed_size -- entropy length in bytes
+// @param seed_value -- entropy to mix into the prng, highly recommended larger than 32 bytes
+// @param seed_size -- entropy length in bytes, highly recommended larger than 32 bytes
 // @param additional_value -- additional input to the prng
 // @param additional_size -- additional input length in bytes
 int
