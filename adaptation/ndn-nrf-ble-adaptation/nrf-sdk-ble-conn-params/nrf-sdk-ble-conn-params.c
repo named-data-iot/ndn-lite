@@ -20,6 +20,8 @@
 
 #include "../logger.h"
 
+static bool m_init_success = false; /**< Will be true if this module was already initialized successfully. */
+
 void conn_params_error_handler(uint32_t nrf_error)
 {
   APP_ERROR_CHECK_IGNORE_INVALID_STATE(nrf_error, "nrf-sdk-ble-conn-params.c, conn_params_error_handler");
@@ -39,6 +41,10 @@ void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
 
 int nrf_sdk_ble_conn_params_init(void)
 {
+
+    if (m_init_success)
+      return;
+
     ret_code_t             err_code;
     ble_conn_params_init_t cp_init;
 
@@ -58,6 +64,8 @@ int nrf_sdk_ble_conn_params_init(void)
     if (err_code != NRF_SUCCESS) {
       return NRF_BLE_OP_FAILURE;
     }
+
+    m_init_success = true;
 
     return NRF_BLE_OP_SUCCESS;
 }

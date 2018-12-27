@@ -18,6 +18,9 @@
  *
  * @details This function sets up all the necessary GAP (Generic Access Profile) parameters of the
  *          device including the device name, appearance, and the preferred connection parameters.
+ *
+ * @return If this module initialized successfully, or was already initialized successfully
+ *           before, will return true. Will return false otherwise.
  */
 int nrf_sdk_ble_gap_init(void);
 

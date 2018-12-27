@@ -15,8 +15,14 @@
 #include "../nrf-sdk-ble-consts.h"
 #include "../nrf-sdk-ble-error-check.h"
 
+static bool m_init_success = false; /**< Will be true if this module was already initialized successfully. */
+
 int nrf_sdk_ble_gap_init(void)
 {
+
+    if (m_init_success)
+      return NRF_BLE_OP_SUCCESS;
+
     ret_code_t              err_code;
     ble_gap_conn_params_t   gap_conn_params;
     ble_gap_conn_sec_mode_t sec_mode;
@@ -37,6 +43,8 @@ int nrf_sdk_ble_gap_init(void)
 
     err_code = sd_ble_gap_ppcp_set(&gap_conn_params);
     APP_ERROR_CHECK_IGNORE_INVALID_STATE(err_code, "nrf_sdk_ble_gap_init, sd_ble_gap_ppcp_set");
+
+    m_init_success = true;
 
     return NRF_BLE_OP_SUCCESS;
     

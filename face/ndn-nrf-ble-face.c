@@ -115,8 +115,8 @@ ndn_nrf_ble_face_t *
 ndn_nrf_ble_face_construct(uint16_t face_id) {
   // Initialize BLE related things.
   nrf_sdk_ble_stack_init();
-  nrf_sdk_ble_scan_init(ndn_nrf_ble_face_adv_uuid);
 
+  nrf_sdk_ble_scan_init(ndn_nrf_ble_face_adv_uuid);
   nrf_sdk_ble_scan_start(ndn_nrf_ble_recvd_data_ext_adv);
 
   nrf_sdk_ble_ndn_lite_ble_unicast_transport_init();

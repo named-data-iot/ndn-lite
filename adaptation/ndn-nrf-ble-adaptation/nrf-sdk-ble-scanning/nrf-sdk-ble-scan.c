@@ -63,6 +63,7 @@ void scan_evt_handler(scan_evt_t const *p_scan_evt) {
 }
 
 int scan_init(ble_uuid_t scan_uuid) {
+
   ret_code_t err_code;
   nrf_ble_scan_init_t init_scan;
 

@@ -24,6 +24,7 @@
 static bool m_is_connected; /**< A boolean variable to store whether the device is currently connected to a central. */
 nrf_sdk_ble_stack_observer_t m_nrf_sdk_ble_stack_observers[NRF_SDK_BLE_STACK_MAX_OBSERVERS]; /**< An array of all observers. */
 static int m_num_nrf_sdk_ble_stack_observers = 0; /**< Current number of observers. */
+static bool m_init_success = false; /**< Will be true if this module was already initialized successfully. */
 
 static void ble_evt_handler(ble_evt_t const * p_evt, void * p_context)
 {
@@ -141,10 +142,16 @@ ble_stack_init(void)
 
 int nrf_sdk_ble_stack_init()
 {
+
+  if (m_init_success)
+    return NRF_BLE_OP_SUCCESS;
+
   if (ble_stack_init() != NRF_BLE_OP_SUCCESS) {
     APP_LOG("in ble_init(), ble_stack_init() failed.\n");
     return NRF_BLE_OP_FAILURE;
   }
+
+  m_init_success = true;
   
   return NRF_BLE_OP_SUCCESS;
 

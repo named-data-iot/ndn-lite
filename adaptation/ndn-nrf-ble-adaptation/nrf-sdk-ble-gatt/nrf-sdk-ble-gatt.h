@@ -20,7 +20,10 @@
 // AND NRF_BLE_OP_FAILURE UPON FAILURE.
 
 /**@brief Function for initializing the GATT module. 
-*/
+ *
+ * @return If this module initialized successfully, or was already initialized successfully
+ *           before, will return true. Will return false otherwise.
+ */
 int nrf_sdk_ble_gatt_init(void);
 
 #endif // NRF_SDK_BLE_GATT_H

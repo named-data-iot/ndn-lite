@@ -35,6 +35,7 @@ NRF_SDK_BLE_NDN_LITE_BLE_UNICAST_SERVICE_DEF(m_nrf_sdk_ble_ndn_lite_ble_unicast_
 nrf_sdk_ble_ndn_lite_ble_unicast_transport_observer_t 
   m_nrf_sdk_ble_ndn_lite_ble_unicast_transport_observers[NRF_SDK_BLE_NDN_LITE_BLE_UNICAST_TRANSPORT_MAX_OBSERVERS];
 int m_num_nrf_sdk_ble_ndn_lite_ble_unicast_transport_observers = 0; /**< Current number of observers. */
+static bool m_init_success = false; /**< Will be true if this module was already initialized successfully. */
 
 
 ret_code_t sendPacket(uint16_t conn_handle, nrf_sdk_ble_ndn_lite_ble_unicast_service_t *ndn_lite_ble_unicast_service_p, uint8_t *cert_rqst_buf, uint16_t *cert_rqst_buf_len_p);
@@ -214,6 +215,9 @@ static void sleep_mode_enter(void) {
 
 int nrf_sdk_ble_ndn_lite_ble_unicast_transport_init() {
 
+  if (m_init_success)
+    return NRF_BLE_OP_SUCCESS;
+
   if (nrf_sdk_ble_stack_init() != NRF_BLE_OP_SUCCESS) {
     APP_LOG("in nrf_sdk_ble_ndn_lite_ble_unicast_transport_init, nrf_sdk_ble_stack_init failed.\n");
     return NRF_BLE_OP_FAILURE;
@@ -254,6 +258,8 @@ int nrf_sdk_ble_ndn_lite_ble_unicast_transport_init() {
     APP_LOG("in nrf_sdk_ble_ndn_lite_ble_unicast_transport_init, nrf_sdk_ble_ndn_lite_ble_unicast_transport_adv_start failed.\n");
     return NRF_BLE_OP_FAILURE;
   }
+
+  m_init_success = true;
 
   return NRF_BLE_OP_SUCCESS;
 }
