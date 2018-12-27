@@ -167,11 +167,11 @@ ndn_signed_interest_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_interest_t
   // calculate digest component and append it to the name
   name_component_init(&interest->name.components[interest->name.components_size],
                       TLV_ParametersSha256DigestComponent);
-  ndn_signer_t signer;
-  ndn_signer_init(&signer, params_block.value, params_block.size,
-                  interest->name.components[interest->name.components_size].value,
-                  NDN_NAME_COMPONENT_BUFFER_SIZE);
-  int result = ndn_signer_sha256_sign(&signer);
+
+  uint32_t used_bytes = 0;
+  int result = ndn_signer_sha256_sign(params_block.value, params_block.size,
+                                      interest->name.components[interest->name.components_size].value,
+                                      NDN_NAME_COMPONENT_BUFFER_SIZE, &used_bytes);
   if (result < 0)
     return result;
   interest->name.components_size++;
@@ -186,11 +186,11 @@ ndn_signed_interest_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_interest_t
   uint32_t name_block_ending = encoder->offset;
 
   // calculate signature
-  ndn_signer_init(&signer, &encoder->output_value[name_block_starting],
-                  name_block_ending - name_block_starting,
-                  interest->signature.sig_value, interest->signature.sig_size);
-  result = ndn_signer_ecdsa_sign(&signer, prv_key->key_value, prv_key->key_size,
-                                 prv_key->curve_type);
+  result = ndn_signer_ecdsa_sign(&encoder->output_value[name_block_starting],
+                                 name_block_ending - name_block_starting,
+                                 interest->signature.sig_value, interest->signature.sig_size,
+                                 prv_key->key_value, prv_key->key_size,
+                                 prv_key->curve_type, &used_bytes);
   if (result < 0)
     return result;
 
@@ -219,11 +219,10 @@ ndn_signed_interest_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_interest_t*
   // calculate digest component and append it to the name
   name_component_init(&interest->name.components[interest->name.components_size],
                       TLV_ParametersSha256DigestComponent);
-  ndn_signer_t signer;
-  ndn_signer_init(&signer, params_block.value, params_block.size,
+  uint32_t used_bytes = 0;
+  int result = ndn_signer_sha256_sign(params_block.value, params_block.size,
                   interest->name.components[interest->name.components_size].value,
-                  NDN_NAME_COMPONENT_BUFFER_SIZE);
-  int result = ndn_signer_sha256_sign(&signer);
+                                      NDN_NAME_COMPONENT_BUFFER_SIZE, &used_bytes);
   if (result < 0)
     return result;
   interest->name.components_size++;
@@ -238,10 +237,10 @@ ndn_signed_interest_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_interest_t*
   uint32_t name_block_ending = encoder->offset;
 
   // calculate signature
-  ndn_signer_init(&signer, &encoder->output_value[name_block_starting],
-                  name_block_ending - name_block_starting,
-                  interest->signature.sig_value, interest->signature.sig_size);
-  result = ndn_signer_hmac_sign(&signer, hmac_key->key_value, hmac_key->key_size);
+  result = ndn_signer_hmac_sign(&encoder->output_value[name_block_starting],
+                                name_block_ending - name_block_starting,
+                                interest->signature.sig_value, interest->signature.sig_size,
+                                hmac_key->key_value, hmac_key->key_size, &used_bytes);
   if (result < 0)
     return result;
 
@@ -269,11 +268,10 @@ ndn_signed_interest_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_interest_
   // calculate digest component and append it to the name
   name_component_init(&interest->name.components[interest->name.components_size],
                       TLV_ParametersSha256DigestComponent);
-  ndn_signer_t signer;
-  ndn_signer_init(&signer, params_block.value, params_block.size,
+  uint32_t used_bytes = 0;
+  int result = ndn_signer_sha256_sign(params_block.value, params_block.size,
                   interest->name.components[interest->name.components_size].value,
-                  NDN_NAME_COMPONENT_BUFFER_SIZE);
-  int result = ndn_signer_sha256_sign(&signer);
+                                      NDN_NAME_COMPONENT_BUFFER_SIZE, &used_bytes);
   if (result < 0)
     return result;
   interest->name.components_size++;
@@ -288,10 +286,10 @@ ndn_signed_interest_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_interest_
   uint32_t name_block_ending = encoder->offset;
 
   // calculate signature
-  ndn_signer_init(&signer, &encoder->output_value[name_block_starting],
-                  name_block_ending - name_block_starting,
-                  interest->signature.sig_value, interest->signature.sig_size);
-  result = ndn_signer_sha256_sign(&signer);
+  result = ndn_signer_sha256_sign(&encoder->output_value[name_block_starting],
+                                  name_block_ending - name_block_starting,
+                                  interest->signature.sig_value, interest->signature.sig_size,
+                                  &used_bytes);
   if (result < 0)
     return result;
 
@@ -307,15 +305,12 @@ ndn_signed_interest_ecdsa_verify(const ndn_interest_t* interest, const ndn_ecc_p
   ndn_encoder_t encoder;
   encoder_init(&encoder, name_block, NDN_NAME_MAX_BLOCK_SIZE);
   ndn_name_tlv_encode(&encoder, &interest->name);
-
-  ndn_verifier_t verifier;
-  ndn_verifier_init(&verifier, encoder.output_value, encoder.offset,
-                    interest->signature.sig_value, interest->signature.sig_size);
-  int result = ndn_verifier_ecdsa_verify(&verifier, pub_key->key_value,
+  int result = ndn_verifier_ecdsa_verify(encoder.output_value, encoder.offset,
+                                         interest->signature.sig_value, interest->signature.sig_size,
+                                         pub_key->key_value,
                                          pub_key->key_size, pub_key->curve_type);
   if (result)
     return result;
-
   return 0;
 }
 
@@ -326,14 +321,11 @@ ndn_signed_interest_hmac_verify(const ndn_interest_t* interest, const ndn_hmac_k
   ndn_encoder_t encoder;
   encoder_init(&encoder, name_block, NDN_NAME_MAX_BLOCK_SIZE);
   ndn_name_tlv_encode(&encoder, &interest->name);
-
-  ndn_verifier_t verifier;
-  ndn_verifier_init(&verifier, encoder.output_value, encoder.offset,
-                    interest->signature.sig_value, interest->signature.sig_size);
-  int result = ndn_verifier_hmac_verify(&verifier, hmac_key->key_value, hmac_key->key_size);
+  int result = ndn_verifier_hmac_verify(encoder.output_value, encoder.offset,
+                                        interest->signature.sig_value, interest->signature.sig_size,
+                                        hmac_key->key_value, hmac_key->key_size);
   if (result)
     return result;
-
   return 0;
 }
 
@@ -345,12 +337,9 @@ ndn_signed_interest_digest_verify(const ndn_interest_t* interest)
   encoder_init(&encoder, name_block, NDN_NAME_MAX_BLOCK_SIZE);
   ndn_name_tlv_encode(&encoder, &interest->name);
 
-  ndn_verifier_t verifier;
-  ndn_verifier_init(&verifier, encoder.output_value, encoder.offset,
-                    interest->signature.sig_value, interest->signature.sig_size);
-  int result = ndn_verifier_sha256_verify(&verifier);
+  int result = ndn_verifier_sha256_verify(encoder.output_value, encoder.offset,
+                                          interest->signature.sig_value, interest->signature.sig_size);
   if (result)
     return result;
-
   return 0;
 }

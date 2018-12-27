@@ -10,6 +10,7 @@
 #define NDN_SECURITY_RANDOM_H_
 
 #include "../encode/name.h"
+#include "sign-verify.h"
 
 #ifdef __cplusplus
 extern "C" {

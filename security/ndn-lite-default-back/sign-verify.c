@@ -6,7 +6,7 @@
  * directory for more details.
  */
 
-#include "sign-verify.h"
+#include "../sign-verify.h"
 #include "micro-ecc/uECC.h"
 #include "tinycrypt/hmac.h"
 
@@ -63,26 +63,30 @@ hmac_sha256(const uint8_t* key, unsigned int key_size,
 }
 
 int
-ndn_signer_sha256_sign(ndn_signer_t* signer)
+ndn_signer_sha256_sign(const uint8_t* input_value, uint32_t input_size,
+                       uint8_t* output_value, uint32_t output_max_size,
+                       uint32_t* output_used_size)
 {
-  if (signer->output_used_size + 32 > signer->output_max_size)
+  if (output_max_size < 32)
     return NDN_OVERSIZE;
-  sha256(signer->input_value, signer->input_size, signer->output_value);
-  signer->output_used_size += 32;
+  sha256(input_value, input_size, output_value);
+  *output_used_size = 32;
   return 0;
 }
 
 int
-ndn_signer_ecdsa_sign(ndn_signer_t* signer, const uint8_t* key_value, uint32_t key_size,
-                      uint8_t ecdsa_type)
+ndn_signer_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
+                      uint8_t* output_value, uint32_t output_max_size,
+                      const uint8_t* prv_key_value, uint32_t prv_key_size,
+                      uint8_t ecdsa_type, uint32_t* output_used_size)
 {
-  if (signer->output_used_size + 64 > signer->output_max_size)
+  if (output_max_size < 64)
     return NDN_OVERSIZE;
   if (key_size > 32)
     return NDN_SEC_WRONG_KEY_SIZE;
 
   uint8_t input_hash[32] = {0};
-  sha256(signer->input_value, signer->input_size, input_hash);
+  sha256(input_value, input_size, input_hash);
   uECC_Curve curve;
   switch (ecdsa_type) {
   case NDN_ECDSA_CURVE_SECP160R1:
@@ -117,51 +121,57 @@ ndn_signer_ecdsa_sign(ndn_signer_t* signer, const uint8_t* key_value, uint32_t k
   ctx->uECC.result_size = 32;
   ctx->uECC.tmp = tmp;
   ecc_sign_result = uECC_sign_deterministic(key_value, input_hash, sizeof(input_hash),
-                                            &ctx->uECC, signer->output_value, curve);
+                                            &ctx->uECC, output_value, curve);
 #else
   ecc_sign_result = uECC_sign(key_value, input_hash, sizeof(input_hash),
-                              signer->output_value, curve);
+                              output_value, curve);
 #endif
   if (ecc_sign_result == 0)
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
-  signer->output_used_size += 64;
+  *output_used_size = 64;
   return 0;
 }
 
 int
-ndn_signer_hmac_sign(ndn_signer_t* signer, const uint8_t* key_value, uint32_t key_size)
+ndn_signer_hmac_sign(const uint8_t* input_value, uint32_t input_size,
+                     uint8_t* output_value, uint32_t output_max_size,
+                     const uint8_t* key_value, uint32_t key_size,
+                     uint32_t* output_used_size)
 {
-  if (signer->output_used_size + 32 > signer->output_max_size)
+  if (output_max_size < 32)
     return NDN_OVERSIZE;
-  hmac_sha256(key_value, key_size, signer->input_value, signer->input_size, signer->output_value);
-  signer->output_used_size += 32;
+  hmac_sha256(key_value, key_size, input_value, input_size, output_value);
+  *output_used_size = 32;
   return 0;
 }
 
 int
-ndn_verifier_sha256_verify(ndn_verifier_t* verifier)
+ndn_verifier_sha256_verify(const uint8_t* input_value, uint32_t input_size,
+                           const uint8_t* sig_value, uint32_t sig_size)
 {
-  if (verifier->sig_size != 32)
+  if (sig_size != 32)
     return NDN_SEC_WRONG_SIG_SIZE;
   uint8_t input_hash[32] = {0};
-  sha256(verifier->input_value, verifier->input_size, input_hash);
-  if (memcmp(input_hash, verifier->sig_value, sizeof(input_hash)) != 0)
+  sha256(input_value, input_size, input_hash);
+  if (memcmp(input_hash, sig_value, sizeof(input_hash)) != 0)
     return -1;
   else
     return 0;
 }
 
 int
-ndn_verifier_ecdsa_verify(ndn_verifier_t* verifier, const uint8_t* key_value, uint32_t key_size,
-                          uint8_t ecdsa_type)
+ndn_verifier_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
+                          const uint8_t* sig_value, uint32_t sig_size,
+                          const uint8_t* pub_key_value,
+                          uint32_t pub_key_size, uint8_t ecdsa_type)
 {
-  if (verifier->sig_size > 64)
+  if (sig_size > 64)
     return NDN_SEC_WRONG_SIG_SIZE;
   if (key_size > 64)
     return NDN_SEC_WRONG_KEY_SIZE;
 
   uint8_t input_hash[32] = {0};
-  sha256(verifier->input_value, verifier->input_size, input_hash);
+  sha256(input_value, input_size, input_hash);
   uECC_Curve curve;
   switch(ecdsa_type){
   case NDN_ECDSA_CURVE_SECP160R1:
@@ -183,21 +193,23 @@ ndn_verifier_ecdsa_verify(ndn_verifier_t* verifier, const uint8_t* key_value, ui
     return NDN_SEC_UNSUPPORT_CRYPTO_ALGO;
   }
   if (uECC_verify(key_value, input_hash, sizeof(input_hash),
-                  verifier->sig_value, curve) == 0)
+                  sig_value, curve) == 0)
     return -1;
   else
     return 0;
 }
 
 int
-ndn_verifier_hmac_verify(ndn_verifier_t* verifier, const uint8_t* key_value, uint32_t key_size)
+ndn_verifier_hmac_verify(const uint8_t* input_value, uint32_t input_size,
+                         const uint8_t* sig_value, uint32_t sig_size,
+                         const uint8_t* key_value, uint32_t key_size)
 {
-  if (verifier->sig_size != 32)
+  if (sig_size != 32)
     return NDN_SEC_WRONG_SIG_SIZE;
 
   uint8_t input_hmac[32] = {0};
-  hmac_sha256(key_value, key_size, verifier->input_value, verifier->input_size, input_hmac);
-  if (memcmp(input_hmac, verifier->sig_value, sizeof(input_hmac)) != 0)
+  hmac_sha256(key_value, key_size, input_value, input_size, input_hmac);
+  if (memcmp(input_hmac, sig_value, sizeof(input_hmac)) != 0)
     return -1;
   else
     return 0;

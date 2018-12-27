@@ -6,8 +6,7 @@
  * directory for more details.
  */
 
-#include "random.h"
-#include "sign-verify.h"
+#include "../random.h"
 #include "tinycrypt/hmac_prng.h"
 
 int
@@ -15,10 +14,8 @@ ndn_random_hkdf(const uint8_t* input_value, uint32_t input_size,
                 uint8_t* output_value, uint32_t output_size,
                 const uint8_t* seed_value, uint32_t seed_size)
 {
-  ndn_signer_t signer;
   uint8_t prk[32] = {0};
-  ndn_signer_init(&signer, input_value, input_size, prk, 32);
-  ndn_signer_hmac_sign(&signer, seed_value, seed_size);
+  ndn_signer_hmac_sign(input_value, input_size, prk, 32, seed_value, seed_size);
 
   int iter;
   if (output_size % 32)
@@ -35,15 +32,13 @@ ndn_random_hkdf(const uint8_t* input_value, uint32_t input_size,
   uint8_t t_first[2] = {0x00, 0x01};
   for (int i = 0; i < iter; ++i) {
     if (i == 0) {
-      ndn_signer_init(&signer, t_first, sizeof(t_first), t, 32);
-      ndn_signer_hmac_sign(&signer, prk, 32);
+      ndn_signer_hmac_sign(t_first, sizeof(t_first), t, 32, prk, 32);
       memcpy(okm + i * 32, t, 32);
     }
     else {
       memcpy(cat, t, 32);
       cat[32] = table[i];
-      ndn_signer_init(&signer, cat, 33, t, 32);
-      ndn_signer_hmac_sign(&signer, prk, 32);
+      ndn_signer_hmac_sign(cat, 33, t, 32, prk, 32);
       memcpy(okm + i * 32, t, 32);
     }
   }
