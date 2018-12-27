@@ -20,7 +20,7 @@
 
 #include "../../../../../../../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
 
-#include <uECC.h>
+#include "../../../../../../../../../security/ndn-lite-default-back/micro-ecc/uECC.h"
 
 int sign_on_basic_microecc_gen_sha256_ecdsa_sig(
     const uint8_t *pri_key_raw,

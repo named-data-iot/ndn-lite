@@ -12,7 +12,7 @@
 #define ECC_NRF_CRYPTO_IMPL_H
 
 #include <stddef.h>
-#include <uECC.h>
+#include "../../../../../../../../../security/ndn-lite-default-back/micro-ecc/uECC.h"
 
 #include "../../../../../../../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
 
