@@ -78,9 +78,20 @@ int ndn_nrf_ble_face_send(struct ndn_face_intf *self, const ndn_name_t *name,
   // disconnect to do extended advertising with the same data packet, then reconnect to the controller
   // afterwards
 
-  if (nrf_sdk_ble_ndn_lite_ble_unicast_transport_send(current_packet_block_to_send_p,
-          current_packet_block_to_send_size) != NRF_BLE_OP_SUCCESS) {
-    printf("in ndn_nrf_ble_unicast_on_mtu_rqst, ndn_lite_ble_unicast_transport_send failed.\n");
+  if (nrf_sdk_ble_stack_connected()) {
+    printf("in ndn_nrf_ble_face_send, we were connected.\n");
+    if (nrf_sdk_ble_ndn_lite_ble_unicast_transport_send(current_packet_block_to_send_p,
+            current_packet_block_to_send_size) != NRF_BLE_OP_SUCCESS) {
+      printf("in ndn_nrf_ble_unicast_on_mtu_rqst, ndn_lite_ble_unicast_transport_send failed.\n");
+    }
+  } else {
+    printf("in ndn_nrf_ble_face_send, we were not connected.\n");
+    if (nrf_sdk_ble_adv_start(current_packet_block_to_send, current_packet_block_to_send_size,
+            ndn_nrf_ble_face_adv_uuid, true, NDN_NRF_BLE_ADV_NUM,
+            ndn_nrf_ble_adv_stopped) != NRF_BLE_OP_SUCCESS) {
+      printf("nrf_sdk_ble_adv_start inside of ndn_nrf_ble_adv_stopped failed.\n");
+      return -1;
+    }
   }
 
   return 0;
@@ -167,8 +178,7 @@ void ndn_nrf_ble_unicast_hvn_tx_complete(uint16_t conn_handle) {
       // to wait for the on disconnect callback
       printf("in ndn_nrf_ble_unicast_hvn_tx_complete, ndn_lite_ble_unicast_transport_disconnect returned NRF_BLE_OP_SUCCESS\n");
     }
-  }
-  else {
+  } else {
     printf("in ndn_nrf_ble_unicast_hvn_tx_complete, current_packet_block_to_send_p was NULL.\n");
   }
 }
