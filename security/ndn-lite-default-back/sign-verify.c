@@ -82,7 +82,7 @@ ndn_signer_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
 {
   if (output_max_size < 64)
     return NDN_OVERSIZE;
-  if (key_size > 32)
+  if (prv_key_size > 32)
     return NDN_SEC_WRONG_KEY_SIZE;
 
   uint8_t input_hash[32] = {0};
@@ -120,10 +120,10 @@ ndn_signer_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
   ctx->uECC.block_size = 64;
   ctx->uECC.result_size = 32;
   ctx->uECC.tmp = tmp;
-  ecc_sign_result = uECC_sign_deterministic(key_value, input_hash, sizeof(input_hash),
+  ecc_sign_result = uECC_sign_deterministic(prv_key_value, input_hash, sizeof(input_hash),
                                             &ctx->uECC, output_value, curve);
 #else
-  ecc_sign_result = uECC_sign(key_value, input_hash, sizeof(input_hash),
+  ecc_sign_result = uECC_sign(prv_key_value, input_hash, sizeof(input_hash),
                               output_value, curve);
 #endif
   if (ecc_sign_result == 0)
@@ -167,7 +167,7 @@ ndn_verifier_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
 {
   if (sig_size > 64)
     return NDN_SEC_WRONG_SIG_SIZE;
-  if (key_size > 64)
+  if (pub_key_size > 64)
     return NDN_SEC_WRONG_KEY_SIZE;
 
   uint8_t input_hash[32] = {0};
@@ -192,7 +192,7 @@ ndn_verifier_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
   default:
     return NDN_SEC_UNSUPPORT_CRYPTO_ALGO;
   }
-  if (uECC_verify(key_value, input_hash, sizeof(input_hash),
+  if (uECC_verify(pub_key_value, input_hash, sizeof(input_hash),
                   sig_value, curve) == 0)
     return -1;
   else

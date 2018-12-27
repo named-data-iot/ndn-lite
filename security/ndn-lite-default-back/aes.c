@@ -38,6 +38,7 @@ ndn_decrypter_aes_cbc_decrypt(const uint8_t* input_value, uint8_t input_size,
     return NDN_SEC_WRONG_AES_SIZE;
   }
   (void)aes_iv;
+  struct tc_aes_key_sched_struct schedule;
   tc_aes128_set_decrypt_key(&schedule, key_value);
   if (tc_cbc_mode_decrypt(output_value, input_size - TC_AES_BLOCK_SIZE,
                           input_value + TC_AES_BLOCK_SIZE, input_size - TC_AES_BLOCK_SIZE,

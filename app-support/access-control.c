@@ -14,7 +14,9 @@
 #include "../security/aes.h"
 #include "../security/key-storage.h"
 #include "../security/random.h"
-#include "../security/tinycrypt/ecc_dh.h"
+#include "../security/ndn-lite-default-back/tinycrypt/ecc_dh.h"
+#include "../security/ndn-lite-default-back/tinycrypt/constants.h"
+#include "../security/ndn-lite-default-back/tinycrypt/cbc_mode.h"
 
 static ndn_ac_unfinished_key_t unfinished_key;
 static ndn_ac_state_t ac_state;
@@ -183,10 +185,9 @@ ndn_ac_on_dk_response_process(const ndn_data_t* data)
   decoder_get_type(&decoder, &probe);
   decoder_get_length(&decoder, &probe);
   decoder_get_raw_buffer_value(&decoder, ciphertext, sizeof(ciphertext));
-  ndn_decrypter_t decrypter;
-  ndn_decrypter_aes_cbc_init(&decrypter, ciphertext, sizeof(ciphertext),
-                             plaintext, sizeof(plaintext));
-  ndn_decrypter_aes_cbc_decrypt(&decrypter, symmetric_key, sizeof(symmetric_key));
+  ndn_decrypter_aes_cbc_decrypt(ciphertext, sizeof(ciphertext),
+                                plaintext, sizeof(plaintext), NULL,
+                                symmetric_key, sizeof(symmetric_key));
 
   // insert dk into key storage
   ndn_aes_key_t* aes = NULL;
@@ -364,16 +365,15 @@ ndn_ac_prepare_dk_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
     return -1;
 
   // encrypt ek
-  ndn_encrypter_t encrypter;
   uint8_t Encrypted[NDN_APPSUPPORT_AC_EDK_SIZE + TC_AES_BLOCK_SIZE] = {0};
   uint8_t aes_iv[TC_AES_BLOCK_SIZE] = {0};
 
   // TODO: update personalization, add, seed with truly randomness
   ndn_random_hmacprng(personalization, sizeof(personalization), aes_iv, TC_AES_BLOCK_SIZE,
                       seed, sizeof(seed), additional_input, sizeof(additional_input));
-  ndn_encrypter_aes_cbc_init(&encrypter, aes->key_value, aes->key_size,
-                             Encrypted, sizeof(Encrypted));
-  ndn_encrypter_aes_cbc_encrypt(&encrypter, aes_iv, symmetric_key, sizeof(symmetric_key));
+  ndn_encrypter_aes_cbc_encrypt(aes->key_value, aes->key_size,
+                                Encrypted, sizeof(Encrypted), aes_iv,
+                                symmetric_key, sizeof(symmetric_key));
 
   // TODO: lifetime calculation
   uint32_t lifetime = 100;

@@ -10,6 +10,7 @@
 #define NDN_SECURITY_AES_H_
 
 #include "../ndn-error-code.h"
+#include <inttypes.h>
 
 #ifdef __cplusplus
 extern "C" {
