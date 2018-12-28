@@ -10,6 +10,7 @@
 
 #include "ndn-nrf-802154-face.h"
 #include "../encode/data.h"
+#include "../encode/fragmentation-support.h"
 #include <stdio.h>
 
 static ndn_nrf_802154_face_t nrf_802154_face;
@@ -93,19 +94,38 @@ ndn_nrf_802154_face_send(struct ndn_face_intf* self, const ndn_name_t* name,
 
   // init header
   ndn_nrf_init_802154_packet(packet_block);
-  packet_block[2] = nrf_802154_face.packet_id&0xff;
+  packet_block[2] = nrf_802154_face.packet_id & 0xff;
 
   // init payload
   if (size <= NDN_NRF_802154_MAX_PAYLOAD_SIZE) {
     memcpy(&packet_block[9], packet, size);
+    
+    // send out the packet
+    _nrf_802154_transmission(packet_block, size + 9, true);
   }
   else {
-    // TBD
-    return -1;
-  }
+    // fragmentation
+    ndn_fragmenter_t fragmenter;
+    uint16_t id = 99; // only for test, should be random
+    ndn_fragmenter_init(&fragmenter, packet, size, NDN_NRF_802154_MAX_PAYLOAD_SIZE, 
+                        id);
+    printf("%d pieces needed\n", fragmenter.total_frag_num);
 
-  // send out the packet
-  if (nrf_802154_transmit(packet_block, size + 9, true)) {
+    while (fragmenter.counter < fragmenter.total_frag_num) {
+      ndn_fragmenter_fragment(&fragmenter, &packet_block[9]); 
+      printf("fragment output ONE piece, No. %d\n", fragmenter.counter);
+
+      // send out the packet
+      _nrf_802154_transmission(packet_block, size + 9, true);
+    }
+  }
+  return 0;
+}
+
+static int
+_nrf_802154_transmission(uint8_t* packet_block, uint32_t packet_size, bool flag)
+{
+  if (nrf_802154_transmit(packet_block, packet_size, flag)) {
     nrf_802154_face.tx_done = false;
     nrf_802154_face.tx_failed = false;
     int delay_loops = 0;
@@ -135,7 +155,6 @@ ndn_nrf_802154_face_send(struct ndn_face_intf* self, const ndn_name_t* name,
   }
   return -3;
 }
-
 
 int
 ndn_nrf_802154_face_down(struct ndn_face_intf* self)
@@ -215,7 +234,11 @@ nrf_802154_received(uint8_t* p_data, uint8_t length, int8_t power, uint8_t lqi)
   printf("RX frame, power %d, lqi %u, payload len %u: ",
          (int) power, (unsigned) lqi, (unsigned) length);
 
-  ndn_face_receive(&nrf_802154_face.intf, &p_data[9], length - 9);
-
+  if (length - 9 < NDN_NRF_802154_MAX_PAYLOAD_SIZE)
+    ndn_face_receive(&nrf_802154_face.intf, &p_data[9], length - 9);
+  else {
+  //  ndn_frag_assembler_t assembler;
+  //  ndn_frag_assembler_init(&assembler, )
+  }
   nrf_802154_buffer_free(p_data);
 }
