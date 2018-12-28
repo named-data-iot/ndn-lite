@@ -50,6 +50,14 @@ encoder_probe_block_size(const int type, const uint32_t payload_size)
   return (payload_size + type_size + length_size);
 }
 
+// get the TLV block value size
+// use this function to avoid malloc or other dynamic mem operations
+static inline uint32_t
+encoder_probe_block_value_size(const int type, const uint32_t payload_size)
+{
+  return payload_size;
+}
+
 // init an encoder
 // To invoke the function, first probe the size of the output block size and
 // create the block

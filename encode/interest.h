@@ -108,22 +108,38 @@ ndn_interest_set_Parameters(ndn_interest_t* interest,
   interest->parameters.size = params_size;
 }
 
+// get the length of inner tlv's of the interest
+static inline uint32_t
+ndn_interest_probe_block_internals_size(const ndn_interest_t* interest)
+{
+  uint32_t interest_buffer_internals_size = ndn_name_probe_block_size(&interest->name);
+  if (interest->enable_CanBePrefix)
+    interest_buffer_internals_size += 2;
+  if (interest->enable_MustBeFresh)
+    interest_buffer_internals_size += 2;
+  if (interest->enable_HopLimit)
+    interest_buffer_internals_size += 3;
+  if (interest->enable_Parameters)
+    interest_buffer_internals_size += encoder_probe_block_size(TLV_Parameters, interest->parameters.size);
+  interest_buffer_internals_size += 6; // nounce
+  interest_buffer_internals_size += 4; // lifetime
+  return interest_buffer_internals_size;
+}
+
 // used only for unsigned Interest
 static inline uint32_t
 ndn_interest_probe_block_size(const ndn_interest_t* interest)
 {
-  uint32_t interest_buffer_size = ndn_name_probe_block_size(&interest->name);
-  if (interest->enable_CanBePrefix)
-    interest_buffer_size += 2;
-  if (interest->enable_MustBeFresh)
-    interest_buffer_size += 2;
-  if (interest->enable_HopLimit)
-    interest_buffer_size += 3;
-  if (interest->enable_Parameters)
-    interest_buffer_size += encoder_probe_block_size(TLV_Parameters, interest->parameters.size);
-  interest_buffer_size += 6; // nounce
-  interest_buffer_size += 4; // lifetime
+  uint32_t interest_buffer_size = ndn_interest_probe_block_internals_size(interest);
   return encoder_probe_block_size(TLV_Interest, interest_buffer_size);
+}
+
+// used only for unsigned Interest
+static inline uint32_t
+ndn_interest_probe_block_value_size(const ndn_interest_t* interest)
+{
+  uint32_t interest_buffer_size = ndn_interest_probe_block_internals_size(interest);
+  return encoder_probe_block_value_size(TLV_Interest, interest_buffer_size);
 }
 
 // used only for unsigned Interest

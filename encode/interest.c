@@ -96,9 +96,9 @@ ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest)
 {
   encoder_append_type(encoder, TLV_Interest);
 
-  uint32_t interest_block_size = ndn_interest_probe_block_size(interest);
+  uint32_t interest_block_value_size = ndn_interest_probe_block_value_size(interest);
 
-  encoder_append_length(encoder, interest_block_size);
+  encoder_append_length(encoder, interest_block_value_size);
   ndn_name_tlv_encode(encoder, &interest->name);
 
   if (interest->enable_CanBePrefix) {
