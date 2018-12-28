@@ -1,5 +1,6 @@
 #include "data.h"
 #include "../security/sign-verify.h"
+#include "../security/aes.h"
 
 /************************************************************/
 /*  Helper functions for signed interest APIs               */
@@ -16,7 +17,10 @@ _ndn_data_prepare_unsigned_block(ndn_encoder_t* encoder, const ndn_data_t* data)
   // meta info
   ndn_metainfo_tlv_encode(encoder, &data->metainfo);
   // content
-  encoder_append_type(encoder, TLV_Content);
+  if (data->is_Encrypted)
+    encoder_append_type(encoder, TLV_AC_ENCRYPTED_CONTENT);
+  else
+    encoder_append_type(encoder, TLV_Content);
   encoder_append_length(encoder, data->content_size);
   encoder_append_raw_buffer_value(encoder, data->content_value, data->content_size);
   // signature info
@@ -63,7 +67,10 @@ ndn_data_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_data_t* data)
   // meta info
   data_buffer_size += ndn_metainfo_probe_block_size(&data->metainfo);
   // content
-  data_buffer_size += encoder_probe_block_size(TLV_Content, data->content_size);
+  if (data->is_Encrypted)
+    data_buffer_size += encoder_probe_block_size(TLV_AC_ENCRYPTED_CONTENT, data->content_size);
+  else
+    data_buffer_size += encoder_probe_block_size(TLV_Content, data->content_size);
   // signature info
   data_buffer_size += ndn_signature_info_probe_block_size(&data->signature);
   // signature value
@@ -102,7 +109,10 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
   // meta info
   data_buffer_size += ndn_metainfo_probe_block_size(&data->metainfo);
   // content
-  data_buffer_size += encoder_probe_block_size(TLV_Content, data->content_size);
+  if (data->is_Encrypted)
+    data_buffer_size += encoder_probe_block_size(TLV_AC_ENCRYPTED_CONTENT, data->content_size);
+  else
+    data_buffer_size += encoder_probe_block_size(TLV_Content, data->content_size);
   // signature info
   data_buffer_size += ndn_signature_info_probe_block_size(&data->signature);
   // signature value
@@ -142,7 +152,10 @@ ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
   // meta info
   data_buffer_size += ndn_metainfo_probe_block_size(&data->metainfo);
   // content
-  data_buffer_size += encoder_probe_block_size(TLV_Content, data->content_size);
+  if (data->is_Encrypted)
+    data_buffer_size += encoder_probe_block_size(TLV_AC_ENCRYPTED_CONTENT, data->content_size);
+  else
+    data_buffer_size += encoder_probe_block_size(TLV_Content, data->content_size);
   // signature info
   data_buffer_size += ndn_signature_info_probe_block_size(&data->signature);
   // signature value
@@ -191,6 +204,8 @@ ndn_data_tlv_decode_no_verify(ndn_data_t* data, const uint8_t* block_value, uint
 
   // content
   decoder_get_type(&decoder, &probe);
+  if (probe == TLV_AC_ENCRYPTED_CONTENT)
+    data->is_Encrypted = 1;
   decoder_get_length(&decoder, &data->content_size);
   decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
 
@@ -225,6 +240,8 @@ ndn_data_tlv_decode_digest_verify(ndn_data_t* data, const uint8_t* block_value, 
 
   // content
   decoder_get_type(&decoder, &probe);
+  if (probe == TLV_AC_ENCRYPTED_CONTENT)
+    data->is_Encrypted = 1;
   decoder_get_length(&decoder, &data->content_size);
   decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
 
@@ -264,6 +281,8 @@ ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, u
 
   // content
   decoder_get_type(&decoder, &probe);
+  if (probe == TLV_AC_ENCRYPTED_CONTENT)
+    data->is_Encrypted = 1;
   decoder_get_length(&decoder, &data->content_size);
   decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
 
@@ -305,6 +324,8 @@ ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, ui
 
   // content
   decoder_get_type(&decoder, &probe);
+  if (probe == TLV_AC_ENCRYPTED_CONTENT)
+    data->is_Encrypted = 1;
   decoder_get_length(&decoder, &data->content_size);
   decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
 
@@ -323,4 +344,53 @@ ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, ui
     return 0;
   else
     return result;
+}
+
+int
+ndn_data_encrypted_content_generate(ndn_data_t* data, ndn_name_t* key_id, uint8_t* aes_iv, ndn_aes_key_t* key)
+{
+  if (encoder_probe_block_size(TLV_AC_ENCRYPTED_PAYLOAD, data->content_size) + 
+      ndn_name_probe_block_size(key_id) + NDN_AES_BLOCK_SIZE + 2 >
+      NDN_CONTENT_BUFFER_SIZE)
+    return NDN_OVERSIZE;
+  data->is_Encrypted = 1;
+  ndn_encoder_t encoder;
+  uint8_t toTransform[NDN_CONTENT_BUFFER_SIZE] = {0};
+  encoder_init(&encoder, toTransform, sizeof(toTransform));
+  ndn_name_tlv_encode(&encoder, key_id);
+  encoder_append_type(&encoder, TLV_AC_AES_IV);
+  encoder_append_length(&encoder, NDN_AES_BLOCK_SIZE);
+  encoder_append_raw_buffer_value(&encoder, aes_iv, NDN_AES_BLOCK_SIZE);
+  encoder_append_type(&encoder, TLV_AC_ENCRYPTED_PAYLOAD);
+  encoder_append_length(&encoder, data->content_size + NDN_AES_BLOCK_SIZE);
+  ndn_encrypter_aes_cbc_encrypt(data->content_value, data->content_size,
+                                encoder.output_value + encoder.offset, 
+                                encoder.output_max_size - encoder.offset,
+                                aes_iv, key->key_value, key->key_size);
+  encoder.offset += data->content_size + NDN_AES_BLOCK_SIZE;
+  memcpy(data->content_value, toTransform, encoder.offset);
+  data->content_size = encoder.offset;
+  return 0;
+}
+
+int
+ndn_data_encrypted_content_parse(ndn_data_t* data, ndn_name_t* key_id, uint8_t* aes_iv, ndn_aes_key_t* key)
+{
+  ndn_decoder_t decoder;
+  uint8_t toTransform[NDN_CONTENT_BUFFER_SIZE] = {0};
+  decoder_init(&decoder, data->content_value, data->content_size);
+  ndn_name_tlv_decode(&decoder, key_id);
+  uint32_t probe;
+  decoder_get_type(&decoder, &probe);
+  decoder_get_length(&decoder, &probe);
+  decoder_get_raw_buffer_value(&decoder, aes_iv, NDN_AES_BLOCK_SIZE);
+  decoder_get_type(&decoder, &probe);
+  decoder_get_length(&decoder, &probe);
+  ndn_decrypter_aes_cbc_decrypt(decoder.input_value + decoder.offset, probe,
+                                toTransform, probe - NDN_AES_BLOCK_SIZE,
+                                aes_iv, key->key_value, key->key_size);
+  decoder.offset -= probe;
+  memcpy(data->content_value, toTransform, probe - NDN_AES_BLOCK_SIZE);
+  data->content_size = probe - NDN_AES_BLOCK_SIZE;
+  return 0;
 }

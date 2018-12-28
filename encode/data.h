@@ -25,6 +25,7 @@ extern "C" {
 typedef struct ndn_data {
   ndn_name_t name;
   ndn_metainfo_t metainfo;
+  uint8_t is_Encrypted;
   uint8_t content_value[NDN_CONTENT_BUFFER_SIZE];
   uint32_t content_size;
   ndn_signature_t signature;
@@ -37,6 +38,7 @@ ndn_data_init(ndn_data_t* data, uint8_t* content_value, uint32_t content_size)
     memcpy(data->content_value, content_value, content_size);
     data->content_size = content_size;
   }
+  data->is_Encrypted = 0;
   return 0;
 }
 
@@ -67,6 +69,16 @@ ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, u
 int
 ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size,
                                 const ndn_hmac_key_t* hmac_key);
+
+
+// for content encrypted data
+// call this function before data encode/sign. Using aes cbc, without padding 
+int
+ndn_data_encrypted_content_generate(ndn_data_t* data, ndn_name_t* key_id, uint8_t* aes_iv, ndn_aes_key_t* key);
+
+// call this function after data decode/verify. Using aes cbc, without padding
+int
+ndn_data_encrypted_content_parse(ndn_data_t* data, ndn_name_t* key_id, uint8_t* aes_iv, ndn_aes_key_t* key);
 
 #ifdef __cplusplus
 }
