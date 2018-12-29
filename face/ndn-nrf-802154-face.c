@@ -14,6 +14,8 @@
 #include <stdio.h>
 
 static ndn_nrf_802154_face_t nrf_802154_face;
+static frag_buffer[NDN_FRAG_BUFFER_MAX];
+static ndn_frag_assembler_t assembler;
 
 ndn_nrf_802154_face_t*
 ndn_nrf_802154_face_get_instance()
@@ -99,8 +101,6 @@ ndn_nrf_802154_face_send(struct ndn_face_intf* self, const ndn_name_t* name,
   // init payload
   if (size <= NDN_NRF_802154_MAX_PAYLOAD_SIZE) {
     memcpy(&packet_block[9], packet, size);
-    
-    // send out the packet
     _nrf_802154_transmission(packet_block, size + 9, true);
   }
   else {
@@ -110,12 +110,9 @@ ndn_nrf_802154_face_send(struct ndn_face_intf* self, const ndn_name_t* name,
     ndn_fragmenter_init(&fragmenter, packet, size, NDN_NRF_802154_MAX_PAYLOAD_SIZE, 
                         id);
     printf("%d pieces needed\n", fragmenter.total_frag_num);
-
     while (fragmenter.counter < fragmenter.total_frag_num) {
       ndn_fragmenter_fragment(&fragmenter, &packet_block[9]); 
-      printf("fragment output ONE piece, No. %d\n", fragmenter.counter);
-
-      // send out the packet
+      printf("fragmentation output ONE piece, No. %d\n", fragmenter.counter);
       _nrf_802154_transmission(packet_block, size + 9, true);
     }
   }
@@ -198,6 +195,8 @@ ndn_nrf_802154_face_construct(uint16_t face_id,
 
   nrf_802154_face.on_error(1);
 
+  ndn_frag_assembler_init(&assembler, frag_buffer, sizeof(frag_buffer));
+
   return &nrf_802154_face;
 }
 
@@ -234,11 +233,14 @@ nrf_802154_received(uint8_t* p_data, uint8_t length, int8_t power, uint8_t lqi)
   printf("RX frame, power %d, lqi %u, payload len %u: ",
          (int) power, (unsigned) lqi, (unsigned) length);
 
-  if (length - 9 < NDN_NRF_802154_MAX_PAYLOAD_SIZE)
-    ndn_face_receive(&nrf_802154_face.intf, &p_data[9], length - 9);
+  if (length - 9 <= NDN_NRF_802154_MAX_PAYLOAD_SIZE) {
+    ndn_frag_assembler_assemble_frag(&assembler, &p_data[9], length);
+    if (assembler.is_finished) {
+      ndn_face_receive(&nrf_802154_face.intf, frag_buffer, assembler.offset);
+      ndn_frag_assembler_init(&assembler, frag_buffer, sizeof(frag_buffer));
+    }  
+  }
   else {
-  //  ndn_frag_assembler_t assembler;
-  //  ndn_frag_assembler_init(&assembler, )
   }
   nrf_802154_buffer_free(p_data);
 }

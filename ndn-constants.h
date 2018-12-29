@@ -42,6 +42,7 @@
 #define NDN_FRAG_MF_MASK 0x20 // 0010 0000
 #define NDN_FRAG_SEQ_MASK 0x1F // 0001 1111
 #define NDN_FRAG_MAX_SEQ_NUM 30
+#define NDN_FRAG_BUFFER_MAX 512
 
 // access control
 #define NDN_APPSUPPORT_AC_EDK_SIZE 16
