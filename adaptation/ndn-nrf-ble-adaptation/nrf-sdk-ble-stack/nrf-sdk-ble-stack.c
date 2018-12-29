@@ -98,6 +98,13 @@ static void ble_evt_handler(ble_evt_t const * p_evt, void * p_context)
               m_nrf_sdk_ble_stack_observers[i].on_hvn_tx_complete(p_evt->evt.gap_evt.conn_handle);
             }
 
+            break;
+
+        case BLE_GATTC_EVT_EXCHANGE_MTU_RSP:
+            APP_LOG("Got a BLE_GATTC_EVT_EXCHANGE_MTU_RSP\n");
+
+            break;
+
         default:
             // No implementation needed.
             break;

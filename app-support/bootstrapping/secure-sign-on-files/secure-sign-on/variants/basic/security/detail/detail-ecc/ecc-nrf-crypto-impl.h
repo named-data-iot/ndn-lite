@@ -12,9 +12,6 @@
 #define ECC_NRF_CRYPTO_IMPL_H
 
 #include <stddef.h>
-#include "../../../../../../../../../security/ndn-lite-default-back/micro-ecc/uECC.h"
-
-#include "../../../../../../../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
 
 // Includes from the "ecdsa" example of the SDK
 //**************************************//
@@ -62,14 +59,7 @@
 
 //**************************************//
 
-//Includes to use mbedtls for ECDSA
-//***************************************************//
-#include <mbedtls/bignum.h>
-#include <mbedtls/ecdsa.h>
-#include <mbedtls/ecp.h>
-#include "nrf_rng.h"
-
-//***************************************************//
+#include <uECC.h>
 
 #define ECDSA_WITH_SHA256_SECP_256_ASN_ENCODED_SIGNATURE_SIZE 80
 

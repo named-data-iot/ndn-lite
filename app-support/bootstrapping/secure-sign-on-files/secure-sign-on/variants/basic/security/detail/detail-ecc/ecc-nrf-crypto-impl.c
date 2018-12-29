@@ -154,12 +154,12 @@ int sign_on_basic_nrf_crypto_gen_sha256_ecdsa_sig(const uint8_t *pri_key_raw, uE
   if (output_buf_len < ECDSA_WITH_SHA256_SECP_256_ASN_ENCODED_SIGNATURE_SIZE)
     return SEC_OP_FAILURE;
 
-  APP_LOG_HEX("Bytes of signature payload:", payload, payload_len);
+  //APP_LOG_HEX("Bytes of signature payload:", payload, payload_len);
 
   if (!sign_on_basic_nrf_crypto_gen_sha256_hash(payload, payload_len, m_digest))
     return SEC_OP_FAILURE;
 
-  APP_LOG_HEX("Bytes of digest of signature payload:", m_digest, NRF_CRYPTO_HASH_SIZE_SHA256);
+  //APP_LOG_HEX("Bytes of digest of signature payload:", m_digest, NRF_CRYPTO_HASH_SIZE_SHA256);
   
   uint16_t offsetForSignatureEncoding = 8;
 
@@ -168,7 +168,7 @@ int sign_on_basic_nrf_crypto_gen_sha256_ecdsa_sig(const uint8_t *pri_key_raw, uE
 
   uint16_t pri_key_raw_len = uECC_curve_private_key_size(curve);
 
-  APP_LOG("Bootstrapping request signature generation\n");
+  //APP_LOG("Bootstrapping request signature generation\n");
 
   // Alice converts her raw private key to internal representation
   err_code = nrf_crypto_ecc_private_key_from_raw(
@@ -188,7 +188,7 @@ int sign_on_basic_nrf_crypto_gen_sha256_ecdsa_sig(const uint8_t *pri_key_raw, uE
       output_buf + offsetForSignatureEncoding,
       output_len);
   if (err_code != NRF_SUCCESS) {
-    APP_LOG("inside of sign_on_basic_nrf_crypto_gen_sha256_ecdsa_sig, nrf_crypto_ecdsa_sign failed.\n");
+    //APP_LOG("inside of sign_on_basic_nrf_crypto_gen_sha256_ecdsa_sig, nrf_crypto_ecdsa_sign failed.\n");
     return SEC_OP_FAILURE;
   }
 
@@ -210,7 +210,7 @@ int sign_on_basic_nrf_crypto_gen_ecdh_shared_secret(
     uint8_t *output_buf, uint16_t output_buf_len, uint16_t *output_len) {
 
   if (output_buf_len < uECC_curve_public_key_size(curve)) {
-    APP_LOG("Output buffer was too small to hold generated shared secret.\n");
+    //APP_LOG("Output buffer was too small to hold generated shared secret.\n");
     return false;
   }
 
@@ -226,7 +226,7 @@ int sign_on_basic_nrf_crypto_gen_ecdh_shared_secret(
 
   ret_code_t err_code = NRF_SUCCESS;
 
-  APP_LOG("Generating shared secret.\n");
+  //APP_LOG("Generating shared secret.\n");
 
   static nrf_crypto_ecc_private_key_t pri_key;
   static nrf_crypto_ecc_public_key_t pub_key;
@@ -238,7 +238,7 @@ int sign_on_basic_nrf_crypto_gen_ecdh_shared_secret(
   size = pub_key_raw_len;
   memcpy(raw_key_buffer, pub_key_raw, pub_key_raw_len);
 
-  APP_LOG_HEX("Value of N2 pub:", raw_key_buffer, size);
+  //APP_LOG_HEX("Value of N2 pub:", raw_key_buffer, size);
 
   // Alice converts Bob's raw public key to internal representation
   err_code = nrf_crypto_ecc_public_key_from_raw(&g_nrf_crypto_ecc_secp256r1_curve_info,
@@ -271,7 +271,7 @@ int sign_on_basic_nrf_crypto_gen_ecdh_shared_secret(
   *output_len = size;
   memcpy(output_buf, diffie_hellman_shared_secret, *output_len);
 
-  APP_LOG_HEX("Generated shared secret: ", output_buf, *output_len);
+  //APP_LOG_HEX("Generated shared secret: ", output_buf, *output_len);
 
   // Key deallocation
   err_code = nrf_crypto_ecc_private_key_free(&pri_key);

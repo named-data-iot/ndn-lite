@@ -35,8 +35,6 @@
 
 //**************************************//
 
-#include "../../../../../../../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
-
 // taken from the "aes" example of the SDK
 //*****************************************************//
 

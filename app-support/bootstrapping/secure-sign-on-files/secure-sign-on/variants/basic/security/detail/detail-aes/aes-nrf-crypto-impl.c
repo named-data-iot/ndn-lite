@@ -56,9 +56,9 @@ int sign_on_basic_nrf_crypto_decrypt_aes_cbc_pkcs5pad(uint8_t *key, uint16_t key
   memcpy(encrypted_text, encrypted_payload, encrypted_payload_len);
   len_out = encrypted_payload_len;
 
-  APP_LOG_HEX("Bytes we are attempting to decrypt", encrypted_text, len_out);
-  APP_LOG("Length of bytes we are attempting to decrypt: %d\n", len_out);
-  APP_LOG_HEX("Attempting to decrypt with this key", key, max_key_length);
+  //APP_LOG_HEX("Bytes we are attempting to decrypt", encrypted_text, len_out);
+  //APP_LOG("Length of bytes we are attempting to decrypt: %d\n", len_out);
+  //APP_LOG_HEX("Attempting to decrypt with this key", key, max_key_length);
 
   /* Decrypt text */
   ret_val = nrf_crypto_aes_finalize(&cbc_decr_128_ctx,
@@ -74,7 +74,7 @@ int sign_on_basic_nrf_crypto_decrypt_aes_cbc_pkcs5pad(uint8_t *key, uint16_t key
     return SEC_OP_FAILURE;
   }
 
-  APP_LOG("Length of decrypted contents: %d\n", len_out);
+  //APP_LOG("Length of decrypted contents: %d\n", len_out);
 
   memcpy(decrypted_payload, decrypted_text, len_out);
   *decrypted_payload_len = len_out;

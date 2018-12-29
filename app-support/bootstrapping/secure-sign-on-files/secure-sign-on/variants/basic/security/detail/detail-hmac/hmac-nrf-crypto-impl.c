@@ -11,7 +11,6 @@
 #include "hmac-nrf-crypto-impl.h"
 
 #include "../../sign-on-basic-sec-consts.h"
-#include "../../../../../../../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
 
 bool sign_on_basic_nrf_crypto_vrfy_hmac_sha256_sig(const uint8_t *payload, uint16_t payload_len,
     const uint8_t *sig, uint16_t sig_len,
@@ -38,7 +37,7 @@ bool sign_on_basic_nrf_crypto_vrfy_hmac_sha256_sig(const uint8_t *payload, uint1
   size_t digest_len = sizeof(m_digest);
   size_t key_len = key_len_in;
 
-  APP_LOG("HMAC example started.\n");
+  //APP_LOG("HMAC example started.\n");
 
   // Initialize frontend (which also initializes backend).
   ret_code_t err_code = nrf_crypto_hmac_init(
@@ -60,10 +59,10 @@ bool sign_on_basic_nrf_crypto_vrfy_hmac_sha256_sig(const uint8_t *payload, uint1
     return SEC_OP_FAILURE;
 
   // Print digest (result).
-  APP_LOG_HEX("Calculated HMAC:", m_digest, digest_len);
+  //APP_LOG_HEX("Calculated HMAC:", m_digest, digest_len);
 
   if (memcmp(m_digest, sig, sig_len) != 0) {
-    APP_LOG("Failed to verify bootstrapping request response by secure sign on code.\n");
+    //APP_LOG("Failed to verify bootstrapping request response by secure sign on code.\n");
     return SEC_OP_FAILURE;
   }
 

@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "../../../../../../../../security/ndn-lite-default-back/micro-ecc/uECC.h"
+#include <uECC.h>
 
 // define the board type here; I think there is a better way to do this than based on board type,
 // since many boards will share the same security libraries, but for now I will do it this way...
