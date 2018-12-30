@@ -25,22 +25,10 @@ extern "C" {
 typedef struct ndn_data {
   ndn_name_t name;
   ndn_metainfo_t metainfo;
-  uint8_t is_Encrypted;
   uint8_t content_value[NDN_CONTENT_BUFFER_SIZE];
   uint32_t content_size;
   ndn_signature_t signature;
 } ndn_data_t;
-
-static inline int
-ndn_data_init(ndn_data_t* data, uint8_t* content_value, uint32_t content_size)
-{
-  if (content_size < NDN_CONTENT_BUFFER_SIZE) {
-    memcpy(data->content_value, content_value, content_size);
-    data->content_size = content_size;
-  }
-  data->is_Encrypted = 0;
-  return 0;
-}
 
 // this function will automatically set signature info and signature value
 int
@@ -70,15 +58,29 @@ int
 ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size,
                                 const ndn_hmac_key_t* hmac_key);
 
+static inline int
+ndn_data_set_content(ndn_data_t* data, uint8_t* content_value, uint32_t content_size)
+{
+  if (content_size < NDN_CONTENT_BUFFER_SIZE) {
+    memcpy(data->content_value, content_value, content_size);
+    data->content_size = content_size;
+  }
+  return 0;
+}
 
 // for content encrypted data
-// call this function before data encode/sign. Using aes cbc, without padding 
+// call this function before data encode/sign. Using aes cbc, without padding
 int
-ndn_data_encrypted_content_generate(ndn_data_t* data, ndn_name_t* key_id, uint8_t* aes_iv, ndn_aes_key_t* key);
+ndn_data_set_encrypted_content(ndn_data_t* data,
+                               const uint8_t* content_value, uint32_t content_size,
+                               const ndn_name_t* key_id, const uint8_t* aes_iv,
+                               const ndn_aes_key_t* key);
 
 // call this function after data decode/verify. Using aes cbc, without padding
 int
-ndn_data_encrypted_content_parse(ndn_data_t* data, ndn_name_t* key_id, uint8_t* aes_iv, ndn_aes_key_t* key);
+ndn_data_parse_encrypted_content(ndn_data_t* data,
+                                 uint8_t* content_value, uint32_t* content_used_size,
+                                 ndn_name_t* key_id, uint8_t* aes_iv, ndn_aes_key_t* key);
 
 #ifdef __cplusplus
 }

@@ -16,24 +16,23 @@
 extern "C" {
 #endif
 
-
 /*
  * Interface for AES CBC encryption
  */
 int
-ndn_encrypter_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
-                              uint8_t* output_value, uint8_t output_size,
-                              const uint8_t* aes_iv,
-                              const uint8_t* key_value, uint8_t key_size);
+ndn_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
+                    uint8_t* output_value, uint8_t output_size,
+                    const uint8_t* aes_iv,
+                    const uint8_t* key_value, uint8_t key_size);
 
 /*
  * Interface for AES CBC decryption
  */
 int
-ndn_decrypter_aes_cbc_decrypt(const uint8_t* input_value, uint8_t input_size,
-                              uint8_t* output_value, uint8_t output_size,
-                              const uint8_t* aes_iv,
-                              const uint8_t* key_value, uint8_t key_size);
+ndn_aes_cbc_decrypt(const uint8_t* input_value, uint8_t input_size,
+                    uint8_t* output_value, uint8_t output_size,
+                    const uint8_t* aes_iv,
+                    const uint8_t* key_value, uint8_t key_size);
 
 #ifdef __cplusplus
 }

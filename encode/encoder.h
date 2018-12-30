@@ -41,7 +41,6 @@ encoder_get_var_size(uint32_t var)
 }
 
 // get the TLV block size before create the block
-// use this function to avoid malloc or other dynamic mem operations
 static inline uint32_t
 encoder_probe_block_size(const int type, const uint32_t payload_size)
 {
@@ -51,10 +50,10 @@ encoder_probe_block_size(const int type, const uint32_t payload_size)
 }
 
 // get the TLV block value size
-// use this function to avoid malloc or other dynamic mem operations
 static inline uint32_t
 encoder_probe_block_value_size(const int type, const uint32_t payload_size)
 {
+  (void)type;
   return payload_size;
 }
 

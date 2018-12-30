@@ -276,7 +276,7 @@ ndn_sd_on_query_process(const ndn_interest_t* interest, ndn_data_t* response)
     // (Optional) ECDH_Pub_Key
 
     response->name = interest->name;
-    ndn_data_init(response, buffer, sizeof(buffer));
+    ndn_data_set_content(response, buffer, sizeof(buffer));
     return 0;
   }
   return NDN_SD_NO_MATCH_SERVCE;
