@@ -106,9 +106,12 @@ ndn_aes_key_init(ndn_aes_key_t* key, uint8_t* key_value,
   return 0;
 }
 
-// int
-// ndn_ecc_key_make_key(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
-//                      uint8_t curve_type, uint32_t key_id, ndn_ECC_RNG_Function rng_func);
+void
+ndn_ecc_key_set_rng(ndn_ECC_RNG_Function rng);
+
+int
+ndn_ecc_key_make_key(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
+                      uint8_t curve_type, uint32_t key_id);
 
 // // @param input_value -- personalization string
 // // @param input_size -- personalization length in bytes
@@ -118,12 +121,17 @@ ndn_aes_key_init(ndn_aes_key_t* key, uint8_t* key_value,
 // // @param seed_size -- entropy length in bytes
 // // @param additional_value -- additional input to the prng
 // // @param additional_size -- additional input length in bytes
-// int
-// ndn_hmac_make_key(ndn_hmac_key_t* key, uint32_t key_id,
-//                   const uint8_t* input_value, uint32_t input_size,
-//                   const uint8_t* seed_value, uint32_t seed_size,
-//                   const uint8_t* additional_value, uint32_t additional_size);
+int
+ndn_hmac_make_key(ndn_hmac_key_t* key, uint32_t key_id,
+                   const uint8_t* input_value, uint32_t input_size,
+                   const uint8_t* personalization, uint32_t personalization_size,
+                   const uint8_t* seed_value, uint32_t seed_size,
+                   const uint8_t* additional_value, uint32_t additional_size,
+                   uint32_t salt_size);
 
+int
+ndn_ecc_key_shared_secret(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
+                          uint8_t curve_type, uint8_t* output, uint32_t output_size);
 #ifdef __cplusplus
 }
 #endif

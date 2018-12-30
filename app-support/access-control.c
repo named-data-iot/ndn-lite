@@ -8,14 +8,12 @@
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
-#include "stdio.h"
 #include "access-control.h"
 #include "../encode/signed-interest.h"
 #include "../security/aes.h"
 #include "../security/key-storage.h"
 #include "../security/random.h"
 #include "../security/ndn-lite-default-back/tinycrypt/ecc_dh.h"
-#include "../security/ndn-lite-default-back/tinycrypt/constants.h"
 #include "../security/ndn-lite-default-back/tinycrypt/cbc_mode.h"
 
 static ndn_ac_unfinished_key_t unfinished_key;
@@ -75,10 +73,10 @@ ndn_ac_prepare_key_request_interest(ndn_encoder_t* encoder,
   encoder_append_uint32_value(&params_encoder, ac_key_id);
 
   // encode ECDH Pub into Parameters
-  tc_uECC_Curve curve = tc_uECC_secp256r1();
   unfinished_key.dh_pub.key_size = 64;
   unfinished_key.dh_prv.key_size = 32;
-  tc_uECC_make_key(unfinished_key.dh_pub.key_value, unfinished_key.dh_prv.key_value, curve);
+  ndn_ecc_key_make_key(&unfinished_key.dh_pub, &unfinished_key.dh_prv, 
+                       NDN_ECDSA_CURVE_SECP256R1, 1234);
   encoder_append_type(&params_encoder, TLV_AC_ECDH_PUB);
   encoder_append_length(&params_encoder, unfinished_key.dh_pub.key_size);
   encoder_append_raw_buffer_value(&params_encoder,
@@ -115,9 +113,10 @@ ndn_ac_on_ek_response_process(const ndn_data_t* data)
 
   // ECDH
   uint8_t shared[32];
-  tc_uECC_Curve curve = tc_uECC_secp256r1();
-  int r = tc_uECC_shared_secret(ecdh_bytes, unfinished_key.dh_prv.key_value, shared, curve);
-  if (!r) printf("shared secret failed\n");
+  ndn_ecc_pub_t ecdh_pubkey;
+  ndn_ecc_pub_init(&ecdh_pubkey, ecdh_bytes, sizeof(ecdh_bytes), NDN_ECDSA_CURVE_SECP256R1, 2345);
+  ndn_ecc_key_shared_secret(&ecdh_pubkey, &unfinished_key.dh_prv, NDN_ECDSA_CURVE_SECP256R1, 
+                            shared, sizeof(shared));
 
   // encryption/decryption key generation
   uint8_t symmetric_key[NDN_APPSUPPORT_AC_EDK_SIZE];
@@ -158,9 +157,11 @@ ndn_ac_on_dk_response_process(const ndn_data_t* data)
   decoder_get_length(&decoder, &probe);
   uint8_t ecdh_bytes[64];
   decoder_get_raw_buffer_value(&decoder, ecdh_bytes, sizeof(ecdh_bytes));
-  tc_uECC_Curve curve = tc_uECC_secp256r1();
   uint8_t shared[32];
-  tc_uECC_shared_secret(ecdh_bytes, unfinished_key.dh_prv.key_value, shared, curve);
+  ndn_ecc_pub_t ecdh_pubkey;
+  ndn_ecc_pub_init(&ecdh_pubkey, ecdh_bytes, sizeof(ecdh_bytes), NDN_ECDSA_CURVE_SECP256R1, 2345);
+  ndn_ecc_key_shared_secret(&ecdh_pubkey, &unfinished_key.dh_prv, 
+                            NDN_ECDSA_CURVE_SECP256R1, shared, sizeof(shared));
 
   // decode Salt from content
   decoder_get_type(&decoder, &probe);
@@ -250,13 +251,14 @@ ndn_ac_prepare_ek_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
   uint8_t ecdh_bytes[64];
   decoder_get_raw_buffer_value(decoder, ecdh_bytes, 64);
 
-  tc_uECC_Curve curve = tc_uECC_secp256r1();
-  tc_uECC_make_key(temp.dh_pub.key_value, temp.dh_prv.key_value, curve);
+  ndn_ecc_key_make_key(&temp.dh_pub, &temp.dh_prv, NDN_ECDSA_CURVE_SECP256R1, 1234);
 
   uint8_t shared[32];
-  int r = tc_uECC_shared_secret(ecdh_bytes, temp.dh_prv.key_value, shared, curve);
-  if (!r) printf("shared secret failed\n");
-
+  ndn_ecc_pub_t ecdh_pubkey;
+  ndn_ecc_pub_init(&ecdh_pubkey, ecdh_bytes, sizeof(ecdh_bytes), NDN_ECDSA_CURVE_SECP256R1, 2345);
+  ndn_ecc_key_shared_secret(&ecdh_pubkey, &unfinished_key.dh_prv, NDN_ECDSA_CURVE_SECP256R1, 
+                            shared, sizeof(shared));
+                            
   // salt generation
   uint8_t salt[NDN_APPSUPPORT_AC_SALT_SIZE];
 
@@ -334,13 +336,14 @@ ndn_ac_prepare_dk_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
   uint8_t ecdh_bytes[64];
   decoder_get_raw_buffer_value(decoder, ecdh_bytes, 64);
 
-  tc_uECC_Curve curve = tc_uECC_secp256r1();
-  tc_uECC_make_key(temp.dh_pub.key_value, temp.dh_prv.key_value, curve);
+  ndn_ecc_key_make_key(&temp.dh_pub, &temp.dh_prv, NDN_ECDSA_CURVE_SECP256R1, 1234);
 
   uint8_t shared[32];
-  int r = tc_uECC_shared_secret(ecdh_bytes, temp.dh_prv.key_value, shared, curve);
-  if (!r) printf("shared secret failed\n");
-
+  ndn_ecc_pub_t ecdh_pubkey;
+  ndn_ecc_pub_init(&ecdh_pubkey, ecdh_bytes, sizeof(ecdh_bytes), NDN_ECDSA_CURVE_SECP256R1, 2345);
+  ndn_ecc_key_shared_secret(&ecdh_pubkey, &temp.dh_prv, NDN_ECDSA_CURVE_SECP256R1, 
+                            shared, sizeof(shared));
+  
   // salt generation
   uint8_t salt[NDN_APPSUPPORT_AC_SALT_SIZE];
 
