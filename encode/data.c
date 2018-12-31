@@ -371,9 +371,9 @@ ndn_data_set_encrypted_content(ndn_data_t* data,
 }
 
 int
-ndn_data_parse_encrypted_content(ndn_data_t* data,
+ndn_data_parse_encrypted_content(const ndn_data_t* data,
                                  uint8_t* content_value, uint32_t* content_used_size,
-                                 ndn_name_t* key_id, uint8_t* aes_iv, ndn_aes_key_t* key)
+                                 ndn_name_t* key_id, uint8_t* aes_iv, const ndn_aes_key_t* key)
 {
   ndn_decoder_t decoder;
   // uint8_t toTransform[NDN_CONTENT_BUFFER_SIZE] = {0};

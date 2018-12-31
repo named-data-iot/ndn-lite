@@ -19,45 +19,126 @@
 extern "C" {
 #endif
 
-// the best practice of Data is to first declare a ndn_data_t object and
-// init each component using object.attribute_name to save memory
-
+/**
+ * The structure to represent an NDN Data packet
+ * The best practice of using ndn_data_t is to first declare a ndn_data_t object
+ * and init each of its component to save memory
+ */
 typedef struct ndn_data {
+  /**
+   * Data Name Value (not include T and L)
+   */
   ndn_name_t name;
+  /**
+   * Data MetaInfo Value (not include T and L)
+   */
   ndn_metainfo_t metainfo;
+  /**
+   * Data Content Value (not include T and L)
+   */
   uint8_t content_value[NDN_CONTENT_BUFFER_SIZE];
+  /**
+   * Data MetaInfo Content Value Size
+   */
   uint32_t content_size;
+  /**
+   * Data Signature.
+   * This attribute should not be manually modified.
+   * Use ndn_data_tlv_encode_*_sign functions to generate signature.
+   */
   ndn_signature_t signature;
 } ndn_data_t;
 
-// this function will automatically set signature info and signature value
+/**
+ * Use Digest (SHA256) to sign the Data and encode the Data into wire format.
+ * This function will automatically set signature info and signature value.
+ * @param encoder Output. The encoder to keep the encoded Data.
+ *        The encoder should be inited to proper output buffer.
+ * @param data Input. The data to be encoded.
+ * @return 0 if there is no error.
+ */
 int
 ndn_data_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_data_t* data);
 
-// this function will automatically set signature info and signature value
+/**
+ * Use ECDSA Algorithm to sign the Data and encode the Data into wire format.
+ * This function will automatically set signature info and signature value.
+ * @param encoder. Output. The encoder to keep the encoded Data.
+ *        The encoder should be inited to proper output buffer.
+ * @param data. Input. The data to be encoded.
+ * @param producer_identity. Input. The producer's identity name.
+ * @param prv_key. Input. The private ECC key used to generate the signature.
+ * @return 0 if there is no error.
+ */
 int
 ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
                                const ndn_name_t* producer_identity, const ndn_ecc_prv_t* prv_key);
 
-// this function will automatically set signature info and signature value
+/**
+ * Use HMAC Algorithm to sign the Data and encode the Data into wire format.
+ * This function will automatically set signature info and signature value.
+ * @param encoder. Output. The encoder to keep the encoded Data.
+ *        The encoder should be inited to proper output buffer.
+ * @param data. Input. The data to be encoded.
+ * @param producer_identity. Input. The producer's identity name.
+ * @param prv_key. Input. The private HMAC key used to generate the signature.
+ * @return 0 if there is no error.
+ */
 int
 ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
                               const ndn_name_t* producer_identity, const ndn_hmac_key_t* hmac_key);
 
+/**
+ * Simply decode the encoded Data into a Data structure without signature verification.
+ * @param data. Output. The data to which the wired block will be decoded.
+ * @param block_value. Input. The wire format Data buffer.
+ * @param block_size. Input. The size of the wire format Data buffer.
+ * @return 0 if there is no error.
+ */
 int
 ndn_data_tlv_decode_no_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size);
 
+/**
+ * Decode the encoded Data into a Data structure and verify the Digest (SHA256) signature.
+ * @param data. Output. The data to which the wired block will be decoded.
+ * @param block_value. Input. The wire format Data buffer.
+ * @param block_size. Input. The size of the wire format Data buffer.
+ * @return 0 if there is no error and the signature is valid.
+ */
 int
 ndn_data_tlv_decode_digest_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size);
 
+/**
+ * Decode the encoded Data into a Data structure and verify the ECDSA signature.
+ * @param data. Output. The data to which the wired block will be decoded.
+ * @param block_value. Input. The wire format Data buffer.
+ * @param block_size. Input. The size of the wire format Data buffer.
+ * @param pub_key. Input. The ECC public key used to verify the Data signature.
+ * @return 0 if there is no error and the signature is valid.
+ */
 int
 ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size,
                                  const ndn_ecc_pub_t* pub_key);
 
+/**
+ * Decode the encoded Data into a Data structure and verify the HMAC signature.
+ * @param data. Output. The data to which the wired block will be decoded.
+ * @param block_value. Input. The wire format Data buffer.
+ * @param block_size. Input. The size of the wire format Data buffer.
+ * @param hmac_key. Input. The HMAC public key used to verify the Data signature.
+ * @return 0 if there is no error and the signature is valid.
+ */
 int
 ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size,
                                 const ndn_hmac_key_t* hmac_key);
 
+/**
+ * Set the Data content.
+ * @param data. Output. The data whose content will be set.
+ * @param content_value. Input. The content buffer (Content Value only, no T(type) and L(length)).
+ * @param content_size. Input. The size of the content buffer.
+ * @return 0 if there is no error.
+ */
 static inline int
 ndn_data_set_content(ndn_data_t* data, uint8_t* content_value, uint32_t content_size)
 {
@@ -68,19 +149,39 @@ ndn_data_set_content(ndn_data_t* data, uint8_t* content_value, uint32_t content_
   return 0;
 }
 
-// for content encrypted data
-// call this function before data encode/sign. Using aes cbc, without padding
+/**
+ * Set the Data content with the encrypted content.
+ * The content payload will be encrypted with AES CBC without padding.
+ * @param data. Output. The data whose content will be set.
+ * @param content_value. Input. The content buffer (Content Value only, no T(type) and L(length)).
+ * @param content_size. Input. The size of the content buffer.
+ * @param key_id. Input. The encryption key name.
+ * @param aes_iv. Input. The IV used for AES encryption.
+ * @param key. Input. The AES key used for AES encryption.
+ * @return 0 if there is no error.
+ */
 int
 ndn_data_set_encrypted_content(ndn_data_t* data,
                                const uint8_t* content_value, uint32_t content_size,
                                const ndn_name_t* key_id, const uint8_t* aes_iv,
                                const ndn_aes_key_t* key);
 
-// call this function after data decode/verify. Using aes cbc, without padding
+/**
+ * Parse the Data encrypted content and get the decrypted content.
+ * The content payload will be decrypted with AES CBC without padding.
+ * @param data. Input. The data whose content will be set.
+ * @param content_value. Output. The decrypted content buffer
+ *        (Content Value only, no T(type) and L(length)).
+ * @param content_used_size. Output. The size of the decrypted content buffer.
+ * @param key_id. Output. The encryption key name.
+ * @param aes_iv. Output. The IV used for AES decryption.
+ * @param key. Input. The AES key used for AES decryption.
+ * @return 0 if there is no error.
+ */
 int
-ndn_data_parse_encrypted_content(ndn_data_t* data,
+ndn_data_parse_encrypted_content(const ndn_data_t* data,
                                  uint8_t* content_value, uint32_t* content_used_size,
-                                 ndn_name_t* key_id, uint8_t* aes_iv, ndn_aes_key_t* key);
+                                 ndn_name_t* key_id, uint8_t* aes_iv, const ndn_aes_key_t* key);
 
 #ifdef __cplusplus
 }
