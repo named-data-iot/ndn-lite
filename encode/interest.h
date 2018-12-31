@@ -138,8 +138,7 @@ ndn_interest_probe_block_size(const ndn_interest_t* interest)
 static inline uint32_t
 ndn_interest_probe_block_value_size(const ndn_interest_t* interest)
 {
-  uint32_t interest_buffer_size = ndn_interest_probe_block_internals_size(interest);
-  return encoder_probe_block_value_size(TLV_Interest, interest_buffer_size);
+  return ndn_interest_probe_block_internals_size(interest);
 }
 
 // used only for unsigned Interest

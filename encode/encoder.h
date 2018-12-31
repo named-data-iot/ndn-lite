@@ -24,14 +24,44 @@ typedef struct ndn_buffer {
   uint32_t max_size;
 } ndn_buffer_t;
 
-// State keeper when doing encode
+/**
+ * The structure to keep the state when doing NDN TLV encoding.
+ */
 typedef struct ndn_encoder {
+  /**
+   * The buffer to keep the encoding output.
+   */
   uint8_t* output_value;
+  /**
+   * The size of the buffer to keep the encoding output.
+   */
   uint32_t output_max_size;
+  /**
+   * The actual size used of the buffer to keep the encoding output.
+   */
   uint32_t offset;
 } ndn_encoder_t;
 
-// only used for type (T) and length (L)
+/**
+ * Init a encoder by setting the buffer to keep the encoding output and its size.
+ * @param encoder. Output. The encoder to be inited.
+ * @param block_value. Input. The buffer to keep the wire format buffer.
+ * @param block_max_size. Input. The size of wire format buffer.
+ */
+static inline void
+encoder_init(ndn_encoder_t* encoder, uint8_t* block_value, uint32_t block_max_size)
+{
+  memset(block_value, 0, block_max_size);
+  encoder->output_value = block_value;
+  encoder->output_max_size = block_max_size;
+  encoder->offset = 0;
+}
+
+/**
+ * Probe the size of a variable length type (T) or length (L).
+ * @param var. Input. The value of the variable length type (T) or length (L).
+ * @return the length of the type (T) or length (L).
+ */
 static inline int
 encoder_get_var_size(uint32_t var)
 {
@@ -40,7 +70,13 @@ encoder_get_var_size(uint32_t var)
   else return 5;
 }
 
-// get the TLV block size before create the block
+/**
+ * Probe the size of a TLV block.
+ * This function is used to check whether the output buffer size is enough or not.
+ * @param type. Input. The value of the type (T).
+ * @param payload_size. Input. The value of length (L).
+ * @return the length of the TLV block.
+ */
 static inline uint32_t
 encoder_probe_block_size(const int type, const uint32_t payload_size)
 {
@@ -49,26 +85,12 @@ encoder_probe_block_size(const int type, const uint32_t payload_size)
   return (payload_size + type_size + length_size);
 }
 
-// get the TLV block value size
-static inline uint32_t
-encoder_probe_block_value_size(const int type, const uint32_t payload_size)
-{
-  (void)type;
-  return payload_size;
-}
-
-// init an encoder
-// To invoke the function, first probe the size of the output block size and
-// create the block
-static inline void
-encoder_init(ndn_encoder_t* encoder, uint8_t* block_value, uint32_t block_max_size)
-{
-  encoder->output_value = block_value;
-  encoder->output_max_size = block_max_size;
-  encoder->offset = 0;
-}
-
-// function to set the type (T) and length (L)
+/**
+ * Append a variable length type (T) or length (L) to the wire format buffer.
+ * @param encoder. Output. The encoder will keep the encoding result and the offset will be updated.
+ * @param var. Input. The variable length type (T) or length (L).
+ * @return 0 if there is no error.
+ */
 static inline int
 encoder_append_var(ndn_encoder_t* encoder, uint32_t var)
 {
@@ -97,34 +119,54 @@ encoder_append_var(ndn_encoder_t* encoder, uint32_t var)
   return 0;
 }
 
-static inline int
-encoder_append_integer(ndn_encoder_t* encoder, uint32_t var){
-  return encoder_append_var(encoder, var);
-}
-
-// function to set the type (T)
+/**
+ * Append a variable length type (T) to the wire format buffer.
+ * @param encoder. Output. The encoder will keep the encoding result and the offset will be updated.
+ * @param type. Input. The variable length type (T).
+ * @return 0 if there is no error.
+ */
 static inline int
 encoder_append_type(ndn_encoder_t* encoder, uint32_t type)
 {
   return encoder_append_var(encoder, type);
 }
 
-// function to set the length (L)
+/**
+ * Append a variable length length (L) to the wire format buffer.
+ * @param encoder. Output. The encoder will keep the encoding result and the offset will be updated.
+ * @param length. Input. The variable length length (L).
+ * @return 0 if there is no error.
+ */
 static inline int
 encoder_append_length(ndn_encoder_t* encoder, uint32_t length)
 {
   return encoder_append_var(encoder, length);
 }
 
-// function to set the value (V)
-// the buffer size must be equal to the rest size of the output maintained by
-// the encoder
-int
-encoder_append_buffer_value(ndn_encoder_t* encoder, const ndn_buffer_t* buffer);
+/**
+ * Append the byte array as the value (V) to the wire format buffer.
+ * @param encoder. Output. The encoder will keep the encoding result and the offset will be updated.
+ * @param buffer. Input. The buffer to be encoded.
+ * @param size. Input. The size of the buffer to be encoded.
+ * @return 0 if there is no error.
+ */
+static inline int
+encoder_append_raw_buffer_value(ndn_encoder_t* encoder, const uint8_t* buffer, uint32_t size)
+{
+  if (encoder->output_max_size - encoder->offset < (int) size) {
+    return NDN_OVERSIZE;
+  }
+  memcpy(encoder->output_value + encoder->offset, buffer, size);
+  encoder->offset += size;
+  return 0;
+}
 
-int
-encoder_append_raw_buffer_value(ndn_encoder_t* encoder, const uint8_t* buffer, uint32_t size);
-
+/**
+ * Append a single byte as the value (V) to the wire format buffer.
+ * @param encoder. Output. The encoder will keep the encoding result and the offset will be updated.
+ * @param value. Input. The byte to be encoded.
+ * @return 0 if there is no error.
+ */
 static inline int
 encoder_append_byte_value(ndn_encoder_t* encoder, uint8_t value)
 {
@@ -135,6 +177,12 @@ encoder_append_byte_value(ndn_encoder_t* encoder, uint8_t value)
   return 0;
 }
 
+/**
+ * Append a uint16_t as the value (V) to the wire format buffer.
+ * @param encoder. Output. The encoder will keep the encoding result and the offset will be updated.
+ * @param value. Input. The uint16_t to be encoded.
+ * @return 0 if there is no error.
+ */
 static inline int
 encoder_append_uint16_value(ndn_encoder_t* encoder, uint16_t value)
 {
@@ -146,6 +194,12 @@ encoder_append_uint16_value(ndn_encoder_t* encoder, uint16_t value)
   return 0;
 }
 
+/**
+ * Append a uint32_t as the value (V) to the wire format buffer.
+ * @param encoder. Output. The encoder will keep the encoding result and the offset will be updated.
+ * @param value. Input. The uint32_t to be encoded.
+ * @return 0 if there is no error.
+ */
 static inline int
 encoder_append_uint32_value(ndn_encoder_t* encoder, uint32_t value)
 {
@@ -159,22 +213,42 @@ encoder_append_uint32_value(ndn_encoder_t* encoder, uint32_t value)
   return 0;
 }
 
+/**
+ * Move the encoder's offset forward by @param step.
+ * @param encoder. Output. The encoder whose offset will be updated.
+ * @param step. Input. The step by which the offset will be moved.
+ * @return 0 if there is no error.
+ */
 static inline int
-encoder_move_forward(ndn_encoder_t* encoder, uint32_t step){
+encoder_move_forward(ndn_encoder_t* encoder, uint32_t step)
+{
   if (encoder->offset + step > encoder->output_max_size)
     return NDN_OVERSIZE;
   encoder->offset += step;
   return 0;
 }
 
+/**
+ * Move the encoder's offset backward by @param step.
+ * @param encoder. Output. The encoder whose offset will be updated.
+ * @param step. Input. The step by which the offset will be moved.
+ * @return 0 if there is no error.
+ */
 static inline int
-encoder_move_backward(ndn_encoder_t* encoder, uint32_t step){
+encoder_move_backward(ndn_encoder_t* encoder, uint32_t step)
+{
   encoder->offset -= step;
   return 0;
 }
 
+/**
+ * Get the offset of the encoder.
+ * @param encoder. Input. The encoder's offset will be updated.
+ * @return the uint32_t type offset.
+ */
 static inline uint32_t
-encoder_get_offset(ndn_encoder_t* encoder){
+encoder_get_offset(const ndn_encoder_t* encoder)
+{
   return encoder->offset;
 }
 
