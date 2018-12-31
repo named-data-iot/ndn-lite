@@ -170,9 +170,6 @@ void ndn_nrf_ble_unicast_hvn_tx_complete(uint16_t conn_handle) {
         printf("nrf_sdk_ble_adv_start inside of ndn_nrf_ble_adv_stopped failed.\n");
         return -1;
       }
-      // make sure to set current_packet_block_to_send_p to NULL to indicate that we have sent
-      // this packet to both the controller through unicast and through extended advertising broadcast
-      current_packet_block_to_send_p = NULL;
     } else {
       // if ndn_lite_ble_unicast_transport_disconnect returned NRF_BLE_OP_SUCCESS, it means that we will have
       // to wait for the on disconnect callback
@@ -197,7 +194,6 @@ void ndn_nrf_ble_unicast_disconnected() {
             ndn_nrf_ble_face_adv_uuid, true, NDN_NRF_BLE_ADV_NUM,
             ndn_nrf_ble_adv_stopped) != NRF_BLE_OP_SUCCESS) {
       printf("nrf_sdk_ble_adv_start inside of ndn_nrf_ble_unicast_disconnected failed.\n");
-      current_packet_block_to_send_p = NULL;
     }
   } else {
     printf("in ndn_nrf_ble_unicast_disconnected, current_packet_block_to_send_p was NULL.\n");
@@ -211,6 +207,10 @@ void ndn_nrf_ble_unicast_disconnected() {
 
 void ndn_nrf_ble_adv_stopped(void) {
   printf("ndn_nrf_ble_adv_stopped got called.\n");
+
+  // make sure to set current_packet_block_to_send_p to NULL to indicate that we have sent
+  // this packet to both the controller through unicast and through extended advertising broadcast
+  current_packet_block_to_send_p = NULL;
 
   // this is a hack for now; since we are using ble advertising for both the ndn-lite ble face
   // and the secure sign on ble object, we will just share advertising between them; any time that
