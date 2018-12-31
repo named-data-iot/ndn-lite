@@ -38,11 +38,10 @@
 // taken from the "aes" example of the SDK
 //*****************************************************//
 
-#define NRF_CRYPTO_EXAMPLE_AES_MAX_TEXT_SIZE 120
-
-int ndn_lite_nrf_crypto_decrypt_aes_cbc_pkcs5pad(uint8_t *key, uint16_t key_len, 
-    const uint8_t *encrypted_payload, uint16_t encrypted_payload_len,
-    uint8_t *decrypted_payload, uint16_t *decrypted_payload_len);
+int ndn_lite_aes_cbc_decrypt_nrf_crypto(const uint8_t* input_value, uint8_t input_size,
+                                                  uint8_t* output_value, uint8_t output_size,
+                                                  const uint8_t* aes_iv,
+                                                  const uint8_t* key_value, uint8_t key_size);
 
 //*****************************************************//
 
