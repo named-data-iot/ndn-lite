@@ -6,6 +6,10 @@
  * directory for more details.
  */
 
+#include "../ndn-lite-sec-config.h"
+
+#ifdef NDN_LITE_SEC_BACKEND_AES_DEFAULT
+
 #include "../ndn-lite-aes.h"
 #include "../sec-lib/tinycrypt/tc_cbc_mode.h"
 #include "../sec-lib/tinycrypt/tc_constants.h"
@@ -47,3 +51,5 @@ ndn_aes_cbc_decrypt(const uint8_t* input_value, uint8_t input_size,
   }
   return 0;
 }
+
+#endif // NDN_LITE_SEC_BACKEND_AES_DEFAULT

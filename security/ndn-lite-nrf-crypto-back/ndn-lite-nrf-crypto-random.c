@@ -1,18 +1,12 @@
-/*
- * Copyright (C) 2018 Tianyuan Yu, Zhiyi Zhang
- *
- * This file is subject to the terms and conditions of the GNU Lesser
- * General Public License v2.1. See the file LICENSE in the top level
- * directory for more details.
- */
+
 
 #include "../ndn-lite-sec-config.h"
 
-#ifdef NDN_LITE_SEC_BACKEND_RANDOM_DEFAULT
+#ifdef NDN_LITE_SEC_BACKEND_RANDOM_NRF_CRYPTO
 
-#include "../ndn-lite-random.h"
-#include "../sec-lib/tinycrypt/tc_hmac_prng.h"
-#include "../ndn-lite-sign-verify.h"
+#include "../random.h"
+#include "nrf_crypto.h"
+#include "../sign-verify.h"
 
 int
 ndn_random_hkdf(const uint8_t* input_value, uint32_t input_size,
@@ -52,28 +46,23 @@ ndn_random_hkdf(const uint8_t* input_value, uint32_t input_size,
   return 0;
 }
 
+// for this to work properly, should have proper flags set in sdk_config.h,
+// as is outlined in RNG Usage section of this resource:
+// https://infocenter.nordicsemi.com/index.jsp?topic=%2Fcom.nordic.infocenter.sdk5.v15.0.0%2Flib_crypto_rng.html
+
 int
 ndn_random_hmacprng(const uint8_t* input_value, uint32_t input_size,
                     uint8_t* output_value, uint32_t output_size,
                     const uint8_t* seed_value, uint32_t seed_size,
                     const uint8_t* additional_value, uint32_t additional_size)
 {
-  struct tc_hmac_prng_struct h;
-  tc_hmac_prng_init(&h, input_value, input_size);
-
-  if (seed_size < 32)
-  {
-    uint8_t min_seed[32] = {0};
-    memcpy(min_seed, seed_value, seed_size);
-    tc_hmac_prng_reseed(&h, min_seed, sizeof(min_seed), additional_value, additional_size);
-    tc_hmac_prng_generate(output_value, output_size, &h);
-  }
-  else
-  {
-    tc_hmac_prng_reseed(&h, seed_value, seed_size, additional_value, additional_size);
-    tc_hmac_prng_generate(output_value, output_size, &h);
-  }
+  nrf_crypto_init();
+  nrf_crypto_rng_temp_buffer_t temp_reseed_buffer;
+  size_t seed_len = (size_t) seed_size;
+  nrf_crypto_rng_reseed(&temp_reseed_buffer, seed_value, seed_len);
+  size_t output_len = (size_t) output_size;
+  nrf_crypto_rng_vector_generate(output_value, output_len);
   return 0;
 }
 
-#endif // NDN_LITE_SEC_BACKEND_RANDOM_DEFAULT
+#endif // NDN_LITE_SEC_BACKEND_RANDOM_NRF_CRYPTO
