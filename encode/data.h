@@ -13,7 +13,7 @@
 
 #include "signature.h"
 #include "metainfo.h"
-#include "../security/crypto-key.h"
+#include "../security/ndn-lite-crypto-key.h"
 
 #ifdef __cplusplus
 extern "C" {

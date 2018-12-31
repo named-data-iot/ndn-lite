@@ -6,9 +6,9 @@
  * directory for more details.
  */
 
-#include "../random.h"
-#include "tinycrypt/hmac_prng.h"
-#include "../sign-verify.h"
+#include "../ndn-lite-random.h"
+#include "../sec-lib/tinycrypt/tc_hmac_prng.h"
+#include "../ndn-lite-sign-verify.h"
 
 int
 ndn_random_hkdf(const uint8_t* input_value, uint32_t input_size,

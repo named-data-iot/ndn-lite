@@ -7,7 +7,7 @@
  */
 
 #include "interest.h"
-#include "../security/sign-verify.h"
+#include "../security/ndn-lite-sign-verify.h"
 
 int
 ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, uint32_t block_size)

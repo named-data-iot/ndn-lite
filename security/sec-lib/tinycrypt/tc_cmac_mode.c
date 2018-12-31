@@ -30,10 +30,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "aes.h"
-#include "cmac_mode.h"
-#include "constants.h"
-#include "utils.h"
+#include "tc_aes.h"
+#include "tc_cmac_mode.h"
+#include "tc_constants.h"
+#include "tc_utils.h"
 
 /* max number of calls until change the key (2^48).*/
 static const uint64_t MAX_CALLS = ((uint64_t)1 << 48);

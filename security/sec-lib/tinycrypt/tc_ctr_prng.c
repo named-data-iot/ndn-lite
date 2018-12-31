@@ -27,9 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ctr_prng.h"
-#include "utils.h"
-#include "constants.h"
+#include "tc_ctr_prng.h"
+#include "tc_utils.h"
+#include "tc_constants.h"
 #include <string.h>
 
 /*

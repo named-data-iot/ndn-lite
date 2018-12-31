@@ -7,7 +7,7 @@
  */
 
 #include "signed-interest.h"
-#include "../security/sign-verify.h"
+#include "../security/ndn-lite-sign-verify.h"
 
 /************************************************************/
 /*  Helper functions for signed interest APIs               */

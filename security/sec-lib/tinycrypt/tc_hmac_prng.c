@@ -30,10 +30,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "hmac_prng.h"
-#include "hmac.h"
-#include "constants.h"
-#include "utils.h"
+#include "tc_hmac_prng.h"
+#include "tc_hmac.h"
+#include "tc_constants.h"
+#include "tc_utils.h"
 
 /*
  * min bytes in the seed string.

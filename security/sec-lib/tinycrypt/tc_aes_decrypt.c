@@ -30,9 +30,9 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "aes.h"
-#include "constants.h"
-#include "utils.h"
+#include "tc_aes.h"
+#include "tc_constants.h"
+#include "tc_utils.h"
 
 static const uint8_t inv_sbox[256] = {
 	0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e,

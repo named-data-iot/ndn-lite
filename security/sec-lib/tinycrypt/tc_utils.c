@@ -30,8 +30,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "utils.h"
-#include "constants.h"
+#include "tc_utils.h"
+#include "tc_constants.h"
 
 #include <string.h>
 

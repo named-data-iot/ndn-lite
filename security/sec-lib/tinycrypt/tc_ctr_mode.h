@@ -67,8 +67,8 @@
 #ifndef __TC_CTR_MODE_H__
 #define __TC_CTR_MODE_H__
 
-#include "aes.h"
-#include "constants.h"
+#include "tc_aes.h"
+#include "tc_constants.h"
 
 #ifdef __cplusplus
 extern "C" {

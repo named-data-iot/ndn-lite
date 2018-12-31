@@ -53,9 +53,9 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "constants.h"
-#include "ecc.h"
-#include "ecc_dsa.h"
+#include "tc_constants.h"
+#include "tc_ecc.h"
+#include "tc_ecc_dsa.h"
 
 #if default_RNG_defined
 static tc_uECC_RNG_Function g_rng_function = &default_CSPRNG;

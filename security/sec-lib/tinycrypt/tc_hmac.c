@@ -30,9 +30,9 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "hmac.h"
-#include "constants.h"
-#include "utils.h"
+#include "tc_hmac.h"
+#include "tc_constants.h"
+#include "tc_utils.h"
 
 static void rekey(uint8_t *key, const uint8_t *new_key, unsigned int key_size)
 {

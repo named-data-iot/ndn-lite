@@ -52,8 +52,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ecc.h"
-#include "ecc_platform_specific.h"
+#include "tc_ecc.h"
+#include "tc_ecc_platform_specific.h"
 #include <string.h>
 
 /* IMPORTANT: Make sure a cryptographically-secure PRNG is set and the platform

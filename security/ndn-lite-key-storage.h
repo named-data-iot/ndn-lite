@@ -10,7 +10,7 @@
 #ifndef NDN_SECURITY_KEY_STORAGE_H
 #define NDN_SECURITY_KEY_STORAGE_H
 
-#include "crypto-key.h"
+#include "ndn-lite-crypto-key.h"
 #include "../encode/data.h"
 
 #ifdef __cplusplus

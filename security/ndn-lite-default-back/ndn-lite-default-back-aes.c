@@ -6,9 +6,9 @@
  * directory for more details.
  */
 
-#include "../aes.h"
-#include "tinycrypt/cbc_mode.h"
-#include "tinycrypt/constants.h"
+#include "../ndn-lite-aes.h"
+#include "../sec-lib/tinycrypt/tc_cbc_mode.h"
+#include "../sec-lib/tinycrypt/tc_constants.h"
 
 int
 ndn_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,

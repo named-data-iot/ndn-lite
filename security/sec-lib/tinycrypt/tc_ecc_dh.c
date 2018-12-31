@@ -54,9 +54,9 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-#include "constants.h"
-#include "ecc.h"
-#include "ecc_dh.h"
+#include "tc_constants.h"
+#include "tc_ecc.h"
+#include "tc_ecc_dh.h"
 #include <string.h>
 
 #if default_RNG_defined

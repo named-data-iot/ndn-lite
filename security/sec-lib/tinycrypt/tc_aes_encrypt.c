@@ -30,9 +30,9 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "aes.h"
-#include "utils.h"
-#include "constants.h"
+#include "tc_aes.h"
+#include "tc_utils.h"
+#include "tc_constants.h"
 
 static const uint8_t sbox[256] = {
 	0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b,

@@ -69,7 +69,7 @@
 #ifndef __TC_ECC_DH_H__
 #define __TC_ECC_DH_H__
 
-#include "ecc.h"
+#include "tc_ecc.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -6,9 +6,9 @@
  * directory for more details.
  */
 
-#include "../sign-verify.h"
-#include "micro-ecc/uECC.h"
-#include "tinycrypt/hmac.h"
+#include "../ndn-lite-sign-verify.h"
+#include "../sec-lib/micro-ecc/uECC.h"
+#include "../sec-lib/tinycrypt/tc_hmac.h"
 
 #ifndef FEATURE_PERIPH_HWRNG
 typedef struct uECC_SHA256_HashContext {

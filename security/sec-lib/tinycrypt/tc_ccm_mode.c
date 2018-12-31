@@ -30,9 +30,9 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ccm_mode.h"
-#include "constants.h"
-#include "utils.h"
+#include "tc_ccm_mode.h"
+#include "tc_constants.h"
+#include "tc_utils.h"
 
 #include <stdio.h>
 

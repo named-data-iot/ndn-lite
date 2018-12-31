@@ -97,7 +97,7 @@
 #ifndef __TC_CMAC_MODE_H__
 #define __TC_CMAC_MODE_H__
 
-#include "aes.h"
+#include "tc_aes.h"
 
 #include <stddef.h>
 

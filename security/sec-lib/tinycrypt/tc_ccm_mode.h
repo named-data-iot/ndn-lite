@@ -74,7 +74,7 @@
 #ifndef __TC_CCM_MODE_H__
 #define __TC_CCM_MODE_H__
 
-#include "aes.h"
+#include "tc_aes.h"
 #include <stddef.h>
 
 #ifdef __cplusplus

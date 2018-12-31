@@ -5,10 +5,10 @@
  * General Public License v2.1. See the file LICENSE in the top level
  * directory for more details.
  */
-#include "../random.h"
-#include "../crypto-key.h"
-#include "tinycrypt/ecc_dh.h"
-#include "tinycrypt/constants.h"
+#include "../ndn-lite-random.h"
+#include "../ndn-lite-crypto-key.h"
+#include "../sec-lib/tinycrypt/tc_ecc_dh.h"
+#include "../sec-lib/tinycrypt/tc_constants.h"
 
 void
 ndn_ecc_key_set_rng(ndn_ECC_RNG_Function rng) {

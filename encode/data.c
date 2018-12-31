@@ -1,6 +1,6 @@
 #include "data.h"
-#include "../security/sign-verify.h"
-#include "../security/aes.h"
+#include "../security/ndn-lite-sign-verify.h"
+#include "../security/ndn-lite-aes.h"
 
 /************************************************************/
 /*  Helper functions for signed interest APIs               */
