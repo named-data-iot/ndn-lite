@@ -11,8 +11,8 @@
 #ifdef NDN_LITE_SEC_BACKEND_AES_DEFAULT
 
 #include "../ndn-lite-aes.h"
-#include "../sec-lib/tinycrypt/tc_cbc_mode.h"
-#include "../sec-lib/tinycrypt/tc_constants.h"
+#include "../detail/sec-lib/tinycrypt/tc_cbc_mode.h"
+#include "../detail/sec-lib/tinycrypt/tc_constants.h"
 
 int
 ndn_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,

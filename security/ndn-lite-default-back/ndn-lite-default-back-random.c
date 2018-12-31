@@ -11,7 +11,7 @@
 #ifdef NDN_LITE_SEC_BACKEND_RANDOM_DEFAULT
 
 #include "../ndn-lite-random.h"
-#include "../sec-lib/tinycrypt/tc_hmac_prng.h"
+#include "../detail/sec-lib/tinycrypt/tc_hmac_prng.h"
 #include "../ndn-lite-sign-verify.h"
 
 int

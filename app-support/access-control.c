@@ -13,8 +13,8 @@
 #include "../security/ndn-lite-aes.h"
 #include "../security/ndn-lite-key-storage.h"
 #include "../security/ndn-lite-random.h"
-#include "../security/sec-lib/tinycrypt/tc_ecc_dh.h"
-#include "../security/sec-lib/tinycrypt/tc_cbc_mode.h"
+#include "../security/detail/sec-lib/tinycrypt/tc_ecc_dh.h"
+#include "../security/detail/sec-lib/tinycrypt/tc_cbc_mode.h"
 
 static ndn_ac_unfinished_key_t unfinished_key;
 static ndn_ac_state_t ac_state;

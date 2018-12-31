@@ -11,8 +11,8 @@
 #ifdef NDN_LITE_SEC_BACKEND_SIGN_VERIFY_DEFAULT
 
 #include "../ndn-lite-sign-verify.h"
-#include "../sec-lib/micro-ecc/uECC.h"
-#include "../sec-lib/tinycrypt/tc_hmac.h"
+#include "../detail/sec-lib/micro-ecc/uECC.h"
+#include "../detail/sec-lib/tinycrypt/tc_hmac.h"
 
 #ifndef FEATURE_PERIPH_HWRNG
 typedef struct uECC_SHA256_HashContext {
