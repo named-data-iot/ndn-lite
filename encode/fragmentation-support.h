@@ -9,8 +9,17 @@
 #ifndef NDN_ENCODING_FRAGMENTATION_SUPPORT_H
 #define NDN_ENCODING_FRAGMENTATION_SUPPORT_H
 
-/*
- * Reuse the ndn-riot fragmentation header (3 bytes header)
+#include "../ndn-constants.h"
+#include "../ndn-error-code.h"
+#include <inttypes.h>
+#include <string.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * NDN-Lite reuses the ndn-riot fragmentation header (3 bytes header)
  *
  *    0           1           2
  *    0 1 2  3    8         15           23
@@ -25,26 +34,52 @@
  *    9th to 24th bit: identification (2-byte random number)
  */
 
-#include "../ndn-constants.h"
-#include "../ndn-error-code.h"
-#include <inttypes.h>
-#include <string.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+/**
+ * The structure to keep the state when doing fragmentation.
+ */
 typedef struct ndn_fragmenter {
+  /**
+   * The buffer to keep the original packet.
+   */
   const uint8_t* original;
+  /**
+   * The size of the original packet.
+   */
   uint32_t original_size;
+  /**
+   * The max size of each fragment.
+   * This value is obtained from protocol-specific MTU.
+   */
   uint32_t fragment_max_size;
+  /**
+   * The identifier of the fragments.
+   */
   uint16_t frag_identifier;
-
-  uint32_t total_frag_num; // total frags to be generated
+  /**
+   * The total number of frags to be generated
+   */
+  uint32_t total_frag_num;
+  /**
+   * The offset before which the original packet has been fragmented.
+   */
   uint32_t offset;
-  uint32_t counter; // how many frags have been generated
+  /**
+   * The counter indicating how many frags have been generated.
+   */
+  uint32_t counter;
 } ndn_fragmenter_t;
 
+
+/**
+ * Init a fragmenter.
+ * @param fragmenter. Output. The fragmenter to be inited.
+ * @param original. Input. The original packet buffer.
+ * @param original_size. Input. The size of the original packet buffer.
+ * @param fragment_max_size. Input. The max size of each fragment.
+ *        This value is obtained from protocol-specific MTU.
+ * @param frag_identifier. Input. The identifier of the fragments
+ *        generated from the original packet.
+ */
 static inline void
 ndn_fragmenter_init(ndn_fragmenter_t* fragmenter, const uint8_t* original, uint32_t original_size,
                     uint32_t fragment_max_size, uint16_t frag_identifier)
@@ -62,14 +97,13 @@ ndn_fragmenter_init(ndn_fragmenter_t* fragmenter, const uint8_t* original, uint3
   fragmenter->counter = 0;
 }
 
-static inline uint32_t
-ndn_fragmenter_probe_required_size(ndn_fragmenter_t* fragmenter)
-{
-  return fragmenter->total_frag_num * 3 + fragmenter->original_size;
-}
-
-// generate ONE fragmented packet
-// fragmented's size should at least be the fragment_max_size
+/**
+ * Generate one fragmented packet.
+ * @param fragmenter. Input/Output. The fragmenter used to keep the original packet and the state.
+ * @param fragmented. Output. The buffer to keep the fragmented packet.
+ *        The buffer size should at least be the fragmenter->fragment_max_size.
+ * @return 0 if there is no error.
+ */
 static inline int
 ndn_fragmenter_fragment(ndn_fragmenter_t* fragmenter, uint8_t* fragmented)
 {
@@ -100,16 +134,42 @@ ndn_fragmenter_fragment(ndn_fragmenter_t* fragmenter, uint8_t* fragmented)
   return 0;
 }
 
+/**
+ * The structure to keep the state when assembling fragments.
+ */
 typedef struct ndn_frag_assembler {
+  /**
+   * The buffer to keep the original packet.
+   */
   uint8_t* original;
+  /**
+   * The size of the buffer to keep the original packet.s
+   */
   uint32_t original_max_size;
+  /**
+   * The identifier of the fragments.
+   */
   uint16_t frag_identifier;
-
+  /**
+   * The offset before which the original packet has been assembled.
+   */
   uint32_t offset;
-  uint8_t seq; // NEXT seq to be received
-  uint8_t is_finished; // used to check whether the assembling is finished
+  /**
+   * Next sequence number of the fragment to be received.
+   */
+  uint8_t seq;
+  /**
+   * A flag used to check whether the assembling is finished.
+   */
+  uint8_t is_finished;
 } ndn_frag_assembler_t;
 
+/**
+ * Init an assembler.
+ * @param assembler. Output. The assembler to be inited.
+ * @param original. Input. The buffer used to keep the assembled packet.
+ * @param original_max_size. Input. The size of the buffer used to keep the assembled packet.
+ */
 static inline void
 ndn_frag_assembler_init(ndn_frag_assembler_t* assembler, uint8_t* original, uint32_t original_max_size)
 {
@@ -121,6 +181,13 @@ ndn_frag_assembler_init(ndn_frag_assembler_t* assembler, uint8_t* original, uint
   assembler->is_finished = 0;
 }
 
+/**
+ * Assemble a fragment into the assembler.
+ * @param assembler. Output. The assembler used to keep the assembled packet and the state.
+ * @param frag. Input. The fragment packet buffer.
+ * @param fra_size. Input. The size of the fragment packet buffer.
+ * @return 0 if there is no error.
+ */
 static inline int
 ndn_frag_assembler_assemble_frag(ndn_frag_assembler_t* assembler, uint8_t* frag, uint32_t fra_size)
 {
