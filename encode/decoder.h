@@ -15,13 +15,30 @@
 extern "C" {
 #endif
 
-// State keeper when doing encode
+/**
+ * The structure to keep the state when doing NDN TLV decoding.
+ */
 typedef struct ndn_decoder {
+  /**
+   * The encoded wire format buffer.
+   */
   const uint8_t* input_value;
+  /**
+   * The size of the encoded wire format buffer.
+   */
   uint32_t input_size;
+  /**
+   * The current offset after which the wire has not been decoded.
+   */
   uint32_t offset;
 } ndn_decoder_t;
 
+/**
+ * Init a decoder by setting the wire format buffer and its size.
+ * @param decoder. Output. The decoder to be inited.
+ * @param block_value. Input. The wire format buffer.
+ * @param block_size. Input. The size of wire format buffer.
+ */
 static inline void
 decoder_init(ndn_decoder_t* decoder, const uint8_t* block_value, uint32_t block_size)
 {
@@ -30,8 +47,12 @@ decoder_init(ndn_decoder_t* decoder, const uint8_t* block_value, uint32_t block_
   decoder->offset = 0;
 }
 
-// function to get the type (T) and length (L)
-// ndn_block_get_var_number
+/**
+ * Get the variable size Type (T) and Length (L).
+ * @param decoder. Input/Output. The decoder's offset will be updated.
+ * @param var. Output. The uint32_t to keep the decoded Type (T) or Length (L).
+ * @return 0 if there is no error.
+ */
 static inline int
 decoder_get_var(ndn_decoder_t* decoder, uint32_t* var)
 {
@@ -59,45 +80,58 @@ decoder_get_var(ndn_decoder_t* decoder, uint32_t* var)
   return 0;
 }
 
-static inline int
-decoder_get_integer(ndn_decoder_t* decoder, uint32_t* var){
-  return decoder_get_var(decoder, var);
-}
-
+/**
+ * Get the variable size Type (T).
+ * @param decoder. Input/Output. The decoder's offset will be updated.
+ * @param type. Output. The uint32_t to keep the decoded Type (T).
+ * @return 0 if there is no error.
+ */
 static inline int
 decoder_get_type(ndn_decoder_t* decoder, uint32_t* type)
 {
   return decoder_get_var(decoder, type);
 }
 
-// must be invoked after decoder_get_type
+/**
+ * Get the variable size Length (L).
+ * This function is supposed to be invoked after decoder_get_type().
+ * @param decoder. Input/Output. The decoder's offset will be updated.
+ * @param length. Output. The uint32_t to keep the decoded Length (L).
+ * @return 0 if there is no error.
+ */
 static inline int
 decoder_get_length(ndn_decoder_t* decoder, uint32_t* length)
 {
   return decoder_get_var(decoder, length);
 }
 
-// get the value(V) size from a block
-static inline uint32_t
-decoder_probe_value_size(const uint8_t* block_value, uint32_t block_size)
+/**
+ * Get the variable size Value (V) to bytes.
+ * This function is supposed to be invoked after decoder_get_length().
+ * @param decoder. Input/Output. The decoder's offset will be updated.
+ * @param value. Output. The variable to keep the value.
+ *        It must have been initialized with an empty uint8_t array.
+ * @param size. Input. The size should be set to the value obtained from decoder_get_length().
+ * @return 0 if there is no error.
+ */
+static inline int
+decoder_get_raw_buffer_value(ndn_decoder_t* decoder, uint8_t* value, uint32_t size)
 {
-  ndn_decoder_t decoder;
-  decoder_init(&decoder, block_value, block_size);
-  uint32_t type;
-  decoder_get_var(&decoder, &type);
-  uint32_t length;
-  decoder_get_length(&decoder, &length);
-  return length;
+  if (decoder->input_size - decoder->offset < (int) size) {
+    return NDN_OVERSIZE;
+  }
+  memcpy(value, decoder->input_value + decoder->offset, size);
+  decoder->offset += size;
+  return 0;
 }
 
-// the buffer must have been initialized with the empty uint8_t array and
-// right size obtained from decoder_get_length
-int
-decoder_get_buffer_value(ndn_decoder_t* decoder, ndn_buffer_t* value);
-
-int
-decoder_get_raw_buffer_value(ndn_decoder_t* decoder, uint8_t* value, uint32_t size);
-
+/**
+ * Get the variable size Value (V) to a single byte.
+ * This function is supposed to be invoked after decoder_get_length().
+ * @param decoder. Input/Output. The decoder's offset will be updated.
+ * @param value. Output. The variable to keep the byte value.
+ * @return 0 if there is no error.
+ */
 static inline int
 decoder_get_byte_value(ndn_decoder_t* decoder, uint8_t* value)
 {
@@ -108,6 +142,13 @@ decoder_get_byte_value(ndn_decoder_t* decoder, uint8_t* value)
   return 0;
 }
 
+/**
+ * Get the variable size Value (V) to a uint32_t.
+ * This function is supposed to be invoked after decoder_get_length().
+ * @param decoder. Input/Output. The decoder's offset will be updated.
+ * @param value. Output. The variable to keep the uint32_t value.
+ * @return 0 if there is no error.
+ */
 static inline int
 decoder_get_uint32_value(ndn_decoder_t* decoder, uint32_t* value)
 {
@@ -122,6 +163,13 @@ decoder_get_uint32_value(ndn_decoder_t* decoder, uint32_t* value)
   return 0;
 }
 
+/**
+ * Get the variable size Value (V) to a uint16_t.
+ * This function is supposed to be invoked after decoder_get_length().
+ * @param decoder. Input/Output. The decoder's offset will be updated.
+ * @param value. Output. The variable to keep the uint16_t value.
+ * @return 0 if there is no error.
+ */
 static inline int
 decoder_get_uint16_value(ndn_decoder_t* decoder, uint16_t* value)
 {
@@ -134,24 +182,47 @@ decoder_get_uint16_value(ndn_decoder_t* decoder, uint16_t* value)
   return 0;
 }
 
+/**
+ * Move the decoder's offset forward by @param step.
+ * @param decoder. Output. The decoder's offset will be updated.
+ * @param step. Input. The step by which the offset will be moved.
+ * @return 0 if there is no error.
+ */
 static inline int
-decoder_move_forward(ndn_decoder_t* decoder, uint32_t step){
+decoder_move_forward(ndn_decoder_t* decoder, uint32_t step)
+{
   if (decoder->offset + step > decoder->input_size)
     return NDN_OVERSIZE;
   decoder->offset += step;
   return 0;
 }
 
+/**
+ * Move the decoder's offset backward by @param step.
+ * @param decoder. Output. The decoder's offset will be updated.
+ * @param step. Input. The step by which the offset will be moved.
+ * @return 0 if there is no error.
+ */
 static inline int
-decoder_move_backward(ndn_decoder_t* decoder, uint32_t step){
+decoder_move_backward(ndn_decoder_t* decoder, uint32_t step)
+{
+  if (decoder->offset - step < 0)
+    return NDN_OVERSIZE;
   decoder->offset -= step;
   return 0;
 }
 
+/**
+ * Get the offset of the decoder.
+ * @param decoder. Input. The decoder's offset will be updated.
+ * @return the uint32_t type offset.
+ */
 static inline uint32_t
-decoder_get_offset(ndn_decoder_t* decoder){
+decoder_get_offset(const ndn_decoder_t* decoder)
+{
   return decoder->offset;
 }
+
 #ifdef __cplusplus
 }
 #endif
