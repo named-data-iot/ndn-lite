@@ -8,17 +8,17 @@
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
-#include "ecc-nrf-crypto-impl.h"
+#include "ndn-lite-ecc-nrf-crypto-impl.h"
 
 //#include "ecc-helpers.h"
 //#include "sha256-helpers.h"
-#include "../detail-sha256/sha256-nrf-crypto-impl.h"
+#include "../detail-sha256/ndn-lite-sha256-nrf-crypto-impl.h"
 
-#include "../../sign-on-basic-sec-consts.h"
+#include "../../../ndn-error-code.h"
 
 #include <string.h>
 
-int determineAsn1IntLength(const uint8_t *integer, uECC_Curve curve) {
+int ndn_lite_determineAsn1IntLength(const uint8_t *integer, uECC_Curve curve) {
 
   int priKeySize = uECC_curve_private_key_size(curve);
 
@@ -42,7 +42,7 @@ int determineAsn1IntLength(const uint8_t *integer, uECC_Curve curve) {
 }
 
 uint8_t *
-writeAsn1Int(uint8_t *output, const uint8_t *integer, int length, uECC_Curve curve) {
+ndn_lite_writeAsn1Int(uint8_t *output, const uint8_t *integer, int length, uECC_Curve curve) {
   *(output++) = ASN1_INTEGER;
   *(output++) = (uint8_t)(length);
 
@@ -58,7 +58,7 @@ writeAsn1Int(uint8_t *output, const uint8_t *integer, int length, uECC_Curve cur
   return output + length;
 }
 
-bool encodeSignatureBits(uint8_t *sig, uint16_t *sigLength, uECC_Curve curve) {
+bool ndn_lite_encodeSignatureBits(uint8_t *sig, uint16_t *sigLength, uECC_Curve curve) {
   const uint8_t *begin = sig;
   const uint8_t *r = sig + 8;
   const uint8_t *s = r + uECC_curve_private_key_size(curve);
@@ -75,7 +75,7 @@ bool encodeSignatureBits(uint8_t *sig, uint16_t *sigLength, uECC_Curve curve) {
   return true;
 }
 
-int sign_on_basic_nrf_crypto_gen_ec_keypair(uint8_t *pub_key_buf, uint16_t pub_key_buf_len, uint16_t *pub_key_output_len,
+int ndn_lite_nrf_crypto_gen_ec_keypair(uint8_t *pub_key_buf, uint16_t pub_key_buf_len, uint16_t *pub_key_output_len,
     uint8_t *pri_key_buf, uint16_t pri_key_buf_len, uint16_t *pri_key_output_len,
     uECC_Curve curve) {
 
@@ -96,10 +96,10 @@ int sign_on_basic_nrf_crypto_gen_ec_keypair(uint8_t *pub_key_buf, uint16_t pub_k
   size_t priKeySize = uECC_curve_public_key_size(curve);
 
   if (pub_key_buf_len < pubKeySize)
-    return SEC_OP_FAILURE;
+    return NDN_SEC_INIT_FAILURE;
 
   if (pri_key_buf_len < priKeySize)
-    return SEC_OP_FAILURE;
+    return NDN_SEC_INIT_FAILURE;
 
   // taken from "eddsa" example of SDK
   //**************************************//
@@ -112,33 +112,33 @@ int sign_on_basic_nrf_crypto_gen_ec_keypair(uint8_t *pub_key_buf, uint16_t pub_k
       &priv_key,
       &pub_key);
   if (err_code != NRF_SUCCESS)
-    return SEC_OP_FAILURE;
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
 
   // Print public key.
   err_code = nrf_crypto_ecc_public_key_to_raw(&pub_key,
       raw_pub_key,
       &raw_pub_key_size);
   if (err_code != NRF_SUCCESS)
-    return SEC_OP_FAILURE;
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
 
   // Print private key.
   err_code = nrf_crypto_ecc_private_key_to_raw(&priv_key,
       raw_priv_key,
       &raw_priv_key_size);
   if (err_code != NRF_SUCCESS)
-    return SEC_OP_FAILURE;
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
 
   memcpy(pub_key_buf, raw_pub_key, raw_pub_key_size);
   *pub_key_output_len = (uint16_t) raw_pub_key_size;
   memcpy(pri_key_buf, raw_priv_key, raw_priv_key_size);
   *pri_key_output_len = (uint16_t) raw_priv_key_size;
 
-  return SEC_OP_SUCCESS;
+  return NDN_SEC_CRYPTO_ALGO_FAILURE;
 
   //**************************************//
 }
 
-int sign_on_basic_nrf_crypto_gen_sha256_ecdsa_sig(const uint8_t *pri_key_raw, uECC_Curve curve,
+int ndn_lite_nrf_crypto_gen_sha256_ecdsa_sig(const uint8_t *pri_key_raw, uECC_Curve curve,
                           const uint8_t *payload, uint16_t payload_len,
                           uint8_t *output_buf, uint16_t output_buf_len, uint16_t *output_len) {
 
@@ -152,12 +152,12 @@ int sign_on_basic_nrf_crypto_gen_sha256_ecdsa_sig(const uint8_t *pri_key_raw, uE
   //**************************************//
 
   if (output_buf_len < ECDSA_WITH_SHA256_SECP_256_ASN_ENCODED_SIGNATURE_SIZE)
-    return SEC_OP_FAILURE;
+    return NDN_SEC_WRONG_SIG_SIZE;
 
   //APP_LOG_HEX("Bytes of signature payload:", payload, payload_len);
 
-  if (!sign_on_basic_nrf_crypto_gen_sha256_hash(payload, payload_len, m_digest))
-    return SEC_OP_FAILURE;
+  if (!ndn_lite_nrf_crypto_gen_sha256_hash(payload, payload_len, m_digest))
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
 
   //APP_LOG_HEX("Bytes of digest of signature payload:", m_digest, NRF_CRYPTO_HASH_SIZE_SHA256);
   
@@ -177,7 +177,7 @@ int sign_on_basic_nrf_crypto_gen_sha256_ecdsa_sig(const uint8_t *pri_key_raw, uE
       pri_key_raw,
       pri_key_raw_len);
   if (err_code != NRF_SUCCESS)
-    return SEC_OP_FAILURE;
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
 
   // Alice generates signature using ECDSA and SHA-256
   err_code = nrf_crypto_ecdsa_sign(
@@ -188,22 +188,22 @@ int sign_on_basic_nrf_crypto_gen_sha256_ecdsa_sig(const uint8_t *pri_key_raw, uE
       output_buf + offsetForSignatureEncoding,
       output_len);
   if (err_code != NRF_SUCCESS) {
-    //APP_LOG("inside of sign_on_basic_nrf_crypto_gen_sha256_ecdsa_sig, nrf_crypto_ecdsa_sign failed.\n");
-    return SEC_OP_FAILURE;
+    //APP_LOG("inside of ndn_lite_nrf_crypto_gen_sha256_ecdsa_sig, nrf_crypto_ecdsa_sign failed.\n");
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
 
   // Key deallocation
   err_code = nrf_crypto_ecc_private_key_free(&pri_key);
   if (err_code != NRF_SUCCESS)
-    return SEC_OP_FAILURE;
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
 
   if (!encodeSignatureBits(output_buf, output_len, uECC_secp256r1()))
-    return SEC_OP_FAILURE;
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
 
-  return SEC_OP_SUCCESS;
+  return NDN_SUCCESS;
 }
 
-int sign_on_basic_nrf_crypto_gen_ecdh_shared_secret(
+int ndn_lite_nrf_crypto_gen_ecdh_shared_secret(
     const uint8_t *pub_key_raw, uint16_t pub_key_raw_len,
     const uint8_t *pri_key_raw, uint16_t pri_key_raw_len,
     uECC_Curve curve,
@@ -211,7 +211,7 @@ int sign_on_basic_nrf_crypto_gen_ecdh_shared_secret(
 
   if (output_buf_len < uECC_curve_public_key_size(curve)) {
     //APP_LOG("Output buffer was too small to hold generated shared secret.\n");
-    return false;
+    return NDN_SEC_WRONG_KEY_SIZE;
   }
 
   // taken from the "ecdh" example of the SDK
@@ -245,7 +245,7 @@ int sign_on_basic_nrf_crypto_gen_ecdh_shared_secret(
       &pub_key,
       raw_key_buffer, size);
   if (err_code != NRF_SUCCESS) {
-    return SEC_OP_FAILURE;
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
 
   // Alice converts her raw private key to internal representation
@@ -254,7 +254,7 @@ int sign_on_basic_nrf_crypto_gen_ecdh_shared_secret(
       pri_key_raw,
       pri_key_raw_len);
   if (err_code != NRF_SUCCESS) {
-    return SEC_OP_FAILURE;
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
 
   // Alice computes shared secret using ECDH
@@ -265,7 +265,7 @@ int sign_on_basic_nrf_crypto_gen_ecdh_shared_secret(
       diffie_hellman_shared_secret,
       &size);
   if (err_code != NRF_SUCCESS) {
-    return SEC_OP_FAILURE;
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
 
   *output_len = size;
@@ -276,13 +276,13 @@ int sign_on_basic_nrf_crypto_gen_ecdh_shared_secret(
   // Key deallocation
   err_code = nrf_crypto_ecc_private_key_free(&pri_key);
   if (err_code != NRF_SUCCESS) {
-    return SEC_OP_FAILURE;
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
   err_code = nrf_crypto_ecc_public_key_free(&pub_key);
   if (err_code != NRF_SUCCESS) {
-    return SEC_OP_FAILURE;
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
 
   //***************************************************//
-  return SEC_OP_SUCCESS;
+  return NDN_SUCCESS;
 }

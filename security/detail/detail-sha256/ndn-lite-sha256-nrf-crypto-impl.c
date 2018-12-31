@@ -8,10 +8,10 @@
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
-#include "sha256-nrf-crypto-impl.h"
-#include "../../sign-on-basic-sec-consts.h"
+#include "ndn-lite-sha256-nrf-crypto-impl.h"
+#include "../../../ndn-error-code.h"
 
-int sign_on_basic_nrf_crypto_gen_sha256_hash(const uint8_t *payload, uint16_t payload_len, uint8_t *output) {
+int ndn_lite_nrf_crypto_gen_sha256_hash(const uint8_t *payload, uint16_t payload_len, uint8_t *output) {
 
   // taken from the "hash" example of the SDK
   //**************************************//
@@ -36,11 +36,11 @@ int sign_on_basic_nrf_crypto_gen_sha256_hash(const uint8_t *payload, uint16_t pa
       ext_digest,                     // Result buffer
       &current_digest_len);           // Result size
   if (err_code != NRF_SUCCESS)
-    return SEC_OP_FAILURE;
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
 
   //**************************************//
   memcpy(output, ext_digest, current_digest_len);
 
-  return SEC_OP_SUCCESS;
+  return NDN_SUCCESS;
 
 }

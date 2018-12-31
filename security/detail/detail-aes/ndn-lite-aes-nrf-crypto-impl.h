@@ -40,7 +40,7 @@
 
 #define NRF_CRYPTO_EXAMPLE_AES_MAX_TEXT_SIZE 120
 
-int sign_on_basic_nrf_crypto_decrypt_aes_cbc_pkcs5pad(uint8_t *key, uint16_t key_len, 
+int ndn_lite_nrf_crypto_decrypt_aes_cbc_pkcs5pad(uint8_t *key, uint16_t key_len, 
     const uint8_t *encrypted_payload, uint16_t encrypted_payload_len,
     uint8_t *decrypted_payload, uint16_t *decrypted_payload_len);
 

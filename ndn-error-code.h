@@ -9,6 +9,8 @@
 #ifndef NDN_ERROR_CODE_H
 #define NDN_ERROR_CODE_H
 
+#define NDN_SUCCESS 0
+
 // General Error Types
 #define NDN_OVERSIZE -10
 #define NDN_NAME_INVALID_FORMAT -11
@@ -23,6 +25,8 @@
 #define NDN_SEC_UNSUPPORT_CRYPTO_ALGO -26
 #define NDN_SEC_UNSUPPORT_SIGN_TYPE -26
 #define NDN_SEC_WRONG_AES_SIZE -27
+#define NDN_SEC_INIT_FAILURE -28
+#define NDN_SEC_FAIL_VERIFY_SIG -29
 
 // Fragmentation Error
 #define NDN_FRAG_NO_MORE_FRAGS -30

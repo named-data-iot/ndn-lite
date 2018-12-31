@@ -8,11 +8,11 @@
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
-#include "hmac-nrf-crypto-impl.h"
+#include "ndn-lite-hmac-nrf-crypto-impl.h"
 
-#include "../../sign-on-basic-sec-consts.h"
+#include "../.././ndn-error-code.h"
 
-bool sign_on_basic_nrf_crypto_vrfy_hmac_sha256_sig(const uint8_t *payload, uint16_t payload_len,
+bool ndn_lite_nrf_crypto_vrfy_hmac_sha256_sig(const uint8_t *payload, uint16_t payload_len,
     const uint8_t *sig, uint16_t sig_len,
     const uint8_t *key, uint16_t key_len_in) {
 
@@ -46,27 +46,27 @@ bool sign_on_basic_nrf_crypto_vrfy_hmac_sha256_sig(const uint8_t *payload, uint1
       key,
       key_len);
   if (err_code != NRF_SUCCESS)
-    return SEC_OP_FAILURE;
+    return NDN_SEC_INIT_FAILURE;
 
   // Push all data in one go (could be done repeatedly)
   err_code = nrf_crypto_hmac_update(&m_context, payload, payload_len);
   if (err_code != NRF_SUCCESS)
-    return SEC_OP_FAILURE;
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
 
   // Finish calculation
   err_code = nrf_crypto_hmac_finalize(&m_context, m_digest, &digest_len);
   if (err_code != NRF_SUCCESS)
-    return SEC_OP_FAILURE;
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
 
   // Print digest (result).
   //APP_LOG_HEX("Calculated HMAC:", m_digest, digest_len);
 
   if (memcmp(m_digest, sig, sig_len) != 0) {
     //APP_LOG("Failed to verify bootstrapping request response by secure sign on code.\n");
-    return SEC_OP_FAILURE;
+    return NDN_SEC_FAIL_VERIFY_SIG;
   }
 
   //*****************************************************//
 
-  return SEC_OP_SUCCESS;
+  return NDN_SUCCESS;
 }

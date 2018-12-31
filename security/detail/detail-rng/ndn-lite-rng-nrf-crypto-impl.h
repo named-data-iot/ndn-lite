@@ -13,8 +13,8 @@
 
 #include <stdint.h>
 
-int nrf_random();
+int ndn_lite_nrf_random();
 
-int RNG(uint8_t *dest, unsigned size);
+int ndn_lite_RNG(uint8_t *dest, unsigned size);
 
 #endif // RNG_NRF_CRYPTO_IMPL_H

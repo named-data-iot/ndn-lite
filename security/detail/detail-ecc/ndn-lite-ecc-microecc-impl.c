@@ -8,24 +8,25 @@
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
-#include "ecc-microecc-impl.h"
+#include "ndn-lite-ecc-microecc-impl.h"
 
-#include "../../sign-on-basic-sec-consts.h"
+#include "../../../ndn-error-code.h"
+#include "../../../ndn-constants.h"
 
-#include "../detail-sha256/sha256-nrf-crypto-impl.h"
+#include "../detail-sha256/ndn-lite-sha256-nrf-crypto-impl.h"
 
-#include "../detail-rng/rng-nrf-crypto-impl.h"
+#include "../detail-rng/ndn-lite-rng-nrf-crypto-impl.h"
 
-#include "../detail-ecc/ecc-nrf-crypto-impl.h"
+#include "../detail-ecc/ndn-lite-ecc-nrf-crypto-impl.h"
 
 #include <uECC.h>
 
-int sign_on_basic_microecc_gen_sha256_ecdsa_sig(
+int ndn_lite_microecc_gen_sha256_ecdsa_sig(
     const uint8_t *pri_key_raw,
     const uint8_t *payload, uint16_t payload_len,
     uint8_t *output_buf, uint16_t output_buf_len, uint16_t *output_len) {
 
-  //APP_LOG("sign_on_basic_microecc_gen_sha256_ecdsa_sig got called.\n");
+  //APP_LOG("ndn_lite_microecc_gen_sha256_ecdsa_sig got called.\n");
 
   uint8_t pri_key[32];
 
@@ -36,13 +37,14 @@ int sign_on_basic_microecc_gen_sha256_ecdsa_sig(
   //APP_LOG_HEX("Bytes of original private key: ", pri_key_raw, 32);
   //APP_LOG_HEX("Bytes of endian reversed private key: ", pri_key, 32);
 
-  uint8_t payload_digest_original[SIGN_ON_BASIC_SHA256_HASH_SIZE];
-  if (sign_on_basic_nrf_crypto_gen_sha256_hash(payload, payload_len, payload_digest_original) != SEC_OP_SUCCESS) {
-    //APP_LOG("Failed to generate sha256 hash within sign_on_basic_microecc_gen_sha256_ecdsa_sig\n");
-    return SEC_OP_FAILURE;
+  uint8_t payload_digest_original[NDN_SEC_SHA256_HASH_SIZE];
+  if (ndn_lite_nrf_crypto_gen_sha256_hash(payload, payload_len, payload_digest_original) 
+      != NDN_SUCCESS) {
+    //APP_LOG("Failed to generate sha256 hash within ndn_lite_microecc_gen_sha256_ecdsa_sig\n");
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
 
-  uint8_t payload_digest[SIGN_ON_BASIC_SHA256_HASH_SIZE];
+  uint8_t payload_digest[NDN_SEC_SHA256_HASH_SIZE];
   for (int i = 0; i < 32; i++) {
     payload_digest[i] = payload_digest_original[32 - 1 - i];
   }
@@ -50,19 +52,19 @@ int sign_on_basic_microecc_gen_sha256_ecdsa_sig(
   //APP_LOG_HEX("Original payload digest:", payload_digest_original, 32);
   //APP_LOG_HEX("Reversed payload digest:", payload_digest, 32);
 
-  uECC_set_rng(RNG);
+  uECC_set_rng(ndn_lite_RNG);
 
   int signatureEncodingOffset = 8;
 
   int ret = uECC_sign(pri_key,
               payload_digest,
-              SIGN_ON_BASIC_SHA256_HASH_SIZE,
+              NDN_SEC_SHA256_HASH_SIZE,
               output_buf + signatureEncodingOffset,
               uECC_secp256r1());
 
   if (ret != 1) {
-    //APP_LOG("in sign_on_basic_microecc_gen_sha256_ecdsa_sig, uECC_sign failed.\n");
-    return SEC_OP_FAILURE;
+    //APP_LOG("in ndn_lite_microecc_gen_sha256_ecdsa_sig, uECC_sign failed.\n");
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
 
   uint8_t *sig_begin = output_buf + signatureEncodingOffset;
@@ -84,8 +86,8 @@ int sign_on_basic_microecc_gen_sha256_ecdsa_sig(
 
   //APP_LOG_HEX("Raw signature after reversing bytes:", sig_begin, 64);
 
-  encodeSignatureBits(output_buf, output_len, uECC_secp256r1());
+  ndn_lite_encodeSignatureBits(output_buf, output_len, uECC_secp256r1());
 
-  return SEC_OP_SUCCESS;
+  return NDN_SUCCESS;
 
 }

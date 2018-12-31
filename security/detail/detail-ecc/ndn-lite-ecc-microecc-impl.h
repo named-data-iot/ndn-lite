@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-int sign_on_basic_microecc_gen_sha256_ecdsa_sig(
+int ndn_lite_microecc_gen_sha256_ecdsa_sig(
     const uint8_t *pri_key_raw,
     const uint8_t *payload, uint16_t payload_len,
     uint8_t *output_buf, uint16_t output_buf_len, uint16_t *output_len);

@@ -8,7 +8,7 @@
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
-#include "rng-nrf-crypto-impl.h"
+#include "ndn-lite-rng-nrf-crypto-impl.h"
 
 #include "nordic_common.h"
 #include "nrf.h"
@@ -32,7 +32,7 @@
 #include "nrf_pwr_mgmt.h"
 
 
-int nrf_random() {
+int ndn_lite_nrf_random() {
   uint8_t random_bytes[4];
   sd_rand_application_vector_get(random_bytes, 4);
   // taken from https://stackoverflow.com/questions/12240299/convert-bytes-to-int-uint-in-c
@@ -40,7 +40,7 @@ int nrf_random() {
   return random_int;
 }
 
-int RNG(uint8_t *dest, unsigned size) {
+int ndn_lite_RNG(uint8_t *dest, unsigned size) {
   // Use the least-significant bits from the ADC for an unconnected pin (or connected to a source of 
   // random noise). This can take a long time to generate random data if the result of analogRead(0) 
   // doesn't change very frequently.
