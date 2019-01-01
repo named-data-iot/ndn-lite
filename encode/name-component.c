@@ -25,12 +25,12 @@ name_component_from_block(name_component_t* component, const name_component_bloc
 }
 
 int
-name_component_compare(const name_component_t* a, const name_component_t* b)
+name_component_compare(const name_component_t* lhs, const name_component_t* rhs)
 {
-  if (a->type != b->type) return -1;
-  if (a->size != b->size) return -1;
+  if (lhs->type != rhs->type) return -1;
+  if (lhs->size != rhs->size) return -1;
   else {
-    int result = memcmp(a->value, b->value, a->size);
+    int result = memcmp(lhs->value, rhs->value, lhs->size);
     if (result != 0) return -1;
     else return 0;
   }

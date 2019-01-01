@@ -140,9 +140,9 @@ ndn_metainfo_probe_block_size(const ndn_metainfo_t* meta)
 }
 
 /**
- * Decode the Metainfo structure into wire format (TLV block).
+ * Encode the Metainfo structure into wire format (TLV block).
  * @param encoder. Output. The encoder who keeps the encoding result and the state.
- * @param interest. Input. The Metainfo structure to be encoded.
+ * @param meta. Input. The Metainfo structure to be encoded.
  * @return 0 if there is no error.
  */
 int

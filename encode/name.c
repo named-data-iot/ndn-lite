@@ -128,13 +128,13 @@ ndn_name_tlv_encode(ndn_encoder_t* encoder, const ndn_name_t *name)
 }
 
 int
-ndn_name_compare(const ndn_name_t* a, const ndn_name_t* b)
+ndn_name_compare(const ndn_name_t* lhs, const ndn_name_t* rhs)
 {
-  if (a->components_size != b->components_size) return -1;
+  if (lhs->components_size != rhs->components_size) return -1;
   else {
     int result = 0;
-    for (uint8_t i = 0; i < a->components_size; i++) {
-      result = name_component_compare(&a->components[i], &b->components[i]);
+    for (uint8_t i = 0; i < lhs->components_size; i++) {
+      result = name_component_compare(&lhs->components[i], &rhs->components[i]);
       if (result != 0) return -1;
     }
     return 0;
@@ -142,18 +142,18 @@ ndn_name_compare(const ndn_name_t* a, const ndn_name_t* b)
 }
 
 int
-ndn_name_is_prefix_of(const ndn_name_t* prefix, const ndn_name_t* name)
+ndn_name_is_prefix_of(const ndn_name_t* lhs, const ndn_name_t* rhs)
 {
   int result = 0;
   uint8_t i;
 
-  if (prefix->components_size > name->components_size) {
+  if (lhs->components_size > rhs->components_size) {
     return 1;
   }
   else {
     result = 0;
-    for (i = 0; i < prefix->components_size; i++) {
-      result = name_component_compare(&prefix->components[i], &name->components[i]);
+    for (i = 0; i < lhs->components_size; i++) {
+      result = name_component_compare(&lhs->components[i], &rhs->components[i]);
       if (result != 0) return 1;
     }
     return 0;
