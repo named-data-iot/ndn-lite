@@ -21,17 +21,17 @@
 #include <uECC.h>
 
 int sign_on_basic_microecc_gen_sha256_ecdsa_sig(
-    const uint8_t *pri_key_raw,
+    const uint8_t *pri_key,
     const uint8_t *payload, uint16_t payload_len,
     uint8_t *output_buf, uint16_t output_buf_len, uint16_t *output_len) {
 
   //APP_LOG("sign_on_basic_microecc_gen_sha256_ecdsa_sig got called.\n");
 
-  uint8_t pri_key[32];
-
-  for (int i = 0; i < 32; i++) {
-    pri_key[i] = pri_key_raw[32 - 1 - i];
-  }
+//  uint8_t pri_key[32];
+//
+//  for (int i = 0; i < 32; i++) {
+//    pri_key[i] = pri_key_raw[32 - 1 - i];
+//  }
 
   //APP_LOG_HEX("Bytes of original private key: ", pri_key_raw, 32);
   //APP_LOG_HEX("Bytes of endian reversed private key: ", pri_key, 32);
@@ -42,10 +42,12 @@ int sign_on_basic_microecc_gen_sha256_ecdsa_sig(
     return SEC_OP_FAILURE;
   }
 
-  uint8_t payload_digest[SIGN_ON_BASIC_SHA256_HASH_SIZE];
-  for (int i = 0; i < 32; i++) {
-    payload_digest[i] = payload_digest_original[32 - 1 - i];
-  }
+  uint8_t *payload_digest = payload_digest_original;
+
+//  uint8_t payload_digest[SIGN_ON_BASIC_SHA256_HASH_SIZE];
+//  for (int i = 0; i < 32; i++) {
+//    payload_digest[i] = payload_digest_original[32 - 1 - i];
+//  }
 
   //APP_LOG_HEX("Original payload digest:", payload_digest_original, 32);
   //APP_LOG_HEX("Reversed payload digest:", payload_digest, 32);
@@ -70,17 +72,17 @@ int sign_on_basic_microecc_gen_sha256_ecdsa_sig(
 
   //APP_LOG_HEX("Raw signature before reversing bytes:", sig_begin, 64);
 
-  for (int i = 0; i < 16; i++) {
-    uint8_t temp = sig_begin[32 - 1 - i];
-    sig_begin[32 - 1 - i] = sig_begin[i];
-    sig_begin[i] = temp;
-  }
-
-  for (int i = 0; i < 16; i++) {
-    uint8_t temp = sig_begin_2[32 - 1 - i];
-    sig_begin_2[32 - 1 - i] = sig_begin_2[i];
-    sig_begin_2[i] = temp;
-  }
+//  for (int i = 0; i < 16; i++) {
+//    uint8_t temp = sig_begin[32 - 1 - i];
+//    sig_begin[32 - 1 - i] = sig_begin[i];
+//    sig_begin[i] = temp;
+//  }
+//
+//  for (int i = 0; i < 16; i++) {
+//    uint8_t temp = sig_begin_2[32 - 1 - i];
+//    sig_begin_2[32 - 1 - i] = sig_begin_2[i];
+//    sig_begin_2[i] = temp;
+//  }
 
   //APP_LOG_HEX("Raw signature after reversing bytes:", sig_begin, 64);
 
