@@ -78,7 +78,7 @@
 #ifndef __TC_ECC_DSA_H__
 #define __TC_ECC_DSA_H__
 
-#include "ecc.h"
+#include "tc_ecc.h"
 
 #ifdef __cplusplus
 extern "C" {
