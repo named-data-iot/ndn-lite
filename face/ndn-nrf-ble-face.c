@@ -48,6 +48,9 @@ int ndn_nrf_ble_face_up(struct ndn_face_intf *self) {
   return 0;
 }
 
+int ndn_nrf_ble_send_unicast_packet(const char *msg);
+int ndn_nrf_ble_send_extended_adv_packet(const char *msg);
+
 int ndn_nrf_ble_face_send(struct ndn_face_intf *self, const ndn_name_t *name,
     const uint8_t *packet, uint32_t size) {
 
@@ -58,7 +61,8 @@ int ndn_nrf_ble_face_send(struct ndn_face_intf *self, const ndn_name_t *name,
   uint8_t packet_block[NDN_NRF_BLE_MAX_PAYLOAD_SIZE];
 
   if (current_packet_block_to_send_p != NULL) {
-    printf("in ndn_nrf_ble_face_send, current_packet_block_to_send_p wasn't NULL, meaning we are currently sending something else\n");
+    printf("in ndn_nrf_ble_face_send, current_packet_block_to_send_p wasn't NULL, "
+           "meaning we are currently sending something else\n");
     return -1;
   }
 
@@ -80,18 +84,20 @@ int ndn_nrf_ble_face_send(struct ndn_face_intf *self, const ndn_name_t *name,
 
   if (nrf_sdk_ble_stack_connected()) {
     printf("in ndn_nrf_ble_face_send, we were connected.\n");
-    if (nrf_sdk_ble_ndn_lite_ble_unicast_transport_send(current_packet_block_to_send_p,
-            current_packet_block_to_send_size) != NRF_BLE_OP_SUCCESS) {
-      printf("in ndn_nrf_ble_unicast_on_mtu_rqst, ndn_lite_ble_unicast_transport_send failed.\n");
+    if (!ndn_nrf_ble_send_unicast_packet("in ndn_nrf_ble_face_send, "
+                                    "ndn_lite_ble_unicast_transport_send failed.\n")) {
+      if (!ndn_nrf_ble_send_extended_adv_packet("in ndn_nrf_ble_face_send, "
+                                           "calling ndn_nrf_ble_send_extended_adv_packet "
+                                           "failed, so calling "
+                                            "ndn_nrf_ble_send_extended_adv_packet\n")) {
+        printf("in ndn_nrf_ble_face_send, both ndn_nrf_ble_send_unicast_packet and "
+               "ndn_nrf_ble_send_extended_adv_packet failed\n");
+      }
     }
   } else {
     printf("in ndn_nrf_ble_face_send, we were not connected.\n");
-    if (nrf_sdk_ble_adv_start(current_packet_block_to_send, current_packet_block_to_send_size,
-            ndn_nrf_ble_face_adv_uuid, true, NDN_NRF_BLE_ADV_NUM,
-            ndn_nrf_ble_adv_stopped) != NRF_BLE_OP_SUCCESS) {
-      printf("nrf_sdk_ble_adv_start inside of ndn_nrf_ble_adv_stopped failed.\n");
-      return -1;
-    }
+    ndn_nrf_ble_send_extended_adv_packet("nrf_sdk_ble_adv_start inside of "
+                                         "ndn_nrf_ble_adv_stopped failed.\n");
   }
 
   return 0;
@@ -142,6 +148,30 @@ ndn_nrf_ble_face_construct(uint16_t face_id) {
 
 //================================================================
 
+int ndn_nrf_ble_send_extended_adv_packet(const char *fail_msg) {
+  if (nrf_sdk_ble_adv_start(current_packet_block_to_send, current_packet_block_to_send_size,
+          ndn_nrf_ble_face_adv_uuid, true, NDN_NRF_BLE_ADV_NUM,
+          ndn_nrf_ble_adv_stopped) != NRF_BLE_OP_SUCCESS) {
+    printf(fail_msg);
+    // always set this pointer to NULL if sending extended advertisement packet fails, so that
+    // the face doesn't get stuck into thinking its still sending something
+    current_packet_block_to_send_p == NULL;
+    return -1;
+  }
+  return 1;
+}
+
+int ndn_nrf_ble_send_unicast_packet(const char *fail_msg) {
+  if (nrf_sdk_ble_ndn_lite_ble_unicast_transport_send(current_packet_block_to_send_p,
+       current_packet_block_to_send_size) != NRF_BLE_OP_SUCCESS) {
+    printf(fail_msg);
+    return -1;
+  }
+  return 1;
+}
+
+// below are callback functions for BLE related events
+
 void ndn_nrf_ble_legacy_adv_stopped() {
   printf("ndn_nrf_ble_legacy_adv_stopped got called.\n");
 }
@@ -163,20 +193,17 @@ void ndn_nrf_ble_unicast_hvn_tx_complete(uint16_t conn_handle) {
     printf("in ndn_nrf_ble_unicast_hvn_tx_complete, current_packet_block_to_send_p wasn't NULL.\n");
     if (nrf_sdk_ble_ndn_lite_ble_unicast_transport_disconnect(ndn_nrf_ble_unicast_disconnected) == NRF_BLE_OP_FAILURE) {
       printf("nrf_sdk_ble_adv_start is being called within ndn_nrf_ble_unicast_hvn_tx_complete\n");
-      // if this call fails, that means we weren't connected, so we can send right away
-      if (nrf_sdk_ble_adv_start(current_packet_block_to_send, current_packet_block_to_send_size,
-              ndn_nrf_ble_face_adv_uuid, true, NDN_NRF_BLE_ADV_NUM,
-              ndn_nrf_ble_adv_stopped) != NRF_BLE_OP_SUCCESS) {
-        printf("nrf_sdk_ble_adv_start inside of ndn_nrf_ble_adv_stopped failed.\n");
-        return -1;
-      }
+      ndn_nrf_ble_send_extended_adv_packet("nrf_sdk_ble_adv_start inside of ndn_nrf_ble_adv_stopped "
+                                           "failed.\n");
     } else {
       // if ndn_lite_ble_unicast_transport_disconnect returned NRF_BLE_OP_SUCCESS, it means that we will have
       // to wait for the on disconnect callback
-      printf("in ndn_nrf_ble_unicast_hvn_tx_complete, ndn_lite_ble_unicast_transport_disconnect returned NRF_BLE_OP_SUCCESS\n");
+      printf("in ndn_nrf_ble_unicast_hvn_tx_complete, ndn_lite_ble_unicast_transport_disconnect "
+             "returned NRF_BLE_OP_SUCCESS\n");
     }
   } else {
-    printf("in ndn_nrf_ble_unicast_hvn_tx_complete, current_packet_block_to_send_p was NULL.\n");
+    printf("in ndn_nrf_ble_unicast_hvn_tx_complete, "
+           "current_packet_block_to_send_p was NULL.\n");
   }
 }
 
@@ -189,12 +216,8 @@ void ndn_nrf_ble_unicast_disconnected() {
   // other ndn-lite ble face messages as well as messages from the unicast connection to the phone
   if (current_packet_block_to_send_p != NULL) {
     printf("in ndn_nrf_ble_unicast_disconnected, current_packet_block_to_send_p wasn't NULL.\n");
-    printf("in ndn_nrf_ble_unicast_disconnected, nrf_sdk_ble_adv_start is getting called.\n");
-    if (nrf_sdk_ble_adv_start(current_packet_block_to_send, current_packet_block_to_send_size,
-            ndn_nrf_ble_face_adv_uuid, true, NDN_NRF_BLE_ADV_NUM,
-            ndn_nrf_ble_adv_stopped) != NRF_BLE_OP_SUCCESS) {
-      printf("nrf_sdk_ble_adv_start inside of ndn_nrf_ble_unicast_disconnected failed.\n");
-    }
+    ndn_nrf_ble_send_extended_adv_packet("nrf_sdk_ble_adv_start inside of "
+                                         "ndn_nrf_ble_unicast_disconnected failed.\n");
   } else {
     printf("in ndn_nrf_ble_unicast_disconnected, current_packet_block_to_send_p was NULL.\n");
     // because the current_packet_block_to_send_p was NULL, it means that the disconnection wasn't

@@ -11,6 +11,8 @@
 #include "forwarder.h"
 #include <stdio.h>
 
+#include "../adaptation/ndn-nrf-ble-adaptation/logger.h"
+
 int
 ndn_face_receive(ndn_face_intf_t* self, const uint8_t* packet, uint32_t size)
 {
@@ -23,10 +25,12 @@ ndn_face_receive(ndn_face_intf_t* self, const uint8_t* packet, uint32_t size)
   decoder_get_type(&decoder, &probe);
   if (probe == TLV_Data) {
     printf("data packet\n");
+    APP_LOG_HEX("Contents of data packet:", packet, size);
     return ndn_forwarder_on_incoming_data(ndn_forwarder_get_instance(), self, NULL, packet, size);
   }
   else if (probe == TLV_Interest) {
     printf("interest packet\n");
+    APP_LOG_HEX("Contents of interest packet:", packet, size);
     return ndn_forwarder_on_incoming_interest(ndn_forwarder_get_instance(), self, NULL, packet, size);
   }
   else {
