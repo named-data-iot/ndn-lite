@@ -81,9 +81,9 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
       interest->enable_MustBeFresh = 1;
       decoder_get_length(&decoder, &length);
     }
-    else if (type == TLV_Nounce) {
+    else if (type == TLV_Nonce) {
       decoder_get_length(&decoder, &length);
-      decoder_get_uint32_value(&decoder, &interest->nounce);
+      decoder_get_uint32_value(&decoder, &interest->nonce);
     }
     else if (type == TLV_InterestLifetime) {
       decoder_get_length(&decoder, &length);
@@ -115,10 +115,10 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
       // timestamp
       decoder_get_length(&decoder, &probe);
       decoder_get_uint32_value(&decoder, &interest->signature_timestamp);
-      // nounce
+      // nonce
       decoder_get_type(&decoder, &probe);
       decoder_get_length(&decoder, &probe);
-      decoder_get_uint32_value(&decoder, &interest->signature_nounce);
+      decoder_get_uint32_value(&decoder, &interest->signature_nonce);
       // signature info
       ndn_signature_info_tlv_decode(&decoder, &interest->signature);
     }
@@ -151,10 +151,10 @@ ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest)
     encoder_append_length(encoder, 0);
   }
 
-  // nounce
-  encoder_append_type(encoder, TLV_Nounce);
+  // nonce
+  encoder_append_type(encoder, TLV_Nonce);
   encoder_append_length(encoder, 4);
-  encoder_append_uint32_value(encoder, interest->nounce);
+  encoder_append_uint32_value(encoder, interest->nonce);
 
   // lifetime
   encoder_append_type(encoder, TLV_InterestLifetime);

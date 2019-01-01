@@ -29,7 +29,7 @@ enum {
   TLV_CanBePrefix = 33,
   TLV_MustBeFresh = 18,
   TLV_ForwardingHint = 30,
-  TLV_Nounce = 10,
+  TLV_Nonce = 10,
   TLV_InterestLifetime = 12,
   TLV_HopLimit = 34,
   TLV_Parameters = 35,

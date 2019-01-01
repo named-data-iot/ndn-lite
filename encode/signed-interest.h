@@ -16,9 +16,9 @@ extern "C" {
 #endif
 
 static inline void
-ndn_signed_interest_set_signature_nounce(ndn_interest_t* interest, uint32_t nounce)
+ndn_signed_interest_set_signature_nonce(ndn_interest_t* interest, uint32_t nonce)
 {
-  interest->signature_nounce = nounce;
+  interest->signature_nonce = nonce;
 }
 
 static inline void
