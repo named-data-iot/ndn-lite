@@ -15,25 +15,35 @@
 extern "C" {
 #endif
 
-// @param input_value -- random input that requires KDF
-// @param input_size -- random input length in bytes
-// @param output_value -- buffer to receive output
-// @param output_size -- size of the output buffer
-// @param seed_value -- entropy to mix into the prng
-// @param seed_size -- entropy length in bytes
+/**
+ * Use HMAC-KDF Algorithm to generate a secure HMAC key. 
+ * This function requires proper entropy source.
+ * @param input_value. Input. Random input that requires KDF.
+ * @param input_size. Input. Random input length in bytes.
+ * @param output_value. Output. Buffer to receive output.
+ * @param output_size. Input. Size of the output buffer.
+ * @param seed_value. Input. Entropy to mix into the prng
+ * @param seed_size. Input. Entropy length in bytes
+ * @return 0 if there is no error.
+ */
 int
 ndn_random_hkdf(const uint8_t* input_value, uint32_t input_size,
                 uint8_t* output_value, uint32_t output_size,
                 const uint8_t* seed_value, uint32_t seed_size);
 
-// @param input_value -- personalization string
-// @param input_size -- personalization length in bytes
-// @param output_value -- buffer to receive output
-// @param output_size -- size of the output buffer
-// @param seed_value -- entropy to mix into the prng, highly recommended larger than 32 bytes
-// @param seed_size -- entropy length in bytes, highly recommended larger than 32 bytes
-// @param additional_value -- additional input to the prng
-// @param additional_size -- additional input length in bytes
+/**
+ * Use HMAC-PRNG Algorithm to generate pseudo-random bytes. 
+ * This function requires proper entropy source.
+ * @param input_value. Input. Personalization string.
+ * @param input_size. Input. Personalization length in bytes.
+ * @param output_value. Output. Buffer to receive output.
+ * @param output_size. Input. Size of the output buffer.
+ * @param seed_value. Input. Entropy to mix into the prng, highly recommend larger than 32 bytes.
+ * @param seed_size. Input. Entropy length in bytes, highly recommend larger than 32 bytes.
+ * @param additional_value. Input. Additional input to the prng
+ * @param additional_size. Input. Additional input length in bytes
+ * @return 0 if there is no error.
+ */
 int
 ndn_random_hmacprng(const uint8_t* input_value, uint32_t input_size,
                     uint8_t* output_value, uint32_t output_size,
