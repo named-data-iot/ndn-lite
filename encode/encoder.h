@@ -13,6 +13,7 @@
 #include "../ndn-error-code.h"
 #include "../ndn-enums.h"
 #include <inttypes.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -153,7 +154,8 @@ encoder_append_length(ndn_encoder_t* encoder, uint32_t length)
 static inline int
 encoder_append_raw_buffer_value(ndn_encoder_t* encoder, const uint8_t* buffer, uint32_t size)
 {
-  if (encoder->output_max_size - encoder->offset < (int) size) {
+  int rest_length = encoder->output_max_size - encoder->offset;
+  if (rest_length < (int) size) {
     return NDN_OVERSIZE;
   }
   memcpy(encoder->output_value + encoder->offset, buffer, size);

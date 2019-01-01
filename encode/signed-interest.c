@@ -24,8 +24,8 @@ _ndn_signed_interest_parameters_probe_value_size(const ndn_interest_t* interest)
    params_value_size += encoder_probe_block_size(TLV_Parameters, interest->parameters.size);
   // timestamp
   params_value_size += encoder_probe_block_size(TLV_SignedInterestTimestamp, 4);
-  // nounce
-  params_value_size += encoder_probe_block_size(TLV_Nounce, 4);
+  // nonce
+  params_value_size += encoder_probe_block_size(TLV_Nonce, 4);
   // signature info
   params_value_size += ndn_signature_info_probe_block_size(&interest->signature);
   return params_value_size;
@@ -47,7 +47,7 @@ _ndn_signed_interest_probe_block_size(const ndn_interest_t* interest,
   // signed interest parameters
   interest_buffer_size += encoder_probe_block_size(TLV_SignedInterestParameters,
                                                    signed_interest_params_value_size);
-  interest_buffer_size += 6; // nounce
+  interest_buffer_size += 6; // nonce
   interest_buffer_size += 4; // lifetime
   interest_buffer_size += ndn_signature_value_probe_block_size(&interest->signature);
   return encoder_probe_block_size(TLV_Interest, interest_buffer_size);
@@ -99,10 +99,10 @@ _prepare_signed_interest_parameters_block(ndn_interest_t* interest,
   encoder_append_type(&encoder, TLV_SignedInterestTimestamp);
   encoder_append_length(&encoder, 4);
   encoder_append_uint32_value(&encoder, interest->signature_timestamp);
-  // nounce
-  encoder_append_type(&encoder, TLV_Nounce);
+  // nonce
+  encoder_append_type(&encoder, TLV_Nonce);
   encoder_append_length(&encoder, 4);
-  encoder_append_uint32_value(&encoder, interest->signature_nounce);
+  encoder_append_uint32_value(&encoder, interest->signature_nonce);
   // signature info
   ndn_signature_info_tlv_encode(&encoder, &interest->signature);
   // set offset
@@ -123,10 +123,10 @@ _signed_interest_tlv_encode_after_signing(ndn_encoder_t* encoder, ndn_interest_t
     encoder_append_type(encoder, TLV_MustBeFresh);
     encoder_append_length(encoder, 0);
   }
-  // nounce
-  encoder_append_type(encoder, TLV_Nounce);
+  // nonce
+  encoder_append_type(encoder, TLV_Nonce);
   encoder_append_length(encoder, 4);
-  encoder_append_uint32_value(encoder, interest->nounce);
+  encoder_append_uint32_value(encoder, interest->nonce);
   // lifetime
   encoder_append_type(encoder, TLV_InterestLifetime);
   encoder_append_length(encoder, 2);

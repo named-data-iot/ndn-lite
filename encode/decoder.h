@@ -117,7 +117,8 @@ decoder_get_length(ndn_decoder_t* decoder, uint32_t* length)
 static inline int
 decoder_get_raw_buffer_value(ndn_decoder_t* decoder, uint8_t* value, uint32_t size)
 {
-  if (decoder->input_size - decoder->offset < (int) size) {
+  int rest_length = decoder->input_size - decoder->offset;
+  if (rest_length < (int) size) {
     return NDN_OVERSIZE;
   }
   memcpy(value, decoder->input_value + decoder->offset, size);
@@ -206,7 +207,8 @@ decoder_move_forward(ndn_decoder_t* decoder, uint32_t step)
 static inline int
 decoder_move_backward(ndn_decoder_t* decoder, uint32_t step)
 {
-  if (decoder->offset - step < 0)
+  int new_position = decoder->offset - step;
+  if (new_position < 0)
     return NDN_OVERSIZE;
   decoder->offset -= step;
   return 0;

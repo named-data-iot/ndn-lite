@@ -179,6 +179,7 @@ ndn_interest_set_Parameters(ndn_interest_t* interest,
   interest->enable_Parameters = 1;
   memcpy(interest->parameters.value, params_value, params_size);
   interest->parameters.size = params_size;
+  return 0;
 }
 
 /**

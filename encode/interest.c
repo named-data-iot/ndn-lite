@@ -14,6 +14,7 @@
 /************************************************************/
 
 // get the length of inner tlv's of the interest
+// used only for unsigned interest
 static uint32_t
 ndn_interest_probe_block_internals_size(const ndn_interest_t* interest)
 {
@@ -29,21 +30,6 @@ ndn_interest_probe_block_internals_size(const ndn_interest_t* interest)
   interest_buffer_internals_size += 6; // nonce
   interest_buffer_internals_size += 4; // lifetime
   return interest_buffer_internals_size;
-}
-
-// used only for unsigned Interest
-static uint32_t
-ndn_interest_probe_block_size(const ndn_interest_t* interest)
-{
-  uint32_t interest_buffer_size = ndn_interest_probe_block_internals_size(interest);
-  return encoder_probe_block_size(TLV_Interest, interest_buffer_size);
-}
-
-// used only for unsigned Interest
-static uint32_t
-ndn_interest_probe_block_value_size(const ndn_interest_t* interest)
-{
-  return ndn_interest_probe_block_internals_size(interest);
 }
 
 /************************************************************/
@@ -135,10 +121,13 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
 int
 ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest)
 {
+  uint32_t interest_block_value_size = ndn_interest_probe_block_internals_size(interest);
+  int required_size = encoder_probe_block_size(TLV_Interest, interest_block_value_size);
+  int rest_size = encoder->output_max_size - encoder->offset;
+  if (required_size > rest_size)
+    return NDN_OVERSIZE;
+
   encoder_append_type(encoder, TLV_Interest);
-
-  uint32_t interest_block_value_size = ndn_interest_probe_block_value_size(interest);
-
   encoder_append_length(encoder, interest_block_value_size);
   ndn_name_tlv_encode(encoder, &interest->name);
 
