@@ -1494,12 +1494,14 @@ int uECC_verify(const uint8_t *public_key,
 
     /* r, s must not be 0. */
     if (uECC_vli_isZero(r, num_words) || uECC_vli_isZero(s, num_words)) {
+        printf("uECC_verify failed, r or s was zero.\n");
         return 0;
     }
 
     /* r, s must be < n. */
     if (uECC_vli_cmp_unsafe(curve->n, r, num_n_words) != 1 ||
             uECC_vli_cmp_unsafe(curve->n, s, num_n_words) != 1) {
+        printf("uECC_verify failed, r or s was >= n.\n");
         return 0;
     }
 

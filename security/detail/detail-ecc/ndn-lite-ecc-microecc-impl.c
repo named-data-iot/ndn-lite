@@ -12,82 +12,159 @@
 
 #include "../../../ndn-error-code.h"
 #include "../../../ndn-constants.h"
+#include "../../../ndn-enums.h"
 
-#include "../detail-sha256/ndn-lite-sha256-nrf-crypto-impl.h"
+#include "../detail-sha256/ndn-lite-sha256-tinycrypt-impl.h"
+#include "../sec-lib/micro-ecc/uECC.h"
 
+// there should be a better way to do a generic rng function, but for now will just include
+// nrf crypto's rng function...
 #include "../detail-rng/ndn-lite-rng-nrf-crypto-impl.h"
 
-#include "../detail-ecc/ndn-lite-ecc-nrf-crypto-impl.h"
+#include "../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
 
-#include <uECC.h>
+// this was code to do uECC deterministic signing; it didn't work on my system, so I've commented
+// it out for now - Edward
+//#ifndef FEATURE_PERIPH_HWRNG
+//typedef struct uECC_SHA256_HashContext {
+//  uECC_HashContext uECC;
+//  struct tc_sha256_state_struct ctx;
+//} uECC_SHA256_HashContext;
+//
+//static void
+//_init_sha256(const uECC_HashContext *base)
+//{
+//  uECC_SHA256_HashContext *context = (uECC_SHA256_HashContext*)base;
+//  tc_sha256_init(&context->ctx);
+//}
+//
+//static void
+//_update_sha256(const uECC_HashContext *base,
+//               const uint8_t *message,
+//               unsigned message_size)
+//{
+//  uECC_SHA256_HashContext *context = (uECC_SHA256_HashContext*)base;
+//  tc_sha256_update(&context->ctx, message, message_size);
+//}
+//
+//static void
+//_finish_sha256(const uECC_HashContext *base, uint8_t *hash_result)
+//{
+//  uECC_SHA256_HashContext *context = (uECC_SHA256_HashContext*)base;
+//  tc_sha256_final(hash_result, &context->ctx);
+//}
+//#endif
 
-int ndn_lite_microecc_gen_sha256_ecdsa_sig(
-    const uint8_t *pri_key_raw,
-    const uint8_t *payload, uint16_t payload_len,
-    uint8_t *output_buf, uint16_t output_buf_len, uint16_t *output_len) {
+int ndn_lite_microecc_set_rng() {
+  uECC_set_rng(ndn_lite_rng_nrf_crypto);
+}
 
-  //APP_LOG("ndn_lite_microecc_gen_sha256_ecdsa_sig got called.\n");
+int ndn_lite_ecdsa_verify_microecc(const uint8_t* input_value, uint32_t input_size,
+                                   const uint8_t* sig_value, uint32_t sig_size,
+                                   const uint8_t* pub_key_value,
+                                   uint32_t pub_key_size, uint8_t ecdsa_type) {
 
-  uint8_t pri_key[32];
+  ndn_lite_microecc_set_rng();
 
-  for (int i = 0; i < 32; i++) {
-    pri_key[i] = pri_key_raw[32 - 1 - i];
-  }
+  if (sig_size > NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE)
+    return NDN_SEC_WRONG_SIG_SIZE;
+  if (pub_key_size > NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE)
+    return NDN_SEC_WRONG_KEY_SIZE;
 
-  //APP_LOG_HEX("Bytes of original private key: ", pri_key_raw, 32);
-  //APP_LOG_HEX("Bytes of endian reversed private key: ", pri_key, 32);
-
-  uint8_t payload_digest_original[NDN_SEC_SHA256_HASH_SIZE];
-  if (ndn_lite_nrf_crypto_gen_sha256_hash(payload, payload_len, payload_digest_original) 
-      != NDN_SUCCESS) {
-    //APP_LOG("Failed to generate sha256 hash within ndn_lite_microecc_gen_sha256_ecdsa_sig\n");
+  uint8_t input_hash[NDN_SEC_SHA256_HASH_SIZE] = {0};
+  if (ndn_lite_sha256_tinycrypt(input_value, input_size, input_hash) != NDN_SUCCESS) {
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
-
-  uint8_t payload_digest[NDN_SEC_SHA256_HASH_SIZE];
-  for (int i = 0; i < 32; i++) {
-    payload_digest[i] = payload_digest_original[32 - 1 - i];
+  uECC_Curve curve;
+  switch(ecdsa_type){
+  case NDN_ECDSA_CURVE_SECP160R1:
+    curve = uECC_secp160r1();
+    break;
+  case NDN_ECDSA_CURVE_SECP192R1:
+    curve = uECC_secp192r1();
+    break;
+  case NDN_ECDSA_CURVE_SECP224R1:
+    curve = uECC_secp224r1();
+    break;
+  case NDN_ECDSA_CURVE_SECP256R1:
+    curve = uECC_secp256r1();
+    break;
+  case NDN_ECDSA_CURVE_SECP256K1:
+    curve = uECC_secp256k1();
+    break;
+  default:
+    return NDN_SEC_UNSUPPORT_CRYPTO_ALGO;
   }
-
-  //APP_LOG_HEX("Original payload digest:", payload_digest_original, 32);
-  //APP_LOG_HEX("Reversed payload digest:", payload_digest, 32);
-
-  uECC_set_rng(ndn_lite_RNG);
-
-  int signatureEncodingOffset = 8;
-
-  int ret = uECC_sign(pri_key,
-              payload_digest,
-              NDN_SEC_SHA256_HASH_SIZE,
-              output_buf + signatureEncodingOffset,
-              uECC_secp256r1());
-
-  if (ret != 1) {
-    //APP_LOG("in ndn_lite_microecc_gen_sha256_ecdsa_sig, uECC_sign failed.\n");
+  if (uECC_verify(pub_key_value, input_hash, sizeof(input_hash),
+                  sig_value, curve) == 0) {
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
+  else
+    return NDN_SUCCESS;
+}
 
-  uint8_t *sig_begin = output_buf + signatureEncodingOffset;
-  uint8_t *sig_begin_2 = sig_begin + 32;
+int ndn_lite_ecdsa_sign_microecc(const uint8_t* input_value, uint32_t input_size,
+                                 uint8_t* output_value, uint32_t output_max_size,
+                                 const uint8_t* prv_key_value, uint32_t prv_key_size,
+                                 uint8_t ecdsa_type, uint32_t* output_used_size) {
+ 
+  ndn_lite_microecc_set_rng();
 
-  //APP_LOG_HEX("Raw signature before reversing bytes:", sig_begin, 64);
+  if (output_max_size < NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE)
+    return NDN_OVERSIZE;
+  if (prv_key_size > NDN_SEC_ECC_SECP256R1_PRIVATE_KEY_SIZE)
+    return NDN_SEC_WRONG_KEY_SIZE;
 
-  for (int i = 0; i < 16; i++) {
-    uint8_t temp = sig_begin[32 - 1 - i];
-    sig_begin[32 - 1 - i] = sig_begin[i];
-    sig_begin[i] = temp;
+  uint8_t input_hash[NDN_SEC_SHA256_HASH_SIZE] = {0};
+  if (ndn_lite_sha256_tinycrypt(input_value, input_size, input_hash) != NDN_SUCCESS) {
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
-
-  for (int i = 0; i < 16; i++) {
-    uint8_t temp = sig_begin_2[32 - 1 - i];
-    sig_begin_2[32 - 1 - i] = sig_begin_2[i];
-    sig_begin_2[i] = temp;
+  uECC_Curve curve;
+  switch (ecdsa_type) {
+  case NDN_ECDSA_CURVE_SECP160R1:
+    curve = uECC_secp160r1();
+    break;
+  case NDN_ECDSA_CURVE_SECP192R1:
+    curve = uECC_secp192r1();
+    break;
+  case NDN_ECDSA_CURVE_SECP224R1:
+    curve = uECC_secp224r1();
+    break;
+  case NDN_ECDSA_CURVE_SECP256R1:
+    curve = uECC_secp256r1();
+    break;
+  case NDN_ECDSA_CURVE_SECP256K1:
+    curve = uECC_secp256k1();
+    break;
+  default:
+    return NDN_SEC_UNSUPPORT_CRYPTO_ALGO;
   }
+  int ecc_sign_result = 0;
 
-  //APP_LOG_HEX("Raw signature after reversing bytes:", sig_begin, 64);
-
-  ndn_lite_encodeSignatureBits(output_buf, output_len, uECC_secp256r1());
-
+  // this was code to do uECC deterministic signing; it didn't work on my system, so I've commented
+  // it out for now - Edward
+//#ifndef FEATURE_PERIPH_HWRNG
+//  // allocate memory on heap to avoid stack overflow
+//  uint8_t tmp[NDN_SEC_ECC_SECP256R1_PRIVATE_KEY_SIZE + 
+//              NDN_SEC_ECC_SECP256R1_PRIVATE_KEY_SIZE + 
+//              NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE];
+//  uECC_SHA256_HashContext HashContext;
+//  uECC_SHA256_HashContext* ctx = &HashContext;
+//  ctx->uECC.init_hash = &_init_sha256;
+//  ctx->uECC.update_hash = &_update_sha256;
+//  ctx->uECC.finish_hash = &_finish_sha256;
+//  ctx->uECC.block_size = NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE;
+//  ctx->uECC.result_size = NDN_SEC_ECC_SECP256R1_PRIVATE_KEY_SIZE;
+//  ctx->uECC.tmp = tmp;
+//  ecc_sign_result = uECC_sign_deterministic(prv_key_value, input_hash, sizeof(input_hash),
+//                                            &ctx->uECC, output_value, curve);
+//#else
+  ecc_sign_result = uECC_sign(prv_key_value, input_hash, sizeof(input_hash),
+                              output_value, curve);
+//#endif
+  if (ecc_sign_result == 0) {
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
+  }
+  *output_used_size = NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE;
   return NDN_SUCCESS;
-
 }
