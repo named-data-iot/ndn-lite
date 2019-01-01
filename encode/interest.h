@@ -17,31 +17,67 @@
 extern "C" {
 #endif
 
+/**
+ * The structure to represent the Interest parameters element.
+ */
 typedef struct interest_params {
   uint8_t value[NDN_INTEREST_PARAMS_BUFFER_SIZE];
   uint32_t size;
 } interest_params_t;
 
-
+/**
+ * The structure to represent the Interest packet.
+ */
 typedef struct ndn_interest {
+  /**
+   * The name of the Interest.
+   */
   ndn_name_t name;
-  uint32_t nounce;
+  /**
+   * The nonce of the Interest.
+   */
+  uint32_t nonce;
+  /**
+   * The lifetime of the Interest.
+   */
   uint16_t lifetime;
 
   uint8_t enable_CanBePrefix;
   uint8_t enable_MustBeFresh;
-  uint8_t enable_HopLimit;
+
+  /**
+   * The Interest parameters of the Interest. Used when enable_Parameters > 0.
+   */
+  interest_params_t parameters;
   uint8_t enable_Parameters;
 
-  interest_params_t parameters;
+  /**
+   * The hop_limit parameters of the Interest. Used when enable_HopLimit > 0.
+   */
   uint8_t hop_limit;
+  uint8_t enable_HopLimit;
 
   uint8_t is_SignedInterest;
+  /**
+   * The signature timestamp. Used when is_SignedInterest > 0.
+   */
   uint32_t signature_timestamp;
-  uint32_t signature_nounce;
+  /**
+   * The signature nonce. Used when is_SignedInterest > 0.
+   */
+  uint32_t signature_nonce;
+  /**
+   * The signature structure. Used when is_SignedInterest > 0.
+   */
   ndn_signature_t signature;
 } ndn_interest_t;
 
+/**
+ * Init an Interest packet.
+ * This function or ndn_interest_from_name() should be invoked
+ * whenever a new ndn_interest_t is created.
+ * @param interest. Output. The Interest to be inited.
+ */
 static inline void
 ndn_interest_init(ndn_interest_t* interest)
 {
@@ -51,13 +87,20 @@ ndn_interest_init(ndn_interest_t* interest)
   interest->enable_Parameters = 0;
   interest->is_SignedInterest = 0;
 
-  interest->nounce = 0;
+  interest->nonce = 0;
   interest->lifetime = NDN_DEFAULT_INTEREST_LIFETIME;
   interest->hop_limit = 0;
   interest->signature_timestamp = 0;
-  interest->signature_nounce = 0;
+  interest->signature_nonce = 0;
 }
 
+/**
+ * Init an Interest packet from a @param name.
+ * This function or ndn_interest_init() should be invoked
+ * whenever a new ndn_interest_t is created.
+ * @param interest. Output. The Interest to be inited.
+ * @param name. Input. The Interest name.
+ */
 static inline void
 ndn_interest_from_name(ndn_interest_t* interest, const ndn_name_t* name)
 {
@@ -69,29 +112,50 @@ ndn_interest_from_name(ndn_interest_t* interest, const ndn_name_t* name)
   interest->enable_Parameters = 0;
   interest->is_SignedInterest = 0;
 
-  interest->nounce = 0;
+  interest->nonce = 0;
   interest->lifetime = NDN_DEFAULT_INTEREST_LIFETIME;
   interest->hop_limit = 0;
   interest->signature_timestamp = 0;
-  interest->signature_nounce = 0;
+  interest->signature_nonce = 0;
 }
 
-// return 0 if decoding is successful
+/**
+ * Decode an Interest TLV block into an Interest.
+ * @param interest. Output. The Interest to which the TLV block will be decoded.
+ * @param block_value. Input. The Interest TLV block buffer.
+ * @param block_size. Input. The size of the Interest TLV block buffer.
+ * @return 0 if decoding is successful.
+ */
 int
 ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, uint32_t block_size);
 
+/**
+ * Set CanBePrefix flag of the Interest.
+ * @param interest. Output. The Interest whose flag will be set.
+ * @param can_be_prefix. Input. CanBePrefix is set if can_be_prefix is larger than 0.
+ */
 static inline void
 ndn_interest_set_CanBePrefix(ndn_interest_t* interest, uint8_t can_be_prefix)
 {
   interest->enable_CanBePrefix = (can_be_prefix > 0 ? 1 : 0);
 }
 
+/**
+ * Set MustBeFresh flag of the Interest.
+ * @param interest. Output. The Interest whose flag will be set.
+ * @param can_be_prefix. Input. MustBeFresh is set if must_be_fresh is larger than 0.
+ */
 static inline void
 ndn_interest_set_MustBeFresh(ndn_interest_t* interest, uint8_t must_be_fresh)
 {
   interest->enable_MustBeFresh = (must_be_fresh > 0 ? 1 : 0);
 }
 
+/**
+ * Set HopLimit flag of the Interest.
+ * @param interest. Output. The Interest whose flag will be set.
+ * @param hop. Input. The value of the HopLimit.
+ */
 static inline void
 ndn_interest_set_HopLimit(ndn_interest_t* interest, uint8_t hop)
 {
@@ -99,49 +163,31 @@ ndn_interest_set_HopLimit(ndn_interest_t* interest, uint8_t hop)
   interest->hop_limit = hop;
 }
 
-static inline void
+/**
+ * Set InterestParameters of the Interest.
+ * @param interest. Output. The Interest whose InterestParameters will be set.
+ * @param params_value. Input. The interest parameters value (V).
+ * @param params_size. Input. The size of the interest parameters value (V).
+ * @return 0 if there is no error.
+ */
+static inline int
 ndn_interest_set_Parameters(ndn_interest_t* interest,
                             const uint8_t* params_value, uint32_t params_size)
 {
+  if (params_size > NDN_INTEREST_PARAMS_BUFFER_SIZE)
+    return NDN_OVERSIZE;
   interest->enable_Parameters = 1;
   memcpy(interest->parameters.value, params_value, params_size);
   interest->parameters.size = params_size;
 }
 
-// get the length of inner tlv's of the interest
-static inline uint32_t
-ndn_interest_probe_block_internals_size(const ndn_interest_t* interest)
-{
-  uint32_t interest_buffer_internals_size = ndn_name_probe_block_size(&interest->name);
-  if (interest->enable_CanBePrefix)
-    interest_buffer_internals_size += 2;
-  if (interest->enable_MustBeFresh)
-    interest_buffer_internals_size += 2;
-  if (interest->enable_HopLimit)
-    interest_buffer_internals_size += 3;
-  if (interest->enable_Parameters)
-    interest_buffer_internals_size += encoder_probe_block_size(TLV_Parameters, interest->parameters.size);
-  interest_buffer_internals_size += 6; // nounce
-  interest_buffer_internals_size += 4; // lifetime
-  return interest_buffer_internals_size;
-}
-
-// used only for unsigned Interest
-static inline uint32_t
-ndn_interest_probe_block_size(const ndn_interest_t* interest)
-{
-  uint32_t interest_buffer_size = ndn_interest_probe_block_internals_size(interest);
-  return encoder_probe_block_size(TLV_Interest, interest_buffer_size);
-}
-
-// used only for unsigned Interest
-static inline uint32_t
-ndn_interest_probe_block_value_size(const ndn_interest_t* interest)
-{
-  return ndn_interest_probe_block_internals_size(interest);
-}
-
-// used only for unsigned Interest
+/**
+ * Encode the Interest into wire format (TLV block).
+ * This function is only used for unsigned Interest.
+ * @param encoder. Output. The encoder who keeps the encoding result and the state.
+ * @param interest. Input. The Interest to be encoded.
+ * @return 0 if there is no error.
+ */
 int
 ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest);
 

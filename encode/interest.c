@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang
+ * Copyright (C) 2018 Zhiyi Zhang, Edward Lu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -8,6 +8,47 @@
 
 #include "interest.h"
 #include "../security/ndn-lite-sign-verify.h"
+
+/************************************************************/
+/*  Definition of helper functions                          */
+/************************************************************/
+
+// get the length of inner tlv's of the interest
+static uint32_t
+ndn_interest_probe_block_internals_size(const ndn_interest_t* interest)
+{
+  uint32_t interest_buffer_internals_size = ndn_name_probe_block_size(&interest->name);
+  if (interest->enable_CanBePrefix)
+    interest_buffer_internals_size += 2;
+  if (interest->enable_MustBeFresh)
+    interest_buffer_internals_size += 2;
+  if (interest->enable_HopLimit)
+    interest_buffer_internals_size += 3;
+  if (interest->enable_Parameters)
+    interest_buffer_internals_size += encoder_probe_block_size(TLV_Parameters, interest->parameters.size);
+  interest_buffer_internals_size += 6; // nonce
+  interest_buffer_internals_size += 4; // lifetime
+  return interest_buffer_internals_size;
+}
+
+// used only for unsigned Interest
+static uint32_t
+ndn_interest_probe_block_size(const ndn_interest_t* interest)
+{
+  uint32_t interest_buffer_size = ndn_interest_probe_block_internals_size(interest);
+  return encoder_probe_block_size(TLV_Interest, interest_buffer_size);
+}
+
+// used only for unsigned Interest
+static uint32_t
+ndn_interest_probe_block_value_size(const ndn_interest_t* interest)
+{
+  return ndn_interest_probe_block_internals_size(interest);
+}
+
+/************************************************************/
+/*  Definition of Interest APIs                             */
+/************************************************************/
 
 int
 ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, uint32_t block_size)
