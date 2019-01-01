@@ -10,6 +10,7 @@
 #define NDN_LITE_ECC_TINYCRYPT_H
 
 #include "../../ndn-lite-crypto-key.h"
+#include "../sec-lib/tinycrypt/tc_ecc.h"
 
 int ndn_lite_ecc_key_shared_secret_tinycrypt(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
                                              uint8_t curve_type, uint8_t* output,

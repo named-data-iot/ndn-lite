@@ -9,8 +9,8 @@
 #include "ndn-lite-aes-tinycrypt-impl.h"
 #include "../sec-lib/tinycrypt/tc_cbc_mode.h"
 #include "../sec-lib/tinycrypt/tc_constants.h"
-#include "../../../../ndn-error-code.h"
-#include "../../../../ndn-constants.h"
+#include "../../../ndn-error-code.h"
+#include "../../../ndn-constants.h"
 
 int
 ndn_lite_aes_cbc_encrypt_tinycrypt(const uint8_t* input_value, uint8_t input_size,

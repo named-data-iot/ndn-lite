@@ -12,7 +12,9 @@
 
 void
 ndn_ecc_key_set_rng(ndn_ECC_RNG_Function rng) {
+#ifdef NDN_LITE_SEC_BACKEND_ECC_DEFAULT
   tc_uECC_set_rng(rng);
+#endif
 }
 
 int
