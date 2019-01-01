@@ -23,7 +23,7 @@ extern "C" {
 typedef struct ndn_key_storage {
   /**
    * The trust anchor storage.
-   */  
+   */
   ndn_data_t trust_anchor;
   /**
    * The trust anchor public key.

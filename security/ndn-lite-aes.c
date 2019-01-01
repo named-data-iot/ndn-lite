@@ -7,7 +7,6 @@
  */
 
 #include "ndn-lite-sec-config.h"
-
 #include "ndn-lite-aes.h"
 
 int

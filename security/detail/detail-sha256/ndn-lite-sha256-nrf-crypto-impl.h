@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Edward Lu
+ * Copyright (C) 2018 Edward Lu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -20,9 +20,9 @@
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
-
 //**************************************//
 
-int ndn_lite_nrf_crypto_gen_sha256_hash(const uint8_t *payload, uint16_t payload_len, uint8_t *output);
+int
+ndn_lite_nrf_crypto_gen_sha256_hash(const uint8_t *payload, uint16_t payload_len, uint8_t *output);
 
 #endif // SHA_256_NRF_CRYPTO_IMPL_H

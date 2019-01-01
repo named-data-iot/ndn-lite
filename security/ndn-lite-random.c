@@ -7,10 +7,8 @@
  */
 
 #include "ndn-lite-sec-config.h"
-
 #include "ndn-lite-random.h"
 #include "ndn-lite-sign-verify.h"
-#include "detail/detail-rng/ndn-lite-rng-tinycrypt-impl.h"
 
 int
 ndn_random_hkdf(const uint8_t* input_value, uint32_t input_size,

@@ -18,7 +18,7 @@ extern "C" {
 
 /**
  * Use AES-128 CBC Algorithm to encrypt the buffer. This function is implemented without padding.
- * The input_size should meet requirement (input_size % NDN_AES_BLOCK_SIZE) = 0 to enable a 
+ * The input_size should meet requirement (input_size % NDN_AES_BLOCK_SIZE) = 0 to enable a
  * successful encryption.
  * @param input_value. Input. Buffer to encrypt.
  * @param input_size. Input. Size of input buffer.
@@ -37,7 +37,7 @@ ndn_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
 
 /**
  * Use AES-128 CBC Algorithm to decrypt the AES encrypted buffer. This function is implemented without padding.
- * The input_size should meet requirement (input_size % NDN_AES_BLOCK_SIZE) = 0 to enable a 
+ * The input_size should meet requirement (input_size % NDN_AES_BLOCK_SIZE) = 0 to enable a
  * successful decryption.
  * @param input_value. Input. Buffer to decrypt.
  * @param input_size. Input. Size of input buffer.

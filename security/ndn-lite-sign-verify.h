@@ -21,7 +21,7 @@ extern "C" {
  * @param input_size. Input. Size of input buffer.
  * @param output_value. Output. Signature value.
  * @param output_max_size. Input. Buffer size of output_value
- * @param output_used_size. Output. Size of used output buffer when signing complete. 
+ * @param output_used_size. Output. Size of used output buffer when signing complete.
  * @return 0 if there is no error.
  */
 int
@@ -30,7 +30,7 @@ ndn_signer_sha256_sign(const uint8_t* input_value, uint32_t input_size,
                        uint32_t* output_used_size);
 
 /**
- * Use ECDSA Algorithm to sign buffer. This function will automatically use 
+ * Use ECDSA Algorithm to sign buffer. This function will automatically use
  * deterministic signing when no hardware pseudo-random number generater available.
  * @param input_value. Input. Buffer prepared to sign.
  * @param input_size. Input. Size of input buffer.
@@ -38,9 +38,9 @@ ndn_signer_sha256_sign(const uint8_t* input_value, uint32_t input_size,
  * @param output_max_size. Input. Buffer size of output_value
  * @param prv_key_value. Input. ECDSA private key buffer.
  * @param prv_key_size. Input. Size of private key.
- * @param ecdsa_type. Input. Type of ECDSA siganture. Can be secp160r1, secp192r1, secp224r1, 
+ * @param ecdsa_type. Input. Type of ECDSA siganture. Can be secp160r1, secp192r1, secp224r1,
  *        secp256r1, secp256k1.
- * @param output_used_size. Output. Size of used output buffer when signing complete. 
+ * @param output_used_size. Output. Size of used output buffer when signing complete.
  * @return 0 if there is no error.
  */
 int
@@ -53,11 +53,11 @@ ndn_signer_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
  * Use HMAC Algorithm to sign buffer. Memory buffer to hold the siganture should not smaller than 32 bytes.
  * @param input_value. Input. Buffer prepared to sign.
  * @param input_size. Input. Size of input buffer.
- * @param output_value. Output. Signature value. 
+ * @param output_value. Output. Signature value.
  * @param output_max_size. Input. Buffer size of output_value
  * @param key_value. Input. HMAC key.
  * @param key_size. Input. Size of HMAC key.
- * @param output_used_size. Output. Size of used output buffer when signing complete. 
+ * @param output_used_size. Output. Size of used output buffer when signing complete.
  * @return 0 if there is no error.
  */
 int

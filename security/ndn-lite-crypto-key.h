@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-/*
+/**
  * ndn_ECC_RNG_Function type
  *
  * This type is the same as micro-ecc/uECC.h::uECC_RNG_Function
@@ -26,7 +26,6 @@ extern "C" {
  * The filled-in values should be either truly random, or from a cryptographically-secure PRNG.
  * Setting a correctly functioning RNG function improves the resistance to side-channel attacks.
  **/
-
 typedef int (*ndn_ECC_RNG_Function)(uint8_t *dest, unsigned size);
 
 /**
@@ -105,7 +104,7 @@ typedef struct ndn_aes_key {
   uint8_t key_value[32];
   /**
    * The key size of key bytes.
-   */  
+   */
   uint32_t key_size;
 } ndn_aes_key_t;
 
@@ -114,7 +113,7 @@ typedef struct ndn_aes_key {
  * @param ecc_pub. Input. The ECC public key whose info will be set.
  * @param key_value. Input. The key value bytes to set.
  * @param key_size. Input. The key size. Should not larger than 64 bytes.
- * @param curve_type. Input. Type of ECC Curve. Can be secp160r1, secp192r1, secp224r1, 
+ * @param curve_type. Input. Type of ECC Curve. Can be secp160r1, secp192r1, secp224r1,
  *        secp256r1, secp256k1.
  * @param key_id. Input. The key id to be set with this ECC public key.
  * @return 0 if there is no error.
@@ -137,7 +136,7 @@ ndn_ecc_pub_init(ndn_ecc_pub_t* ecc_pub, uint8_t* key_value,
  * @param ecc_prv. Input. The ECC private key whose info will be set.
  * @param key_value. Input. The key value bytes to set.
  * @param key_size. Input. The key size. Should not larger than 32 bytes.
- * @param curve_type. Input. Type of ECC Curve. Can be secp160r1, secp192r1, secp224r1, 
+ * @param curve_type. Input. Type of ECC Curve. Can be secp160r1, secp192r1, secp224r1,
  *        secp256r1, secp256k1.
  * @param key_id. Input. The key id to be set with this ECC private key.
  * @return 0 if there is no error.
@@ -203,7 +202,7 @@ void
 ndn_ecc_key_set_rng(ndn_ECC_RNG_Function rng);
 
 /**
- * Make a ECC key pair with specific curve type and key id. 
+ * Make a ECC key pair with specific curve type and key id.
  * NOTES: Current backend implementation of (i.e., tinycrypt) only support curve type secp256r1.
  * @param ecc_pub. Output. ECC public key whose key bytes to be generated.
  * @param ecc_prv. Output. ECC private key whose key bytes to be generated.
@@ -216,7 +215,7 @@ ndn_ecc_key_make_key(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
                       uint8_t curve_type, uint32_t key_id);
 
 /**
- * Make a HMAC key with specific key size and key id. 
+ * Make a HMAC key with specific key size and key id.
  * @param input_value. Input. Personalization string.
  * @param input_size. Input. Personalization length in bytes.
  * @param output_value. Output. Buffer to receive output.
@@ -236,7 +235,7 @@ ndn_hmac_make_key(ndn_hmac_key_t* key, uint32_t key_id,
                    uint32_t salt_size);
 
 /**
- * Negotiate a shared secret wih given ECC public and private keys via ECDH. 
+ * Negotiate a shared secret wih given ECC public and private keys via ECDH.
  * @param ecc_pub. Input. Input ECC public key.
  * @param ecc_prv. Input. Input ECC private key.
  * @param curve_type. Input. ECC curve type. Should be the same type of input public and private key.

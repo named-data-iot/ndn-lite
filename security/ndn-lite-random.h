@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 /**
- * Use HMAC-KDF Algorithm to generate a secure HMAC key. 
+ * Use HMAC-KDF Algorithm to generate a secure HMAC key.
  * This function requires proper entropy source.
  * @param input_value. Input. Random input that requires KDF.
  * @param input_size. Input. Random input length in bytes.
@@ -32,7 +32,7 @@ ndn_random_hkdf(const uint8_t* input_value, uint32_t input_size,
                 const uint8_t* seed_value, uint32_t seed_size);
 
 /**
- * Use HMAC-PRNG Algorithm to generate pseudo-random bytes. 
+ * Use HMAC-PRNG Algorithm to generate pseudo-random bytes.
  * This function requires proper entropy source.
  * @param input_value. Input. Personalization string.
  * @param input_size. Input. Personalization length in bytes.

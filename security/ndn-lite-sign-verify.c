@@ -7,15 +7,7 @@
  */
 
 #include "ndn-lite-sec-config.h"
-
 #include "ndn-lite-sign-verify.h"
-
-#include "detail/detail-hmac/ndn-lite-hmac-tinycrypt-impl.h"
-#include "detail/detail-sha256/ndn-lite-sha256-tinycrypt-impl.h"
-#include "detail/detail-ecc/ndn-lite-ecc-microecc-impl.h"
-#include "detail/sec-lib/tinycrypt/tc_hmac.h"
-#include "detail/sec-lib/micro-ecc/uECC.h"
-
 #include "../ndn-error-code.h"
 
 static int

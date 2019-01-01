@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Edward Lu
+ * Copyright (C) 2018 Edward Lu, Zhiyi Zhang
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -55,15 +55,17 @@
 //}
 //#endif
 
-int ndn_lite_microecc_set_rng() {
+int
+ndn_lite_microecc_set_rng() {
   uECC_set_rng(ndn_lite_rng_nrf_crypto);
 }
 
-int ndn_lite_ecdsa_verify_microecc(const uint8_t* input_value, uint32_t input_size,
-                                   const uint8_t* sig_value, uint32_t sig_size,
-                                   const uint8_t* pub_key_value,
-                                   uint32_t pub_key_size, uint8_t ecdsa_type) {
-
+int
+ndn_lite_ecdsa_verify_microecc(const uint8_t* input_value, uint32_t input_size,
+                               const uint8_t* sig_value, uint32_t sig_size,
+                               const uint8_t* pub_key_value,
+                               uint32_t pub_key_size, uint8_t ecdsa_type)
+{
   ndn_lite_microecc_set_rng();
 
   if (sig_size > NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE)
@@ -103,11 +105,12 @@ int ndn_lite_ecdsa_verify_microecc(const uint8_t* input_value, uint32_t input_si
     return NDN_SUCCESS;
 }
 
-int ndn_lite_ecdsa_sign_microecc(const uint8_t* input_value, uint32_t input_size,
-                                 uint8_t* output_value, uint32_t output_max_size,
-                                 const uint8_t* prv_key_value, uint32_t prv_key_size,
-                                 uint8_t ecdsa_type, uint32_t* output_used_size) {
- 
+int
+ndn_lite_ecdsa_sign_microecc(const uint8_t* input_value, uint32_t input_size,
+                             uint8_t* output_value, uint32_t output_max_size,
+                             const uint8_t* prv_key_value, uint32_t prv_key_size,
+                             uint8_t ecdsa_type, uint32_t* output_used_size)
+{
   ndn_lite_microecc_set_rng();
 
   if (output_max_size < NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE)
@@ -143,25 +146,25 @@ int ndn_lite_ecdsa_sign_microecc(const uint8_t* input_value, uint32_t input_size
 
   // this was code to do uECC deterministic signing; it didn't work on my system, so I've commented
   // it out for now - Edward
-//#ifndef FEATURE_PERIPH_HWRNG
-//  // allocate memory on heap to avoid stack overflow
-//  uint8_t tmp[NDN_SEC_ECC_SECP256R1_PRIVATE_KEY_SIZE + 
-//              NDN_SEC_ECC_SECP256R1_PRIVATE_KEY_SIZE + 
-//              NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE];
-//  uECC_SHA256_HashContext HashContext;
-//  uECC_SHA256_HashContext* ctx = &HashContext;
-//  ctx->uECC.init_hash = &_init_sha256;
-//  ctx->uECC.update_hash = &_update_sha256;
-//  ctx->uECC.finish_hash = &_finish_sha256;
-//  ctx->uECC.block_size = NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE;
-//  ctx->uECC.result_size = NDN_SEC_ECC_SECP256R1_PRIVATE_KEY_SIZE;
-//  ctx->uECC.tmp = tmp;
-//  ecc_sign_result = uECC_sign_deterministic(prv_key_value, input_hash, sizeof(input_hash),
-//                                            &ctx->uECC, output_value, curve);
-//#else
+  //#ifndef FEATURE_PERIPH_HWRNG
+  //  // allocate memory on heap to avoid stack overflow
+  //  uint8_t tmp[NDN_SEC_ECC_SECP256R1_PRIVATE_KEY_SIZE +
+  //              NDN_SEC_ECC_SECP256R1_PRIVATE_KEY_SIZE +
+  //              NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE];
+  //  uECC_SHA256_HashContext HashContext;
+  //  uECC_SHA256_HashContext* ctx = &HashContext;
+  //  ctx->uECC.init_hash = &_init_sha256;
+  //  ctx->uECC.update_hash = &_update_sha256;
+  //  ctx->uECC.finish_hash = &_finish_sha256;
+  //  ctx->uECC.block_size = NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE;
+  //  ctx->uECC.result_size = NDN_SEC_ECC_SECP256R1_PRIVATE_KEY_SIZE;
+  //  ctx->uECC.tmp = tmp;
+  //  ecc_sign_result = uECC_sign_deterministic(prv_key_value, input_hash, sizeof(input_hash),
+  //                                            &ctx->uECC, output_value, curve);
+  //#else
   ecc_sign_result = uECC_sign(prv_key_value, input_hash, sizeof(input_hash),
                               output_value, curve);
-//#endif
+  //#endif
   if (ecc_sign_result == 0) {
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }

@@ -1,15 +1,23 @@
+/*
+ * Copyright (C) 2018 Zhiyi Zhang, Tianyuan Yu, Edward Lu
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
 
 #include "ndn-lite-aes-tinycrypt-impl.h"
-
 #include "../sec-lib/tinycrypt/tc_cbc_mode.h"
 #include "../sec-lib/tinycrypt/tc_constants.h"
 #include "../../../../ndn-error-code.h"
 #include "../../../../ndn-constants.h"
 
-int ndn_lite_aes_cbc_encrypt_tinycrypt(const uint8_t* input_value, uint8_t input_size,
-                                                  uint8_t* output_value, uint8_t output_size,
-                                                  const uint8_t* aes_iv,
-                                                  const uint8_t* key_value, uint8_t key_size) {
+int
+ndn_lite_aes_cbc_encrypt_tinycrypt(const uint8_t* input_value, uint8_t input_size,
+                                   uint8_t* output_value, uint8_t output_size,
+                                   const uint8_t* aes_iv,
+                                   const uint8_t* key_value, uint8_t key_size)
+{
   if (input_size + TC_AES_BLOCK_SIZE > output_size || key_size < NDN_SEC_AES_MIN_KEY_SIZE) {
     return NDN_SEC_WRONG_AES_SIZE;
   }
@@ -24,10 +32,12 @@ int ndn_lite_aes_cbc_encrypt_tinycrypt(const uint8_t* input_value, uint8_t input
   return 0;
 }
 
-int ndn_lite_aes_cbc_decrypt_tinycrypt(const uint8_t* input_value, uint8_t input_size,
-                                       uint8_t* output_value, uint8_t output_size,
-                                       const uint8_t* aes_iv,
-                                       const uint8_t* key_value, uint8_t key_size) {
+int
+ndn_lite_aes_cbc_decrypt_tinycrypt(const uint8_t* input_value, uint8_t input_size,
+                                   uint8_t* output_value, uint8_t output_size,
+                                   const uint8_t* aes_iv,
+                                   const uint8_t* key_value, uint8_t key_size)
+{
   if (output_size < input_size - TC_AES_BLOCK_SIZE || key_size < NDN_SEC_AES_MIN_KEY_SIZE) {
     return NDN_SEC_WRONG_AES_SIZE;
   }

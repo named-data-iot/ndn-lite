@@ -1,23 +1,27 @@
+/*
+ * Copyright (C) 2018 Tianyuan Yu, Zhiyi Zhang, Edward Lu
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
 
 #include "ndn-lite-rng-tinycrypt-impl.h"
-
 #include "../detail-hmac/ndn-lite-hmac-tinycrypt-impl.h"
 #include "../sec-lib/tinycrypt/tc_hmac_prng.h"
 #include "../sec-lib/tinycrypt/tc_constants.h"
-
-#include "../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
-
+// #include "../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
 #include "../../../ndn-constants.h"
 #include "../../../ndn-error-code.h"
-
 #include <stddef.h>
 
-int ndn_lite_random_hkdf_tinycrypt(const uint8_t* input_value, uint32_t input_size,
-                         uint8_t* output_value, uint32_t output_size,
-                         const uint8_t* seed_value, uint32_t seed_size)
+int
+ndn_lite_random_hkdf_tinycrypt(const uint8_t* input_value, uint32_t input_size,
+                               uint8_t* output_value, uint32_t output_size,
+                               const uint8_t* seed_value, uint32_t seed_size)
 {
   uint8_t prk[NDN_SEC_SHA256_HASH_SIZE] = {0};
-  if (ndn_lite_hmac_sha256_tinycrypt(input_value, input_size, 
+  if (ndn_lite_hmac_sha256_tinycrypt(input_value, input_size,
                                      seed_value, seed_size, prk) != NDN_SUCCESS) {
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
@@ -42,7 +46,7 @@ int ndn_lite_random_hkdf_tinycrypt(const uint8_t* input_value, uint32_t input_si
   for (int i = 0; i < iter; ++i) {
     if (i == 0) {
       if (ndn_lite_hmac_sha256_tinycrypt(prk, NDN_SEC_SHA256_HASH_SIZE,
-                                     t_first, sizeof(t_first), t) != NDN_SUCCESS) {
+                                         t_first, sizeof(t_first), t) != NDN_SUCCESS) {
         return NDN_SEC_CRYPTO_ALGO_FAILURE;
       }
       memcpy(okm + i * NDN_SEC_SHA256_HASH_SIZE, t, NDN_SEC_SHA256_HASH_SIZE);
@@ -52,7 +56,7 @@ int ndn_lite_random_hkdf_tinycrypt(const uint8_t* input_value, uint32_t input_si
       memcpy(cat, t, NDN_SEC_SHA256_HASH_SIZE);
       cat[NDN_SEC_SHA256_HASH_SIZE] = table[i];
       if (ndn_lite_hmac_sha256_tinycrypt(prk, NDN_SEC_SHA256_HASH_SIZE,
-                                      cat, NDN_SEC_SHA256_HASH_SIZE+1, t) != NDN_SUCCESS) {
+                                         cat, NDN_SEC_SHA256_HASH_SIZE+1, t) != NDN_SUCCESS) {
         return NDN_SEC_CRYPTO_ALGO_FAILURE;
       }
       memcpy(okm + i * NDN_SEC_SHA256_HASH_SIZE, t, NDN_SEC_SHA256_HASH_SIZE);
@@ -74,27 +78,25 @@ int ndn_lite_random_hmacprng_tinycrypt(const uint8_t* input_value, uint32_t inpu
     return NDN_SEC_INIT_FAILURE;
   }
 
-  if (seed_size < 32)
-  {
-    uint8_t min_seed[32] = {0};
-    memcpy(min_seed, seed_value, seed_size);
-    if (tc_hmac_prng_reseed(&h, min_seed, sizeof(min_seed), 
-          additional_value, additional_size) != TC_CRYPTO_SUCCESS) {
-      return NDN_SEC_INIT_FAILURE;
+  if (seed_size < 32) {
+      uint8_t min_seed[32] = {0};
+      memcpy(min_seed, seed_value, seed_size);
+      if (tc_hmac_prng_reseed(&h, min_seed, sizeof(min_seed),
+                              additional_value, additional_size) != TC_CRYPTO_SUCCESS) {
+        return NDN_SEC_INIT_FAILURE;
+      }
+      if (tc_hmac_prng_generate(output_value, output_size, &h) != TC_CRYPTO_SUCCESS) {
+        return NDN_SEC_CRYPTO_ALGO_FAILURE;
+      }
     }
-    if (tc_hmac_prng_generate(output_value, output_size, &h) != TC_CRYPTO_SUCCESS) {
-      return NDN_SEC_CRYPTO_ALGO_FAILURE;
+  else {
+      if (tc_hmac_prng_reseed(&h, seed_value, seed_size,
+                              additional_value, additional_size) != TC_CRYPTO_SUCCESS) {
+        return NDN_SEC_INIT_FAILURE;
+      }
+      if (tc_hmac_prng_generate(output_value, output_size, &h) != TC_CRYPTO_SUCCESS) {
+        return NDN_SEC_CRYPTO_ALGO_FAILURE;
+      }
     }
-  }
-  else
-  {
-    if (tc_hmac_prng_reseed(&h, seed_value, seed_size, 
-          additional_value, additional_size) != TC_CRYPTO_SUCCESS) {
-      return NDN_SEC_INIT_FAILURE;
-    }
-    if (tc_hmac_prng_generate(output_value, output_size, &h) != TC_CRYPTO_SUCCESS) {
-      return NDN_SEC_CRYPTO_ALGO_FAILURE;
-    }
-  }
   return NDN_SUCCESS;
 }

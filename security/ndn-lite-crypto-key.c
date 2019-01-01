@@ -9,10 +9,6 @@
 #include "ndn-lite-sec-config.h"
 #include "ndn-lite-random.h"
 #include "ndn-lite-crypto-key.h"
-#include "detail/sec-lib/tinycrypt/tc_ecc_dh.h"
-#include "detail/sec-lib/tinycrypt/tc_constants.h"
-#include "detail/detail-hmac/ndn-lite-hmac-tinycrypt-impl.h"
-#include "detail/detail-ecc/ndn-lite-ecc-tinycrypt-impl.h"
 
 void
 ndn_ecc_key_set_rng(ndn_ECC_RNG_Function rng) {
