@@ -4,12 +4,12 @@
 
 #include <stdint.h>
 
-int ndn_lite_aes_cbc_encrypt_tinycript(const uint8_t* input_value, uint8_t input_size,
+int ndn_lite_aes_cbc_encrypt_tinycrypt(const uint8_t* input_value, uint8_t input_size,
                                        uint8_t* output_value, uint8_t output_size,
                                        const uint8_t* aes_iv,
                                        const uint8_t* key_value, uint8_t key_size);
 
-int ndn_lite_aes_cbc_decrypt_tinycript(const uint8_t* input_value, uint8_t input_size,
+int ndn_lite_aes_cbc_decrypt_tinycrypt(const uint8_t* input_value, uint8_t input_size,
                                        uint8_t* output_value, uint8_t output_size,
                                        const uint8_t* aes_iv,
                                        const uint8_t* key_value, uint8_t key_size);

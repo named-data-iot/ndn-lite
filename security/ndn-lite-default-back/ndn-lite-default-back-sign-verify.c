@@ -11,9 +11,10 @@
 #ifdef NDN_LITE_SEC_BACKEND_SIGN_VERIFY_DEFAULT
 
 #include "../ndn-lite-sign-verify.h"
-#include "../detail/detail-sha256/ndn-lite-sha256-tinycript-impl.h"
-#include "../detail/sec-lib/micro-ecc/uECC.h"
+#include "../detail/detail-hmac/ndn-lite-hmac-tinycrypt-impl.h"
+#include "../detail/detail-sha256/ndn-lite-sha256-tinycrypt-impl.h"
 #include "../detail/sec-lib/tinycrypt/tc_hmac.h"
+#include "../detail/sec-lib/micro-ecc/uECC.h"
 
 #ifndef FEATURE_PERIPH_HWRNG
 typedef struct uECC_SHA256_HashContext {
@@ -56,12 +57,9 @@ hmac_sha256(const uint8_t* key, unsigned int key_size,
             const void* data, unsigned int data_length,
             uint8_t* hmac_result)
 {
-  struct tc_hmac_state_struct h;
-  (void)memset(&h, 0x00, sizeof(h));
-  (void)tc_hmac_set_key(&h, key, key_size);
-  (void)tc_hmac_init(&h);
-  (void)tc_hmac_update(&h, data, data_length);
-  (void)tc_hmac_final(hmac_result, TC_SHA256_DIGEST_SIZE, &h);
+  return ndn_lite_hmac_sign_tinycrypt(key, key_size,
+                                      data, data_length,
+                                      hmac_result);
 }
 
 int

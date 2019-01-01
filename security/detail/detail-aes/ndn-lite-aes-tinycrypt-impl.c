@@ -1,12 +1,12 @@
 
-#include "ndn-lite-aes-tinycript-impl.h"
+#include "ndn-lite-aes-tinycrypt-impl.h"
 
 #include "../sec-lib/tinycrypt/tc_cbc_mode.h"
 #include "../sec-lib/tinycrypt/tc_constants.h"
 #include "../../../../ndn-error-code.h"
 #include "../../../../ndn-constants.h"
 
-int ndn_lite_aes_cbc_encrypt_tinycript(const uint8_t* input_value, uint8_t input_size,
+int ndn_lite_aes_cbc_encrypt_tinycrypt(const uint8_t* input_value, uint8_t input_size,
                                                   uint8_t* output_value, uint8_t output_size,
                                                   const uint8_t* aes_iv,
                                                   const uint8_t* key_value, uint8_t key_size) {
@@ -24,7 +24,7 @@ int ndn_lite_aes_cbc_encrypt_tinycript(const uint8_t* input_value, uint8_t input
   return 0;
 }
 
-int ndn_lite_aes_cbc_decrypt_tinycript(const uint8_t* input_value, uint8_t input_size,
+int ndn_lite_aes_cbc_decrypt_tinycrypt(const uint8_t* input_value, uint8_t input_size,
                                        uint8_t* output_value, uint8_t output_size,
                                        const uint8_t* aes_iv,
                                        const uint8_t* key_value, uint8_t key_size) {
