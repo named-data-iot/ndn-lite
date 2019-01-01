@@ -12,12 +12,13 @@
 
 #include "sign-on-basic-consts.h"
 
+#include "../../../../../../ndn-error-code.h"
+
 #include "variants/ecc_256/sign-on-basic-ecc-256-sec.h"
 
 #include <stdio.h>
 
-enum sign_on_basic_set_sec_intf_result sign_on_basic_set_sec_intf(uint8_t variant,
-                                                      struct sign_on_basic_client_t *sign_on_basic_client) {
+int sign_on_basic_set_sec_intf(uint8_t variant, struct sign_on_basic_client_t *sign_on_basic_client) {
   switch (variant) {
     case SIGN_ON_BASIC_VARIANT_ECC_256: {
 
@@ -34,8 +35,8 @@ enum sign_on_basic_set_sec_intf_result sign_on_basic_set_sec_intf(uint8_t varian
       break;
     }
     default:
-      return SIGN_ON_BASIC_CLIENT_INIT_FAILED_UNRECOGNIZED_VARIANT;
+      return NDN_SIGN_ON_BASIC_CLIENT_INIT_FAILED_UNRECOGNIZED_VARIANT;
   }
 
-  return SIGN_ON_BASIC_SET_SEC_INTF_SUCCESS;
+  return NDN_SUCCESS;
 }

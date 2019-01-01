@@ -12,6 +12,8 @@
 
 #include <string.h>
 
+#include "../../../../../../ndn-error-code.h"
+
 #include "sign-on-basic-consts.h"
 #include "security/sign-on-basic-sec-consts.h"
 #include "sign-on-basic-impl-consts.h"
@@ -19,9 +21,10 @@
 #include "variants/ecc_256/sign-on-basic-ecc-256-consts.h"
 
 #include "../../tlv/sign-on-basic-tlv-helpers.h"
+
 #include "../../../../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
 
-enum sign_on_basic_client_init_result sign_on_basic_client_init(
+int sign_on_basic_client_init(
     uint8_t variant,
     struct sign_on_basic_client_t *sign_on_basic_client,
     const uint8_t *device_identifier_p, uint16_t device_identifier_len,
@@ -30,20 +33,24 @@ enum sign_on_basic_client_init_result sign_on_basic_client_init(
     const uint8_t *KS_pub_p, uint16_t KS_pub_len,
     const uint8_t *KS_pri_p, uint16_t KS_pri_len) {
 
+  APP_LOG_HEX("In sign_on_basic_client_init, value of device identifier:", device_identifier_p,
+              device_identifier_len);
+  APP_LOG_HEX("In sign_on_basic_client_init, value of device capabilities:", device_capabilities_p,
+              device_capabilities_len);
+
   switch (variant) {
     case SIGN_ON_BASIC_VARIANT_ECC_256:
       sign_on_basic_client->secure_sign_on_code_len = SIGN_ON_BASIC_ECC_256_SECURE_SIGN_ON_CODE_LENGTH;
       APP_LOG("Secure sign-on ble basic client being initialized with ecc_256 variant\n");
       break;
     default:
-      return SIGN_ON_BASIC_CLIENT_INIT_FAILED_UNRECOGNIZED_VARIANT;
+      return NDN_SIGN_ON_BASIC_CLIENT_INIT_FAILED_UNRECOGNIZED_VARIANT;
       break;
   }
 
-  enum sign_on_basic_set_sec_intf_result set_sec_intf_result;
-  set_sec_intf_result = sign_on_basic_set_sec_intf(variant, sign_on_basic_client);
-  if (set_sec_intf_result != SIGN_ON_BASIC_SET_SEC_INTF_SUCCESS)
-    return SIGN_ON_BASIC_CLIENT_INIT_FAILED_TO_SET_SEC_INTF;
+  int set_sec_intf_result = sign_on_basic_set_sec_intf(variant, sign_on_basic_client);
+  if (set_sec_intf_result != NDN_SUCCESS)
+    return NDN_SIGN_ON_BASIC_CLIENT_INIT_FAILED_TO_SET_SEC_INTF;
 
   memcpy(sign_on_basic_client->device_identifier_p, device_identifier_p, device_identifier_len);
   sign_on_basic_client->device_identifier_len = device_identifier_len;
@@ -64,17 +71,17 @@ enum sign_on_basic_client_init_result sign_on_basic_client_init(
 
   sign_on_basic_client->status = SIGN_ON_BASIC_CLIENT_NOT_STARTED;
 
-  return SIGN_ON_BASIC_CLIENT_INIT_SUCCESS;
+  return NDN_SUCCESS;
 }
 
-enum cnstrct_btstrp_rqst_result cnstrct_btstrp_rqst(uint8_t *buf_p, uint16_t buf_len,
+int cnstrct_btstrp_rqst(uint8_t *buf_p, uint16_t buf_len,
     uint16_t *output_len_p,
     struct sign_on_basic_client_t *sign_on_basic_client) {
 
   uint8_t digest_buffer[SIGN_ON_BASIC_SHA256_HASH_SIZE];
 
   if (buf_len < 1)
-    return CNSTRCT_BTSTRP_RQST_BUFFER_TOO_SHORT;
+    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_BUFFER_TOO_SHORT;
 
   // generate N1 key pair here
   if (!sign_on_basic_client->sec_intf.gen_n1_keypair(
@@ -82,7 +89,7 @@ enum cnstrct_btstrp_rqst_result cnstrct_btstrp_rqst(uint8_t *buf_p, uint16_t buf
           &sign_on_basic_client->N1_pub_len,
           sign_on_basic_client->N1_pri_p, SIGN_ON_BASIC_CLIENT_N1_PRI_MAX_LENGTH,
           &sign_on_basic_client->N1_pri_len)) {
-    return CNSTRCT_BTSTRP_RQST_FAILED_TO_GENERATE_N1_KEYPAIR;
+    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_FAILED_TO_GENERATE_N1_KEYPAIR;
   }
 
   APP_LOG_HEX("Bytes of generated N1 pub:", sign_on_basic_client->N1_pub_p, sign_on_basic_client->N1_pub_len);
@@ -97,6 +104,9 @@ enum cnstrct_btstrp_rqst_result cnstrct_btstrp_rqst(uint8_t *buf_p, uint16_t buf
   // add TLV_TYPE_AND_LENGTH_SIZE to account for the bootstrapping request tlv type and length;
   // these will be filled in at the end
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
+
+  APP_LOG_HEX("Value of device identifier within cnstrct_btstrp_rqst:", 
+    sign_on_basic_client->device_identifier_p, sign_on_basic_client->device_identifier_len);
 
   uint8_t device_identifier_len = sign_on_basic_client->device_identifier_len;
   buf_p[currentOffset] = SECURE_SIGN_ON_DEVICE_IDENTIFIER_TLV_TYPE;
@@ -146,7 +156,7 @@ enum cnstrct_btstrp_rqst_result cnstrct_btstrp_rqst(uint8_t *buf_p, uint16_t buf
                                                           sig_payload_begin, sig_payload_size,
                                                           btstrpRqstSigBuf, SIG_GENERATION_BUF_LENGTH, 
                                                           &encodedSignatureSize)) {
-    return CNSTRCT_BTSTRP_RQST_FAILED_TO_GENERATE_SIG;
+    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_FAILED_TO_GENERATE_SIG;
   }
 
   //**************************************//
@@ -176,10 +186,10 @@ enum cnstrct_btstrp_rqst_result cnstrct_btstrp_rqst(uint8_t *buf_p, uint16_t buf
   APP_LOG_HEX("Bytes of generated bootstrapping request:", buf_p, *output_len_p);
 
   sign_on_basic_client->status = SIGN_ON_BASIC_CLIENT_GENERATED_BOOTSTRAPPING_REQUEST;
-  return CNSTRCT_BTSTRP_RQST_SUCCESS;
+  return NDN_SUCCESS;
 }
 
-enum prcs_btstrp_rqst_rspns_result prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
+int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
     uint16_t btstrp_rqst_rspns_buf_len,
     struct sign_on_basic_client_t *sign_on_basic_client) {
 
@@ -205,7 +215,7 @@ enum prcs_btstrp_rqst_rspns_result prcs_btstrp_rqst_rspns(const uint8_t *btstrp_
                     &bootstrappingRequestTlvValueLength, 
                     &bootstrappingRequestTlvValueOffset) != PARSE_TLV_VALUE_SUCCESS) {
     APP_LOG("Failed to get tlv value of bootstrapping request.");
-    return PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_PACKET_HEADER;
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_PACKET_HEADER;
   }
   APP_LOG("Bootstrapping request tlv value length: %d\n", bootstrappingRequestTlvValueLength);
   APP_LOG("Bootstrapping request tlv value offset: %d\n", bootstrappingRequestTlvValueOffset);
@@ -223,7 +233,7 @@ enum prcs_btstrp_rqst_rspns_result prcs_btstrp_rqst_rspns(const uint8_t *btstrp_
                     SECURE_SIGN_ON_SIGNATURE_TLV_TYPE, &currentTlvValueLength, 
                     &currentTlvValueOffset) != PARSE_TLV_VALUE_SUCCESS) {
     APP_LOG("Failed to get tlv value of bootstrapping request response signature.\n");
-    return PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_SIG;
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_SIG;
   }
   APP_LOG("Bootstrapping request response signature tlv block length: %d\n", currentTlvValueLength);
   APP_LOG("Bootstrapping request response signature tlv value offset: %d\n", currentTlvValueOffset);
@@ -246,14 +256,14 @@ enum prcs_btstrp_rqst_rspns_result prcs_btstrp_rqst_rspns(const uint8_t *btstrp_
           sign_on_basic_client->secure_sign_on_code_p,
           sign_on_basic_client->secure_sign_on_code_len)) {
     APP_LOG("Failed to verify bootstrapping request signature.\n");
-    return PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_VERIFY_SIGNATURE;
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_VERIFY_SIGNATURE;
   }
 
   parseTlvValue(btstrp_rqst_rspns_tlv_val_buf_p, bootstrappingRequestTlvValueLength,
       SECURE_SIGN_ON_N2_PUB_TLV_TYPE, &currentTlvValueLength, &currentTlvValueOffset);
   if (parseResult != PARSE_TLV_VALUE_SUCCESS) {
     APP_LOG("Failed to get tlv value of N2 pub.\n");
-    return PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_N2_PUB;
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_N2_PUB;
   }
   APP_LOG("N2 pub tlv block length: %d\n", currentTlvValueLength);
   APP_LOG("N2 pub tlv value offset: %d\n", currentTlvValueOffset);
@@ -268,7 +278,7 @@ enum prcs_btstrp_rqst_rspns_result prcs_btstrp_rqst_rspns(const uint8_t *btstrp_
                                              SIGN_ON_BASIC_CLIENT_KT_MAX_LENGTH,
                                              &sign_on_basic_client->KT_len)) {
     APP_LOG("Failed to generate shared secret.\n");
-    return PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GENERATE_KT;
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GENERATE_KT;
   }
 
   //***************************************************//
@@ -277,7 +287,7 @@ enum prcs_btstrp_rqst_rspns_result prcs_btstrp_rqst_rspns(const uint8_t *btstrp_
       SECURE_SIGN_ON_ANCHOR_CERTIFICATE_TLV_TYPE, &currentTlvValueLength, &currentTlvValueOffset);
   if (parseResult != PARSE_TLV_VALUE_SUCCESS) {
     APP_LOG("Failed to get tlv value of anchor certificate.\n");
-    return PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_TRUST_ANCHOR_CERT;
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_TRUST_ANCHOR_CERT;
   }
   APP_LOG("Value of N2_pub_len after parseTlvValue for anchor certificate: %d\n", N2_pub_len);
   APP_LOG("Anchor certificate tlv block length: %d\n", currentTlvValueLength);
@@ -294,10 +304,10 @@ enum prcs_btstrp_rqst_rspns_result prcs_btstrp_rqst_rspns(const uint8_t *btstrp_
   sign_on_basic_client->trust_anchor_cert_len = trust_anchor_len;
 
   sign_on_basic_client->status = SIGN_ON_BASIC_CLIENT_PROCESSED_BOOTSTRAPPING_REQUEST_RESPONSE;
-  return PRCS_BTSTRP_RQST_RSPNS_SUCCESS;
+  return NDN_SUCCESS;
 }
 
-enum cnstrct_cert_rqst_result cnstrct_cert_rqst(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
+int cnstrct_cert_rqst(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
     struct sign_on_basic_client_t *sign_on_basic_client) {
 
   APP_LOG("Construct certificate request got called.\n");
@@ -306,7 +316,7 @@ enum cnstrct_cert_rqst_result cnstrct_cert_rqst(uint8_t *buf_p, uint16_t buf_len
 
   if (buf_len < 1) {
     APP_LOG("The buffer passed into construct certificate request was too short.\n");
-    return CNSTRCT_CERT_RQST_BUFFER_TOO_SHORT;
+    return NDN_SIGN_ON_CNSTRCT_CERT_RQST_BUFFER_TOO_SHORT;
   }
 
   int certificateRequestTlvTypePosition = 0;
@@ -346,7 +356,7 @@ enum cnstrct_cert_rqst_result cnstrct_cert_rqst(uint8_t *buf_p, uint16_t buf_len
 
   if (!sign_on_basic_client->sec_intf.gen_sha256_hash(sign_on_basic_client->N2_pub_p, 
     sign_on_basic_client->N2_pub_len, digest_buffer)) {
-    return CNSTRCT_CERT_RQST_FAILED_TO_GENERATE_N2_PUB_HASH;
+    return NDN_SIGN_ON_CNSTRCT_CERT_RQST_FAILED_TO_GENERATE_N2_PUB_HASH;
   }
 
   //**************************************//
@@ -365,7 +375,7 @@ enum cnstrct_cert_rqst_result cnstrct_cert_rqst(uint8_t *buf_p, uint16_t buf_len
 
   if (!sign_on_basic_client->sec_intf.gen_sha256_hash(sign_on_basic_client->trust_anchor_cert_p,
             sign_on_basic_client->trust_anchor_cert_len, digest_buffer)) {
-    return CNSTRCT_CERT_RQST_FAILED_TO_GENERATE_TRUST_ANCHOR_CERT_HASH;
+    return NDN_SIGN_ON_CNSTRCT_CERT_RQST_FAILED_TO_GENERATE_TRUST_ANCHOR_CERT_HASH;
   }
 
   //**************************************//
@@ -402,7 +412,7 @@ enum cnstrct_cert_rqst_result cnstrct_cert_rqst(uint8_t *buf_p, uint16_t buf_len
                                                         sig_payload_begin, sig_payload_size,
                                                         certRqstSigBuf, SIG_GENERATION_BUF_LENGTH, 
                                                         &encodedSignatureSize)) {
-    return CNSTRCT_CERT_RQST_FAILED_TO_GENERATE_SIG;
+    return NDN_SIGN_ON_CNSTRCT_CERT_RQST_FAILED_TO_GENERATE_SIG;
   }
 
   //**************************************//
@@ -433,10 +443,10 @@ enum cnstrct_cert_rqst_result cnstrct_cert_rqst(uint8_t *buf_p, uint16_t buf_len
   APP_LOG_HEX("Bytes of generated certificate request:", buf_p, *output_len_p);
 
   sign_on_basic_client->status = SIGN_ON_BASIC_CLIENT_GENERATED_CERTIFICATE_REQUEST;
-  return CNSTRCT_CERT_RQST_SUCCESS;
+  return NDN_SUCCESS;
 }
 
-enum prcs_cert_rqst_rspns_result prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
+int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
     uint16_t cert_rqst_rspns_buf_len,
     struct sign_on_basic_client_t *sign_on_basic_client) {
 
@@ -459,7 +469,7 @@ enum prcs_cert_rqst_rspns_result prcs_cert_rqst_rspns(const uint8_t *cert_rqst_r
                     &certificateRequestTlvValueLength, 
                     &certificateRequestTlvValueOffset) != PARSE_TLV_VALUE_SUCCESS) {
     APP_LOG("Failed to get tlv value of certificate request.\n");
-    return PRCS_CERT_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_PACKET_HEADER;
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_PACKET_HEADER;
   }
   APP_LOG("Certificate request tlv value length: %d\n", certificateRequestTlvValueLength);
   APP_LOG("Certificate request tlv value offset: %d\n", certificateRequestTlvValueOffset);
@@ -477,7 +487,7 @@ enum prcs_cert_rqst_rspns_result prcs_cert_rqst_rspns(const uint8_t *cert_rqst_r
                     SECURE_SIGN_ON_SIGNATURE_TLV_TYPE, &currentTlvValueLength, 
                     &currentTlvValueOffset) != PARSE_TLV_VALUE_SUCCESS) {
     APP_LOG("Failed to get tlv value of cert request response signature.\n");
-    return PRCS_CERT_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_KD_PRI_ENC;
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_KD_PRI_ENC;
   }
   APP_LOG_HEX("Bytes of signature of cert request response:", cert_rqst_rspns_tlv_val_buf_p + currentTlvValueOffset,
       currentTlvValueLength);
@@ -495,7 +505,7 @@ enum prcs_cert_rqst_rspns_result prcs_cert_rqst_rspns(const uint8_t *cert_rqst_r
           sign_on_basic_client->KT_p,
           sign_on_basic_client->KT_len)) {
     APP_LOG("Failed to verify certificate request signature.\n");
-    return PRCS_CERT_RQST_RSPNS_FAILED_TO_VERIFY_SIGNATURE;
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_VERIFY_SIGNATURE;
   }
 
   //***************************************************************************//
@@ -504,7 +514,7 @@ enum prcs_cert_rqst_rspns_result prcs_cert_rqst_rspns(const uint8_t *cert_rqst_r
                     SECURE_SIGN_ON_KD_PRI_ENCRYPTED_TLV_TYPE, &currentTlvValueLength, 
                     &currentTlvValueOffset) != PARSE_TLV_VALUE_SUCCESS) {
     APP_LOG("Failed to get tlv value of kd pri encrypted.\n");
-    return PRCS_CERT_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_KD_PRI_ENC;
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_KD_PRI_ENC;
   }
   APP_LOG("Kd pri encrypted tlv block length: %d\n", currentTlvValueLength);
   APP_LOG("Kd pri encrypted tlv value offset: %d\n", currentTlvValueOffset);
@@ -523,10 +533,8 @@ enum prcs_cert_rqst_rspns_result prcs_cert_rqst_rspns(const uint8_t *cert_rqst_r
       sign_on_basic_client->KT_len,
       kd_pri_enc_begin, kd_pri_enc_len,
       KD_pri_decrypted_temp_buf, &KD_pri_decrypted_len)) {
-    return PRCS_CERT_RQST_RSPNS_FAILED_TO_DECRYPT_KD_PRI;
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_DECRYPT_KD_PRI;
   }
-
-
 
   APP_LOG_HEX("Kd pri decrypted:", KD_pri_decrypted_temp_buf, KD_pri_decrypted_len);
 
@@ -539,7 +547,7 @@ enum prcs_cert_rqst_rspns_result prcs_cert_rqst_rspns(const uint8_t *cert_rqst_r
                     SECURE_SIGN_ON_KD_PUB_CERTIFICATE_TLV_TYPE, &currentTlvValueLength, 
                     &currentTlvValueOffset) != PARSE_TLV_VALUE_SUCCESS) {
     APP_LOG("Failed to get tlv value of kd pub certificate.\n");
-    return PRCS_CERT_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_KD_PUB_CERT;
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_KD_PUB_CERT;
   }
   APP_LOG("Kd pub certificate tlv block length: %d\n", currentTlvValueLength);
   APP_LOG("Kd pub certificate tlv value offset: %d\n", currentTlvValueOffset);
@@ -553,10 +561,10 @@ enum prcs_cert_rqst_rspns_result prcs_cert_rqst_rspns(const uint8_t *cert_rqst_r
   sign_on_basic_client->KD_pub_cert_len = KD_pub_cert_len;
 
   sign_on_basic_client->status = SIGN_ON_BASIC_CLIENT_PROCESSED_CERTIFICATE_REQUEST_RESPONSE;
-  return PRCS_CERT_RQST_RSPNS_SUCCESS;
+  return NDN_SUCCESS;
 }
 
-enum cnstrct_fin_msg_result cnstrct_fin_msg(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
+int cnstrct_fin_msg(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
                             struct sign_on_basic_client_t *sign_on_basic_client) {
 
   APP_LOG("Construct finish message got called.\n");
@@ -565,7 +573,7 @@ enum cnstrct_fin_msg_result cnstrct_fin_msg(uint8_t *buf_p, uint16_t buf_len, ui
 
   if (buf_len < 1) {
     APP_LOG("The buffer passed into construct finish message was too short.\n");
-    return CNSTRCT_FIN_MSG_BUFFER_TOO_SHORT;
+    return NDN_SIGN_ON_CNSTRCT_FIN_MSG_BUFFER_TOO_SHORT;
   }
 
   int finishMessageTlvTypePosition = 0;
@@ -600,7 +608,7 @@ enum cnstrct_fin_msg_result cnstrct_fin_msg(uint8_t *buf_p, uint16_t buf_len, ui
 
   if (!sign_on_basic_client->sec_intf.gen_sha256_hash(sign_on_basic_client->N2_pub_p, 
     sign_on_basic_client->N2_pub_len, digest_buffer)) {
-    return CNSTRCT_CERT_RQST_FAILED_TO_GENERATE_N2_PUB_HASH;
+    return NDN_SIGN_ON_CNSTRCT_CERT_RQST_FAILED_TO_GENERATE_N2_PUB_HASH;
   }
 
   //**************************************//
@@ -619,7 +627,7 @@ enum cnstrct_fin_msg_result cnstrct_fin_msg(uint8_t *buf_p, uint16_t buf_len, ui
 
   if (!sign_on_basic_client->sec_intf.gen_sha256_hash(sign_on_basic_client->trust_anchor_cert_p,
           sign_on_basic_client->trust_anchor_cert_len, digest_buffer)) {
-    return CNSTRCT_CERT_RQST_FAILED_TO_GENERATE_TRUST_ANCHOR_CERT_HASH;
+    return NDN_SIGN_ON_CNSTRCT_CERT_RQST_FAILED_TO_GENERATE_TRUST_ANCHOR_CERT_HASH;
   }
 
   //**************************************//
@@ -656,7 +664,7 @@ enum cnstrct_fin_msg_result cnstrct_fin_msg(uint8_t *buf_p, uint16_t buf_len, ui
                                                       sig_payload_begin, sig_payload_size,
                                                       certRqstSigBuf, SIG_GENERATION_BUF_LENGTH, 
                                                       &encodedSignatureSize)) {
-    return CNSTRCT_FIN_MSG_FAILED_TO_GENERATE_SIG;
+    return NDN_SIGN_ON_CNSTRCT_FIN_MSG_FAILED_TO_GENERATE_SIG;
   }
 
   //**************************************//
@@ -687,5 +695,5 @@ enum cnstrct_fin_msg_result cnstrct_fin_msg(uint8_t *buf_p, uint16_t buf_len, ui
   APP_LOG_HEX("Bytes of generated finish message:", buf_p, *output_len_p);
 
   sign_on_basic_client->status = SIGN_ON_BASIC_CLIENT_GENERATED_FINISH_MESSAGE;
-  return CNSTRCT_FIN_MSG_SUCCESS;
+  return NDN_SUCCESS;
 }

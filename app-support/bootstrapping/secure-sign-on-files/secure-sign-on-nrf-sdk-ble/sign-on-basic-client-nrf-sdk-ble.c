@@ -15,6 +15,8 @@
 
 #include "../../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
 
+#include "../../../../ndn-error-code.h"
+
 #define TEMP_BUF_LENGTH 500
 
 static struct sign_on_basic_client_t m_sign_on_basic_client;
@@ -42,7 +44,7 @@ void m_on_transport_adv_stopped() {
   APP_LOG("in sign-on-basic-client-ble.c, m_on_transport_adv_stopped got called\n");
 }
 
-void m_on_transport_mtu_rqst() {
+void m_on_transport_mtu_rqst(uint16_t conn_handle) {
   // after the central is done negotiating its MTU with us, we send our bootstrapping request
 
   APP_LOG("in sign-on-basic-client-ble.c, m_on_transport_mtu_rqst got called\n");
@@ -64,10 +66,9 @@ void m_on_transport_mtu_rqst() {
   uint8_t bootstrappingRequestBuf[TEMP_BUF_LENGTH];
   uint16_t bootstrappingRequestLength = 0;
 
-  enum cnstrct_btstrp_rqst_result cnstrct_result;
-  cnstrct_result = cnstrct_btstrp_rqst(bootstrappingRequestBuf, bootstrappingRequestBufLength, &bootstrappingRequestLength,
+  int cnstrct_result = cnstrct_btstrp_rqst(bootstrappingRequestBuf, bootstrappingRequestBufLength, &bootstrappingRequestLength,
       &m_sign_on_basic_client);
-  if (cnstrct_result != CNSTRCT_BTSTRP_RQST_SUCCESS) {
+  if (cnstrct_result != NDN_SUCCESS) {
     APP_LOG("Construction of bootstrapping request failed, error code %d\n", cnstrct_result);
     m_on_sign_on_completed(SIGN_ON_BASIC_CLIENT_NRF_SDK_BLE_COMPLETED_FAILED_TO_GENERATE_BOOTSTRAPPING_REQUEST);
     return;
@@ -103,10 +104,8 @@ void m_on_recvd_data_callback(const uint8_t *payload, uint16_t payload_len) {
   if (payload[0] == SECURE_SIGN_ON_BOOTSTRAPPING_REQUEST_RESPONSE_TLV_TYPE) {
     APP_LOG("Received bootstrapping request response.\n");
 
-    enum prcs_btstrp_rqst_rspns_result result;
-
-    result = prcs_btstrp_rqst_rspns(payload, payload_len, &m_sign_on_basic_client);
-    if (result != PRCS_BTSTRP_RQST_RSPNS_SUCCESS) {
+    int result = prcs_btstrp_rqst_rspns(payload, payload_len, &m_sign_on_basic_client);
+    if (result != NDN_SUCCESS) {
       APP_LOG("Error processing bootstrapping request response: %d", result);
       return;
     }
@@ -124,10 +123,9 @@ void m_on_recvd_data_callback(const uint8_t *payload, uint16_t payload_len) {
     uint8_t certificateRequestBuf[TEMP_BUF_LENGTH];
     uint16_t certificateRequestLength = 0;
 
-    enum cnstrct_cert_rqst_result cnstrct_result;
-    cnstrct_result = cnstrct_cert_rqst(certificateRequestBuf, certificateRequestBufLength, &certificateRequestLength,
+    int cnstrct_result = cnstrct_cert_rqst(certificateRequestBuf, certificateRequestBufLength, &certificateRequestLength,
         &m_sign_on_basic_client);
-    if (cnstrct_result != CNSTRCT_CERT_RQST_SUCCESS) {
+    if (cnstrct_result != NDN_SUCCESS) {
       APP_LOG("Construction of certificate request failed, error code %d\n", cnstrct_result);
       m_on_sign_on_completed(SIGN_ON_BASIC_CLIENT_NRF_SDK_BLE_COMPLETED_FAILED_TO_GENERATE_CERTIFICATE_REQUEST);
       return;
@@ -145,9 +143,8 @@ void m_on_recvd_data_callback(const uint8_t *payload, uint16_t payload_len) {
   } else if (payload[0] == SECURE_SIGN_ON_CERTIFICATE_REQUEST_RESPONSE_TLV_TYPE) {
     APP_LOG("Received certificate request response.\n");
 
-    enum prcs_cert_rqst_rspns_result result;
-    result = prcs_cert_rqst_rspns(payload, payload_len, &m_sign_on_basic_client);
-    if (result != PRCS_CERT_RQST_RSPNS_SUCCESS) {
+    int result = prcs_cert_rqst_rspns(payload, payload_len, &m_sign_on_basic_client);
+    if (result != NDN_SUCCESS) {
       APP_LOG("Error processing certificate request response: %d\n", result);
       return;
     }
@@ -166,10 +163,9 @@ void m_on_recvd_data_callback(const uint8_t *payload, uint16_t payload_len) {
     uint8_t finishMessageBuf[finishMessageBufLength];
     uint16_t finishMessageLength;
 
-    enum cnstrct_fin_msg_result cnstrct_result;
-    cnstrct_result = cnstrct_fin_msg(finishMessageBuf, finishMessageBufLength, &finishMessageLength,
+    int cnstrct_result = cnstrct_fin_msg(finishMessageBuf, finishMessageBufLength, &finishMessageLength,
       &m_sign_on_basic_client);
-    if (cnstrct_result != CNSTRCT_FIN_MSG_SUCCESS) {
+    if (cnstrct_result != NDN_SUCCESS) {
       APP_LOG("Construction of finish message failed, error code %d\n", cnstrct_result);
       m_on_sign_on_completed(SIGN_ON_BASIC_CLIENT_NRF_SDK_BLE_COMPLETED_FAILED_TO_GENERATE_FINISH_MESSAGE);
       return;
@@ -193,7 +189,7 @@ void m_on_recvd_data_callback(const uint8_t *payload, uint16_t payload_len) {
   }
 }
 
-enum sign_on_basic_client_nrf_sdk_ble_construct_result sign_on_basic_client_nrf_sdk_ble_construct(uint8_t variant,
+int sign_on_basic_client_nrf_sdk_ble_construct(uint8_t variant,
                                    const uint8_t *device_identifier_p, uint16_t device_identifier_len,
                                    const uint8_t *device_capabilities_p, uint16_t device_capabilities_len,
                                    const uint8_t *secure_sign_on_code_p,
@@ -202,6 +198,11 @@ enum sign_on_basic_client_nrf_sdk_ble_construct_result sign_on_basic_client_nrf_
                                    void (*on_sign_on_completed)(enum sign_on_basic_client_nrf_sdk_ble_completed_result result)) {
 
   m_on_sign_on_completed = on_sign_on_completed;
+
+  APP_LOG_HEX("In sign_on_basic_client_nrf_sdk_ble_construct, value of device identifier:",
+              device_identifier_p, device_identifier_len);
+  APP_LOG_HEX("In sign_on_basic_client_nrf_sdk_ble_construct, value of device capabilities:",
+              device_capabilities_p, device_capabilities_len);
   
   nrf_sdk_ble_ndn_lite_ble_unicast_transport_init();
   nrf_sdk_ble_ndn_lite_ble_unicast_transport_observer_t observer;
@@ -213,8 +214,7 @@ enum sign_on_basic_client_nrf_sdk_ble_construct_result sign_on_basic_client_nrf_
   observer.on_adv_stopped = m_on_transport_adv_stopped;
   nrf_sdk_ble_ndn_lite_ble_unicast_transport_add_observer(observer);
 
-  enum sign_on_basic_client_init_result sign_on_client_init_result;
-  sign_on_client_init_result = sign_on_basic_client_init(variant,
+  int sign_on_client_init_result = sign_on_basic_client_init(variant,
                                                          &m_sign_on_basic_client,
                                                          device_identifier_p, device_identifier_len,
                                                          device_capabilities_p, device_capabilities_len,
@@ -222,12 +222,12 @@ enum sign_on_basic_client_nrf_sdk_ble_construct_result sign_on_basic_client_nrf_
                                                          KS_pub_p, KS_pub_len,
                                                          KS_pri_p, KS_pri_len);
 
-  if (sign_on_client_init_result != SIGN_ON_BASIC_CLIENT_INIT_SUCCESS) {
-    APP_LOG("Initialization of sign on client failed.");
-    APP_LOG("Error number: %d", sign_on_client_init_result);
-    return SIGN_ON_BASIC_CLIENT_NRF_SDK_BLE_CONSTRUCT_FAILED_TO_INITIALIZE_SIGN_ON_BASIC_CLIENT;
+  if (sign_on_client_init_result != NDN_SUCCESS) {
+    APP_LOG("Initialization of sign on client failed.\n");
+    APP_LOG("Error number: %d\n", sign_on_client_init_result);
+    return NDN_SIGN_ON_BASIC_CLIENT_NRF_SDK_BLE_CONSTRUCT_FAILED_TO_INITIALIZE_SIGN_ON_BASIC_CLIENT;
   }
   
-  return SIGN_ON_BASIC_CLIENT_NRF_SDK_BLE_CONSTRUCT_SUCCESS;
+  return NDN_SUCCESS;
 
 }

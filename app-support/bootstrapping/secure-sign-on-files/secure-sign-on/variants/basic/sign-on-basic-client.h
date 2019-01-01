@@ -353,14 +353,6 @@ struct sign_on_basic_client_t {
 
 };
 
-/**@brief Result of calling sign_on_basic_client_init.
- */
-enum sign_on_basic_client_init_result {
-  SIGN_ON_BASIC_CLIENT_INIT_SUCCESS,
-  SIGN_ON_BASIC_CLIENT_INIT_FAILED_UNRECOGNIZED_VARIANT,
-  SIGN_ON_BASIC_CLIENT_INIT_FAILED_TO_SET_SEC_INTF,
-};
-
 /**@brief Initialize state for a sign_on_basic_client_t. All buffers passed 
  *        in will be copied into the sign_on_basic_client basic client.
  *
@@ -381,8 +373,9 @@ enum sign_on_basic_client_init_result {
  * @param[in]   KS_pri_p                   "                                               "
  * @param[in]   KS_pri_len                 "                                               "
  *
+ * @return      Returns NDN_SUCCESS upon success.
  */
-enum sign_on_basic_client_init_result sign_on_basic_client_init(
+int sign_on_basic_client_init(
                               uint8_t variant,
                               struct sign_on_basic_client_t *sign_on_basic_client,
                               const uint8_t *device_identifier_p, uint16_t device_identifier_len,
@@ -390,16 +383,6 @@ enum sign_on_basic_client_init_result sign_on_basic_client_init(
                               const uint8_t *secure_sign_on_code_p,
                               const uint8_t *KS_pub_p, uint16_t KS_pub_len,
                               const uint8_t *KS_pri_p, uint16_t KS_pri_len);
-
-/**@brief Result of calling cnstrct_btstrp_rqst_result.
- */
-enum cnstrct_btstrp_rqst_result {
-  CNSTRCT_BTSTRP_RQST_SUCCESS,
-  CNSTRCT_BTSTRP_RQST_BUFFER_TOO_SHORT,
-  CNSTRCT_BTSTRP_RQST_FAILED_TO_GENERATE_N1_KEYPAIR,
-  CNSTRCT_BTSTRP_RQST_FAILED_TO_GENERATE_SIG_PAYLOAD_HASH,
-  CNSTRCT_BTSTRP_RQST_FAILED_TO_GENERATE_SIG,
-};
 
 /**@brief Construct a bootstrapping request.
  *        For a given sign on exchange:
@@ -411,22 +394,12 @@ enum cnstrct_btstrp_rqst_result {
  * @param[in]   output_len_p               Pointer to variable that will be filled with length of generated
  *                                         bootstrapping request upon successful construction.
  * @param[in]   sign_on_basic_client   Reference to the sign_on_basic_client_t to use in construction.
+ *
+ * @return      Returns NDN_SUCCESS upon success.
  */
-enum cnstrct_btstrp_rqst_result cnstrct_btstrp_rqst(uint8_t *buf_p, uint16_t buf_len,
+int cnstrct_btstrp_rqst(uint8_t *buf_p, uint16_t buf_len,
                               uint16_t *output_len_p,
                               struct sign_on_basic_client_t *sign_on_basic_client);
-
-/**@brief Result of calling prcs_btstrp_rqst_rspns_result.
- */
-enum prcs_btstrp_rqst_rspns_result {
-  PRCS_BTSTRP_RQST_RSPNS_SUCCESS,
-  PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_VERIFY_SIGNATURE,
-  PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_PACKET_HEADER,
-  PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_SIG,
-  PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_TRUST_ANCHOR_CERT,
-  PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_N2_PUB,
-  PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GENERATE_KT,
-};
 
 /**@brief Process a bootstrapping request response. 
  *        For a given sign on exchange:
@@ -439,21 +412,12 @@ enum prcs_btstrp_rqst_rspns_result {
  * @param[in]   btstrp_rqst_rspns_buf_p    Buffer that holds the bootstrapping request response.
  * @param[in]   btstrp_rqst_rspns_buf_len  Length of the bootstrapping request response.
  * @param[in]   sign_on_basic_client   Reference to the sign_on_basic_client_t to modify while processing.
+ *
+ * @return      Returns NDN_SUCCESS upon success.
  */
-enum prcs_btstrp_rqst_rspns_result prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
+int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
                                     uint16_t btstrp_rqst_rspns_buf_len,
                                     struct sign_on_basic_client_t *sign_on_basic_client);
-
-/**@brief Result of calling cnstrct_cert_rqst_result.
- */
-enum cnstrct_cert_rqst_result {
-  CNSTRCT_CERT_RQST_SUCCESS,
-  CNSTRCT_CERT_RQST_BUFFER_TOO_SHORT,
-  CNSTRCT_CERT_RQST_FAILED_TO_GENERATE_N2_PUB_HASH,
-  CNSTRCT_CERT_RQST_FAILED_TO_GENERATE_TRUST_ANCHOR_CERT_HASH,
-  CNSTRCT_CERT_RQST_FAILED_TO_GENERATE_SIG_PAYLOAD_HASH,
-  CNSTRCT_CERT_RQST_FAILED_TO_GENERATE_SIG,
-};
 
 /**@brief Construct a certificate request.
  *        For a given sign on exchange:
@@ -465,20 +429,11 @@ enum cnstrct_cert_rqst_result {
  * @param[in]   output_len_p               Pointer to variable that will be filled with length of generated
  *                                         certificate request upon successful construction.
  * @param[in]   sign_on_basic_client   Reference to the sign_on_basic_client_t to use in construction.
+ *
+ * @return      Returns NDN_SUCCESS upon success.
  */
-enum cnstrct_cert_rqst_result cnstrct_cert_rqst(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
+int cnstrct_cert_rqst(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
                             struct sign_on_basic_client_t *sign_on_basic_client);
-
-/**@brief Result of calling prcs_cert_rqst_rspns_result.
- */
-enum prcs_cert_rqst_rspns_result {
-  PRCS_CERT_RQST_RSPNS_SUCCESS,
-  PRCS_CERT_RQST_RSPNS_FAILED_TO_VERIFY_SIGNATURE,
-  PRCS_CERT_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_PACKET_HEADER,
-  PRCS_CERT_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_KD_PUB_CERT,
-  PRCS_CERT_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_KD_PRI_ENC,
-  PRCS_CERT_RQST_RSPNS_FAILED_TO_DECRYPT_KD_PRI
-};
 
 /**@brief Process a certificate request response. 
  *        For a given sign on exchange:
@@ -491,19 +446,12 @@ enum prcs_cert_rqst_rspns_result {
  * @param[in]   cert_rqst_rspns_buf_p      Buffer that holds the certificate request response.
  * @param[in]   cert_rqst_rspns_buf_len    Length of the certificate request response.
  * @param[in]   sign_on_basic_client       Reference to the sign_on_basic_client_t to modify while processing.
+ *
+ * @return      Returns NDN_SUCCESS upon success.
  */
-enum prcs_cert_rqst_rspns_result prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
+int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
                                   uint16_t cert_rqst_rspns_buf_len,
                                   struct sign_on_basic_client_t *sign_on_basic_client);
-
-/**@brief Result of calling cnstrct_fin_msg_result.
- */
-enum cnstrct_fin_msg_result {
-  CNSTRCT_FIN_MSG_SUCCESS,
-  CNSTRCT_FIN_MSG_BUFFER_TOO_SHORT,
-  CNSTRCT_FIN_MSG_FAILED_TO_GENERATE_SIG_PAYLOAD_HASH,
-  CNSTRCT_FIN_MSG_FAILED_TO_GENERATE_SIG,
-};
 
 /**@brief Construct a sign-on basic finish message (this lets the controller know sign-on was completed
  *          successfully.
@@ -517,8 +465,10 @@ enum cnstrct_fin_msg_result {
  * @param[in]   output_len_p               Pointer to variable that will be filled with length of generated
  *                                         finish message upon successful construction.
  * @param[in]   sign_on_basic_client   Reference to the sign_on_basic_client_t to use in construction.
+ *
+ * @return      Returns NDN_SUCCESS upon success.
  */
-enum cnstrct_fin_msg_result cnstrct_fin_msg(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
+int cnstrct_fin_msg(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
                             struct sign_on_basic_client_t *sign_on_basic_client);
 
 #endif // SIGN_ON_BASIC_CLIENT_H

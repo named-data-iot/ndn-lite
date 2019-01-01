@@ -46,13 +46,6 @@ typedef struct sign_on_basic_client_nrf_sdk_ble {
 sign_on_basic_client_nrf_sdk_ble_t*
 get_sign_on_basic_client_nrf_sdk_ble_instance();
 
-/**@brief Result of calling sign_on_basic_client_nrf_sdk_ble_init.
- */
-enum sign_on_basic_client_nrf_sdk_ble_construct_result {
-  SIGN_ON_BASIC_CLIENT_NRF_SDK_BLE_CONSTRUCT_SUCCESS,
-  SIGN_ON_BASIC_CLIENT_NRF_SDK_BLE_CONSTRUCT_FAILED_TO_INITIALIZE_SIGN_ON_BASIC_CLIENT,
-};
-
 /**@brief Result of sign-on process.
  *
  * @note SIGN_ON_BASIC_CLIENT_NRF_SDK_BLE_COMPLETED_FAILED_TO_PROCESS_BOOTSTRAPPING_REQUEST_RESPONSE and
@@ -104,7 +97,7 @@ enum sign_on_basic_client_nrf_sdk_ble_completed_result {
  *                                           when the finish message has been successfully generated and sent.
  *
  */
-enum sign_on_basic_client_nrf_sdk_ble_construct_result sign_on_basic_client_nrf_sdk_ble_construct(
+int sign_on_basic_client_nrf_sdk_ble_construct(
                               uint8_t variant,
                               const uint8_t *device_identifier_p, uint16_t device_identifier_len,
                               const uint8_t *device_capabilities_p, uint16_t device_capabilities_len,
@@ -112,7 +105,5 @@ enum sign_on_basic_client_nrf_sdk_ble_construct_result sign_on_basic_client_nrf_
                               const uint8_t *KS_pub_p, uint16_t KS_pub_len,
                               const uint8_t *KS_pri_p, uint16_t KS_pri_len,
                               void (*on_sign_on_completed)(enum sign_on_basic_client_nrf_sdk_ble_completed_result result));
-
-
 
 #endif // SIGN_ON_BASIC_CLIENT_NRF_SDK_BLE_H

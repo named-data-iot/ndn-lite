@@ -16,14 +16,6 @@
 
 #include "sign-on-basic-client.h"
 
-/**@brief Result of calling sign_on_basic_set_sec_intf.
- *
- */
-enum sign_on_basic_set_sec_intf_result {
-  SIGN_ON_BASIC_SET_SEC_INTF_SUCCESS,
-  SIGN_ON_BASIC_SET_SEC_INTF_FAILURE
-};
-
 /**@brief Function to set the security interface of a Sign-on Basic client. Security implementations of 
  *          generic security operations in the Sign-on Basic client will depend on the variant.
  *
@@ -31,8 +23,8 @@ enum sign_on_basic_set_sec_intf_result {
  * @param[in]   sign_on_basic_client       Reference to sign_on_basic_client_t to set the security interfaces
  *                                           of.
  *
+ * @return      Returns NDN_SUCCESS upon success.
  */
-enum sign_on_basic_set_sec_intf_result sign_on_basic_set_sec_intf(uint8_t variant,
-                                                      struct sign_on_basic_client_t *sign_on_basic_client);
+int sign_on_basic_set_sec_intf(uint8_t variant, struct sign_on_basic_client_t *sign_on_basic_client);
 
 #endif // SIGN_ON_BASIC_SEC_INTF_SETTER_H
