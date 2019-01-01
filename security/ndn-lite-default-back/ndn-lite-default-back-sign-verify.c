@@ -49,10 +49,10 @@ _finish_sha256(const uECC_HashContext *base, uint8_t *hash_result)
 static int
 sha256(const uint8_t* data, size_t datalen, uint8_t* hash_result)
 {
-  return ndn_lite_sha256_tinycript(data, datalen, hash_result);
+  return ndn_lite_sha256_tinycrypt(data, datalen, hash_result);
 }
 
-static void
+static int
 hmac_sha256(const uint8_t* key, unsigned int key_size,
             const void* data, unsigned int data_length,
             uint8_t* hmac_result)
@@ -140,7 +140,10 @@ ndn_signer_hmac_sign(const uint8_t* input_value, uint32_t input_size,
 {
   if (output_max_size < 32)
     return NDN_OVERSIZE;
-  hmac_sha256(key_value, key_size, input_value, input_size, output_value);
+  int ret_val = hmac_sha256(key_value, key_size, input_value, input_size, output_value);
+  if (ret_val != NDN_SUCCESS) {
+    return ret_val;
+  }
   *output_used_size = 32;
   return 0;
 }
