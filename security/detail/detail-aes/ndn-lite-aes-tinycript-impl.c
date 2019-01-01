@@ -14,9 +14,11 @@ int ndn_lite_aes_cbc_encrypt_tinycript(const uint8_t* input_value, uint8_t input
     return NDN_SEC_WRONG_AES_SIZE;
   }
   struct tc_aes_key_sched_struct schedule;
-  tc_aes128_set_encrypt_key(&schedule, key_value);
+  if (tc_aes128_set_encrypt_key(&schedule, key_value) != TC_CRYPTO_SUCCESS) {
+    return NDN_SEC_INIT_FAILURE;
+  }
   if (tc_cbc_mode_encrypt(output_value, input_size + TC_AES_BLOCK_SIZE,
-                          input_value, input_size, aes_iv, &schedule) == 0) {
+                          input_value, input_size, aes_iv, &schedule) != TC_CRYPTO_SUCCESS) {
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
   return 0;
@@ -31,7 +33,9 @@ int ndn_lite_aes_cbc_decrypt_tinycript(const uint8_t* input_value, uint8_t input
   }
   (void)aes_iv;
   struct tc_aes_key_sched_struct schedule;
-  tc_aes128_set_decrypt_key(&schedule, key_value);
+  if (tc_aes128_set_decrypt_key(&schedule, key_value) != TC_CRYPTO_SUCCESS) {
+    return NDN_SEC_INIT_FAILURE;
+  }
   if (tc_cbc_mode_decrypt(output_value, input_size - TC_AES_BLOCK_SIZE,
                           input_value + TC_AES_BLOCK_SIZE, input_size - TC_AES_BLOCK_SIZE,
                           input_value, &schedule) == 0) {

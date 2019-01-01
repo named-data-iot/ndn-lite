@@ -12,8 +12,8 @@
 
 #include "../ndn-lite-random.h"
 #include "../ndn-lite-crypto-key.h"
-#include "../sec-lib/tinycrypt/tc_ecc_dh.h"
-#include "../sec-lib/tinycrypt/tc_constants.h"
+#include "../detail/sec-lib/tinycrypt/tc_ecc_dh.h"
+#include "../detail/sec-lib/tinycrypt/tc_constants.h"
 
 void
 ndn_ecc_key_set_rng(ndn_ECC_RNG_Function rng) {

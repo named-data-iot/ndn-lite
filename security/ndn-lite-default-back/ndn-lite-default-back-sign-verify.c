@@ -11,6 +11,7 @@
 #ifdef NDN_LITE_SEC_BACKEND_SIGN_VERIFY_DEFAULT
 
 #include "../ndn-lite-sign-verify.h"
+#include "../detail/detail-sha256/ndn-lite-sha256-tinycript-impl.h"
 #include "../detail/sec-lib/micro-ecc/uECC.h"
 #include "../detail/sec-lib/tinycrypt/tc_hmac.h"
 
@@ -44,13 +45,10 @@ _finish_sha256(const uECC_HashContext *base, uint8_t *hash_result)
 }
 #endif
 
-static void
+static int
 sha256(const uint8_t* data, size_t datalen, uint8_t* hash_result)
 {
-  struct tc_sha256_state_struct s;
-  (void)tc_sha256_init(&s);
-  tc_sha256_update(&s, data, datalen);
-  (void)tc_sha256_final(hash_result, &s);
+  return ndn_lite_sha256_tinycript(data, datalen, hash_result);
 }
 
 static void
