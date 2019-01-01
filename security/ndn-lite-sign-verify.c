@@ -13,9 +13,9 @@
 static int
 sha256(const uint8_t* data, size_t datalen, uint8_t* hash_result)
 {
-  #ifdef NDN_LITE_SEC_BACKEND_SHA256_DEFAULT
+#ifdef NDN_LITE_SEC_BACKEND_SHA256_DEFAULT
   return ndn_lite_sha256_tinycrypt(data, datalen, hash_result);
-  #endif
+#endif
 }
 
 static int
@@ -23,11 +23,11 @@ hmac_sha256(const uint8_t* key, unsigned int key_size,
             const void* data, unsigned int data_length,
             uint8_t* hmac_result)
 {
-  #ifdef NDN_LITE_SEC_BACKEND_HMAC_DEFAULT
+#ifdef NDN_LITE_SEC_BACKEND_HMAC_DEFAULT
   return ndn_lite_hmac_sha256_tinycrypt(key, key_size,
                                         data, data_length,
                                         hmac_result);
-  #endif
+#endif
 }
 
 int
@@ -50,12 +50,12 @@ ndn_signer_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
                       const uint8_t* prv_key_value, uint32_t prv_key_size,
                       uint8_t ecdsa_type, uint32_t* output_used_size)
 {
-  #ifdef NDN_LITE_SEC_BACKEND_ECC_DEFAULT
+#ifdef NDN_LITE_SEC_BACKEND_ECC_DEFAULT
   return ndn_lite_ecdsa_sign_microecc(input_value, input_size,
                                       output_value, output_max_size,
                                       prv_key_value, prv_key_size,
                                       ecdsa_type, output_used_size);
-  #endif
+#endif
 }
 
 int
@@ -94,12 +94,12 @@ ndn_verifier_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
                           const uint8_t* pub_key_value,
                           uint32_t pub_key_size, uint8_t ecdsa_type)
 {
-  #ifdef NDN_LITE_SEC_BACKEND_ECC_DEFAULT
+#ifdef NDN_LITE_SEC_BACKEND_ECC_DEFAULT
   return ndn_lite_ecdsa_verify_microecc(input_value, input_size,
                                         sig_value, sig_size,
                                         pub_key_value,
                                         pub_key_size, ecdsa_type);
-  #endif
+#endif
 }
 
 int
