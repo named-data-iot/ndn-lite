@@ -48,6 +48,7 @@ to be word aligned on architectures that do not support unaligned accesses.
 IMPORTANT: Keys and signatures generated with uECC_VLI_NATIVE_LITTLE_ENDIAN=1 are incompatible
 with keys and signatures generated with uECC_VLI_NATIVE_LITTLE_ENDIAN=0; all parties must use
 the same endianness. */
+#define uECC_VLI_NATIVE_LITTLE_ENDIAN 0
 #ifndef uECC_VLI_NATIVE_LITTLE_ENDIAN
     #define uECC_VLI_NATIVE_LITTLE_ENDIAN 0
 #endif

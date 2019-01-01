@@ -165,6 +165,7 @@ int ndn_lite_ecdsa_sign_microecc(const uint8_t* input_value, uint32_t input_size
   if (ecc_sign_result == 0) {
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
+
   *output_used_size = NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE;
   return NDN_SUCCESS;
 }
