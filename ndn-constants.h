@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang, Tianyuan Yu, Xinyu Ma
+ * Copyright (C) 2018-2019 Zhiyi Zhang, Tianyuan Yu, Xinyu Ma
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -33,7 +33,7 @@
 #define NDN_PIT_MAX_SIZE 32
 #define NDN_CS_MAX_SIZE 10
 #define NDN_FACE_TABLE_MAX_SIZE 10
-#define NDN_FACE_DEFUALT_COST 1
+#define NDN_FACE_DEFAULT_COST 1
 #define NDN_AES_BLOCK_SIZE 16
 
 // fragmentation support
