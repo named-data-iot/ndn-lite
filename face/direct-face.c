@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang
+ * Copyright (C) 2018-2019 Zhiyi Zhang
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -134,7 +134,7 @@ ndn_direct_face_register_prefix(const ndn_name_t* prefix_name,
       direct_face.cb_entries[i].on_timeout = NULL;
       direct_face.cb_entries[i].on_interest = on_interest;
 
-      ndn_forwarder_fib_insert(prefix_name, &direct_face.intf, NDN_FACE_DEFUALT_COST);
+      ndn_forwarder_fib_insert(prefix_name, &direct_face.intf, NDN_FACE_DEFAULT_COST);
       return 0;
     }
   }
