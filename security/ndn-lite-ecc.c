@@ -10,7 +10,7 @@
 #include "ndn-lite-sec-config.h"
 
 void
-ndn_ecc_key_set_rng(ndn_ECC_RNG_Function rng)
+ndn_ecc_set_rng(ndn_ECC_RNG_Function rng)
 {
 #ifdef NDN_LITE_SEC_BACKEND_ECC_DEFAULT
   tc_uECC_set_rng(rng);
@@ -46,8 +46,8 @@ ndn_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
 }
 
 int
-ndn_ecc_key_make_key(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
-                     uint8_t curve_type, uint32_t key_id)
+ndn_ecc_make_key(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
+                 uint8_t curve_type, uint32_t key_id)
 {
   ecc_pub->key_id = key_id;
   ecc_prv->key_id = key_id;
