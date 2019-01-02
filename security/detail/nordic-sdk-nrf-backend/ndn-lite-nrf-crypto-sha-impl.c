@@ -8,11 +8,12 @@
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
-#include "ndn-lite-sha256-nrf-crypto-impl.h"
+#include "ndn-lite-nrf-crypto-sha-impl.h"
 #include "../../../ndn-error-code.h"
 
-int ndn_lite_nrf_crypto_gen_sha256_hash(const uint8_t *payload, uint16_t payload_len, uint8_t *output) {
-
+int
+ndn_lite_nrf_crypto_sha256_hash(const uint8_t *payload, uint16_t payload_len, uint8_t *output)
+{
   // taken from the "hash" example of the SDK
   //**************************************//
   nrf_crypto_hash_sha256_digest_t ext_digest;
@@ -28,13 +29,12 @@ int ndn_lite_nrf_crypto_gen_sha256_hash(const uint8_t *payload, uint16_t payload
   //  // Integrated version
   ret_code_t err_code;
   uint16_t current_digest_len = ext_digest_len;
-  err_code = nrf_crypto_hash_calculate(
-      &ext_hash_context,              // Context or NULL to allocate internally
-      &g_nrf_crypto_hash_sha256_info, // Info structure configures hash mode
-      payload,                        // Input buffer
-      payload_len,                    // Input size
-      ext_digest,                     // Result buffer
-      &current_digest_len);           // Result size
+  err_code = nrf_crypto_hash_calculate(&ext_hash_context,              // Context or NULL to allocate internally
+                                       &g_nrf_crypto_hash_sha256_info, // Info structure configures hash mode
+                                       payload,                        // Input buffer
+                                       payload_len,                    // Input size
+                                       ext_digest,                     // Result buffer
+                                       &current_digest_len);           // Result size
   if (err_code != NRF_SUCCESS)
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
 
@@ -42,5 +42,4 @@ int ndn_lite_nrf_crypto_gen_sha256_hash(const uint8_t *payload, uint16_t payload
   memcpy(output, ext_digest, current_digest_len);
 
   return NDN_SUCCESS;
-
 }

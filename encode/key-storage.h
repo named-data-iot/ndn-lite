@@ -7,11 +7,11 @@
  *
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
-#ifndef NDN_SECURITY_KEY_STORAGE_H
-#define NDN_SECURITY_KEY_STORAGE_H
+#ifndef NDN_ENCODE_KEY_STORAGE_H
+#define NDN_ENCODE_KEY_STORAGE_H
 
-#include "ndn-lite-crypto-key.h"
-#include "../encode/data.h"
+#include "../security/ndn-lite-crypto-key.h"
+#include "../data.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -138,4 +138,4 @@ ndn_key_storage_get_aes_key(uint32_t key_id, ndn_aes_key_t** aes);
 }
 #endif
 
-#endif // NDN_SECURITY_KEY_STORAGE_H
+#endif // NDN_ENCODE_KEY_STORAGE_H

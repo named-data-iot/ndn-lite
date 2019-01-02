@@ -108,38 +108,37 @@
  */
 // SHA256 backend
 #if defined NDN_LITE_SEC_BACKEND_SHA256_DEFAULT
-  #include "detail/default-backend/ndn-lite-sha256-tinycrypt-impl.h"
+  #include "detail/default-backend/ndn-lite-default-sha-impl.h"
 #endif // NDN_LITE_SEC_BACKEND_SHA256_DEFAULT
 #if defined NDN_LITE_SEC_BACKEND_SHA256_NRF_CRYPTO
-  #include "detail/nordic-sdk-nrf-backend/ndn-lite-sha256-nrf-crypto-impl.h"
+  #include "detail/nordic-sdk-nrf-backend/ndn-lite-nrf-crypto-sha-impl.h"
 #endif // NDN_LITE_SEC_BACKEND_SHA256_NRF_CRYPTO
 
 
 // AES backend
 #if defined NDN_LITE_SEC_BACKEND_AES_DEFAULT
-  #include "detail/default-backend/ndn-lite-aes-tinycrypt-impl.h"
+  #include "detail/default-backend/ndn-lite-default-aes-impl.h"
 #endif // NDN_LITE_SEC_BACKEND_AES_DEFAULT
 
 
 // RNG backend
 #if defined NDN_LITE_SEC_BACKEND_RANDOM_DEFAULT
-  #include "detail/default-backend/ndn-lite-rng-tinycrypt-impl.h"
+  #include "detail/default-backend/ndn-lite-default-rng-impl.h"
 #endif // NDN_LITE_SEC_BACKEND_RANDOM_DEFAULT
 #if defined NDN_LITE_SEC_BACKEND_RANDOM_NRF_CRYPTO
-  #include "detail/nordic-sdk-nrf-backend/ndn-lite-rng-nrf-crypto-impl.h"
+  #include "detail/nordic-sdk-nrf-backend/ndn-lite-nrf-crypto-rng-impl.h"
 #endif // NDN_LITE_SEC_BACKEND_RANDOM_NRF_CRYPTO
 
 
 // ECC backend
 #if defined NDN_LITE_SEC_BACKEND_ECC_DEFAULT
-  #include "detail/default-backend/ndn-lite-ecc-microecc-impl.h"
-  #include "detail/default-backend/ndn-lite-ecc-tinycrypt-impl.h"
+  #include "detail/default-backend/ndn-lite-default-ecc-impl.h"
 #endif // NDN_LITE_SEC_BACKEND_ECC_DEFAULT
 
 
 // HMAC backend
 #if defined NDN_LITE_SEC_BACKEND_HMAC_DEFAULT
-  #include "detail/default-backend/ndn-lite-hmac-tinycrypt-impl.h"
+  #include "detail/default-backend/ndn-lite-default-hmac-impl.h"
 #endif
 
 #endif // NDN_LITE_SEC_CONFIG_H

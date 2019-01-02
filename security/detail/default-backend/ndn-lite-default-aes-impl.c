@@ -7,16 +7,16 @@
  */
 
 #include "ndn-lite-aes-tinycrypt-impl.h"
-#include "../sec-lib/tinycrypt/tc_cbc_mode.h"
-#include "../sec-lib/tinycrypt/tc_constants.h"
+#include "sec-lib/tinycrypt/tc_cbc_mode.h"
+#include "sec-lib/tinycrypt/tc_constants.h"
 #include "../../../ndn-error-code.h"
 #include "../../../ndn-constants.h"
 
 int
-ndn_lite_aes_cbc_encrypt_tinycrypt(const uint8_t* input_value, uint8_t input_size,
-                                   uint8_t* output_value, uint8_t output_size,
-                                   const uint8_t* aes_iv,
-                                   const uint8_t* key_value, uint8_t key_size)
+ndn_lite_default_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
+                                 uint8_t* output_value, uint8_t output_size,
+                                 const uint8_t* aes_iv,
+                                 const uint8_t* key_value, uint8_t key_size)
 {
   if (input_size + TC_AES_BLOCK_SIZE > output_size || key_size < NDN_SEC_AES_MIN_KEY_SIZE) {
     return NDN_SEC_WRONG_AES_SIZE;
@@ -33,10 +33,10 @@ ndn_lite_aes_cbc_encrypt_tinycrypt(const uint8_t* input_value, uint8_t input_siz
 }
 
 int
-ndn_lite_aes_cbc_decrypt_tinycrypt(const uint8_t* input_value, uint8_t input_size,
-                                   uint8_t* output_value, uint8_t output_size,
-                                   const uint8_t* aes_iv,
-                                   const uint8_t* key_value, uint8_t key_size)
+ndn_lite_default_aes_cbc_decrypt(const uint8_t* input_value, uint8_t input_size,
+                                 uint8_t* output_value, uint8_t output_size,
+                                 const uint8_t* aes_iv,
+                                 const uint8_t* key_value, uint8_t key_size)
 {
   if (output_size < input_size - TC_AES_BLOCK_SIZE || key_size < NDN_SEC_AES_MIN_KEY_SIZE) {
     return NDN_SEC_WRONG_AES_SIZE;

@@ -8,12 +8,12 @@
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
-#include "ndn-lite-rng-nrf-crypto-impl.h"
+#include "ndn-lite-nrf-crypto-rng-impl.h"
 #include "nrf_crypto.h"
 #include "sdk_common.h"
 
 int
-ndn_lite_rng_nrf_crypto(uint8_t *dest, unsigned size)
+ndn_lite_nrf_crypto_rng(uint8_t *dest, unsigned size)
 {
   ret_code_t ret_val;
   ret_val = nrf_crypto_init();

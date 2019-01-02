@@ -6,8 +6,8 @@
  * directory for more details.
  */
 
-#include "ndn-lite-sec-config.h"
 #include "ndn-lite-aes.h"
+#include "ndn-lite-sec-config.h"
 
 int
 ndn_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,

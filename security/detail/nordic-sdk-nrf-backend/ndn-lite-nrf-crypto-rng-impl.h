@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 
-int ndn_lite_rng_nrf_crypto(uint8_t *dest, unsigned size);
+int
+ndn_lite_nrf_crypto_rng(uint8_t *dest, unsigned size);
 
 #endif // RNG_NRF_CRYPTO_IMPL_H
