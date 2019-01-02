@@ -9,6 +9,8 @@
 #ifndef NDN_ERROR_CODE_H
 #define NDN_ERROR_CODE_H
 
+#include <inttypes.h>
+
 #define NDN_SUCCESS 0
 
 // General Error Types

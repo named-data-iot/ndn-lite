@@ -8,19 +8,20 @@
 
 #include "ndn-lite-sha.h"
 #include "ndn-lite-sec-config.h"
+#include <string.h>
 
 int
-sha256(const uint8_t* data, size_t datalen, uint8_t* hash_result)
+sha256(const uint8_t* data, uint32_t datalen, uint8_t* hash_result)
 {
 #ifdef NDN_LITE_SEC_BACKEND_SHA256_DEFAULT
-  return ndn_lite_sha256_tinycrypt(data, datalen, hash_result);
+  return ndn_lite_default_sha256(data, datalen, hash_result);
 #endif
 }
 
 int
-ndn_signer_sha256_sign(const uint8_t* input_value, uint32_t input_size,
-                       uint8_t* output_value, uint32_t output_max_size,
-                       uint32_t* output_used_size)
+ndn_sha256_sign(const uint8_t* input_value, uint32_t input_size,
+                uint8_t* output_value, uint32_t output_max_size,
+                uint32_t* output_used_size)
 {
   if (output_max_size < NDN_SEC_SHA256_HASH_SIZE)
     return NDN_OVERSIZE;
@@ -32,8 +33,8 @@ ndn_signer_sha256_sign(const uint8_t* input_value, uint32_t input_size,
 }
 
 int
-ndn_verifier_sha256_verify(const uint8_t* input_value, uint32_t input_size,
-                           const uint8_t* sig_value, uint32_t sig_size)
+ndn_sha256_verify(const uint8_t* input_value, uint32_t input_size,
+                  const uint8_t* sig_value, uint32_t sig_size)
 {
   if (sig_size != NDN_SEC_SHA256_HASH_SIZE)
     return NDN_SEC_WRONG_SIG_SIZE;

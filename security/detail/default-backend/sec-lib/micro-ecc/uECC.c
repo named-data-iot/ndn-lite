@@ -2,6 +2,7 @@
 
 #include "uECC.h"
 #include "uECC_vli.h"
+#include <stdio.h>
 
 #ifndef uECC_RNG_MAX_TRIES
     #define uECC_RNG_MAX_TRIES 64

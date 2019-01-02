@@ -10,6 +10,7 @@
 #define NDN_SECURITY_SHA_H_
 
 #include "../ndn-error-code.h"
+#include "../ndn-constants.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,9 +29,9 @@ sha256(const uint8_t* data, uint32_t datalen, uint8_t* hash_result);
  * @return 0 if there is no error.
  */
 int
-ndn_signer_sha256_sign(const uint8_t* input_value, uint32_t input_size,
-                       uint8_t* output_value, uint32_t output_max_size,
-                       uint32_t* output_used_size);
+ndn_sha256_sign(const uint8_t* input_value, uint32_t input_size,
+                uint8_t* output_value, uint32_t output_max_size,
+                uint32_t* output_used_size);
 
 /**
  * Use SHA-256 Algorithm to verify signature. Memory buffer to hold the siganture should not smaller than 32 bytes.
@@ -41,8 +42,8 @@ ndn_signer_sha256_sign(const uint8_t* input_value, uint32_t input_size,
  * @return 0 if verification succeeded.
  */
 int
-ndn_verifier_sha256_verify(const uint8_t* input_value, uint32_t input_size,
-                           const uint8_t* sig_value, uint32_t sig_size);
+ndn_sha256_verify(const uint8_t* input_value, uint32_t input_size,
+                  const uint8_t* sig_value, uint32_t sig_size);
 
 #ifdef __cplusplus
 }

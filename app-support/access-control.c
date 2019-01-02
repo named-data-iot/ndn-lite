@@ -10,11 +10,11 @@
 
 #include "access-control.h"
 #include "../encode/signed-interest.h"
+#include "../encode/key-storage.h"
 #include "../security/ndn-lite-aes.h"
-#include "../security/ndn-lite-key-storage.h"
-#include "../security/ndn-lite-random.h"
-#include "../security/detail/sec-lib/tinycrypt/tc_ecc_dh.h"
-#include "../security/detail/sec-lib/tinycrypt/tc_cbc_mode.h"
+#include "../security/ndn-lite-rng.h"
+#include "../security/ndn-lite-ecc.h"
+#include "../security/ndn-lite-hmac.h"
 
 static ndn_ac_unfinished_key_t unfinished_key;
 static ndn_ac_state_t ac_state;
@@ -75,8 +75,8 @@ ndn_ac_prepare_key_request_interest(ndn_encoder_t* encoder,
   // encode ECDH Pub into Parameters
   unfinished_key.dh_pub.key_size = 64;
   unfinished_key.dh_prv.key_size = 32;
-  ndn_ecc_key_make_key(&unfinished_key.dh_pub, &unfinished_key.dh_prv, 
-                       NDN_ECDSA_CURVE_SECP256R1, 1234);
+  ndn_ecc_make_key(&unfinished_key.dh_pub, &unfinished_key.dh_prv,
+                   NDN_ECDSA_CURVE_SECP256R1, 1234);
   encoder_append_type(&params_encoder, TLV_AC_ECDH_PUB);
   encoder_append_length(&params_encoder, unfinished_key.dh_pub.key_size);
   encoder_append_raw_buffer_value(&params_encoder,
@@ -115,13 +115,13 @@ ndn_ac_on_ek_response_process(const ndn_data_t* data)
   uint8_t shared[32];
   ndn_ecc_pub_t ecdh_pubkey;
   ndn_ecc_pub_init(&ecdh_pubkey, ecdh_bytes, sizeof(ecdh_bytes), NDN_ECDSA_CURVE_SECP256R1, 2345);
-  ndn_ecc_key_shared_secret(&ecdh_pubkey, &unfinished_key.dh_prv, NDN_ECDSA_CURVE_SECP256R1, 
-                            shared, sizeof(shared));
+  ndn_ecc_dh_shared_secret(&ecdh_pubkey, &unfinished_key.dh_prv, NDN_ECDSA_CURVE_SECP256R1,
+                           shared, sizeof(shared));
 
   // encryption/decryption key generation
   uint8_t symmetric_key[NDN_APPSUPPORT_AC_EDK_SIZE];
-  ndn_random_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key),
-                  salt, sizeof(salt));
+  ndn_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key),
+           salt, sizeof(salt));
 
   // decode Lifetime from content
   uint32_t lifetime = 100;
@@ -160,8 +160,8 @@ ndn_ac_on_dk_response_process(const ndn_data_t* data)
   uint8_t shared[32];
   ndn_ecc_pub_t ecdh_pubkey;
   ndn_ecc_pub_init(&ecdh_pubkey, ecdh_bytes, sizeof(ecdh_bytes), NDN_ECDSA_CURVE_SECP256R1, 2345);
-  ndn_ecc_key_shared_secret(&ecdh_pubkey, &unfinished_key.dh_prv, 
-                            NDN_ECDSA_CURVE_SECP256R1, shared, sizeof(shared));
+  ndn_ecc_dh_shared_secret(&ecdh_pubkey, &unfinished_key.dh_prv,
+                           NDN_ECDSA_CURVE_SECP256R1, shared, sizeof(shared));
 
   // decode Salt from content
   decoder_get_type(&decoder, &probe);
@@ -177,11 +177,11 @@ ndn_ac_on_dk_response_process(const ndn_data_t* data)
 
   // temp symmetric key generation
   uint8_t symmetric_key[NDN_APPSUPPORT_AC_EDK_SIZE];
-  ndn_random_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key),
-                  salt, sizeof(salt));
+  ndn_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key),
+           salt, sizeof(salt));
 
   // dk decryption
-  uint8_t ciphertext[NDN_APPSUPPORT_AC_EDK_SIZE + TC_AES_BLOCK_SIZE] = {0};
+  uint8_t ciphertext[NDN_APPSUPPORT_AC_EDK_SIZE + NDN_AES_BLOCK_SIZE] = {0};
   uint8_t plaintext[NDN_APPSUPPORT_AC_EDK_SIZE] = {0};
   decoder_get_type(&decoder, &probe);
   decoder_get_length(&decoder, &probe);
@@ -250,15 +250,14 @@ ndn_ac_prepare_ek_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
   decoder_get_length(decoder, &probe);
   uint8_t ecdh_bytes[64];
   decoder_get_raw_buffer_value(decoder, ecdh_bytes, 64);
-
-  ndn_ecc_key_make_key(&temp.dh_pub, &temp.dh_prv, NDN_ECDSA_CURVE_SECP256R1, 1234);
+  ndn_ecc_make_key(&temp.dh_pub, &temp.dh_prv, NDN_ECDSA_CURVE_SECP256R1, 1234);
 
   uint8_t shared[32];
   ndn_ecc_pub_t ecdh_pubkey;
   ndn_ecc_pub_init(&ecdh_pubkey, ecdh_bytes, sizeof(ecdh_bytes), NDN_ECDSA_CURVE_SECP256R1, 2345);
-  ndn_ecc_key_shared_secret(&ecdh_pubkey, &unfinished_key.dh_prv, NDN_ECDSA_CURVE_SECP256R1, 
-                            shared, sizeof(shared));
-                            
+  ndn_ecc_dh_shared_secret(&ecdh_pubkey, &unfinished_key.dh_prv, NDN_ECDSA_CURVE_SECP256R1,
+                           shared, sizeof(shared));
+
   // salt generation
   uint8_t salt[NDN_APPSUPPORT_AC_SALT_SIZE];
 
@@ -266,15 +265,15 @@ ndn_ac_prepare_ek_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
   uint8_t *personalization = (uint8_t*)"ndn-iot-access-control";
   uint8_t *additional_input = (uint8_t*)"additional-input";
   uint8_t *seed = (uint8_t*)"seed";
-  ndn_random_hmacprng(personalization, sizeof(personalization), salt, NDN_APPSUPPORT_AC_SALT_SIZE,
-                      seed, sizeof(seed), additional_input, sizeof(additional_input));
+  ndn_hmacprng(personalization, sizeof(personalization), salt, NDN_APPSUPPORT_AC_SALT_SIZE,
+               seed, sizeof(seed), additional_input, sizeof(additional_input));
 
   // ek generation
   uint8_t symmetric_key[NDN_APPSUPPORT_AC_EDK_SIZE];
 
   // TODO: update personalization, add, seed with truly randomness
-  ndn_random_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key),
-                  salt, sizeof(salt));
+  ndn_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key),
+           salt, sizeof(salt));
 
   // insert ek into key storage
   ndn_aes_key_t* aes = NULL;
@@ -336,14 +335,14 @@ ndn_ac_prepare_dk_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
   uint8_t ecdh_bytes[64];
   decoder_get_raw_buffer_value(decoder, ecdh_bytes, 64);
 
-  ndn_ecc_key_make_key(&temp.dh_pub, &temp.dh_prv, NDN_ECDSA_CURVE_SECP256R1, 1234);
+  ndn_ecc_make_key(&temp.dh_pub, &temp.dh_prv, NDN_ECDSA_CURVE_SECP256R1, 1234);
 
   uint8_t shared[32];
   ndn_ecc_pub_t ecdh_pubkey;
   ndn_ecc_pub_init(&ecdh_pubkey, ecdh_bytes, sizeof(ecdh_bytes), NDN_ECDSA_CURVE_SECP256R1, 2345);
-  ndn_ecc_key_shared_secret(&ecdh_pubkey, &temp.dh_prv, NDN_ECDSA_CURVE_SECP256R1, 
-                            shared, sizeof(shared));
-  
+  ndn_ecc_dh_shared_secret(&ecdh_pubkey, &temp.dh_prv, NDN_ECDSA_CURVE_SECP256R1,
+                           shared, sizeof(shared));
+
   // salt generation
   uint8_t salt[NDN_APPSUPPORT_AC_SALT_SIZE];
 
@@ -351,15 +350,15 @@ ndn_ac_prepare_dk_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
   uint8_t *personalization = (uint8_t*)"ndn-iot-access-control";
   uint8_t *additional_input = (uint8_t*)"additional-input";
   uint8_t *seed = (uint8_t*)"seed";
-  ndn_random_hmacprng(personalization, sizeof(personalization), salt, NDN_APPSUPPORT_AC_SALT_SIZE,
-                      seed, sizeof(seed), additional_input, sizeof(additional_input));
+  ndn_hmacprng(personalization, sizeof(personalization), salt, NDN_APPSUPPORT_AC_SALT_SIZE,
+               seed, sizeof(seed), additional_input, sizeof(additional_input));
 
   // temp symmetric key generation
   uint8_t symmetric_key[NDN_APPSUPPORT_AC_EDK_SIZE];
 
   // TODO: update personalization, add, seed with truly randomness
-  ndn_random_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key),
-                  salt, sizeof(salt));
+  ndn_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key),
+           salt, sizeof(salt));
 
   // fetch ek by key_id
   ndn_aes_key_t* aes = NULL;
@@ -368,11 +367,11 @@ ndn_ac_prepare_dk_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
     return -1;
 
   // encrypt ek
-  uint8_t Encrypted[NDN_APPSUPPORT_AC_EDK_SIZE + TC_AES_BLOCK_SIZE] = {0};
-  uint8_t aes_iv[TC_AES_BLOCK_SIZE] = {0};
+  uint8_t Encrypted[NDN_APPSUPPORT_AC_EDK_SIZE + NDN_AES_BLOCK_SIZE] = {0};
+  uint8_t aes_iv[NDN_AES_BLOCK_SIZE] = {0};
 
   // TODO: update personalization, add, seed with truly randomness
-  ndn_random_hmacprng(personalization, sizeof(personalization), aes_iv, TC_AES_BLOCK_SIZE,
+  ndn_hmacprng(personalization, sizeof(personalization), aes_iv, NDN_AES_BLOCK_SIZE,
                       seed, sizeof(seed), additional_input, sizeof(additional_input));
   ndn_aes_cbc_encrypt(aes->key_value, aes->key_size,
                       Encrypted, sizeof(Encrypted), aes_iv,

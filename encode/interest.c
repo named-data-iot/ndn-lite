@@ -7,7 +7,6 @@
  */
 
 #include "interest.h"
-#include "../security/ndn-lite-sign-verify.h"
 
 /************************************************************/
 /*  Definition of helper functions                          */

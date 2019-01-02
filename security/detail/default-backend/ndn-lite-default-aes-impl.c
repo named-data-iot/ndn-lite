@@ -6,7 +6,7 @@
  * directory for more details.
  */
 
-#include "ndn-lite-aes-tinycrypt-impl.h"
+#include "ndn-lite-default-aes-impl.h"
 #include "sec-lib/tinycrypt/tc_cbc_mode.h"
 #include "sec-lib/tinycrypt/tc_constants.h"
 #include "../../../ndn-error-code.h"

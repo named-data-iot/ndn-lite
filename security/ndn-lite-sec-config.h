@@ -123,7 +123,7 @@
 
 // RNG backend
 #if defined NDN_LITE_SEC_BACKEND_RANDOM_DEFAULT
-  #include "detail/default-backend/ndn-lite-default-rng-impl.h"
+// do nothing
 #endif // NDN_LITE_SEC_BACKEND_RANDOM_DEFAULT
 #if defined NDN_LITE_SEC_BACKEND_RANDOM_NRF_CRYPTO
   #include "detail/nordic-sdk-nrf-backend/ndn-lite-nrf-crypto-rng-impl.h"

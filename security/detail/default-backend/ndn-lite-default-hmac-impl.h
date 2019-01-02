@@ -18,7 +18,7 @@ ndn_lite_default_hmac_sha256(const uint8_t* key, unsigned int key_size,
                              uint8_t* hmac_result);
 
 int
-ndn_lite_default_make_hmac_key(ndn_hmac_key_t* key, uint32_t key_id,
+ndn_lite_default_make_hmac_key(uint8_t* key_value, uint32_t* key_size,
                                const uint8_t* input_value, uint32_t input_size,
                                const uint8_t* personalization, uint32_t personalization_size,
                                const uint8_t* seed_value, uint32_t seed_size,

@@ -11,6 +11,7 @@
 
 #include "../ndn-error-code.h"
 #include "ndn-lite-crypto-key.h"
+#include "ndn-lite-rng.h"
 
 #ifdef __cplusplus
 extern "C" {

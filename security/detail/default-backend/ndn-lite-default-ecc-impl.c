@@ -7,8 +7,11 @@
  */
 
 #include "ndn-lite-default-ecc-impl.h"
+#include "ndn-lite-default-sha-impl.h"
 #include "sec-lib/micro-ecc/uECC.h"
 #include "sec-lib/tinycrypt/tc_hmac.h"
+#include "sec-lib/tinycrypt/tc_ecc_dh.h"
+#include "sec-lib/tinycrypt/tc_constants.h"
 #include "../../../ndn-error-code.h"
 #include "../../../ndn-constants.h"
 #include "../../../ndn-enums.h"
@@ -55,7 +58,7 @@ ndn_lite_default_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
     return NDN_SEC_WRONG_KEY_SIZE;
 
   uint8_t input_hash[NDN_SEC_SHA256_HASH_SIZE] = {0};
-  if (ndn_lite_sha256_tinycrypt(input_value, input_size, input_hash) != NDN_SUCCESS) {
+  if (ndn_lite_default_sha256(input_value, input_size, input_hash) != NDN_SUCCESS) {
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
   uECC_Curve curve;
@@ -98,7 +101,7 @@ ndn_lite_default_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
     return NDN_SEC_WRONG_KEY_SIZE;
 
   uint8_t input_hash[NDN_SEC_SHA256_HASH_SIZE] = {0};
-  if (ndn_lite_sha256_tinycrypt(input_value, input_size, input_hash) != NDN_SUCCESS) {
+  if (ndn_lite_default_sha256(input_value, input_size, input_hash) != NDN_SUCCESS) {
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
   uECC_Curve curve;

@@ -18,8 +18,8 @@ hmac_sha256(const void* payload, uint32_t payload_length,
             uint8_t* hmac_result)
 {
 #ifdef NDN_LITE_SEC_BACKEND_HMAC_DEFAULT
-  return ndn_lite_hmac_sha256_tinycrypt(key, key_size,
-                                        payload, payload_length, hmac_result);
+  return ndn_lite_default_hmac_sha256(key, key_size,
+                                      payload, payload_length, hmac_result);
 #endif
 }
 
@@ -63,14 +63,17 @@ ndn_hmac_make_key(ndn_hmac_key_t* key, uint32_t key_id,
                   const uint8_t* additional_value, uint32_t additional_size,
                   uint32_t salt_size)
 {
+  key->key_id = key_id;
+  int result = 0;
 #ifdef NDN_LITE_SEC_BACKEND_HMAC_DEFAULT
-  return ndn_lite_hmac_make_key_tinycrypt(key, key_id,
-                                          input_value, input_size,
-                                          personalization, personalization_size,
-                                          seed_value, seed_size,
-                                          additional_value, additional_size,
-                                          salt_size);
+  result = ndn_lite_default_make_hmac_key(key->key_value, &key->key_size,
+                                        input_value, input_size,
+                                        personalization, personalization_size,
+                                        seed_value, seed_size,
+                                        additional_value, additional_size,
+                                        salt_size);
 #endif
+  return result;
 }
 
 int
@@ -79,9 +82,9 @@ ndn_hkdf(const uint8_t* input_value, uint32_t input_size,
          const uint8_t* seed_value, uint32_t seed_size)
 {
   #ifdef NDN_LITE_SEC_BACKEND_RANDOM_DEFAULT
-  return ndn_lite_random_hkdf_tinycrypt(input_value, input_size,
-                                        output_value, output_size,
-                                        seed_value, seed_size);
+  return ndn_lite_default_hkdf(input_value, input_size,
+                               output_value, output_size,
+                               seed_value, seed_size);
   #endif
 }
 
@@ -91,11 +94,11 @@ ndn_hmacprng(const uint8_t* input_value, uint32_t input_size,
              const uint8_t* seed_value, uint32_t seed_size,
              const uint8_t* additional_value, uint32_t additional_size)
 {
-  #ifdef NDN_LITE_SEC_BACKEND_RANDOM_DEFAULT
-  return ndn_lite_random_hmacprng_tinycrypt(input_value, input_size,
-                                            output_value, output_size,
-                                            seed_value, seed_size,
-                                            additional_value, additional_size);
+#ifdef NDN_LITE_SEC_BACKEND_RANDOM_DEFAULT
+  return ndn_lite_default_hmacprng(input_value, input_size,
+                                   output_value, output_size,
+                                   seed_value, seed_size,
+                                   additional_value, additional_size);
   #endif
 }
 

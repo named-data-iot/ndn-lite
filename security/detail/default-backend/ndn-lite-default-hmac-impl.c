@@ -8,9 +8,11 @@
 
 #include "ndn-lite-default-hmac-impl.h"
 #include "sec-lib/tinycrypt/tc_hmac.h"
+#include "sec-lib/tinycrypt/tc_hmac_prng.h"
 #include "sec-lib/tinycrypt/tc_constants.h"
 #include "../../../ndn-error-code.h"
 #include "../../../ndn-constants.h"
+#include <string.h>
 
 int
 ndn_lite_default_hmac_sha256(const uint8_t* key, unsigned int key_size,
@@ -35,7 +37,7 @@ ndn_lite_default_hmac_sha256(const uint8_t* key, unsigned int key_size,
 }
 
 int
-ndn_lite_default_make_hmac_key(ndn_hmac_key_t* key, uint32_t key_id,
+ndn_lite_default_make_hmac_key(uint8_t* key_value, uint32_t* key_size,
                                const uint8_t* input_value, uint32_t input_size,
                                const uint8_t* personalization, uint32_t personalization_size,
                                const uint8_t* seed_value, uint32_t seed_size,
@@ -43,18 +45,17 @@ ndn_lite_default_make_hmac_key(ndn_hmac_key_t* key, uint32_t key_id,
                                uint32_t salt_size)
 {
   uint8_t salt[salt_size];
-  int r = ndn_lite_random_hmacprng_tinycrypt(personalization, personalization_size,
-                                             salt, sizeof(salt), seed_value, seed_size,
-                                             additional_value, additional_size);
+  int r = ndn_lite_default_hmacprng(personalization, personalization_size,
+                                    salt, sizeof(salt), seed_value, seed_size,
+                                    additional_value, additional_size);
 
   if (r != NDN_SUCCESS)
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
-  key->key_size = NDN_SEC_SHA256_HASH_SIZE;
-  r = ndn_lite_random_hkdf_tinycrypt(input_value, input_size, key->key_value, key->key_size,
-                                     salt, sizeof(salt));
+  *key_size = NDN_SEC_SHA256_HASH_SIZE;
+  r = ndn_lite_default_hkdf(input_value, input_size, key_value, *key_size,
+                            salt, sizeof(salt));
   if (r != NDN_SUCCESS)
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
-  key->key_id = key_id;
   return NDN_SUCCESS;
 }
 
@@ -64,8 +65,8 @@ ndn_lite_default_hkdf(const uint8_t* input_value, uint32_t input_size,
                       const uint8_t* seed_value, uint32_t seed_size)
 {
   uint8_t prk[NDN_SEC_SHA256_HASH_SIZE] = {0};
-  if (ndn_lite_hmac_sha256_tinycrypt(input_value, input_size,
-                                     seed_value, seed_size, prk) != NDN_SUCCESS) {
+  if (ndn_lite_default_hmac_sha256(input_value, input_size,
+                                   seed_value, seed_size, prk) != NDN_SUCCESS) {
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
 
@@ -86,8 +87,8 @@ ndn_lite_default_hkdf(const uint8_t* input_value, uint32_t input_size,
   uint8_t t_first[2] = {0x00, 0x01};
   for (int i = 0; i < iter; ++i) {
     if (i == 0) {
-      if (ndn_lite_hmac_sha256_tinycrypt(prk, NDN_SEC_SHA256_HASH_SIZE,
-                                         t_first, sizeof(t_first), t) != NDN_SUCCESS) {
+      if (ndn_lite_default_hmac_sha256(prk, NDN_SEC_SHA256_HASH_SIZE,
+                                       t_first, sizeof(t_first), t) != NDN_SUCCESS) {
         return NDN_SEC_CRYPTO_ALGO_FAILURE;
       }
       memcpy(okm + i * NDN_SEC_SHA256_HASH_SIZE, t, NDN_SEC_SHA256_HASH_SIZE);
@@ -95,7 +96,7 @@ ndn_lite_default_hkdf(const uint8_t* input_value, uint32_t input_size,
     else {
       memcpy(cat, t, NDN_SEC_SHA256_HASH_SIZE);
       cat[NDN_SEC_SHA256_HASH_SIZE] = table[i];
-      if (ndn_lite_hmac_sha256_tinycrypt(prk, NDN_SEC_SHA256_HASH_SIZE,
+      if (ndn_lite_default_hmac_sha256(prk, NDN_SEC_SHA256_HASH_SIZE,
                                          cat, NDN_SEC_SHA256_HASH_SIZE+1, t) != NDN_SUCCESS) {
         return NDN_SEC_CRYPTO_ALGO_FAILURE;
       }
@@ -139,6 +140,3 @@ ndn_lite_default_hmacprng(const uint8_t* input_value, uint32_t input_size,
   }
   return NDN_SUCCESS;
 }
-
-
-#endif // NDN_LITE_DEFAULT_HMAC_IMPL_H

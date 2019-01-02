@@ -1,6 +1,18 @@
+/*
+ * Copyright (C) Zhiyi Zhang
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ *
+ * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
+ */
+
 #include "data.h"
-#include "../security/ndn-lite-sign-verify.h"
+#include "../security/ndn-lite-hmac.h"
+#include "../security/ndn-lite-sha.h"
 #include "../security/ndn-lite-aes.h"
+#include "../security/ndn-lite-ecc.h"
 
 /************************************************************/
 /*  Helper functions for signed interest APIs               */
@@ -80,10 +92,10 @@ ndn_data_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_data_t* data)
 
   // sign data
   uint32_t used_bytes = 0;
-  int result = ndn_signer_sha256_sign(encoder->output_value + sign_input_starting,
-                                      sign_input_ending - sign_input_starting,
-                                      data->signature.sig_value, data->signature.sig_size,
-                                      &used_bytes);
+  int result = ndn_sha256_sign(encoder->output_value + sign_input_starting,
+                               sign_input_ending - sign_input_starting,
+                               data->signature.sig_value, data->signature.sig_size,
+                               &used_bytes);
   if (result < 0)
     return result;
 
@@ -119,11 +131,11 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
 
   // sign data
   uint32_t used_bytes = 0;
-  int result = ndn_signer_ecdsa_sign(encoder->output_value + sign_input_starting,
-                                     sign_input_ending - sign_input_starting,
-                                     data->signature.sig_value, data->signature.sig_size,
-                                     prv_key->key_value,
-                                     prv_key->key_size, prv_key->curve_type, &used_bytes);
+  int result = ndn_ecdsa_sign(encoder->output_value + sign_input_starting,
+                              sign_input_ending - sign_input_starting,
+                              data->signature.sig_value, data->signature.sig_size,
+                              prv_key->key_value,
+                              prv_key->key_size, prv_key->curve_type, &used_bytes);
   if (result < 0)
     return result;
 
@@ -160,11 +172,11 @@ ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
 
   // sign data
   uint32_t used_bytes = 0;
-  int result = ndn_signer_hmac_sign(encoder->output_value + sign_input_starting,
-                                    sign_input_ending - sign_input_starting,
-                                    data->signature.sig_value, data->signature.sig_size,
-                                    hmac_key->key_value, hmac_key->key_size,
-                                    &used_bytes);
+  int result = ndn_hmac_sign(encoder->output_value + sign_input_starting,
+                             sign_input_ending - sign_input_starting,
+                             data->signature.sig_value, data->signature.sig_size,
+                             hmac_key->key_value, hmac_key->key_size,
+                             &used_bytes);
   if (result < 0)
     return result;
 
@@ -236,9 +248,9 @@ ndn_data_tlv_decode_digest_verify(ndn_data_t* data, const uint8_t* block_value, 
   // signature value
   ndn_signature_value_tlv_decode(&decoder, &data->signature);
 
-  int result = ndn_verifier_sha256_verify(decoder.input_value + input_starting,
-                                          input_ending - input_starting,
-                                          data->signature.sig_value, data->signature.sig_size);
+  int result = ndn_sha256_verify(decoder.input_value + input_starting,
+                                 input_ending - input_starting,
+                                 data->signature.sig_value, data->signature.sig_size);
   if (result == 0)
     return 0;
   else
@@ -275,11 +287,11 @@ ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, u
   // signature value
   ndn_signature_value_tlv_decode(&decoder, &data->signature);
 
-  int result = ndn_verifier_ecdsa_verify(decoder.input_value + input_starting,
-                                         input_ending - input_starting,
-                                         data->signature.sig_value, data->signature.sig_size,
-                                         pub_key->key_value,
-                                         pub_key->key_size, pub_key->curve_type);
+  int result = ndn_ecdsa_verify(decoder.input_value + input_starting,
+                                input_ending - input_starting,
+                                data->signature.sig_value, data->signature.sig_size,
+                                pub_key->key_value,
+                                pub_key->key_size, pub_key->curve_type);
   if (result == 0)
     return 0;
   else
@@ -316,10 +328,10 @@ ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, ui
   // signature value
   ndn_signature_value_tlv_decode(&decoder, &data->signature);
 
-  int result = ndn_verifier_hmac_verify(decoder.input_value + input_starting,
-                                        input_ending - input_starting,
-                                        data->signature.sig_value, data->signature.sig_size,
-                                        hmac_key->key_value, hmac_key->key_size);
+  int result = ndn_hmac_verify(decoder.input_value + input_starting,
+                               input_ending - input_starting,
+                               data->signature.sig_value, data->signature.sig_size,
+                               hmac_key->key_value, hmac_key->key_size);
   if (result == 0)
     return 0;
   else

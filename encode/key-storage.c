@@ -8,7 +8,7 @@
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
-#include "ndn-lite-key-storage.h"
+#include "key-storage.h"
 
 static ndn_key_storage_t storage;
 

@@ -6,10 +6,12 @@
  * directory for more details.
  */
 
-#ifndef NDN_SECURITY_AES_H_
-#define NDN_SECURITY_AES_H_
+#ifndef NDN_SECURITY_HMAC_H_
+#define NDN_SECURITY_HMAC_H_
 
 #include "../ndn-error-code.h"
+#include "ndn-lite-crypto-key.h"
+#include <inttypes.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -112,4 +114,4 @@ ndn_hmacprng(const uint8_t* input_value, uint32_t input_size,
 }
 #endif
 
-#endif // NDN_SECURITY_AES_H_
+#endif // NDN_SECURITY_HMAC_H_

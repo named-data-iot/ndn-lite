@@ -6,6 +6,7 @@
  * directory for more details.
  */
 
+#include "ndn-lite-ecc.h"
 #include "ndn-lite-sec-config.h"
 
 void
@@ -23,10 +24,10 @@ ndn_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
                uint8_t ecdsa_type, uint32_t* output_used_size)
 {
 #ifdef NDN_LITE_SEC_BACKEND_ECC_DEFAULT
-  return ndn_lite_ecdsa_sign_microecc(input_value, input_size,
-                                      output_value, output_max_size,
-                                      prv_key_value, prv_key_size,
-                                      ecdsa_type, output_used_size);
+  return ndn_lite_default_ecdsa_sign(input_value, input_size,
+                                     output_value, output_max_size,
+                                     prv_key_value, prv_key_size,
+                                     ecdsa_type, output_used_size);
 #endif
 }
 
@@ -37,10 +38,10 @@ ndn_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
                  uint32_t pub_key_size, uint8_t ecdsa_type)
 {
 #ifdef NDN_LITE_SEC_BACKEND_ECC_DEFAULT
-  return ndn_lite_ecdsa_verify_microecc(input_value, input_size,
-                                        sig_value, sig_size,
-                                        pub_key_value,
-                                        pub_key_size, ecdsa_type);
+  return ndn_lite_default_ecdsa_verify(input_value, input_size,
+                                       sig_value, sig_size,
+                                       pub_key_value,
+                                       pub_key_size, ecdsa_type);
 #endif
 }
 
@@ -52,9 +53,9 @@ ndn_ecc_key_make_key(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
   ecc_prv->key_id = key_id;
   int result = 0;
 #ifdef NDN_LITE_SEC_BACKEND_ECC_DEFAULT
-  result = ndn_lite_ecc_key_make_key_tinycrypt(ecc_pub->key_value, &ecc_pub->key_size,
-                                               ecc_prv->key_value, &ecc_prv->key_size,
-                                               curve_type);
+  result = ndn_lite_default_make_ecc_key(ecc_pub->key_value, &ecc_pub->key_size,
+                                         ecc_prv->key_value, &ecc_prv->key_size,
+                                         curve_type);
 #endif
   return result;
 }
@@ -65,10 +66,8 @@ ndn_ecc_dh_shared_secret(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
 {
   int result = 0;
 #ifdef NDN_LITE_SEC_BACKEND_ECC_DEFAULT
-  result = ndn_lite_ecc_key_shared_secret_tinycrypt(ecc_pub->key_value, ecc_prv->key_value,
-                                                    curve_type, output, output_size);
+  result = ndn_lite_default_ecc_dh(ecc_pub->key_value, ecc_prv->key_value,
+                                   curve_type, output, output_size);
 #endif
   return result;
 }
-
-#endif // NDN_SECURITY_AES_H_

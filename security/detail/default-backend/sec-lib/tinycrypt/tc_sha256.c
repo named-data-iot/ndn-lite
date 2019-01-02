@@ -33,6 +33,7 @@
 #include "tc_sha256.h"
 #include "tc_constants.h"
 #include "tc_utils.h"
+#include <stdio.h>
 
 static void compress(unsigned int *iv, const uint8_t *data);
 

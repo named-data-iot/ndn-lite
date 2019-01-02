@@ -8,8 +8,8 @@
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
-#include "ndn-lite-sha256-tinycrypt-impl.h"
-#include "../../../../ndn-error-code.h"
+#include "ndn-lite-default-sha-impl.h"
+#include "../../../ndn-error-code.h"
 #include "sec-lib/tinycrypt/tc_sha256.h"
 #include "sec-lib/tinycrypt/tc_constants.h"
 
