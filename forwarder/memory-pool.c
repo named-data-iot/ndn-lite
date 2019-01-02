@@ -24,7 +24,7 @@ static memory_block_t memory_pool[NDN_POOL_BLOCK_CNT];
 static uint8_t memory_pool_first;
 
 int
-ndn_memory_pool_init()
+ndn_memory_pool_init(void)
 {
   if (NDN_POOL_BLOCK_SIZE < sizeof(ndn_name_t)) {
     return -1;
@@ -40,7 +40,7 @@ ndn_memory_pool_init()
 }
 
 uint8_t*
-ndn_memory_pool_alloc()
+ndn_memory_pool_alloc(void)
 {
   if (memory_pool_first == MEMORY_BLOCK_USED) {
     return NULL;

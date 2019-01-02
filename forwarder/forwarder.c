@@ -16,7 +16,7 @@
 static ndn_forwarder_t instance;
 
 ndn_forwarder_t*
-ndn_forwarder_get_instance()
+ndn_forwarder_get_instance(void)
 {
   return &instance;
 }
