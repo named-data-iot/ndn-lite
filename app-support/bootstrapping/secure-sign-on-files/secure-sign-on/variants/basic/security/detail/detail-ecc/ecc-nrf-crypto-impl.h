@@ -59,7 +59,7 @@
 
 //**************************************//
 
-#include <uECC.h>
+#include "../../../../../../../../../security/detail/default-backend/sec-lib/micro-ecc/uECC.h"
 
 #define ECDSA_WITH_SHA256_SECP_256_ASN_ENCODED_SIGNATURE_SIZE 80
 

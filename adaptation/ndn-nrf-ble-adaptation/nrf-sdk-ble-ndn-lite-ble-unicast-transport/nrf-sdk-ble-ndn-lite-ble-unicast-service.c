@@ -13,7 +13,7 @@
 
 #include <string.h>
 
-#include "../../../../sdk_config.h"
+//#include "../../../../sdk_config.h"
 #include "nrf-sdk-ble-ndn-lite-ble-unicast-service.h"
 #include "../logger.h"
 

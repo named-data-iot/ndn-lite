@@ -18,7 +18,7 @@
 
 #include "../detail-ecc/ecc-nrf-crypto-impl.h"
 
-#include <uECC.h>
+#include "../../../../../../../../../security/detail/default-backend/sec-lib/micro-ecc/uECC.h"
 
 int sign_on_basic_microecc_gen_sha256_ecdsa_sig(
     const uint8_t *pri_key,

@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include <uECC.h>
+#include "../../../../../../../../security/detail/default-backend/sec-lib/micro-ecc/uECC.h"
 
 // define the board type here; I think there is a better way to do this than based on board type,
 // since many boards will share the same security libraries, but for now I will do it this way...
