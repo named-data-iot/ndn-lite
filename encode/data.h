@@ -81,7 +81,7 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
  *        The encoder should be inited to proper output buffer.
  * @param data. Input. The data to be encoded.
  * @param producer_identity. Input. The producer's identity name.
- * @param prv_key. Input. The private HMAC key used to generate the signature.
+ * @param prv_key. Input. The HMAC key used to generate the signature.
  * @return 0 if there is no error.
  */
 int
@@ -125,7 +125,7 @@ ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, u
  * @param data. Output. The data to which the wired block will be decoded.
  * @param block_value. Input. The wire format Data buffer.
  * @param block_size. Input. The size of the wire format Data buffer.
- * @param hmac_key. Input. The HMAC public key used to verify the Data signature.
+ * @param hmac_key. Input. The HMAC key used to verify the Data signature.
  * @return 0 if there is no error and the signature is valid.
  */
 int

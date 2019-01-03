@@ -12,7 +12,7 @@
 #include "../security/ndn-lite-ecc.h"
 
 /************************************************************/
-/*  Helper functions for signed interest APIs               */
+/*  Helper functions for Signed Interest APIs               */
 /*  Not supposed to be used by library users                */
 /************************************************************/
 
@@ -57,7 +57,7 @@ _ndn_signed_interest_probe_block_size(const ndn_interest_t* interest,
 
 static void
 _prepare_signature_info(ndn_interest_t* interest, uint8_t signature_type,
-                        const ndn_name_t* producer_identity, uint32_t key_id)
+                        const ndn_name_t* identity, uint32_t key_id)
 {
   uint8_t raw_key_id[4] = {0};
   raw_key_id[0] = (key_id >> 24) & 0xFF;
@@ -66,7 +66,7 @@ _prepare_signature_info(ndn_interest_t* interest, uint8_t signature_type,
   raw_key_id[3] = key_id & 0xFF;
 
   ndn_signature_init(&interest->signature, signature_type);
-  ndn_signature_set_key_locator(&interest->signature, producer_identity);
+  ndn_signature_set_key_locator(&interest->signature, identity);
 
   // append /KEY and /<KEY-ID> in key locator name
   char key_comp_string[] = "KEY";
@@ -150,14 +150,14 @@ _signed_interest_tlv_encode_after_signing(ndn_encoder_t* encoder, ndn_interest_t
 
 int
 ndn_signed_interest_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_interest_t* interest,
-                                          const ndn_name_t* producer_identity,
+                                          const ndn_name_t* identity,
                                           const ndn_ecc_prv_t* prv_key)
 {
   if (interest->name.components_size + 1 > NDN_NAME_COMPONENTS_SIZE)
     return NDN_OVERSIZE;
 
   // set signature info
-  _prepare_signature_info(interest, NDN_SIG_TYPE_ECDSA_SHA256, producer_identity, prv_key->key_id);
+  _prepare_signature_info(interest, NDN_SIG_TYPE_ECDSA_SHA256, identity, prv_key->key_id);
 
   // encode signed interest parameter block
   uint8_t params_block_value[NDN_SIGNED_INTEREST_PARAMS_MAX_SIZE] = {0};
@@ -203,13 +203,13 @@ ndn_signed_interest_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_interest_t
 
 int
 ndn_signed_interest_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_interest_t* interest,
-                                         const ndn_name_t* producer_identity, const ndn_hmac_key_t* hmac_key)
+                                         const ndn_name_t* identity, const ndn_hmac_key_t* hmac_key)
 {
   if (interest->name.components_size + 1 > NDN_NAME_COMPONENTS_SIZE)
     return NDN_OVERSIZE;
 
   // set signature info
-  _prepare_signature_info(interest, NDN_SIG_TYPE_HMAC_SHA256, producer_identity, hmac_key->key_id);
+  _prepare_signature_info(interest, NDN_SIG_TYPE_HMAC_SHA256, identity, hmac_key->key_id);
 
   // encode signed interest parameter block
   uint8_t params_block_value[NDN_SIGNED_INTEREST_PARAMS_MAX_SIZE] = {0};

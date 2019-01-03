@@ -15,42 +15,93 @@
 extern "C" {
 #endif
 
+/**
+ * Set Nonce of the Signed Interest.
+ * @param interest. Output. The Interest whose Nonce will be set.
+ * @param nonce. Input. Nonce value.
+ */
 static inline void
 ndn_signed_interest_set_signature_nonce(ndn_interest_t* interest, uint32_t nonce)
 {
   interest->signature_nonce = nonce;
 }
 
+/**
+ * Set Timestamp of the Signed Interest.
+ * @param interest. Output. The Interest whose Timestamp will be set.
+ * @param timestamp. Input. Timestamp value.
+ */
 static inline void
 ndn_signed_interest_set_signature_timestamp(ndn_interest_t* interest, uint32_t timestamp)
 {
   interest->signature_timestamp = timestamp;
 }
 
-// this function will automatically set signature info and signature value
+/**
+ * Use Digest (SHA256) to sign the Interest and encode the Signed Interest into wire format.
+ * This function will automatically set signature info and signature value.
+ * @param encoder. Output. The encoder to keep the encoded Signed Interest.
+ *        The encoder should be inited to proper output buffer.
+ * @param interest. Input. The Interest to be signed and encoded.
+ * @return 0 if there is no error.
+ */
 int
 ndn_signed_interest_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_interest_t* interest);
 
-
-// this function will automatically set signature info and signature value
+/**
+ * Use ECDSA Algorithm to sign the Interest and encode the Signed Interest into wire format.
+ * This function will automatically set signature info and signature value.
+ * @param encoder. Output. The encoder to keep the encoded Signed Interest.
+ *        The encoder should be inited to proper output buffer.
+ * @param interest. Input. The Interest to be signed and encoded.
+ * @param producer_identity. Input. The producer's identity name.
+ * @param prv_key. Input. The private ECC key used to generate the signature.
+ * @return 0 if there is no error.
+ */
 int
 ndn_signed_interest_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_interest_t* interest,
-                                          const ndn_name_t* producer_identity,
+                                          const ndn_name_t* identity,
                                           const ndn_ecc_prv_t* prv_key);
 
-// this function will automatically set signature info and signature value
+/**
+ * Use HMAC Algorithm to sign the Interest and encode the Signed Interest into wire format.
+ * This function will automatically set signature info and signature value.
+ * @param encoder. Output. The encoder to keep the encoded Signed Interest.
+ *        The encoder should be inited to proper output buffer.
+ * @param interest. Input. The Interest to be signed and encoded.
+ * @param producer_identity. Input. The producer's identity name.
+ * @param prv_key. Input. The private HMAC key used to generate the signature.
+ * @return 0 if there is no error.
+ */
 int
 ndn_signed_interest_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_interest_t* interest,
-                                         const ndn_name_t* producer_identity,
+                                         const ndn_name_t* identity,
                                          const ndn_hmac_key_t* hmac_key);
 
+/**
+ * Verify the Digest (SHA256) signature of a decoded Signed Interest.
+ * @param interest. Input. The decoded Signed Interest whose signature to be verified.
+ * @return 0 if there is no error and the signature is valid.
+ */
 int
 ndn_signed_interest_digest_verify(const ndn_interest_t* interest);
 
+/**
+ * Verify the ECDSA signature of a decoded Signed Interest.
+ * @param interest. Input. The decoded Signed Interest whose signature to be verified.
+ * @param pub_key. Input. The ECC public key used to verify the Signed Interest signature.
+ * @return 0 if there is no error and the signature is valid.
+ */
 int
 ndn_signed_interest_ecdsa_verify(const ndn_interest_t* interest,
                                  const ndn_ecc_pub_t* pub_key);
 
+/**
+ * Verify the HMAC signature of a decoded Signed Interest.
+ * @param interest. Input. The decoded Signed Interest whose signature to be verified.
+ * @param hmac_key. Input. The HMAC public key used to verify the Signed Interest signature.
+ * @return 0 if there is no error and the signature is valid.
+ */
 int
 ndn_signed_interest_hmac_verify(const ndn_interest_t* interest,
                                 const ndn_hmac_key_t* hmac_key);
