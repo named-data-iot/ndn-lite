@@ -164,7 +164,7 @@ ndn_forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn
     // Allocate memory
     name = (ndn_name_t*)ndn_memory_pool_alloc();
     if (!name) {
-      return NDN_FWD_INSUFFICIENT_MEMORY;
+      return NDN_FWD_NO_MEM;
     }
     // Decode name only
     ndn_decoder_t decoder;
@@ -217,7 +217,7 @@ ndn_forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face,
     // A name is expensive, don't want to do it on stack
     name = (ndn_name_t*)ndn_memory_pool_alloc();
     if (!name) {
-      return NDN_FWD_INSUFFICIENT_MEMORY;
+      return NDN_FWD_NO_MEM;
     }
 
     // Decode name only

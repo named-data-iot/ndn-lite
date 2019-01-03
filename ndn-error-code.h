@@ -33,11 +33,11 @@
 // Fragmentation Error
 #define NDN_FRAG_NO_MORE_FRAGS -30
 #define NDN_FRAG_OUT_OF_ORDER -31
-#define NDN_FRAG_NOT_ENOUGH_MEM -32
+#define NDN_FRAG_NO_MEM -32
 #define NDN_FRAG_WRONG_IDENTIFIER -33
 
 // Forwarder Error
-#define NDN_FWD_INSUFFICIENT_MEMORY -40
+#define NDN_FWD_NO_MEM -40
 #define NDN_FWD_PIT_FULL -41
 #define NDN_FWD_PIT_ENTRY_FACE_LIST_FULL -42
 #define NDN_FWD_FIB_FULL -43
