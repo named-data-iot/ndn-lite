@@ -96,10 +96,10 @@ name_component_from_string(name_component_t* component, const char* string, uint
 {
   if (string[size - 1] == '\0')
     return name_component_from_buffer(component, TLV_GenericNameComponent,
-                                      (uint8_t*)string, size - 1);
+                                      (const uint8_t*)string, size - 1);
   else
     return name_component_from_buffer(component, TLV_GenericNameComponent,
-                                      (uint8_t*)string, size);
+                                      (const uint8_t*)string, size);
 }
 
 /**
