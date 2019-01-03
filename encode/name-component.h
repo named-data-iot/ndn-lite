@@ -63,7 +63,7 @@ name_component_init(name_component_t* component, uint32_t type)
 }
 
 /**
- * Init a Name Component structure from caller supplied memory block. 
+ * Init a Name Component structure from caller supplied memory block.
  * The function will do memory copy
  * @param component. Output. The Name Component structure to be inited.
  * @param type. Input. Name Component Type to be set with.
@@ -84,7 +84,7 @@ name_component_from_buffer(name_component_t* component, uint32_t type,
 }
 
 /**
- * Init a Name Component structure from string. Please include the last byte of the string, 
+ * Init a Name Component structure from string. Please include the last byte of the string,
  * which is "\0". The function will do memory copy.
  * @param component. Output. The Name Component structure to be inited.
  * @param string. Input. String variable which name component initing from.
@@ -96,10 +96,10 @@ name_component_from_string(name_component_t* component, const char* string, uint
 {
   if (string[size - 1] == '\0')
     return name_component_from_buffer(component, TLV_GenericNameComponent,
-                                      (uint8_t*)string, size - 1);
+                                      (const uint8_t*)string, size - 1);
   else
     return name_component_from_buffer(component, TLV_GenericNameComponent,
-                                      (uint8_t*)string, size);
+                                      (const uint8_t*)string, size);
 }
 
 /**
@@ -135,7 +135,7 @@ name_component_compare(const name_component_t* lhs, const name_component_t* rhs)
  * @param component. Input. The name component structure to probe.
  * @return the length of the expected name component TLV block.
  */
-static inline int
+static inline uint32_t
 name_component_probe_block_size(const name_component_t* component)
 {
   return encoder_probe_block_size(component->type, component->size);
