@@ -67,11 +67,11 @@ ndn_hmac_make_key(ndn_hmac_key_t* key, uint32_t key_id,
   int result = 0;
 #ifdef NDN_LITE_SEC_BACKEND_HMAC_DEFAULT
   result = ndn_lite_default_make_hmac_key(key->key_value, &key->key_size,
-                                        input_value, input_size,
-                                        personalization, personalization_size,
-                                        seed_value, seed_size,
-                                        additional_value, additional_size,
-                                        salt_size);
+                                          input_value, input_size,
+                                          personalization, personalization_size,
+                                          seed_value, seed_size,
+                                          additional_value, additional_size,
+                                          salt_size);
 #endif
   return result;
 }
@@ -81,11 +81,11 @@ ndn_hkdf(const uint8_t* input_value, uint32_t input_size,
          uint8_t* output_value, uint32_t output_size,
          const uint8_t* seed_value, uint32_t seed_size)
 {
-  #ifdef NDN_LITE_SEC_BACKEND_RANDOM_DEFAULT
+#ifdef NDN_LITE_SEC_BACKEND_RANDOM_DEFAULT
   return ndn_lite_default_hkdf(input_value, input_size,
                                output_value, output_size,
                                seed_value, seed_size);
-  #endif
+#endif
 }
 
 int
@@ -99,11 +99,7 @@ ndn_hmacprng(const uint8_t* input_value, uint32_t input_size,
                                    output_value, output_size,
                                    seed_value, seed_size,
                                    additional_value, additional_size);
-  #endif
-}
-
-#ifdef __cplusplus
-}
 #endif
+}
 
 #endif // NDN_SECURITY_AES_H_
