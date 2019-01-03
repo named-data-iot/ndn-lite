@@ -77,6 +77,7 @@ ndn_ecc_make_key(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
 
 /**
  * Negotiate a shared secret wih given ECC public and private keys via ECDH.
+ * @note Current backend implementation (i.e., tinycrypt) only supports curve type secp256r1.
  * @param ecc_pub. Input. Input ECC public key.
  * @param ecc_prv. Input. Input ECC private key.
  * @param curve_type. Input. ECC curve type. Should be the same type of input public and private key.
