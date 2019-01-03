@@ -63,12 +63,12 @@ encoder_init(ndn_encoder_t* encoder, uint8_t* block_value, uint32_t block_max_si
  * @param var. Input. The value of the variable length type (T) or length (L).
  * @return the length of the type (T) or length (L).
  */
-static inline int
+static inline uint32_t
 encoder_get_var_size(uint32_t var)
 {
   if (var < 253) return 1;
   if (var <= 0xFFFF) return 3;
-  else return 5;
+  return 5;
 }
 
 /**
@@ -79,11 +79,11 @@ encoder_get_var_size(uint32_t var)
  * @return the length of the TLV block.
  */
 static inline uint32_t
-encoder_probe_block_size(const int type, const uint32_t payload_size)
+encoder_probe_block_size(uint32_t type, uint32_t payload_size)
 {
   uint32_t type_size = encoder_get_var_size(type);
   uint32_t length_size = encoder_get_var_size(payload_size);
-  return (payload_size + type_size + length_size);
+  return payload_size + type_size + length_size;
 }
 
 /**
