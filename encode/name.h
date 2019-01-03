@@ -17,16 +17,16 @@ extern "C" {
 #endif
 
 /**
- * The structure to represent the Name. 
+ * The structure to represent the Name.
  * This structure is memory expensive so please be careful when using it.
  */
 typedef struct ndn_name {
   /**
-   * The name components array which name holds. (not include T and L)
+   * The array of name components contained in this name (not including T and L)
    */
   name_component_t components[NDN_NAME_COMPONENTS_SIZE];
   /**
-   * The components number.
+   * The number of name components
    */
   uint32_t components_size;
 } ndn_name_t;
@@ -68,8 +68,8 @@ int
 ndn_name_append_component(ndn_name_t* name, const name_component_t* component);
 
 
-/** 
- * Init a name block from a string. This funcition will do memory copy and 
+/**
+ * Init a name block from a string. This funcition will do memory copy and
  * only support regular string; not support URI currently.
  * @param name. Output. The Name to be inited.
  * @param string. Input. The string from which Name is inited.

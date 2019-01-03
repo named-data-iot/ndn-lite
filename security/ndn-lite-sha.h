@@ -20,7 +20,8 @@ int
 sha256(const uint8_t* data, uint32_t datalen, uint8_t* hash_result);
 
 /**
- * Use SHA-256 Algorithm to sign buffer. Memory buffer to hold the siganture should not smaller than 32 bytes.
+ * Sign a buffer using SHA-256 algorithm.
+ * The memory buffer to hold the signature should not be smaller than 32 bytes.
  * @param input_value. Input. Buffer prepared to sign.
  * @param input_size. Input. Size of input buffer.
  * @param output_value. Output. Signature value.
@@ -34,11 +35,11 @@ ndn_sha256_sign(const uint8_t* input_value, uint32_t input_size,
                 uint32_t* output_used_size);
 
 /**
- * Use SHA-256 Algorithm to verify signature. Memory buffer to hold the siganture should not smaller than 32 bytes.
- * @param input_value. Input. SHA-256 Signed buffer.
+ * Verify a SHA-256 signature.
+ * @param input_value. Input. SHA-256-signed buffer.
  * @param input_size. Input. Size of input buffer.
  * @param sig_value. Input. SHA-256 signature value.
- * @param sig_size. Input. SHA-256 signature size.
+ * @param sig_size. Input. SHA-256 signature size. Should be 32 bytes.
  * @return 0 if verification succeeded.
  */
 int

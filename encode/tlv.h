@@ -19,7 +19,7 @@ enum {
   TLV_Interest = 5,
   TLV_Data = 6,
 
-  // common fields
+  // common elements
   TLV_Name = 7,
   TLV_GenericNameComponent = 8,
   TLV_ImplicitSha256DigestComponent = 1,

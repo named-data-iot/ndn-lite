@@ -44,7 +44,7 @@ typedef struct ndn_encoder {
 } ndn_encoder_t;
 
 /**
- * Init a encoder by setting the buffer to keep the encoding output and its size.
+ * Init an encoder by setting the buffer to keep the encoding output and its size.
  * @param encoder. Output. The encoder to be inited.
  * @param block_value. Input. The buffer to keep the wire format buffer.
  * @param block_max_size. Input. The size of wire format buffer.
@@ -59,8 +59,8 @@ encoder_init(ndn_encoder_t* encoder, uint8_t* block_value, uint32_t block_max_si
 }
 
 /**
- * Probe the size of a variable length type (T) or length (L).
- * @param var. Input. The value of the variable length type (T) or length (L).
+ * Probe the size of a variable-length type (T) or length (L).
+ * @param var. Input. The value of the variable-length type (T) or length (L).
  * @return the length of the type (T) or length (L).
  */
 static inline int
@@ -73,7 +73,7 @@ encoder_get_var_size(uint32_t var)
 
 /**
  * Probe the size of a TLV block.
- * This function is used to check whether the output buffer size is enough or not.
+ * This function is used to check whether the output buffer size is large enough.
  * @param type. Input. The value of the type (T).
  * @param payload_size. Input. The value of length (L).
  * @return the length of the TLV block.
@@ -87,9 +87,9 @@ encoder_probe_block_size(const int type, const uint32_t payload_size)
 }
 
 /**
- * Append a variable length type (T) or length (L) to the wire format buffer.
+ * Append a variable-length type (T) or length (L) to the wire format buffer.
  * @param encoder. Output. The encoder will keep the encoding result and the offset will be updated.
- * @param var. Input. The variable length type (T) or length (L).
+ * @param var. Input. The variable-length type (T) or length (L).
  * @return 0 if there is no error.
  */
 static inline int
@@ -121,9 +121,9 @@ encoder_append_var(ndn_encoder_t* encoder, uint32_t var)
 }
 
 /**
- * Append a variable length type (T) to the wire format buffer.
+ * Append a variable-length type (T) to the wire format buffer.
  * @param encoder. Output. The encoder will keep the encoding result and the offset will be updated.
- * @param type. Input. The variable length type (T).
+ * @param type. Input. The variable-length type (T).
  * @return 0 if there is no error.
  */
 static inline int
@@ -133,9 +133,9 @@ encoder_append_type(ndn_encoder_t* encoder, uint32_t type)
 }
 
 /**
- * Append a variable length length (L) to the wire format buffer.
+ * Append a variable-length length (L) to the wire format buffer.
  * @param encoder. Output. The encoder will keep the encoding result and the offset will be updated.
- * @param length. Input. The variable length length (L).
+ * @param length. Input. The variable-length length (L).
  * @return 0 if there is no error.
  */
 static inline int

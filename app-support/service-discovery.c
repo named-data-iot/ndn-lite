@@ -151,7 +151,7 @@ ndn_sd_register_get_self_service(const char* prefix, uint32_t size)
   for (uint8_t i = 0; i < NDN_APPSUPPORT_SERVICES_SIZE; ++i) {
     if (sd_context.self.services[i].status != NDN_APPSUPPORT_SERVICE_UNDEFINED)
       continue;
-    sd_context.self.services[i].status = NDN_APPSUPPORT_SERVICE_AVIALABLE;
+    sd_context.self.services[i].status = NDN_APPSUPPORT_SERVICE_AVAILABLE;
     memcpy(&sd_context.self.services[i].id_value, prefix, size);
     sd_context.self.services[i].id_size = size;
     return &sd_context.self.services[i];
@@ -187,7 +187,7 @@ ndn_sd_prepare_advertisement(ndn_interest_t* interest)
   encoder_init(&encoder, interest->parameters.value, NDN_INTEREST_PARAMS_BUFFER_SIZE);
   for (uint8_t i = 0; i < NDN_APPSUPPORT_SERVICES_SIZE; i++) {
     if (sd_context.self.services[i].status != NDN_APPSUPPORT_SERVICE_UNDEFINED
-        && sd_context.self.services[i].status != NDN_APPSUPPORT_SERVICE_UNAVIALABLE) {
+        && sd_context.self.services[i].status != NDN_APPSUPPORT_SERVICE_UNAVAILABLE) {
       name_component_t toEncode;
       name_component_from_buffer(&toEncode, TLV_GenericNameComponent,
                                  sd_context.self.services[i].id_value,
@@ -240,10 +240,10 @@ ndn_sd_on_advertisement_process(const ndn_interest_t* interest)
   ndn_decoder_t decoder;
   decoder_init(&decoder, interest->parameters.value, interest->parameters.size);
   name_component_t toDecode;
-  for (;decoder.input_size - decoder.offset > 0;) {
+  for (; decoder.input_size - decoder.offset > 0;) {
     name_component_tlv_decode(&decoder, &toDecode);
     _neighbor_add_update_service(entry, toDecode.value, toDecode.size,
-                                 NDN_APPSUPPORT_SERVICE_AVIALABLE);
+                                 NDN_APPSUPPORT_SERVICE_AVAILABLE);
   }
   return 0;
 }

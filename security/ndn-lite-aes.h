@@ -17,14 +17,13 @@ extern "C" {
 #endif
 
 /**
- * Use AES-128 CBC Algorithm to encrypt the buffer. This function is implemented without padding.
- * The input_size should meet requirement (input_size % NDN_AES_BLOCK_SIZE) = 0 to enable a
- * successful encryption.
+ * Use AES-128-CBC algorithm to encrypt a buffer. This function does not perform any padding.
+ * The input_size must be a multiple of NDN_AES_BLOCK_SIZE to obtain a successful encryption.
  * @param input_value. Input. Buffer to encrypt.
  * @param input_size. Input. Size of input buffer.
  * @param output_value. Output. Encrypted buffer.
  * @param output_size. Input. Size of encrypted buffer.
- * @param aes_iv. Input. AES Initialization Vector, which length should be NDN_AES_BLOCK_SIZE.
+ * @param aes_iv. Input. AES Initialization Vector, whose length should be NDN_AES_BLOCK_SIZE.
  * @param key_value. Input. AES-128 key to perform encryption.
  * @param key_size. Input. Size of used AES-128 key.
  * @return 0 if there is no error.
@@ -36,14 +35,13 @@ ndn_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
                     const uint8_t* key_value, uint8_t key_size);
 
 /**
- * Use AES-128 CBC Algorithm to decrypt the AES encrypted buffer. This function is implemented without padding.
- * The input_size should meet requirement (input_size % NDN_AES_BLOCK_SIZE) = 0 to enable a
- * successful decryption.
+ * Use AES-128-CBC algorithm to decrypt an encrypted buffer. This function is implemented without padding.
+ * The input_size must be a multiple of NDN_AES_BLOCK_SIZE to obtain a successful decryption.
  * @param input_value. Input. Buffer to decrypt.
  * @param input_size. Input. Size of input buffer.
  * @param output_value. Output. Decrypted buffer.
  * @param output_size. Input. Size of decrypted buffer.
- * @param aes_iv. Input. AES Initialization Vector, which length should be NDN_AES_BLOCK_SIZE.
+ * @param aes_iv. Input. AES Initialization Vector, whose length should be NDN_AES_BLOCK_SIZE.
  * @param key_value. Input. AES-128 key to perform decryption. Should be same as encryption key.
  * @param key_size. Input. Size of used AES-128 key.
  * @return 0 if there is no error.

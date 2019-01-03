@@ -11,17 +11,14 @@
 
 #include "../encode/name.h"
 
-#define container_of(ptr, type, member) ({                      \
-      const typeof( ((type *)0)->member ) *__mptr = (ptr);      \
-      (type *)( (char *)__mptr - offsetof(type,member) );})
+#define container_of(ptr, type, member) ({                \
+  const typeof(((type *)0)->member) *__mptr = (ptr);      \
+  (type *)((char *)__mptr - offsetof(type, member)); })
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * This is a front declaration of structure ndn_face_intf.
- */
 struct ndn_face_intf;
 
 /**
@@ -56,7 +53,6 @@ typedef int (*ndn_face_intf_down)(struct ndn_face_intf* self);
  * ndn_face_intf_destroy is a function pointer to the interface destroy function.
  * After invoking the function, the interface will permanently be destroyed.
  * @param self. Input. The interface to destroy.
- * @return 0 if there is no error.
  */
 typedef void (*ndn_face_intf_destroy)(struct ndn_face_intf* self);
 
@@ -134,7 +130,6 @@ ndn_face_down(ndn_face_intf_t* self)
 /**
  * Destroy the interface.
  * @param self. Input. The interface to destroy.
- * @return 0 if there is no error.
  */
 static inline void
 ndn_face_destroy(ndn_face_intf_t* self)

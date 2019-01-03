@@ -26,15 +26,15 @@ extern "C" {
  */
 typedef struct ndn_data {
   /**
-   * Data Name Value (not include T and L)
+   * Data Name Value (not including T and L)
    */
   ndn_name_t name;
   /**
-   * Data MetaInfo Value (not include T and L)
+   * Data MetaInfo Value (not including T and L)
    */
   ndn_metainfo_t metainfo;
   /**
-   * Data Content Value (not include T and L)
+   * Data Content Value (not including T and L)
    */
   uint8_t content_value[NDN_CONTENT_BUFFER_SIZE];
   /**
@@ -89,7 +89,7 @@ ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
                               const ndn_name_t* producer_identity, const ndn_hmac_key_t* hmac_key);
 
 /**
- * Simply decode the encoded Data into a Data structure without signature verification.
+ * Simply decode the encoded Data into a ndn_data_t without signature verification.
  * @param data. Output. The data to which the wired block will be decoded.
  * @param block_value. Input. The wire format Data buffer.
  * @param block_size. Input. The size of the wire format Data buffer.
@@ -99,7 +99,7 @@ int
 ndn_data_tlv_decode_no_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size);
 
 /**
- * Decode the encoded Data into a Data structure and verify the Digest (SHA256) signature.
+ * Decode the encoded Data into a ndn_data_t and verify the Digest (SHA256) signature.
  * @param data. Output. The data to which the wired block will be decoded.
  * @param block_value. Input. The wire format Data buffer.
  * @param block_size. Input. The size of the wire format Data buffer.
@@ -109,7 +109,7 @@ int
 ndn_data_tlv_decode_digest_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size);
 
 /**
- * Decode the encoded Data into a Data structure and verify the ECDSA signature.
+ * Decode the encoded Data into a ndn_data_t and verify the ECDSA signature.
  * @param data. Output. The data to which the wired block will be decoded.
  * @param block_value. Input. The wire format Data buffer.
  * @param block_size. Input. The size of the wire format Data buffer.
@@ -121,7 +121,7 @@ ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, u
                                  const ndn_ecc_pub_t* pub_key);
 
 /**
- * Decode the encoded Data into a Data structure and verify the HMAC signature.
+ * Decode the encoded Data into a ndn_data_t and verify the HMAC signature.
  * @param data. Output. The data to which the wired block will be decoded.
  * @param block_value. Input. The wire format Data buffer.
  * @param block_size. Input. The size of the wire format Data buffer.
