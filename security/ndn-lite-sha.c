@@ -8,7 +8,7 @@
 
 #include "ndn-lite-sha.h"
 #include "ndn-lite-sec-config.h"
-#include <string.h>
+#include "ndn-lite-sec-utils.h"
 
 int
 sha256(const uint8_t* data, uint32_t datalen, uint8_t* hash_result)
@@ -40,7 +40,7 @@ ndn_sha256_verify(const uint8_t* input_value, uint32_t input_size,
     return NDN_SEC_WRONG_SIG_SIZE;
   uint8_t input_hash[NDN_SEC_SHA256_HASH_SIZE] = {0};
   sha256(input_value, input_size, input_hash);
-  if (memcmp(input_hash, sig_value, sizeof(input_hash)) != 0)
+  if (ndn_const_time_memcmp(input_hash, sig_value, sizeof(input_hash)) != 0)
     return NDN_SEC_FAIL_VERIFY_SIG;
   else
     return NDN_SUCCESS;

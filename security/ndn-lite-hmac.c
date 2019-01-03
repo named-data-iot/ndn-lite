@@ -11,6 +11,7 @@
 
 #include "ndn-lite-hmac.h"
 #include "ndn-lite-sec-config.h"
+#include "ndn-lite-sec-utils.h"
 
 int
 hmac_sha256(const void* payload, uint32_t payload_length,
@@ -49,7 +50,7 @@ ndn_hmac_verify(const uint8_t* input_value, uint32_t input_size,
 
   uint8_t input_hmac[NDN_SEC_SHA256_HASH_SIZE] = {0};
   hmac_sha256(key_value, key_size, input_value, input_size, input_hmac);
-  if (memcmp(input_hmac, sig_value, sizeof(input_hmac)) != 0)
+  if (ndn_const_time_memcmp(input_hmac, sig_value, sizeof(input_hmac)) != 0)
     return NDN_SEC_FAIL_VERIFY_SIG;
   else
     return NDN_SUCCESS;
