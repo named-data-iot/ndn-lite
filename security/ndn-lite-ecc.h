@@ -64,7 +64,7 @@ ndn_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
 
 /**
  * Generate an ECC key pair with specific curve type and key id.
- * @note Current backend implementation (i.e., tinycrypt) only supports curve type secp256r1.
+ * @note Current default backend implementation (i.e., tinycrypt) only supports curve type secp256r1.
  * @param ecc_pub. Output. ECC public key whose key bytes to be generated.
  * @param ecc_prv. Output. ECC private key whose key bytes to be generated.
  * @param curve_type. Input. The chosen ECC curve type to generate the key pair.
@@ -77,7 +77,7 @@ ndn_ecc_make_key(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
 
 /**
  * Negotiate a shared secret wih given ECC public and private keys via ECDH.
- * @note Current backend implementation (i.e., tinycrypt) only supports curve type secp256r1.
+ * @note Current default backend implementation (i.e., tinycrypt) only supports curve type secp256r1.
  * @param ecc_pub. Input. Input ECC public key.
  * @param ecc_prv. Input. Input ECC private key.
  * @param curve_type. Input. ECC curve type. Should be the same type of input public and private key.
