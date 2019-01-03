@@ -29,7 +29,7 @@ typedef struct ndn_key_storage {
    */
   ndn_ecc_pub_t trust_anchor_key;
   /**
-   * The boolean indicating whether the device is bootstrapped.
+   * Boolean indicating whether the device is bootstrapped.
    */
   uint8_t is_bootstrapped;
   /**
@@ -45,7 +45,7 @@ typedef struct ndn_key_storage {
 } ndn_key_storage_t;
 
 /**
- * Init a in-library key storage structure.
+ * Init an in-library key storage structure.
  * @return The pointer to the initialized key storage structure
  */
 ndn_key_storage_t*

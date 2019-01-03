@@ -23,7 +23,8 @@ hmac_sha256(const void* payload, uint32_t payload_length,
             uint8_t* hmac_result);
 
 /**
- * Use HMAC Algorithm to sign buffer. Memory buffer to hold the siganture should not smaller than 32 bytes.
+ * Sign a buffer using HMAC algorithm.
+ * The memory buffer to hold the signature should not be smaller than 32 bytes.
  * @param input_value. Input. Buffer prepared to sign.
  * @param input_size. Input. Size of input buffer.
  * @param output_value. Output. Signature value.
@@ -40,8 +41,8 @@ ndn_hmac_sign(const uint8_t* input_value, uint32_t input_size,
               uint32_t* output_used_size);
 
 /**
- * Use HMAC Algorithm to verify signature. Memory buffer to hold the siganture should not larger than 32 bytes.
- * @param input_value. Input. HMAC Signed buffer.
+ * Verify a HMAC signature.
+ * @param input_value. Input. HMAC-signed buffer.
  * @param input_size. Input. Size of input buffer.
  * @param sig_value. Input. HMAC signature value.
  * @param sig_size. Input. HMAC signature size. Should be 32 bytes.
@@ -55,7 +56,7 @@ ndn_hmac_verify(const uint8_t* input_value, uint32_t input_size,
                 const uint8_t* key_value, uint32_t key_size);
 
 /**
- * Make a HMAC key with specific key size and key id.
+ * Generate a HMAC key with specific key size and key id.
  * This function requires proper entropy source.
  * @param input_value. Input. Personalization string.
  * @param input_size. Input. Personalization length in bytes.
@@ -76,7 +77,7 @@ ndn_hmac_make_key(ndn_hmac_key_t* key, uint32_t key_id,
                   uint32_t salt_size);
 
 /**
- * Use HMAC-KDF Algorithm to generate a secure HMAC key.
+ * Use HMAC-KDF (key derivation function) to generate a secure HMAC key.
  * This function requires proper entropy source.
  * @param input_value. Input. Random input that requires KDF.
  * @param input_size. Input. Random input length in bytes.
@@ -92,7 +93,7 @@ ndn_hkdf(const uint8_t* input_value, uint32_t input_size,
          const uint8_t* seed_value, uint32_t seed_size);
 
 /**
- * Use HMAC-PRNG Algorithm to generate pseudo-random bytes.
+ * Use HMAC-PRNG algorithm to generate pseudo-random bytes.
  * This function requires proper entropy source.
  * @param input_value. Input. Personalization string.
  * @param input_size. Input. Personalization length in bytes.

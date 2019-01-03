@@ -228,7 +228,7 @@ ndn_ac_on_interest_process(ndn_data_t* response, const ndn_interest_t* interest)
   if (type == NDN_AC_DK) // Decryption Key Request
     return ndn_ac_prepare_dk_response(&decoder, interest, response);
 
-  return NDN_AC_UNRECOGNIZE_KEY_REQUEST;
+  return NDN_AC_UNRECOGNIZED_KEY_REQUEST;
 }
 
 int

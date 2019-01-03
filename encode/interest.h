@@ -26,7 +26,7 @@ typedef struct interest_params {
 } interest_params_t;
 
 /**
- * The structure to represent the Interest packet.
+ * The structure to represent an NDN Interest packet.
  */
 typedef struct ndn_interest {
   /**
@@ -46,13 +46,13 @@ typedef struct ndn_interest {
   uint8_t enable_MustBeFresh;
 
   /**
-   * The Interest parameters of the Interest. Used when enable_Parameters > 0.
+   * The Parameters of the Interest. Used when enable_Parameters > 0.
    */
   interest_params_t parameters;
   uint8_t enable_Parameters;
 
   /**
-   * The hop_limit parameters of the Interest. Used when enable_HopLimit > 0.
+   * The HopLimit of the Interest. Used when enable_HopLimit > 0.
    */
   uint8_t hop_limit;
   uint8_t enable_HopLimit;
@@ -120,7 +120,7 @@ ndn_interest_from_name(ndn_interest_t* interest, const ndn_name_t* name)
 }
 
 /**
- * Decode an Interest TLV block into an Interest.
+ * Decode an Interest TLV block into an ndn_interest_t.
  * @param interest. Output. The Interest to which the TLV block will be decoded.
  * @param block_value. Input. The Interest TLV block buffer.
  * @param block_size. Input. The size of the Interest TLV block buffer.
@@ -152,8 +152,8 @@ ndn_interest_set_MustBeFresh(ndn_interest_t* interest, uint8_t must_be_fresh)
 }
 
 /**
- * Set HopLimit flag of the Interest.
- * @param interest. Output. The Interest whose flag will be set.
+ * Set HopLimit element of the Interest.
+ * @param interest. Output. The Interest whose HopLimit will be set.
  * @param hop. Input. The value of the HopLimit.
  */
 static inline void
@@ -164,8 +164,8 @@ ndn_interest_set_HopLimit(ndn_interest_t* interest, uint8_t hop)
 }
 
 /**
- * Set InterestParameters of the Interest.
- * @param interest. Output. The Interest whose InterestParameters will be set.
+ * Set Parameters element of the Interest.
+ * @param interest. Output. The Interest whose Parameters will be set.
  * @param params_value. Input. The interest parameters value (V).
  * @param params_size. Input. The size of the interest parameters value (V).
  * @return 0 if there is no error.

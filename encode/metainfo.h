@@ -30,7 +30,7 @@ typedef struct ndn_metainfo {
 } ndn_metainfo_t;
 
 /**
- * Init an Metainfo structure.
+ * Init a Metainfo structure.
  * @param meta. Output. The Metainfo structure to be inited.
  */
 static inline void
@@ -42,7 +42,7 @@ ndn_metainfo_init(ndn_metainfo_t* meta)
 }
 
 /**
- * Init an Metainfo structure. This function will fo memory copy.
+ * Init a Metainfo structure. This function will do memory copy.
  * @param meta. Output. The Metainfo structure to be inited.
  * @param other. Output. The Metainfo structure to be copied from.
  */
@@ -62,7 +62,7 @@ int
 ndn_metainfo_tlv_decode(ndn_decoder_t* decoder, ndn_metainfo_t* meta);
 
 /**
- * Decode an Metainfo TLV block into an Metainfo.
+ * Decode a Metainfo TLV block into a ndn_metainfo_t.
  * @param meta. Output. The Metainfo to which the TLV block will be decoded.
  * @param block_value. Input. The Metainfo TLV block buffer.
  * @param block_size. Input. The size of the Metainfo TLV block buffer.

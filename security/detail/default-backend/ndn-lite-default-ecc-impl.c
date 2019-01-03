@@ -157,7 +157,8 @@ ndn_lite_default_ecc_dh(uint8_t* ecc_pub, uint8_t* ecc_prv,
                         uint8_t curve_type, uint8_t* output, uint32_t output_size)
 {
   if (output_size < 24)
-    return NDN_SEC_NOT_ENABLED_FEATURE;
+    return NDN_SEC_DISABLED_FEATURE;
+
   tc_uECC_Curve curve;
   switch(curve_type) {
     case NDN_ECDSA_CURVE_SECP256R1:
