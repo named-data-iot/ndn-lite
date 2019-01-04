@@ -96,7 +96,7 @@ int sign_on_basic_ecc_256_gen_kt(const uint8_t *pub_key, uint32_t pub_key_len,
                                  const uint8_t *pri_key, uint32_t pri_key_len,
                                  uint8_t *output_buf, uint32_t output_buf_len, 
                                  uint32_t *output_len) {
-  return sign_on_basic_nrf_crypto_gen_ecdh_shared_secret(pub_key, pub_key_len,
+  return sign_on_basic_gen_ecdh_shared_secret(pub_key, pub_key_len,
                                                          pri_key, pri_key_len,
                                                          uECC_secp256r1(),
                                                          output_buf, output_buf_len,

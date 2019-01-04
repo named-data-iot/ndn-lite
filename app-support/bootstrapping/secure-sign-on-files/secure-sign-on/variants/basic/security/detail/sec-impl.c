@@ -107,17 +107,18 @@ int sign_on_basic_gen_ecdh_shared_secret(const uint8_t *pub_key_raw, uint32_t pu
     APP_LOG("in sign_on_basic_gen_ecdh_shared_secret, unrecognized curve.\n");
     return SIGN_ON_BASIC_SEC_OP_FAILURE;
   }
-  uint32_t arbitrary_key_id = 32;
+  uint32_t arbitrary_key_id = 712;
   ndn_ecc_pub_t ecc_pub_key;
   ndn_ecc_prv_t ecc_prv_key;
   ndn_ecc_pub_init(&ecc_pub_key, pub_key_raw, pub_key_raw_len, ndn_ecc_curve, arbitrary_key_id);
   ndn_ecc_prv_init(&ecc_prv_key, pri_key_raw, pri_key_raw_len, ndn_ecc_curve, arbitrary_key_id);
   if (ndn_ecc_dh_shared_secret(&ecc_pub_key, &ecc_prv_key, 
                                ndn_ecc_curve, 
-                               output_buf, output_buf_len) == NDN_SUCCESS) {
-    return SIGN_ON_BASIC_SEC_OP_SUCCESS;
+                               output_buf, output_buf_len) != NDN_SUCCESS) {
+    return SIGN_ON_BASIC_SEC_OP_FAILURE;
   }
-  return SIGN_ON_BASIC_SEC_OP_FAILURE;
+  *output_len = pri_key_raw_len;
+  return SIGN_ON_BASIC_SEC_OP_SUCCESS;
 }
 
 int sign_on_basic_gen_ec_keypair(uint8_t *pub_key_buf, uint32_t pub_key_buf_len, 

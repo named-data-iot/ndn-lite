@@ -284,6 +284,9 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GENERATE_KT;
   }
 
+  APP_LOG_HEX("In sign-on-basic-client.c, result of gen_kt:", sign_on_basic_client->KT_p,
+              sign_on_basic_client->KT_len);
+
   //***************************************************//
 
   parseTlvValue(btstrp_rqst_rspns_tlv_val_buf_p, bootstrappingRequestTlvValueLength,
