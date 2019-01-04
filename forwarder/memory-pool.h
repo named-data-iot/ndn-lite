@@ -11,19 +11,42 @@
 
 #include "../encode/name.h"
 
-// This value should be larger than Data and Interest
+/*
+ * Memory pool manages temporary memory blocks to store Name.
+ * Memory blocks are allocated in fixed size.
+ */
+
+/**
+ * The size of memory block in bytes.
+ * This value should be equal to sizeof(Name)
+ */
 #define NDN_POOL_BLOCK_SIZE (sizeof(ndn_name_t))
+
+/**
+ * Maximum number of blocks can be allocated.
+ * When program statrts, memory pool will reserve
+ * (NDN_POOL_BLOCK_CNT * NDN_POOL_BLOCK_SIZE) bytes.
+ */
 #define NDN_POOL_BLOCK_CNT 4
 
-// Memory pool deals with temp large memory like Interest and Data.
-// Memory blocks are allocated in fixed size
-
+/**
+ * Initialize the memory pool.
+ * Reserve (NDN_POOL_BLOCK_CNT * NDN_POOL_BLOCK_SIZE) bytes.
+ */
 int
 ndn_memory_pool_init(void);
 
+/**
+ * Allocate a new block in size NDN_POOL_BLOCK_SIZE.
+ * @return A pointer to the allocated block.
+ */
 uint8_t*
 ndn_memory_pool_alloc(void);
 
+/**
+ * Free allocated memory block.
+ * @param ptr. Pointer to the block to be freed.
+ */
 int
 ndn_memory_pool_free(void* ptr);
 
