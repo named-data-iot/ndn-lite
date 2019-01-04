@@ -20,6 +20,9 @@
   #include "detail-ecc/ecc-microecc-impl.h"
 #endif
 
+#include "../../../../../../../../ndn-enums.h"
+#include "../../../../../../../../ndn-error-code.h"
+
 #include "../../../../../../../../security/ndn-lite-aes.h"
 #include "../../../../../../../../security/ndn-lite-ecc.h"
 #include "../../../../../../../../security/ndn-lite-hmac.h"
@@ -82,11 +85,44 @@ int sign_on_basic_gen_ec_keypair(uint8_t *pub_key_buf, uint32_t pub_key_buf_len,
                                  uint8_t *pri_key_buf, uint32_t pri_key_buf_len, 
                                  uint32_t *pri_key_output_len,
                                  uECC_Curve curve) {
-  #ifdef nRF52840
-  return sign_on_basic_nrf_crypto_gen_ec_keypair(pub_key_buf, pub_key_buf_len,
-                                                 pub_key_output_len,
-                                                 pri_key_buf, pri_key_buf_len,
-                                                 pri_key_output_len,
-                                                 curve);
-  #endif
+//  #ifdef nRF52840
+//  return sign_on_basic_nrf_crypto_gen_ec_keypair(pub_key_buf, pub_key_buf_len,
+//                                                 pub_key_output_len,
+//                                                 pri_key_buf, pri_key_buf_len,
+//                                                 pri_key_output_len,
+//                                                 curve);
+//  #endif
+
+    ndn_ecc_set_rng(ndn_lite_rng);
+
+    uint32_t arbitrary_key_id = 235;
+    int ndn_ecc_curve;
+    if (curve == uECC_secp256r1()) {
+      ndn_ecc_curve = NDN_ECDSA_CURVE_SECP256R1;
+    }
+    else {
+      printf("in sign_on_basic_gen_ec_keypair, unrecognized curve.\n");
+      return SIGN_ON_BASIC_SEC_OP_FAILURE;
+    }
+    ndn_ecc_pub_t ecc_pub_key;
+    ndn_ecc_prv_t ecc_prv_key;
+    if (ndn_ecc_make_key(&ecc_pub_key, &ecc_prv_key, ndn_ecc_curve, arbitrary_key_id) 
+        != NDN_SUCCESS) {
+      printf("in sign_on_basic_gen_ec_keypair, ndn_ecc_make_key failed.\n");
+      return SIGN_ON_BASIC_SEC_OP_FAILURE;
+    }
+
+    if (ecc_pub_key.key_size > pub_key_buf_len) {
+      return SIGN_ON_BASIC_SEC_OP_FAILURE;
+    }
+    if (ecc_prv_key.key_size > pri_key_buf_len) {
+      return SIGN_ON_BASIC_SEC_OP_FAILURE;
+    }
+
+    memcpy(pub_key_buf, ecc_pub_key.key_value, ecc_pub_key.key_size);
+    *pub_key_output_len = ecc_pub_key.key_size;
+    memcpy(pri_key_buf, ecc_prv_key.key_value, ecc_prv_key.key_size);
+    *pri_key_output_len = ecc_prv_key.key_size;
+
+    return SIGN_ON_BASIC_SEC_OP_SUCCESS;
 }

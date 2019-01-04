@@ -29,6 +29,17 @@ extern "C" {
  **/
 typedef int (*ndn_ECC_RNG_Function)(uint8_t* dest, unsigned size);
 
+/**
+ * Generate a random number. 
+ *
+ * YOU CANNOT USE THIS FUNCTION IF YOU ARE USING THE
+ * DEFAULT SECURITY BACKEND.
+ *
+ * @param dest Buffer to store random number.
+ * @param size Length of random number to generate.
+ */
+int ndn_lite_rng(uint8_t *dest, unsigned size);
+
 #ifdef __cplusplus
 }
 #endif

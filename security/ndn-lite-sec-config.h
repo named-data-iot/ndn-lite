@@ -22,6 +22,11 @@
 /**
  * The default software backend provided by NDN-Lite
  * CFLAG += -DNDN_LITE_SEC_BACKEND_DEFAULT
+ * 
+ * NOTE: If you select this backend, you will have to use an
+ *       rng function other than ndn_lite_rng; other backends, such as
+ *       NDN_LITE_SEC_BACKEND_NRF_CRYPTO, will automatically
+ *       assign a function to ndn_lite_rng.
  */
 #if defined NDN_LITE_SEC_BACKEND_DEFAULT
 
@@ -53,8 +58,8 @@
 #elif defined NDN_LITE_SEC_BACKEND_NRF_CRYPTO
 
   // SHA256 backend
-  #ifndef NDN_LITE_SEC_BACKEND_SHA256_NRF_CRYPTO
-    #define NDN_LITE_SEC_BACKEND_SHA256_NRF_CRYPTO
+  #ifndef NDN_LITE_SEC_BACKEND_SHA256_DEFAULT
+    #define NDN_LITE_SEC_BACKEND_SHA256_DEFAULT
   #endif
   // AES backend
   #ifndef NDN_LITE_SEC_BACKEND_AES_DEFAULT
