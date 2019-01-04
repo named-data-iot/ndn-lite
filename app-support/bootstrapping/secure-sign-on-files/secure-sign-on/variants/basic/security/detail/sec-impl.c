@@ -30,6 +30,16 @@
 #include "../../../../../../../../security/ndn-lite-rng.h"
 #include "../../../../../../../../security/ndn-lite-crypto-key.h"
 
+// this is a temporary function to convert a uECC curve to an ndn-lite
+// ecdsa curve enum; this really should not be here, because none of these function
+// interfaces should have a uECC dependency in them, but I will fix this later
+int get_ndn_lite_curve(uECC_Curve curve) {
+    if (curve == uECC_secp256r1()) {
+      return NDN_ECDSA_CURVE_SECP256R1;
+    }
+    return -1;
+}
+
 int sign_on_basic_gen_sha256_hash(const uint8_t *payload, uint32_t payload_len, uint8_t *output) {
   if (sha256(payload, payload_len, output) == NDN_SUCCESS) {
     return SIGN_ON_BASIC_SEC_OP_SUCCESS;
@@ -71,13 +81,31 @@ int sign_on_basic_gen_ecdh_shared_secret(const uint8_t *pub_key_raw, uint32_t pu
                                          uECC_Curve curve,
                                          uint8_t *output_buf, uint32_t output_buf_len, 
                                          uint32_t *output_len) {
-  #ifdef nRF52840
-  return sign_on_basic_nrf_crypto_gen_ecdh_shared_secret(pub_key_raw, pub_key_raw_len,
-                                                         pri_key_raw, pri_key_raw_len,
-                                                         curve,
-                                                         output_buf, output_buf_len,
-                                                         output_len);
-  #endif
+  ndn_ecc_set_rng(ndn_lite_rng);
+  int ndn_ecc_curve = get_ndn_lite_curve(curve);
+  if (ndn_ecc_curve == -1) {
+    printf("in sign_on_basic_gen_ecdh_shared_secret, unrecognized curve.\n");
+    return SIGN_ON_BASIC_SEC_OP_FAILURE;
+  }
+  uint32_t arbitrary_key_id = 32;
+  ndn_ecc_pub_t ecc_pub_key;
+  ndn_ecc_prv_t ecc_prv_key;
+  ndn_ecc_pub_init(&ecc_pub_key, pub_key_raw, pub_key_raw_len, ndn_ecc_curve, arbitrary_key_id);
+  ndn_ecc_prv_init(&ecc_prv_key, pri_key_raw, pri_key_raw_len, ndn_ecc_curve, arbitrary_key_id);
+  if (ndn_ecc_dh_shared_secret(&ecc_pub_key, &ecc_prv_key, 
+                               ndn_ecc_curve, 
+                               output_buf, output_buf_len) == NDN_SUCCESS) {
+    return SIGN_ON_BASIC_SEC_OP_SUCCESS;
+  }
+  return SIGN_ON_BASIC_SEC_OP_FAILURE;
+    
+//  #ifdef nRF52840
+//  return sign_on_basic_nrf_crypto_gen_ecdh_shared_secret(pub_key_raw, pub_key_raw_len,
+//                                                         pri_key_raw, pri_key_raw_len,
+//                                                         curve,
+//                                                         output_buf, output_buf_len,
+//                                                         output_len);
+//  #endif
 }
 
 int sign_on_basic_gen_ec_keypair(uint8_t *pub_key_buf, uint32_t pub_key_buf_len, 
@@ -85,22 +113,11 @@ int sign_on_basic_gen_ec_keypair(uint8_t *pub_key_buf, uint32_t pub_key_buf_len,
                                  uint8_t *pri_key_buf, uint32_t pri_key_buf_len, 
                                  uint32_t *pri_key_output_len,
                                  uECC_Curve curve) {
-//  #ifdef nRF52840
-//  return sign_on_basic_nrf_crypto_gen_ec_keypair(pub_key_buf, pub_key_buf_len,
-//                                                 pub_key_output_len,
-//                                                 pri_key_buf, pri_key_buf_len,
-//                                                 pri_key_output_len,
-//                                                 curve);
-//  #endif
-
     ndn_ecc_set_rng(ndn_lite_rng);
 
     uint32_t arbitrary_key_id = 235;
-    int ndn_ecc_curve;
-    if (curve == uECC_secp256r1()) {
-      ndn_ecc_curve = NDN_ECDSA_CURVE_SECP256R1;
-    }
-    else {
+    int ndn_ecc_curve = get_ndn_lite_curve(curve);
+    if (ndn_ecc_curve == -1) {
       printf("in sign_on_basic_gen_ec_keypair, unrecognized curve.\n");
       return SIGN_ON_BASIC_SEC_OP_FAILURE;
     }
