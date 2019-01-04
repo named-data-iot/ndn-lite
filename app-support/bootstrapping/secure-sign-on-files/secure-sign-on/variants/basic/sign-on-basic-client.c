@@ -159,6 +159,9 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_FAILED_TO_GENERATE_SIG;
   }
 
+  APP_LOG_HEX("Value of generated bootstrapping request signature", btstrpRqstSigBuf,
+   encodedSignatureSize);
+
   //**************************************//
 
   // add the signature to the packet

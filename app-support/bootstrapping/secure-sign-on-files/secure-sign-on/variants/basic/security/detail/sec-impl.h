@@ -30,7 +30,7 @@ int sign_on_basic_vrfy_hmac_sha256_sig(const uint8_t *payload, uint32_t payload_
                                                   const uint8_t *sig, uint32_t sig_len,
                                                   const uint8_t *key, uint32_t key_len);
 
-int sign_on_basic_gen_sha256_ecdsa_sig(const uint8_t *pri_key_raw,
+int sign_on_basic_gen_sha256_ecdsa_sig(const uint8_t *pri_key_raw, uECC_Curve curve,
                                                 const uint8_t *payload, uint32_t payload_len,
                                                 uint8_t *output_buf, uint32_t output_buf_len, 
                                                 uint32_t *output_len);

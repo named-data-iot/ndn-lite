@@ -95,8 +95,8 @@ typedef int (*sign_on_basic_sec_gen_kt)(const uint8_t *N2_pub_key, uint32_t N2_p
  *
  */
 typedef int (*sign_on_basic_sec_gen_btstrp_rqst_sig)(const uint8_t *KS_pri_p, const uint8_t *payload, 
-                                                   uint32_t payload_len, uint8_t *output_buf,  
-                                                   uint32_t output_buf_len, uint32_t *output_len);
+                                                     uint32_t payload_len, uint8_t *output_buf,  
+                                                     uint32_t output_buf_len, uint32_t *output_len);
 
 /**@brief Generic function interface for verifying signature of bootstrapping request response. Specific
  *          details regarding the signature of the bootstrapping request are described in the sign on

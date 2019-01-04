@@ -48,25 +48,37 @@ int sign_on_basic_ecc_256_vrfy_cert_rqst_rspns_sig(const uint8_t *payload, uint3
                                                            key, key_len);
 }
 
-int sign_on_basic_ecc_256_gen_cert_rqst_sig(const uint8_t *pri_key, const uint8_t *payload, 
-                                                   uint32_t payload_len, uint8_t *output_buf,  
-                                                   uint32_t output_buf_len, uint32_t *output_len) {
-  return sign_on_basic_gen_sha256_ecdsa_sig(pri_key, payload, payload_len, output_buf,
-                                                    output_buf_len, output_len);
+int sign_on_basic_ecc_256_gen_cert_rqst_sig(const uint8_t *pri_key,
+                                            const uint8_t *payload, uint32_t payload_len,
+                                            uint8_t *output_buf, uint32_t output_buf_len,
+                                            uint32_t *output_len) {
+  return sign_on_basic_gen_sha256_ecdsa_sig(
+                     pri_key, 
+                     uECC_secp256r1(),
+                     payload, payload_len, output_buf,
+                     output_buf_len, output_len);
 }
 
-int sign_on_basic_ecc_256_gen_btstrp_rqst_sig(const uint8_t *pri_key, const uint8_t *payload, 
-                                                   uint32_t payload_len, uint8_t *output_buf,  
-                                                   uint32_t output_buf_len, uint32_t *output_len) {
-  return sign_on_basic_gen_sha256_ecdsa_sig(pri_key, payload, payload_len, output_buf,
-                                                    output_buf_len, output_len);
+int sign_on_basic_ecc_256_gen_btstrp_rqst_sig(const uint8_t *pri_key,
+                                              const uint8_t *payload, uint32_t payload_len,
+                                              uint8_t *output_buf, uint32_t output_buf_len,
+                                              uint32_t *output_len) {
+  return sign_on_basic_gen_sha256_ecdsa_sig(
+                     pri_key, 
+                     uECC_secp256r1(),
+                     payload, payload_len, output_buf,
+                     output_buf_len, output_len);
 }
 
-int sign_on_basic_ecc_256_gen_fin_msg_sig(const uint8_t *pri_key, const uint8_t *payload, 
-                                                   uint32_t payload_len, uint8_t *output_buf,  
-                                                   uint32_t output_buf_len, uint32_t *output_len) {
-  return sign_on_basic_gen_sha256_ecdsa_sig(pri_key, payload, payload_len, output_buf,
-                                                    output_buf_len, output_len);
+int sign_on_basic_ecc_256_gen_fin_msg_sig(const uint8_t *pri_key,
+                                          const uint8_t *payload, uint32_t payload_len,
+                                          uint8_t *output_buf, uint32_t output_buf_len,
+                                          uint32_t *output_len) {
+  return sign_on_basic_gen_sha256_ecdsa_sig(
+                     pri_key, 
+                     uECC_secp256r1(), 
+                     payload, payload_len, output_buf,
+                     output_buf_len, output_len);
 }
 
 int sign_on_basic_ecc_256_gen_n1_keypair(uint8_t *pub_key_buf, uint32_t pub_key_buf_len, 

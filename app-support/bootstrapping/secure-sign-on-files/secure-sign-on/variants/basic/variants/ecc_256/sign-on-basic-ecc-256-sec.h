@@ -54,9 +54,10 @@ int sign_on_basic_ecc_256_vrfy_cert_rqst_rspns_sig(const uint8_t *payload, uint3
  *                       micro-ecc library.
  *
  */
-int sign_on_basic_ecc_256_gen_cert_rqst_sig(const uint8_t *pri_key, const uint8_t *payload, 
-                                            uint32_t payload_len, uint8_t *output_buf,  
-                                             uint32_t output_buf_len, uint32_t *output_len);
+int sign_on_basic_ecc_256_gen_cert_rqst_sig(const uint8_t *pri_key,
+                                            const uint8_t *payload, uint32_t payload_len,
+                                            uint8_t *output_buf, uint32_t output_buf_len,
+                                            uint32_t *output_len);
 
 /**@brief The bootstrapping request signature should be an ecdsa sha256 signature.
  *
@@ -64,18 +65,20 @@ int sign_on_basic_ecc_256_gen_cert_rqst_sig(const uint8_t *pri_key, const uint8_
  *                       micro-ecc library.
  *          
  */
-int sign_on_basic_ecc_256_gen_btstrp_rqst_sig(const uint8_t *pri_key, const uint8_t *payload, 
-                                              uint32_t payload_len, uint8_t *output_buf,  
-                                              uint32_t output_buf_len, uint32_t *output_len);
+int sign_on_basic_ecc_256_gen_btstrp_rqst_sig(const uint8_t *pri_key,
+                                              const uint8_t *payload, uint32_t payload_len,
+                                              uint8_t *output_buf, uint32_t output_buf_len,
+                                              uint32_t *output_len);
 
 /**@brief The finish message signature should be an ecdsa sha256 signature.
  *
  * @param[in] pri_key  The format of pri_key should be the same format used and generated in the 
  *                       micro-ecc library.
  */
-int sign_on_basic_ecc_256_gen_fin_msg_sig(const uint8_t *pri_key, const uint8_t *payload, 
-                                          uint32_t payload_len, uint8_t *output_buf,  
-                                          uint32_t output_buf_len, uint32_t *output_len);
+int sign_on_basic_ecc_256_gen_fin_msg_sig(const uint8_t *pri_key,
+                                          const uint8_t *payload, uint32_t payload_len,
+                                          uint8_t *output_buf, uint32_t output_buf_len,
+                                          uint32_t *output_len);
 
 /**@brief The N1 key pair should be a pair of ecc keys, based on the "secp256r1" curve.
  *

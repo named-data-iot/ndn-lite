@@ -8,6 +8,7 @@
 
 #include "ndn-lite-ecc.h"
 #include "ndn-lite-sec-config.h"
+#include "ndn-lite-sec-utils.h"
 
 void
 ndn_ecc_set_rng(ndn_ECC_RNG_Function rng)
@@ -29,6 +30,27 @@ ndn_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
                                      prv_key_value, prv_key_size,
                                      ecdsa_type, output_used_size);
 #endif
+}
+
+int
+ndn_ecdsa_asn_encode_raw_sig(const uint8_t *sig_val, uint32_t sig_size, 
+                             uint32_t sig_buf_max_size, uint32_t *encoded_sig_size,
+                             uint8_t ecdsa_type) {
+  if (sig_size >= sig_buf_max_size) {
+    return NDN_SEC_WRONG_SIG_SIZE;
+  }
+  uECC_Curve curve;
+  switch (ecdsa_type) {
+  case NDN_ECDSA_CURVE_SECP256R1:
+    curve = uECC_secp256r1();
+    break;
+  default:
+    return NDN_SEC_UNSUPPORT_CRYPTO_ALGO;
+  }
+  if (!encodeSignatureBits(sig_val, encoded_sig_size, curve)) {
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
+  }
+  return NDN_SUCCESS;
 }
 
 int
