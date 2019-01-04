@@ -28,13 +28,10 @@
 #include "../../../../../../../../security/ndn-lite-crypto-key.h"
 
 int sign_on_basic_gen_sha256_hash(const uint8_t *payload, uint32_t payload_len, uint8_t *output) {
-  #ifdef nRF52840
-    return sign_on_basic_nrf_crypto_gen_sha256_hash(payload, payload_len, output);
-  #endif
-//  if (sha256(payload, payload_len, output) == NDN_SUCCESS) {
-//    return SIGN_ON_BASIC_SEC_OP_SUCCESS;
-//  }
-//  return SIGN_ON_BASIC_SEC_OP_FAILURE;
+  if (sha256(payload, payload_len, output) == NDN_SUCCESS) {
+    return SIGN_ON_BASIC_SEC_OP_SUCCESS;
+  }
+  return SIGN_ON_BASIC_SEC_OP_FAILURE;
 }
 
 int sign_on_basic_decrypt_aes_cbc_pkcs5pad(uint8_t *key, uint32_t key_len, 
