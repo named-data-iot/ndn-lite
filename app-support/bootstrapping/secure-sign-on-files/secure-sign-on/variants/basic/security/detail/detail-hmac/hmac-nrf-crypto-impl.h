@@ -29,8 +29,8 @@
 
 //**************************************//
 
-bool sign_on_basic_nrf_crypto_vrfy_hmac_sha256_sig(const uint8_t *payload, uint16_t payload_len,
-                               const uint8_t *sig, uint16_t sig_len,
-                               const uint8_t *key, uint16_t key_len);
+bool sign_on_basic_nrf_crypto_vrfy_hmac_sha256_sig(const uint8_t *payload, uint32_t payload_len,
+                               const uint8_t *sig, uint32_t sig_len,
+                               const uint8_t *key, uint32_t key_len);
 
 #endif // HMAC_NRF_CRYPTO_IMPL_H

@@ -3,12 +3,22 @@
 
 #include <stddef.h>
 
+#include "../ndn-error-code.h"
+
+#include "../adaptation/ndn-nrf-ble-adaptation/logger.h"
+
 int
 ndn_const_time_memcmp(const uint8_t* a, const uint8_t* b, uint32_t size)
 {
-  unsigned char result = 0;
+
+  APP_LOG_HEX("Value of a in ndn_const_time_memcmp:", a, size);
+  APP_LOG_HEX("Value of b in ndn_const_time_memcmp:", b, size);
+
+  unsigned char result = 0; /* will be 0 if equal, nonzero otherwise */
   for (size_t i = 0; i < size; i++) {
     result |= a[i] ^ b[i];
   }
-  return result; /* returns 0 if equal, nonzero otherwise */
+  if (result == 0)
+    return NDN_SUCCESS;
+  return NDN_SEC_CRYPTO_ALGO_FAILURE;
 }

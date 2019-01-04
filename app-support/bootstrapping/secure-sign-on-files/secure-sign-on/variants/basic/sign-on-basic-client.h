@@ -28,7 +28,7 @@
  * @return Returns SEC_OP_SUCCESS on success, SEC_OP_FAILURE on failure.
  *
  */
-typedef int (*sign_on_basic_sec_gen_sha256_hash)(const uint8_t *payload, uint16_t payload_len, 
+typedef int (*sign_on_basic_sec_gen_sha256_hash)(const uint8_t *payload, uint32_t payload_len, 
                                                      uint8_t *output);
 
 /**@brief Generic function interface for generating the N1 keypair. Specific details regarding the keys
@@ -48,10 +48,10 @@ typedef int (*sign_on_basic_sec_gen_sha256_hash)(const uint8_t *payload, uint16_
  * @return Returns SEC_OP_SUCCESS on success, SEC_OP_FAILURE on failure.
  *
  */
-typedef int (*sign_on_basic_sec_gen_n1_keypair)(uint8_t *pub_key_buf, uint16_t pub_key_buf_len, 
-                                                 uint16_t *pub_key_output_len,
-                                                 uint8_t *pri_key_buf, uint16_t pri_key_buf_len, 
-                                                 uint16_t *pri_key_output_len);
+typedef int (*sign_on_basic_sec_gen_n1_keypair)(uint8_t *pub_key_buf, uint32_t pub_key_buf_len, 
+                                                 uint32_t *pub_key_output_len,
+                                                 uint8_t *pri_key_buf, uint32_t pri_key_buf_len, 
+                                                 uint32_t *pri_key_output_len);
 
 
 /**@brief Generic function interface for generating KT. Specific details regarding the keys that are
@@ -69,10 +69,10 @@ typedef int (*sign_on_basic_sec_gen_n1_keypair)(uint8_t *pub_key_buf, uint16_t p
  * @return Returns SEC_OP_SUCCESS on success, SEC_OP_FAILURE on failure.
  *
  */
-typedef int (*sign_on_basic_sec_gen_kt)(const uint8_t *N2_pub_key, uint16_t N2_pub_key_len,
-                                                    const uint8_t *N1_pri_key, uint16_t N1_pri_key_len,
-                                                    uint8_t *output_buf, uint16_t output_buf_len, 
-                                                    uint16_t *output_len);
+typedef int (*sign_on_basic_sec_gen_kt)(const uint8_t *N2_pub_key, uint32_t N2_pub_key_len,
+                                                    const uint8_t *N1_pri_key, uint32_t N1_pri_key_len,
+                                                    uint8_t *output_buf, uint32_t output_buf_len, 
+                                                    uint32_t *output_len);
 
 /**@brief Generic function interface for generating signature of bootstrapping request. Specific details
  *          regarding the signature of the bootstrapping request are described in the sign on basic
@@ -95,8 +95,8 @@ typedef int (*sign_on_basic_sec_gen_kt)(const uint8_t *N2_pub_key, uint16_t N2_p
  *
  */
 typedef int (*sign_on_basic_sec_gen_btstrp_rqst_sig)(const uint8_t *KS_pri_p, const uint8_t *payload, 
-                                                   uint16_t payload_len, uint8_t *output_buf,  
-                                                   uint16_t output_buf_len, uint16_t *output_len);
+                                                   uint32_t payload_len, uint8_t *output_buf,  
+                                                   uint32_t output_buf_len, uint32_t *output_len);
 
 /**@brief Generic function interface for verifying signature of bootstrapping request response. Specific
  *          details regarding the signature of the bootstrapping request are described in the sign on
@@ -118,10 +118,10 @@ typedef int (*sign_on_basic_sec_gen_btstrp_rqst_sig)(const uint8_t *KS_pri_p, co
  * @return Returns SEC_OP_SUCCESS on success, SEC_OP_FAILURE on failure.
  *
  */
-typedef int (*sign_on_basic_sec_vrfy_btstrp_rqst_rspns_sig)(const uint8_t *payload, uint16_t payload_len,
-                                                                const uint8_t *sig, uint16_t sig_len,
+typedef int (*sign_on_basic_sec_vrfy_btstrp_rqst_rspns_sig)(const uint8_t *payload, uint32_t payload_len,
+                                                                const uint8_t *sig, uint32_t sig_len,
                                                                 const uint8_t *secure_sign_on_code_p, 
-                                                                uint16_t secure_sign_on_code_len);
+                                                                uint32_t secure_sign_on_code_len);
 
 /**@brief Generic function interface for generating signature of certificate request. Specific details
  *          regarding the signatuer of the certificate request are described in the sign on basic
@@ -144,8 +144,8 @@ typedef int (*sign_on_basic_sec_vrfy_btstrp_rqst_rspns_sig)(const uint8_t *paylo
  *
  */
 typedef int (*sign_on_basic_sec_gen_cert_rqst_sig)(const uint8_t *KS_pri_p, const uint8_t *payload, 
-                                                   uint16_t payload_len, uint8_t *output_buf,  
-                                                   uint16_t output_buf_len, uint16_t *output_len);
+                                                   uint32_t payload_len, uint8_t *output_buf,  
+                                                   uint32_t output_buf_len, uint32_t *output_len);
 
 /**@brief Generic function interface for verifying signature of certificate request response. Specific
  *          details regarding the certificate request response signature are described in the sign on
@@ -166,9 +166,9 @@ typedef int (*sign_on_basic_sec_gen_cert_rqst_sig)(const uint8_t *KS_pri_p, cons
  * @return Returns SEC_OP_SUCCESS on success, SEC_OP_FAILURE on failure.
  *
  */
-typedef int (*sign_on_basic_sec_vrfy_cert_rqst_rspns_sig)(const uint8_t *payload, uint16_t payload_len,
-                                                                const uint8_t *sig, uint16_t sig_len,
-                                                                const uint8_t *KT_p, uint16_t KT_len);
+typedef int (*sign_on_basic_sec_vrfy_cert_rqst_rspns_sig)(const uint8_t *payload, uint32_t payload_len,
+                                                                const uint8_t *sig, uint32_t sig_len,
+                                                                const uint8_t *KT_p, uint32_t KT_len);
 
 /**@brief Generic function interface for decrypting the encrypted KD private key in the certificate request 
  *          response. Specific details regarding the encrypted KD private key are described in the sign on
@@ -183,11 +183,11 @@ typedef int (*sign_on_basic_sec_vrfy_cert_rqst_rspns_sig)(const uint8_t *payload
  *
  * @return Returns SEC_OP_SUCCESS on success, SEC_OP_FAILURE on failure.
  */
-typedef int (*sign_on_basic_sec_decrypt_kd_pri)(uint8_t *KT_p, uint16_t KT_len, 
+typedef int (*sign_on_basic_sec_decrypt_kd_pri)(uint8_t *KT_p, uint32_t KT_len, 
                                                               const uint8_t *encrypted_kd_pri, 
-                                                              uint16_t encrypted_kd_pri_len,
+                                                              uint32_t encrypted_kd_pri_len,
                                                               uint8_t *decrypted_kd_pri, 
-                                                              uint16_t *decrypted_kd_pri_len);
+                                                              uint32_t *decrypted_kd_pri_len);
 
 /**@brief Generic function interface for generating signature of finish message. Specific details regarding
  *          the signature of the finish message are described in the sign on basic variant implementation.
@@ -209,8 +209,8 @@ typedef int (*sign_on_basic_sec_decrypt_kd_pri)(uint8_t *KT_p, uint16_t KT_len,
  *
  */
 typedef int (*sign_on_basic_sec_gen_fin_msg_sig)(const uint8_t *KS_pri_p, const uint8_t *payload, 
-                                                   uint16_t payload_len, uint8_t *output_buf,  
-                                                   uint16_t output_buf_len, uint16_t *output_len);
+                                                   uint32_t payload_len, uint8_t *output_buf,  
+                                                   uint32_t output_buf_len, uint32_t *output_len);
 
 /**@brief Structure for holding abstract functions that should be implemented by Sign-on basic variants.
  *          All functions here return SEC_OP_SUCCESS on success and SEC_OP_FAILURE on failure.
@@ -312,40 +312,40 @@ struct sign_on_basic_sec_intf {
 struct sign_on_basic_client_t {
 
   uint8_t KS_pub_p[SIGN_ON_BASIC_CLIENT_KS_PUB_MAX_LENGTH];
-  uint16_t KS_pub_len;
+  uint32_t KS_pub_len;
 
   uint8_t KS_pri_p[SIGN_ON_BASIC_CLIENT_KS_PRI_MAX_LENGTH];
-  uint16_t KS_pri_len;
+  uint32_t KS_pri_len;
 
   uint8_t device_identifier_p[SIGN_ON_BASIC_CLIENT_DEVICE_IDENTIFIER_MAX_LENGTH];
-  uint16_t device_identifier_len;
+  uint32_t device_identifier_len;
 
   uint8_t device_capabilities_p[SIGN_ON_BASIC_CLIENT_DEVICE_CAPABILITIES_MAX_LENGTH];
-  uint16_t device_capabilities_len;
+  uint32_t device_capabilities_len;
 
   uint8_t secure_sign_on_code_p[SIGN_ON_BASIC_CLIENT_SECURE_SIGN_ON_CODE_MAX_LENGTH];
-  uint16_t secure_sign_on_code_len;
+  uint32_t secure_sign_on_code_len;
 
   uint8_t KT_p[SIGN_ON_BASIC_CLIENT_KT_MAX_LENGTH];
-  uint16_t KT_len;
+  uint32_t KT_len;
 
   uint8_t N1_pub_p[SIGN_ON_BASIC_CLIENT_N1_PUB_MAX_LENGTH];
-  uint16_t N1_pub_len;
+  uint32_t N1_pub_len;
 
   uint8_t N1_pri_p[SIGN_ON_BASIC_CLIENT_N1_PRI_MAX_LENGTH];
-  uint16_t N1_pri_len;
+  uint32_t N1_pri_len;
 
   uint8_t N2_pub_p[SIGN_ON_BASIC_CLIENT_N2_PUB_MAX_LENGTH];
-  uint16_t N2_pub_len;
+  uint32_t N2_pub_len;
 
   uint8_t trust_anchor_cert_p[SIGN_ON_BASIC_CLIENT_TRUST_ANCHOR_CERT_MAX_LENGTH];
-  uint16_t trust_anchor_cert_len;
+  uint32_t trust_anchor_cert_len;
 
   uint8_t KD_pub_cert_p[SIGN_ON_BASIC_CLIENT_KD_PUB_CERT_MAX_LENGTH];
-  uint16_t KD_pub_cert_len;
+  uint32_t KD_pub_cert_len;
 
   uint8_t KD_pri_p[SIGN_ON_BASIC_CLIENT_KD_PRI_MAX_LENGTH];
-  uint16_t KD_pri_len;
+  uint32_t KD_pri_len;
 
   uint8_t status;
 
@@ -378,11 +378,11 @@ struct sign_on_basic_client_t {
 int sign_on_basic_client_init(
                               uint8_t variant,
                               struct sign_on_basic_client_t *sign_on_basic_client,
-                              const uint8_t *device_identifier_p, uint16_t device_identifier_len,
-                              const uint8_t *device_capabilities_p, uint16_t device_capabilities_len,
+                              const uint8_t *device_identifier_p, uint32_t device_identifier_len,
+                              const uint8_t *device_capabilities_p, uint32_t device_capabilities_len,
                               const uint8_t *secure_sign_on_code_p,
-                              const uint8_t *KS_pub_p, uint16_t KS_pub_len,
-                              const uint8_t *KS_pri_p, uint16_t KS_pri_len);
+                              const uint8_t *KS_pub_p, uint32_t KS_pub_len,
+                              const uint8_t *KS_pri_p, uint32_t KS_pri_len);
 
 /**@brief Construct a bootstrapping request.
  *        For a given sign on exchange:
@@ -397,8 +397,8 @@ int sign_on_basic_client_init(
  *
  * @return      Returns NDN_SUCCESS upon success.
  */
-int cnstrct_btstrp_rqst(uint8_t *buf_p, uint16_t buf_len,
-                              uint16_t *output_len_p,
+int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
+                              uint32_t *output_len_p,
                               struct sign_on_basic_client_t *sign_on_basic_client);
 
 /**@brief Process a bootstrapping request response. 
@@ -416,7 +416,7 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint16_t buf_len,
  * @return      Returns NDN_SUCCESS upon success.
  */
 int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
-                                    uint16_t btstrp_rqst_rspns_buf_len,
+                                    uint32_t btstrp_rqst_rspns_buf_len,
                                     struct sign_on_basic_client_t *sign_on_basic_client);
 
 /**@brief Construct a certificate request.
@@ -432,7 +432,7 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
  *
  * @return      Returns NDN_SUCCESS upon success.
  */
-int cnstrct_cert_rqst(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
+int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
                             struct sign_on_basic_client_t *sign_on_basic_client);
 
 /**@brief Process a certificate request response. 
@@ -450,7 +450,7 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
  * @return      Returns NDN_SUCCESS upon success.
  */
 int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
-                                  uint16_t cert_rqst_rspns_buf_len,
+                                  uint32_t cert_rqst_rspns_buf_len,
                                   struct sign_on_basic_client_t *sign_on_basic_client);
 
 /**@brief Construct a sign-on basic finish message (this lets the controller know sign-on was completed
@@ -468,7 +468,7 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
  *
  * @return      Returns NDN_SUCCESS upon success.
  */
-int cnstrct_fin_msg(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
+int cnstrct_fin_msg(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
                             struct sign_on_basic_client_t *sign_on_basic_client);
 
 #endif // SIGN_ON_BASIC_CLIENT_H

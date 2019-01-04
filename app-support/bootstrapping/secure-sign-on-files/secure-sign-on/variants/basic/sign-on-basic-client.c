@@ -27,11 +27,11 @@
 int sign_on_basic_client_init(
     uint8_t variant,
     struct sign_on_basic_client_t *sign_on_basic_client,
-    const uint8_t *device_identifier_p, uint16_t device_identifier_len,
-    const uint8_t *device_capabilities_p, uint16_t device_capabilities_len,
+    const uint8_t *device_identifier_p, uint32_t device_identifier_len,
+    const uint8_t *device_capabilities_p, uint32_t device_capabilities_len,
     const uint8_t *secure_sign_on_code_p,
-    const uint8_t *KS_pub_p, uint16_t KS_pub_len,
-    const uint8_t *KS_pri_p, uint16_t KS_pri_len) {
+    const uint8_t *KS_pub_p, uint32_t KS_pub_len,
+    const uint8_t *KS_pri_p, uint32_t KS_pri_len) {
 
   APP_LOG_HEX("In sign_on_basic_client_init, value of device identifier:", device_identifier_p,
               device_identifier_len);
@@ -74,8 +74,8 @@ int sign_on_basic_client_init(
   return NDN_SUCCESS;
 }
 
-int cnstrct_btstrp_rqst(uint8_t *buf_p, uint16_t buf_len,
-    uint16_t *output_len_p,
+int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
+    uint32_t *output_len_p,
     struct sign_on_basic_client_t *sign_on_basic_client) {
 
   uint8_t digest_buffer[SIGN_ON_BASIC_SHA256_HASH_SIZE];
@@ -137,16 +137,16 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint16_t buf_len,
   // special part of construction: calculate signature over all bytes of bootstrapping request besides the signature
   // tlv block, and append it to the end
 
-  uint16_t signatureSize = 0;
-  uint16_t offsetForSignatureEncoding = 8;
-  uint16_t encodedSignatureSize;
+  uint32_t signatureSize = 0;
+  uint32_t offsetForSignatureEncoding = 8;
+  uint32_t encodedSignatureSize;
 
   // generate bootstrapping request signature
   //**************************************//
 
-  uint16_t sig_payload_end_offset = currentOffset;
+  uint32_t sig_payload_end_offset = currentOffset;
   // need to subtract TLV_TYPE_AND_LENGTH_SIZE to account for fact that packet header is not included in signature
-  uint16_t sig_payload_size = sig_payload_end_offset - SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
+  uint32_t sig_payload_size = sig_payload_end_offset - SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
   // need to add TLV_TYPE_AND_LENGTH_SIZE to buf_p to account for fact that packet header is not included in signature
   uint8_t *sig_payload_begin = buf_p + SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
 
@@ -190,7 +190,7 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint16_t buf_len,
 }
 
 int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
-    uint16_t btstrp_rqst_rspns_buf_len,
+    uint32_t btstrp_rqst_rspns_buf_len,
     struct sign_on_basic_client_t *sign_on_basic_client) {
 
   APP_LOG("Process bootstrapping request response got called.\n");
@@ -199,16 +199,16 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
   // so that no internal state of the sign on basic client object is modified until after the whole
   // message has been processed successfully
   const uint8_t *N2_pub_p;
-  uint16_t N2_pub_len;
+  uint32_t N2_pub_len;
   const uint8_t *trust_anchor_p;
-  uint16_t trust_anchor_len;
+  uint32_t trust_anchor_len;
 
   APP_LOG("Length of bootstrapping request tlv block: %d\n", btstrp_rqst_rspns_buf_len);
   APP_LOG_HEX("Contents of bootstrapping request response:", btstrp_rqst_rspns_buf_p, btstrp_rqst_rspns_buf_len);
 
   enum ParseTlvValueResultCode parseResult = PARSE_TLV_VALUE_SUCCESS;
-  uint16_t bootstrappingRequestTlvValueLength;
-  uint16_t bootstrappingRequestTlvValueOffset;
+  uint32_t bootstrappingRequestTlvValueLength;
+  uint32_t bootstrappingRequestTlvValueOffset;
 
   if (parseTlvValue(btstrp_rqst_rspns_buf_p, btstrp_rqst_rspns_buf_len, 
                     SECURE_SIGN_ON_BOOTSTRAPPING_REQUEST_RESPONSE_TLV_TYPE,
@@ -223,8 +223,8 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
       bootstrappingRequestTlvValueLength);
 
   const uint8_t *btstrp_rqst_rspns_tlv_val_buf_p = btstrp_rqst_rspns_buf_p + bootstrappingRequestTlvValueOffset;
-  uint16_t currentTlvValueLength;
-  uint16_t currentTlvValueOffset;
+  uint32_t currentTlvValueLength;
+  uint32_t currentTlvValueOffset;
 
   // first, get the signature and verify it
   // *** //
@@ -246,9 +246,9 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
       bootstrappingRequestTlvValueLength - currentTlvValueLength - SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE);
 
   const uint8_t *sig_begin = btstrp_rqst_rspns_tlv_val_buf_p + currentTlvValueOffset;
-  uint16_t sig_len = currentTlvValueLength;
+  uint32_t sig_len = currentTlvValueLength;
   const uint8_t *sig_payload_begin = btstrp_rqst_rspns_tlv_val_buf_p;
-  uint16_t sig_payload_len = bootstrappingRequestTlvValueLength - currentTlvValueLength - SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
+  uint32_t sig_payload_len = bootstrappingRequestTlvValueLength - currentTlvValueLength - SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
 
   if (!sign_on_basic_client->sec_intf.vrfy_btstrp_rqst_rspns_sig(
           sig_payload_begin, sig_payload_len,
@@ -307,7 +307,7 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
   return NDN_SUCCESS;
 }
 
-int cnstrct_cert_rqst(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
+int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
     struct sign_on_basic_client_t *sign_on_basic_client) {
 
   APP_LOG("Construct certificate request got called.\n");
@@ -361,7 +361,7 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
 
   //**************************************//
 
-  uint16_t N2_pub_digest_len = SIGN_ON_BASIC_SHA256_HASH_SIZE;
+  uint32_t N2_pub_digest_len = SIGN_ON_BASIC_SHA256_HASH_SIZE;
 
   buf_p[currentOffset] = SECURE_SIGN_ON_N2_PUB_DIGEST_TLV_TYPE;
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
@@ -380,7 +380,7 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
 
   //**************************************//
 
-  uint16_t trust_anchor_cert_digest_len = SIGN_ON_BASIC_SHA256_HASH_SIZE;
+  uint32_t trust_anchor_cert_digest_len = SIGN_ON_BASIC_SHA256_HASH_SIZE;
 
   buf_p[currentOffset] = SECURE_SIGN_ON_TRUST_ANCHOR_CERTIFICATE_DIGEST_TLV_TYPE;
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
@@ -392,17 +392,17 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
   // special part of construction: calculate signature over all bytes of certificate request besides the signature
   // tlv block, and append it to the end
 
-  uint16_t signatureSize = 0;
-  uint16_t sig_payload_digest_len = SIGN_ON_BASIC_SHA256_HASH_SIZE;
-  uint16_t offsetForSignatureEncoding = 8;
-  uint16_t encodedSignatureSize;
+  uint32_t signatureSize = 0;
+  uint32_t sig_payload_digest_len = SIGN_ON_BASIC_SHA256_HASH_SIZE;
+  uint32_t offsetForSignatureEncoding = 8;
+  uint32_t encodedSignatureSize;
 
   // generate signature of bootstrapping request
   //**************************************//
 
-  uint16_t sig_payload_end_offset = currentOffset;
+  uint32_t sig_payload_end_offset = currentOffset;
   // need to subtract TLV_TYPE_AND_LENGTH_SIZE to account for fact that packet header is not included in signature
-  uint16_t sig_payload_size = sig_payload_end_offset - SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
+  uint32_t sig_payload_size = sig_payload_end_offset - SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
   // need to add TLV_TYPE_AND_LENGTH_SIZE to buf_p to account for fact that packet header is not included in signature
   uint8_t *sig_payload_begin = buf_p + SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
 
@@ -447,22 +447,22 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
 }
 
 int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
-    uint16_t cert_rqst_rspns_buf_len,
+    uint32_t cert_rqst_rspns_buf_len,
     struct sign_on_basic_client_t *sign_on_basic_client) {
 
   // declare pointers to KD pri decrypted and KD pub certificate ahead of time,
   // so that modification of internal state of sign on basic client isn't done until after
   // entire certificate request response message is successfully processed
   const uint8_t *KD_pri_decrypted_p;
-  uint16_t KD_pri_decrypted_len;
+  uint32_t KD_pri_decrypted_len;
   const uint8_t *KD_pub_cert_p;
-  uint16_t KD_pub_cert_len;
+  uint32_t KD_pub_cert_len;
 
   APP_LOG("Process certificate request response got called.\n");
 
   enum ParseTlvValueResultCode parseResult = PARSE_TLV_VALUE_SUCCESS;
-  uint16_t certificateRequestTlvValueLength;
-  uint16_t certificateRequestTlvValueOffset;
+  uint32_t certificateRequestTlvValueLength;
+  uint32_t certificateRequestTlvValueOffset;
 
   if (parseTlvValue(cert_rqst_rspns_buf_p, cert_rqst_rspns_buf_len, 
                     SECURE_SIGN_ON_CERTIFICATE_REQUEST_RESPONSE_TLV_TYPE,
@@ -477,8 +477,8 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
       certificateRequestTlvValueLength);
 
   const uint8_t *cert_rqst_rspns_tlv_val_buf_p = cert_rqst_rspns_buf_p + certificateRequestTlvValueOffset;
-  uint16_t currentTlvValueLength;
-  uint16_t currentTlvValueOffset;
+  uint32_t currentTlvValueLength;
+  uint32_t currentTlvValueOffset;
 
   // verify signature of the certificate request response
   //***************************************************************************//
@@ -493,9 +493,9 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
       currentTlvValueLength);
 
   const uint8_t *sig_begin = cert_rqst_rspns_tlv_val_buf_p + currentTlvValueOffset;
-  uint16_t sig_len = currentTlvValueLength;
+  uint32_t sig_len = currentTlvValueLength;
   const uint8_t *sig_payload_begin = cert_rqst_rspns_tlv_val_buf_p;
-  uint16_t sig_payload_len = certificateRequestTlvValueLength - currentTlvValueLength - SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
+  uint32_t sig_payload_len = certificateRequestTlvValueLength - currentTlvValueLength - SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
 
   APP_LOG_HEX("Bytes over which cert request response signature was calculated:",
       sig_payload_begin, sig_payload_len);
@@ -519,7 +519,7 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
   APP_LOG("Kd pri encrypted tlv block length: %d\n", currentTlvValueLength);
   APP_LOG("Kd pri encrypted tlv value offset: %d\n", currentTlvValueOffset);
   const uint8_t *kd_pri_enc_begin = cert_rqst_rspns_tlv_val_buf_p + currentTlvValueOffset;
-  uint16_t kd_pri_enc_len = currentTlvValueLength;
+  uint32_t kd_pri_enc_len = currentTlvValueLength;
 
   // do decryption of Kd pri here
   //*********************************************************//
@@ -564,7 +564,7 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
   return NDN_SUCCESS;
 }
 
-int cnstrct_fin_msg(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
+int cnstrct_fin_msg(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
                             struct sign_on_basic_client_t *sign_on_basic_client) {
 
   APP_LOG("Construct finish message got called.\n");
@@ -613,7 +613,7 @@ int cnstrct_fin_msg(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
 
   //**************************************//
 
-  uint16_t N2_pub_digest_len = SIGN_ON_BASIC_SHA256_HASH_SIZE;
+  uint32_t N2_pub_digest_len = SIGN_ON_BASIC_SHA256_HASH_SIZE;
 
   buf_p[currentOffset] = SECURE_SIGN_ON_N2_PUB_DIGEST_TLV_TYPE;
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
@@ -632,7 +632,7 @@ int cnstrct_fin_msg(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
 
   //**************************************//
 
-  uint16_t trust_anchor_cert_digest_len = SIGN_ON_BASIC_SHA256_HASH_SIZE;
+  uint32_t trust_anchor_cert_digest_len = SIGN_ON_BASIC_SHA256_HASH_SIZE;
 
   buf_p[currentOffset] = SECURE_SIGN_ON_TRUST_ANCHOR_CERTIFICATE_DIGEST_TLV_TYPE;
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
@@ -644,17 +644,17 @@ int cnstrct_fin_msg(uint8_t *buf_p, uint16_t buf_len, uint16_t *output_len_p,
   // special part of construction: calculate signature over all bytes of certificate request besides the signature
   // tlv block, and append it to the end
 
-  uint16_t signatureSize = 0;
-  uint16_t sig_payload_digest_len = SIGN_ON_BASIC_SHA256_HASH_SIZE;
-  uint16_t offsetForSignatureEncoding = 8;
-  uint16_t encodedSignatureSize;
+  uint32_t signatureSize = 0;
+  uint32_t sig_payload_digest_len = SIGN_ON_BASIC_SHA256_HASH_SIZE;
+  uint32_t offsetForSignatureEncoding = 8;
+  uint32_t encodedSignatureSize;
 
   // generate signature of bootstrapping request
   //**************************************//
 
-  uint16_t sig_payload_end_offset = currentOffset;
+  uint32_t sig_payload_end_offset = currentOffset;
   // need to subtract TLV_TYPE_AND_LENGTH_SIZE to account for fact that packet header is not included in signature
-  uint16_t sig_payload_size = sig_payload_end_offset - SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
+  uint32_t sig_payload_size = sig_payload_end_offset - SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
   // need to add TLV_TYPE_AND_LENGTH_SIZE to buf_p to account for fact that packet header is not included in signature
   uint8_t *sig_payload_begin = buf_p + SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
 

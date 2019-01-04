@@ -32,7 +32,7 @@ ndn_hmac_sign(const uint8_t* input_value, uint32_t input_size,
 {
   if (output_max_size < NDN_SEC_SHA256_HASH_SIZE)
     return NDN_OVERSIZE;
-  int ret_val = hmac_sha256(key_value, key_size, input_value, input_size, output_value);
+  int ret_val = hmac_sha256(input_value, input_size, key_value, key_size, output_value);
   if (ret_val != NDN_SUCCESS) {
     return ret_val;
   }
@@ -49,8 +49,8 @@ ndn_hmac_verify(const uint8_t* input_value, uint32_t input_size,
     return NDN_SEC_WRONG_SIG_SIZE;
 
   uint8_t input_hmac[NDN_SEC_SHA256_HASH_SIZE] = {0};
-  hmac_sha256(key_value, key_size, input_value, input_size, input_hmac);
-  if (ndn_const_time_memcmp(input_hmac, sig_value, sizeof(input_hmac)) != 0)
+  hmac_sha256(input_value, input_size, key_value, key_size, input_hmac);
+  if (ndn_const_time_memcmp(input_hmac, sig_value, sizeof(input_hmac)) != NDN_SUCCESS)
     return NDN_SEC_FAIL_VERIFY_SIG;
   else
     return NDN_SUCCESS;
@@ -65,7 +65,7 @@ ndn_hmac_make_key(ndn_hmac_key_t* key, uint32_t key_id,
                   uint32_t salt_size)
 {
   key->key_id = key_id;
-  int result = 0;
+  int result = NDN_SUCCESS;
 #ifdef NDN_LITE_SEC_BACKEND_HMAC_DEFAULT
   result = ndn_lite_default_make_hmac_key(key->key_value, &key->key_size,
                                           input_value, input_size,

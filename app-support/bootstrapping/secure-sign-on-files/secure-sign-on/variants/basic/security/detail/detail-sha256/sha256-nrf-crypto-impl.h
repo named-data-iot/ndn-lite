@@ -23,6 +23,6 @@
 
 //**************************************//
 
-int sign_on_basic_nrf_crypto_gen_sha256_hash(const uint8_t *payload, uint16_t payload_len, uint8_t *output);
+int sign_on_basic_nrf_crypto_gen_sha256_hash(const uint8_t *payload, uint32_t payload_len, uint8_t *output);
 
 #endif // SHA_256_NRF_CRYPTO_IMPL_H

@@ -12,14 +12,14 @@
 
 #include "../../sign-on-basic-sec-consts.h"
 
-int sign_on_basic_nrf_crypto_decrypt_aes_cbc_pkcs5pad(uint8_t *key, uint16_t key_len, 
-    const uint8_t *encrypted_payload, uint16_t encrypted_payload_len,
-    uint8_t *decrypted_payload, uint16_t *decrypted_payload_len) {
+int sign_on_basic_nrf_crypto_decrypt_aes_cbc_pkcs5pad(uint8_t *key, uint32_t key_len, 
+    const uint8_t *encrypted_payload, uint32_t encrypted_payload_len,
+    uint8_t *decrypted_payload, uint32_t *decrypted_payload_len) {
 
   uint8_t iv[16];
   ret_code_t ret_val;
-  uint16_t len_in;
-  uint16_t len_out;
+  uint32_t len_in;
+  uint32_t len_out;
 
   static char encrypted_text[NRF_CRYPTO_EXAMPLE_AES_MAX_TEXT_SIZE];
   static char decrypted_text[NRF_CRYPTO_EXAMPLE_AES_MAX_TEXT_SIZE];
@@ -36,13 +36,13 @@ int sign_on_basic_nrf_crypto_decrypt_aes_cbc_pkcs5pad(uint8_t *key, uint16_t key
       &g_nrf_crypto_aes_cbc_128_info,
       NRF_CRYPTO_DECRYPT);
   if (ret_val != NRF_SUCCESS) {
-    return SEC_OP_FAILURE;
+    return SIGN_ON_BASIC_SEC_OP_FAILURE;
   }
 
   /* Set key for decryption context - only first 128 key bits will be used */
   ret_val = nrf_crypto_aes_key_set(&cbc_decr_128_ctx, key);
   if (ret_val != NRF_SUCCESS) {
-    return SEC_OP_FAILURE;
+    return SIGN_ON_BASIC_SEC_OP_FAILURE;
   }
 
   memset(iv, 0, sizeof(iv));
@@ -50,7 +50,7 @@ int sign_on_basic_nrf_crypto_decrypt_aes_cbc_pkcs5pad(uint8_t *key, uint16_t key
 
   ret_val = nrf_crypto_aes_iv_set(&cbc_decr_128_ctx, iv);
   if (ret_val != NRF_SUCCESS) {
-    return SEC_OP_FAILURE;
+    return SIGN_ON_BASIC_SEC_OP_FAILURE;
   }
 
   memcpy(encrypted_text, encrypted_payload, encrypted_payload_len);
@@ -71,7 +71,7 @@ int sign_on_basic_nrf_crypto_decrypt_aes_cbc_pkcs5pad(uint8_t *key, uint16_t key
       &len_out);
       //decrypted_payload_len);
   if (ret_val != NRF_SUCCESS) {
-    return SEC_OP_FAILURE;
+    return SIGN_ON_BASIC_SEC_OP_FAILURE;
   }
 
   //APP_LOG("Length of decrypted contents: %d\n", len_out);
@@ -79,7 +79,7 @@ int sign_on_basic_nrf_crypto_decrypt_aes_cbc_pkcs5pad(uint8_t *key, uint16_t key
   memcpy(decrypted_payload, decrypted_text, len_out);
   *decrypted_payload_len = len_out;
 
-  return SEC_OP_SUCCESS;
+  return SIGN_ON_BASIC_SEC_OP_SUCCESS;
 
   /* trim padding */
   //decrypted_text[len_out] = '\0';

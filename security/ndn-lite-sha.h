@@ -27,7 +27,7 @@ sha256(const uint8_t* data, uint32_t datalen, uint8_t* hash_result);
  * @param output_value. Output. Signature value.
  * @param output_max_size. Input. Buffer size of output_value
  * @param output_used_size. Output. Size of used output buffer when signing complete.
- * @return 0 if there is no error.
+ * @return NDN_SUCCESS if there is no error.
  */
 int
 ndn_sha256_sign(const uint8_t* input_value, uint32_t input_size,
@@ -40,7 +40,7 @@ ndn_sha256_sign(const uint8_t* input_value, uint32_t input_size,
  * @param input_size. Input. Size of input buffer.
  * @param sig_value. Input. SHA-256 signature value.
  * @param sig_size. Input. SHA-256 signature size. Should be 32 bytes.
- * @return 0 if verification succeeded.
+ * @return NDN_SUCCESS if verification succeeded.
  */
 int
 ndn_sha256_verify(const uint8_t* input_value, uint32_t input_size,

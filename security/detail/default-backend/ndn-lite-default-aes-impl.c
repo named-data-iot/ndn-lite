@@ -29,7 +29,7 @@ ndn_lite_default_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
                           input_value, input_size, aes_iv, &schedule) != TC_CRYPTO_SUCCESS) {
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
-  return 0;
+  return NDN_SUCCESS;
 }
 
 int
@@ -51,5 +51,5 @@ ndn_lite_default_aes_cbc_decrypt(const uint8_t* input_value, uint8_t input_size,
                           input_value, &schedule) == 0) {
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
-  return 0;
+  return NDN_SUCCESS;
 }

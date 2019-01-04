@@ -22,8 +22,8 @@
 
 int sign_on_basic_microecc_gen_sha256_ecdsa_sig(
     const uint8_t *pri_key,
-    const uint8_t *payload, uint16_t payload_len,
-    uint8_t *output_buf, uint16_t output_buf_len, uint16_t *output_len) {
+    const uint8_t *payload, uint32_t payload_len,
+    uint8_t *output_buf, uint32_t output_buf_len, uint32_t *output_len) {
 
   //APP_LOG("sign_on_basic_microecc_gen_sha256_ecdsa_sig got called.\n");
 
@@ -37,9 +37,9 @@ int sign_on_basic_microecc_gen_sha256_ecdsa_sig(
   //APP_LOG_HEX("Bytes of endian reversed private key: ", pri_key, 32);
 
   uint8_t payload_digest_original[SIGN_ON_BASIC_SHA256_HASH_SIZE];
-  if (sign_on_basic_nrf_crypto_gen_sha256_hash(payload, payload_len, payload_digest_original) != SEC_OP_SUCCESS) {
+  if (sign_on_basic_nrf_crypto_gen_sha256_hash(payload, payload_len, payload_digest_original) != SIGN_ON_BASIC_SEC_OP_SUCCESS) {
     //APP_LOG("Failed to generate sha256 hash within sign_on_basic_microecc_gen_sha256_ecdsa_sig\n");
-    return SEC_OP_FAILURE;
+    return SIGN_ON_BASIC_SEC_OP_FAILURE;
   }
 
   uint8_t *payload_digest = payload_digest_original;
@@ -64,7 +64,7 @@ int sign_on_basic_microecc_gen_sha256_ecdsa_sig(
 
   if (ret != 1) {
     //APP_LOG("in sign_on_basic_microecc_gen_sha256_ecdsa_sig, uECC_sign failed.\n");
-    return SEC_OP_FAILURE;
+    return SIGN_ON_BASIC_SEC_OP_FAILURE;
   }
 
   uint8_t *sig_begin = output_buf + signatureEncodingOffset;
@@ -88,6 +88,6 @@ int sign_on_basic_microecc_gen_sha256_ecdsa_sig(
 
   encodeSignatureBits(output_buf, output_len, uECC_secp256r1());
 
-  return SEC_OP_SUCCESS;
+  return SIGN_ON_BASIC_SEC_OP_SUCCESS;
 
 }

@@ -11,8 +11,8 @@
 #ifndef SIGN_ON_BASIC_SEC_CONSTS_H
 #define SIGN_ON_BASIC_SEC_CONSTS_H
 
-#define SEC_OP_FAILURE 0 ///< Implementations of the generic security interfaces of sign_on_basic_client.h should return this for a successful operation
-#define SEC_OP_SUCCESS 1 ///< Implementations of the generic security interfaces of sign_on_basic_client.h should return this for a failed operation
+#define SIGN_ON_BASIC_SEC_OP_FAILURE 0 ///< Implementations of the generic security interfaces of sign_on_basic_client.h should return this for a successful operation
+#define SIGN_ON_BASIC_SEC_OP_SUCCESS 1 ///< Implementations of the generic security interfaces of sign_on_basic_client.h should return this for a failed operation
 
 #define SIGN_ON_BASIC_SHA256_HASH_SIZE 32 ///< Length of SHA256 hash
 

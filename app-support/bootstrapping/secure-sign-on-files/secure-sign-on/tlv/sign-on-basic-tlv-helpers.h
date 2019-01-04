@@ -37,7 +37,7 @@ static enum ParseTlvValueResultCode {
  *                                           if parsing is successful.
  *
  */
-enum ParseTlvValueResultCode parseTlvValue(const uint8_t *tlvBlock, uint16_t tlvBlockLength, int tlvTypeToFindValueOf,
-                        uint16_t *tlvValueLength, uint16_t *tlvValueOffset);
+enum ParseTlvValueResultCode parseTlvValue(const uint8_t *tlvBlock, uint32_t tlvBlockLength, int tlvTypeToFindValueOf,
+                        uint32_t *tlvValueLength, uint32_t *tlvValueOffset);
 
 #endif // SIGN_ON_BASIC_TLV_HELPERS_H

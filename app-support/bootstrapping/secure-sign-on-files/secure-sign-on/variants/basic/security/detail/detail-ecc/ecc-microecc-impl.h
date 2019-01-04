@@ -16,7 +16,7 @@
 
 int sign_on_basic_microecc_gen_sha256_ecdsa_sig(
     const uint8_t *pri_key_raw,
-    const uint8_t *payload, uint16_t payload_len,
-    uint8_t *output_buf, uint16_t output_buf_len, uint16_t *output_len);
+    const uint8_t *payload, uint32_t payload_len,
+    uint8_t *output_buf, uint32_t output_buf_len, uint32_t *output_len);
 
 #endif // ECC_MICROECC_IMPL_H
