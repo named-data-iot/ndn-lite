@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang, Xinyu Ma
+ * Copyright (C) 2018-2019 Zhiyi Zhang, Xinyu Ma
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -16,7 +16,7 @@ pit_entry_add_incoming_face(ndn_pit_entry_t* entry, ndn_face_intf_t* face)
       return 0;
     }
   }
-  if (entry->incoming_face_size == 3) {
+  if (entry->incoming_face_size == NDN_MAX_FACE_PER_PIT_ENTRY) {
     return NDN_FWD_PIT_ENTRY_FACE_LIST_FULL;
   }
   entry->incoming_face[entry->incoming_face_size] = face;

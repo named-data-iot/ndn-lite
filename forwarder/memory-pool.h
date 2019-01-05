@@ -45,7 +45,7 @@ ndn_memory_pool_alloc(void);
 
 /**
  * Free allocated memory block.
- * @param ptr. Pointer to the block to be freed.
+ * @param ptr. Input. Pointer to the block to be freed.
  */
 int
 ndn_memory_pool_free(void* ptr);
