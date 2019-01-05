@@ -284,9 +284,6 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GENERATE_KT;
   }
 
-  APP_LOG_HEX("In sign-on-basic-client.c, result of gen_kt:", sign_on_basic_client->KT_p,
-              sign_on_basic_client->KT_len);
-
   //***************************************************//
 
   parseTlvValue(btstrp_rqst_rspns_tlv_val_buf_p, bootstrappingRequestTlvValueLength,
@@ -532,13 +529,17 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
 
   APP_LOG("Doing decryption of Kd pri by Kt.\n");
 
+  APP_LOG_HEX("Value of Kt:", sign_on_basic_client->KT_p, sign_on_basic_client->KT_len);
+
   uint8_t KD_pri_decrypted_temp_buf[SIGN_ON_BASIC_CLIENT_KD_PRI_MAX_LENGTH];
 
   if (!sign_on_basic_client->sec_intf.decrypt_kd_pri(
       sign_on_basic_client->KT_p,
       sign_on_basic_client->KT_len,
       kd_pri_enc_begin, kd_pri_enc_len,
-      KD_pri_decrypted_temp_buf, &KD_pri_decrypted_len)) {
+      KD_pri_decrypted_temp_buf, 
+      sizeof(KD_pri_decrypted_temp_buf),
+      &KD_pri_decrypted_len)) {
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_DECRYPT_KD_PRI;
   }
 

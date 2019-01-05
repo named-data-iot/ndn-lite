@@ -22,9 +22,9 @@
 
 int sign_on_basic_gen_sha256_hash(const uint8_t *payload, uint32_t payload_len, uint8_t *output);
 
-int sign_on_basic_decrypt_aes_cbc_pkcs5pad(uint8_t *key, uint32_t key_len, 
+int sign_on_basic_aes_cbc_decrypt(uint8_t *key, uint32_t key_len, 
                                            const uint8_t *encrypted_payload, uint32_t encrypted_payload_len,
-                                           uint8_t *decrypted_payload, uint32_t *decrypted_payload_len);
+                                           uint8_t *decrypted_payload, uint32_t decrypted_payload_buf_len);
 
 int sign_on_basic_vrfy_hmac_sha256_sig(const uint8_t *payload, uint32_t payload_len,
                                                   const uint8_t *sig, uint32_t sig_len,

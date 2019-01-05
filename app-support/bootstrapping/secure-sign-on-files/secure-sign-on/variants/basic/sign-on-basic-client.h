@@ -176,10 +176,13 @@ typedef int (*sign_on_basic_sec_vrfy_cert_rqst_rspns_sig)(const uint8_t *payload
  *
  * @param[in]   KT_p                       Pointer to KT, which will be used for decryption.
  * @param[in]   KT_len                     Length of KT.
- * @param[in]   encrypted_payload          Encrypted payload to be decrypted. 
- * @param[in]   decrypted_payload          Buffer where decrypted payload will be stored.
- * @param[in]   decrypted_payload_len      Pointer to variable that will be filled with size of decrypted
- *                                           payload upon successful decryption.
+ * @param[in]   encrypted_kd_pri           Buffer containing encrypted KD key pair private key to be
+ *                                           decrypted.
+ * @param[in]   encrypted_kd_pri_len       Length of buffer containing encrypted KD key pair private key.
+ * @param[in]   decrypted_kd_pri           Buffer where decrypted KD key pair private key will be stored.
+ * @param[in]   decrypted_payload_buf_len  Length of buffer where decrypted key will be stored.
+ * @param[in]   decrypted_kd_pri_len       Pointer to variable that will be filled with size of decrypted
+ *                                           key upon successful decryption.
  *
  * @return Returns SEC_OP_SUCCESS on success, SEC_OP_FAILURE on failure.
  */
@@ -187,6 +190,7 @@ typedef int (*sign_on_basic_sec_decrypt_kd_pri)(uint8_t *KT_p, uint32_t KT_len,
                                                               const uint8_t *encrypted_kd_pri, 
                                                               uint32_t encrypted_kd_pri_len,
                                                               uint8_t *decrypted_kd_pri, 
+                                                              uint32_t decrypted_kd_pri_buf_len,
                                                               uint32_t *decrypted_kd_pri_len);
 
 /**@brief Generic function interface for generating signature of finish message. Specific details regarding

@@ -49,14 +49,38 @@ int sign_on_basic_gen_sha256_hash(const uint8_t *payload, uint32_t payload_len, 
   return SIGN_ON_BASIC_SEC_OP_FAILURE;
 }
 
-int sign_on_basic_decrypt_aes_cbc_pkcs5pad(uint8_t *key, uint32_t key_len, 
+int sign_on_basic_aes_cbc_decrypt(uint8_t *key, uint32_t key_len, 
                                            const uint8_t *encrypted_payload, uint32_t encrypted_payload_len,
-                                           uint8_t *decrypted_payload, uint32_t *decrypted_payload_len) {
-  #ifdef nRF52840
-  return sign_on_basic_nrf_crypto_decrypt_aes_cbc_pkcs5pad(key, key_len, encrypted_payload,
-                                                           encrypted_payload_len, decrypted_payload,
-                                                           decrypted_payload_len);
-  #endif
+                                           uint8_t *decrypted_payload, uint32_t decrypted_payload_buf_len) {
+//  #ifdef nRF52840
+//  return sign_on_basic_nrf_crypto_decrypt_aes_cbc_pkcs5pad(key, key_len, encrypted_payload,
+//                                                           encrypted_payload_len, decrypted_payload,
+//                                                           decrypted_payload_len);
+//  #endif
+  uint8_t aes_iv[NDN_SEC_AES_IV_LENGTH] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  uint8_t decrypted_payload_buf_len_byte = (uint8_t) decrypted_payload_buf_len;
+  uint8_t key_len_byte = (uint8_t) key_len;
+  uint8_t encrypted_payload_copy[encrypted_payload_len + NDN_SEC_AES_IV_LENGTH];
+  uint32_t encrypted_payload_copy_len = encrypted_payload_len + NDN_SEC_AES_IV_LENGTH;
+  uint8_t encrypted_payload_copy_len_byte = (uint8_t) encrypted_payload_copy_len;
+  memcpy(encrypted_payload_copy, aes_iv, NDN_SEC_AES_IV_LENGTH);
+  memcpy(encrypted_payload_copy + NDN_SEC_AES_IV_LENGTH, encrypted_payload, encrypted_payload_len);
+  APP_LOG("Length of encrypted payload being passed into ndn_aes_cbc_decrypt: %d\n", 
+          encrypted_payload_copy_len_byte);
+  APP_LOG_HEX("Value of key being used to decrypt KD pri:", key,
+              SIGN_ON_BASIC_AES_KEY_MAX_LENGTH);
+  APP_LOG_HEX("Value being decrypted to get KD pri:", encrypted_payload_copy, encrypted_payload_copy_len);
+
+  // according to Tinycrypt's comments in tc_cbc_mode.h, I need to make sure IV and
+  // cipher text are contiguous in the buffer passed in for decryption
+  
+  if (ndn_aes_cbc_decrypt(encrypted_payload_copy, 
+                      encrypted_payload_copy_len_byte, decrypted_payload,
+                      decrypted_payload_buf_len_byte, encrypted_payload_copy, key, 
+                      SIGN_ON_BASIC_AES_KEY_MAX_LENGTH) != NDN_SUCCESS) {
+    return SIGN_ON_BASIC_SEC_OP_FAILURE;
+  }
+  return SIGN_ON_BASIC_SEC_OP_SUCCESS;
 }
 
 int sign_on_basic_vrfy_hmac_sha256_sig(const uint8_t *payload, uint32_t payload_len,

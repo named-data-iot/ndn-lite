@@ -33,4 +33,6 @@
 
 #define SIGN_ON_BASIC_ECC_256_SECURE_SIGN_ON_CODE_LENGTH 16 ///< The length of the secure sign-on code for the ecc_256 variant.
 
+#define SIGN_ON_BASIC_ECC_256_KD_PRI_RAW_LENGTH 32 ///< The length of the KD key pair private key for the ecc_256 variant.
+
 #endif // SIGN_ON_BASIC_ECC_256_CONSTS_H

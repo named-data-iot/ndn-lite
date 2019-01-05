@@ -19,6 +19,8 @@
 #define SIGN_ON_BASIC_ECC_CURVE_SECP_256R1_RAW_PRI_KEY_LENGTH 32 ///< SECP_256R1 ECC curve private key length
 #define SIGN_ON_BASIC_ECC_CURVE_SECP_256R1_RAW_PUB_KEY_LENGTH 64 ///< SECP_256R1 ECC curve public key length, no point identifier
 
+#define SIGN_ON_BASIC_AES_KEY_MAX_LENGTH 16 ///< For encryption and decryption, only this many bytes of any keys will be used.
+
 /** @defgroup ECC curve types
  * @{ */
 #define SIGN_ON_BASIC_ECC_CURVE_SECP_256R1 0 ///< Indicates to use SECP_256R1 ECC curve
