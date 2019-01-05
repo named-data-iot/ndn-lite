@@ -8,7 +8,6 @@
 
 #include "ndn-lite-default-ecc-impl.h"
 #include "ndn-lite-default-sha-impl.h"
-#include "sec-lib/micro-ecc/uECC.h"
 #include "sec-lib/tinycrypt/tc_hmac.h"
 #include "sec-lib/tinycrypt/tc_ecc_dh.h"
 #include "sec-lib/tinycrypt/tc_constants.h"
@@ -158,18 +157,28 @@ ndn_lite_default_ecc_dh(uint8_t* ecc_pub, uint8_t* ecc_prv,
 {
   if (output_size < 24)
     return NDN_SEC_DISABLED_FEATURE;
-
-  tc_uECC_Curve curve;
-  switch(curve_type) {
-    case NDN_ECDSA_CURVE_SECP256R1:
-      curve = tc_uECC_secp256r1();
-      break;
-    default:
-      // TODO: support other ECDSA with micro-ecc
-      return NDN_SEC_UNSUPPORT_CRYPTO_ALGO;
+  uECC_Curve curve;
+  switch (curve_type) {
+  case NDN_ECDSA_CURVE_SECP160R1:
+    curve = uECC_secp160r1();
+    break;
+  case NDN_ECDSA_CURVE_SECP192R1:
+    curve = uECC_secp192r1();
+    break;
+  case NDN_ECDSA_CURVE_SECP224R1:
+    curve = uECC_secp224r1();
+    break;
+  case NDN_ECDSA_CURVE_SECP256R1:
+    curve = uECC_secp256r1();
+    break;
+  case NDN_ECDSA_CURVE_SECP256K1:
+    curve = uECC_secp256k1();
+    break;
+  default:
+    return NDN_SEC_UNSUPPORT_CRYPTO_ALGO;
   }
-  int r = tc_uECC_shared_secret(ecc_pub, ecc_prv, output, curve);
-  if (r != TC_CRYPTO_SUCCESS)
+  int r = uECC_shared_secret(ecc_pub, ecc_prv, output, curve);
+  if (r == 0)
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   return NDN_SUCCESS;
 }
@@ -178,19 +187,31 @@ int
 ndn_lite_default_make_ecc_key(uint8_t* ecc_pub, uint32_t* pub_size,
                               uint8_t* ecc_prv, uint32_t* prv_size, uint8_t curve_type)
 {
-  tc_uECC_Curve curve;
-  switch(curve_type) {
+  uECC_Curve curve;
+  switch (curve_type) {
+  case NDN_ECDSA_CURVE_SECP160R1:
+    curve = uECC_secp160r1();
+    break;
+  case NDN_ECDSA_CURVE_SECP192R1:
+    curve = uECC_secp192r1();
+    break;
+  case NDN_ECDSA_CURVE_SECP224R1:
+    curve = uECC_secp224r1();
+    break;
   case NDN_ECDSA_CURVE_SECP256R1:
-    curve = tc_uECC_secp256r1();
+    curve = uECC_secp256r1();
+    break;
+  case NDN_ECDSA_CURVE_SECP256K1:
+    curve = uECC_secp256k1();
     break;
   default:
-    // TODO: support other ECDSA with micro-ecc
     return NDN_SEC_UNSUPPORT_CRYPTO_ALGO;
   }
-  int r = tc_uECC_make_key(ecc_pub, ecc_prv, curve);
-  if (r != TC_CRYPTO_SUCCESS)
+  int r = uECC_make_key(ecc_pub, ecc_prv, curve);
+  if (r == 0){
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
-  *pub_size = tc_uECC_curve_public_key_size(curve);
-  *prv_size = tc_uECC_curve_private_key_size(curve);
+  }
+  *pub_size = uECC_curve_public_key_size(curve);
+  *prv_size = uECC_curve_private_key_size(curve);
   return NDN_SUCCESS;
 }

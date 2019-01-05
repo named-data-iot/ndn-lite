@@ -12,6 +12,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "sec-lib/tinycrypt/tc_ecc.h"
+#include "sec-lib/micro-ecc/uECC.h"
 
 int
 ndn_lite_default_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,

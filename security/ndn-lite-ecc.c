@@ -73,6 +73,8 @@ ndn_ecc_make_key(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
 {
   ecc_pub->key_id = key_id;
   ecc_prv->key_id = key_id;
+  ecc_pub->curve_type = curve_type;
+  ecc_prv->curve_type = curve_type;
   int result = NDN_SUCCESS;
 #ifdef NDN_LITE_SEC_BACKEND_ECC_DEFAULT
   result = ndn_lite_default_make_ecc_key(ecc_pub->key_value, &ecc_pub->key_size,
