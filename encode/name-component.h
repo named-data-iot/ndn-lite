@@ -132,7 +132,7 @@ name_component_compare(const name_component_t* lhs, const name_component_t* rhs)
 /**
  * Probe the size of a Name component TLV block before encoding it from a Name Component structure.
  * This function is used to check whether the output buffer size is enough or not.
- * @param component. Input. The name component structure to probe.
+ * @param component. Input. The name component structure to be probed.
  * @return the length of the expected name component TLV block.
  */
 static inline uint32_t

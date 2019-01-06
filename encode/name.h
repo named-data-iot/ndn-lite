@@ -82,7 +82,7 @@ ndn_name_from_string(ndn_name_t* name, const char* string, uint32_t size);
 /**
  * Probe the size of a Name TLV block before encoding it from a Name structure.
  * This function is used to check whether the output buffer size is enough or not.
- * @param name. Input. The Name structure to probe.
+ * @param name. Input. The Name structure to be probed.
  * @return the length of the expected Name TLV block.
  */
 static inline uint32_t

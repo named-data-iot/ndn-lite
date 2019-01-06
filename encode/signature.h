@@ -7,26 +7,57 @@
 extern "C" {
 #endif
 
-typedef struct ndn_validaty_period {
+/**
+ * The structure to represent the signature validity period.
+ */
+typedef struct ndn_validity_period {
+  /**
+   * Signature is valid not before.
+   */  
   uint8_t not_before[15];
+  /**
+   * Signature is valid not after.
+   */
   uint8_t not_after[15];
 } ndn_validity_period_t;
 
-// we don't support key digest as KeyLocator in NDN IoT
+/**
+ * The structure to represent the Signature. We don't support key digest as 
+ * KeyLocator in ndn-lite.
+ */
 typedef struct ndn_signature {
+  /**
+   * Signature type.
+   */  
   uint8_t sig_type;
+  /**
+   * The buffer which holds signature value.
+   */    
   uint8_t sig_value[NDN_SIGNATURE_BUFFER_SIZE];
+  /**
+   * Signature value size.
+   */  
   uint32_t sig_size;
-
+  /**
+   * Key locator of the signing key.
+   */  
+  ndn_name_t key_locator_name;
+  /**
+   * Signature validity period.
+   */    
+  ndn_validity_period_t validity_period;
+  
   uint8_t enable_KeyLocator;
   uint8_t enable_ValidityPeriod;
-
-  ndn_name_t key_locator_name;
-  ndn_validity_period_t validity_period;
-
 } ndn_signature_t;
 
-// set signature type, signature size, and disable keylocator and validity period by default
+/**
+ * Init a Signature structure. set signature type, signature size, 
+ * and disable keylocator and validity period by default.
+ * @param signature. Output. The Signature structure to be inited.
+ * @param type. Input. The signature type.
+ * @return 0 if there is no error.
+ */
 static inline int
 ndn_signature_init(ndn_signature_t* signature, uint8_t type)
 {
@@ -49,7 +80,13 @@ ndn_signature_init(ndn_signature_t* signature, uint8_t type)
   return 0;
 }
 
-// will do memory copy
+/**
+ * Set signature value of the Signature. This function will do memory copy.
+ * @param signature. Output. The Signature whose signature value will be set.
+ * @param sig_value. Input. The buffer which holds the input signature value.
+ * @param sig_size. Input. Size of input buffer.
+ * @return 0 if there is no error.
+ */
 static inline int
 ndn_signature_set_signature(ndn_signature_t* signature, const uint8_t* sig_value, size_t sig_size)
 {
@@ -70,9 +107,13 @@ ndn_signature_set_signature(ndn_signature_t* signature, const uint8_t* sig_value
   return 0;
 }
 
-// will do memory copy
-// This function is NOT recommended.
-// Better to first init signature and init signature.keylocator_name and set enable_KeyLocator = 1
+/**
+ * Set keylocator of the Signature. This function will do memory copy.
+ * @note This function is NOT recommended. Better to first init signature and 
+ *       init signature.keylocator_name and set enable_KeyLocator = 1.
+ * @param signature. Output. The Signature whose keylocator will be set.
+ * @param key_name. Input. The input keylocator.
+ */
 static inline void
 ndn_signature_set_key_locator(ndn_signature_t* signature, const ndn_name_t* key_name)
 {
@@ -80,7 +121,13 @@ ndn_signature_set_key_locator(ndn_signature_t* signature, const ndn_name_t* key_
   memcpy(&signature->key_locator_name, key_name, sizeof(ndn_name_t));
 }
 
-// not before and not after must be ISO 8601 time format, which is 15 bytes long
+/**
+ * Set validity period of the Signature. This function will do memory copy.
+ * not before and not after must be ISO 8601 time format, which is 15 bytes long.
+ * @param signature. Output. The Signature whose validity period will be set.
+ * @param not_before. Input. The input not_before time.
+ * @param not_after. Input. The input not_after time.
+ */
 static inline void
 ndn_signature_set_validity_period(ndn_signature_t* signature,
                                   const uint8_t* not_before, const uint8_t* not_after)
@@ -90,6 +137,12 @@ ndn_signature_set_validity_period(ndn_signature_t* signature,
   memcpy(signature->validity_period.not_after, not_after, 15);
 }
 
+/**
+ * Probe the size of a Signature info TLV block before encoding it from a Signature structure.
+ * This function is used to check whether the output buffer size is enough or not.
+ * @param signature. Input. The signature structure to be probed.
+ * @return the length of the expected Signature info TLV block.
+ */
 static inline uint32_t
 ndn_signature_info_probe_block_size(const ndn_signature_t* signature)
 {
@@ -108,21 +161,51 @@ ndn_signature_info_probe_block_size(const ndn_signature_t* signature)
   return encoder_probe_block_size(TLV_SignatureInfo, info_buffer_size);
 }
 
+/**
+ * Probe the size of a Signature value TLV block before encoding it from a Signature structure.
+ * This function is used to check whether the output buffer size is enough or not.
+ * @param signature. Input. The signature structure to be probed.
+ * @return the length of the expected Signature value TLV block.
+ */
 static inline uint32_t
 ndn_signature_value_probe_block_size(const ndn_signature_t* signature)
 {
   return encoder_probe_block_size(TLV_SignatureValue, signature->sig_size);
 }
 
+/**
+ * Encode the Signature info into wire format (TLV block) from Signature structure.
+ * @param encoder. Output. The encoder who keeps the encoding result and the state.
+ * @param signature. Input. The Signature structure whose signature info to be encoded.
+ * @return 0 if there is no error.
+ */
 int
 ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* signature);
 
+/**
+ * Encode the Signature value into wire format (TLV block) from Signature structure.
+ * @param encoder. Output. The encoder who keeps the encoding result and the state.
+ * @param signature. Input. The Signature structure whose signature value to be encoded.
+ * @return 0 if there is no error.
+ */
 int
 ndn_signature_value_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* signature);
 
+/**
+ * Decode an Signature info TLV block into an Signature structure. This function will do memory copy.
+ * @param decoder. Input. The decoder who keeps the decoding result and the state.
+ * @param signature. Output. The Signature structure whose signature info to be decoded.
+ * @return 0 if decoding is successful.
+ */
 int
 ndn_signature_info_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signature);
 
+/**
+ * Decode an Signature value TLV block into an Signature structure. This function will do memory copy.
+ * @param decoder. Input. The decoder who keeps the decoding result and the state.
+ * @param signature. Output. The Signature structure whose signature value to be decoded.
+ * @return 0 if decoding is successful.
+ */
 int
 ndn_signature_value_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signature);
 
