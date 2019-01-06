@@ -21,11 +21,21 @@
 extern "C" {
 #endif
 
+/**
+ * The structure to represent a dummy face. This structure should only be declared for tests.
+ */
 typedef struct ndn_dummy_face {
+  /**
+   * The inherited interface abstraction.
+   */
   ndn_face_intf_t intf;
-
 } ndn_dummy_face_t;
 
+/**
+ * Construct the dummy face and initialize its state.
+ * @param face_id. Input. The face id to identity the dummy face.
+ * @return the pointer to the dummy face.
+ */
 ndn_dummy_face_t*
 ndn_dummy_face_construct(ndn_dummy_face_t* face, uint16_t face_id);
 
