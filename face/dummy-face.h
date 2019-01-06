@@ -33,8 +33,9 @@ typedef struct ndn_dummy_face {
 
 /**
  * Construct the dummy face and initialize its state.
+ * @param face. Input. The dummy face to be constructed.
  * @param face_id. Input. The face id to identity the dummy face.
- * @return the pointer to the dummy face.
+ * @return the pointer to the constructed dummy face.
  */
 ndn_dummy_face_t*
 ndn_dummy_face_construct(ndn_dummy_face_t* face, uint16_t face_id);

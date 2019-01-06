@@ -111,7 +111,7 @@ typedef struct ndn_direct_face {
 /**
  * Construct the direct face and initialize its state.
  * @param face_id. Input. The face id to identity the direct face.
- * @return the pointer to the direct face.
+ * @return the pointer to the constructed direct face.
  */
 ndn_direct_face_t*
 ndn_direct_face_construct(uint16_t face_id);
