@@ -17,9 +17,21 @@
 extern "C" {
 #endif
 
+/**
+ * The structure to keep a HMAC key.
+ */
+typedef struct ndn_hmac_key {
+  abstract_key_t abs_key;
+  /**
+   * The KEY ID of current key. Should be unique.
+   */
+  uint32_t key_id;
+} ndn_hmac_key_t;
+
+
 int
 hmac_sha256(const void* payload, uint32_t payload_length,
-            const uint8_t* key, uint32_t key_size,
+            const abstract_key_t* abs_key,
             uint8_t* hmac_result);
 
 /**
@@ -37,7 +49,7 @@ hmac_sha256(const void* payload, uint32_t payload_length,
 int
 ndn_hmac_sign(const uint8_t* input_value, uint32_t input_size,
               uint8_t* output_value, uint32_t output_max_size,
-              const uint8_t* key_value, uint32_t key_size,
+              const abstract_key_t* abs_key,
               uint32_t* output_used_size);
 
 /**
@@ -53,7 +65,7 @@ ndn_hmac_sign(const uint8_t* input_value, uint32_t input_size,
 int
 ndn_hmac_verify(const uint8_t* input_value, uint32_t input_size,
                 const uint8_t* sig_value, uint32_t sig_size,
-                const uint8_t* key_value, uint32_t key_size);
+                const abstract_key_t* abs_key);
 
 /**
  * Generate a HMAC key with specific key size and key id.

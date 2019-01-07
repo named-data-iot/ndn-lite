@@ -17,6 +17,17 @@ extern "C" {
 #endif
 
 /**
+ * The structure to keep an AES-128 key.
+ */
+typedef struct ndn_aes_key {
+  abstract_key_t abs_key;
+  /**
+   * The KEY ID of current key. Should be unique.
+   */
+  uint32_t key_id;
+} ndn_aes_key_t;
+
+/**
  * Use AES-128-CBC algorithm to encrypt a buffer. This function does not perform any padding.
  * The input_size must be a multiple of NDN_AES_BLOCK_SIZE to obtain a successful encryption.
  * @param input_value. Input. Buffer to encrypt.
@@ -31,8 +42,7 @@ extern "C" {
 int
 ndn_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
                     uint8_t* output_value, uint8_t output_size,
-                    const uint8_t* aes_iv,
-                    const uint8_t* key_value, uint8_t key_size);
+                    const uint8_t* aes_iv, const abstract_key_t* abs_key);
 
 /**
  * Use AES-128-CBC algorithm to decrypt an encrypted buffer. This function is implemented without padding.
@@ -49,8 +59,7 @@ ndn_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
 int
 ndn_aes_cbc_decrypt(const uint8_t* input_value, uint8_t input_size,
                     uint8_t* output_value, uint8_t output_size,
-                    const uint8_t* aes_iv,
-                    const uint8_t* key_value, uint8_t key_size);
+                    const uint8_t* aes_iv, const abstract_key_t* abs_key);
 
 #ifdef __cplusplus
 }

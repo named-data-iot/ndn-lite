@@ -18,6 +18,36 @@ extern "C" {
 #endif
 
 /**
+ * The structure to keep an ECC public key.
+ */
+typedef struct ndn_ecc_pub {
+  abstract_key_t abs_key;
+  /**
+   * The KEY ID of current key. Should be unique.
+   */
+  uint32_t key_id;
+  /**
+   * The curve type of current key. Can be secp160r1, secp192r1, secp224r1, secp256r1, secp256k1.
+   */
+  uint8_t curve_type;
+} ndn_ecc_pub_t;
+
+/**
+ * The structure to keep an ECC private key.
+ */
+typedef struct ndn_ecc_prv {
+  abstract_key_t abs_key;
+  /**
+   * The KEY ID of current key. Should be unique.
+   */
+  uint32_t key_id;
+  /**
+   * The curve type of current key. Can be secp160r1, secp192r1, secp224r1, secp256r1, secp256k1.
+   */
+  uint8_t curve_type;
+} ndn_ecc_prv_t;
+
+/**
  * Set RNG function for backend implementation library,
  * which need this to perform non-deterministic signing.
  * This function should be called before ndn_ecdsa_sign() and ndn_ecc_make_key().
@@ -44,7 +74,7 @@ ndn_ecc_set_rng(ndn_ECC_RNG_Function rng);
 int
 ndn_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
                uint8_t* output_value, uint32_t output_max_size,
-               const uint8_t* prv_key_value, uint32_t prv_key_size,
+               const abstract_key_t* abs_key,
                uint8_t ecdsa_type, uint32_t* output_used_size);
 
 /**
