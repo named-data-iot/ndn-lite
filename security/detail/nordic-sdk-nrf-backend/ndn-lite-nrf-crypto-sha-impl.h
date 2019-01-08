@@ -11,18 +11,10 @@
 #ifndef SHA_256_NRF_CRYPTO_IMPL_H
 #define SHA_256_NRF_CRYPTO_IMPL_H
 
-// Includes from the "hash" example of the SDK
-//**************************************//
-#include "boards.h"
-#include "nrf_assert.h"
-#include "nrf_crypto.h"
-#include "nrf_crypto_hash.h"
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
-//**************************************//
-
 int
-ndn_lite_nrf_crypto_sha256_hash(const uint8_t *payload, uint16_t payload_len, uint8_t *output);
+ndn_lite_nrf_crypto_sha256(const uint8_t *payload, uint16_t payload_len, uint8_t *output);
+
+void
+ndn_lite_nrf_crypto_sha_load_backend(void);
 
 #endif // SHA_256_NRF_CRYPTO_IMPL_H

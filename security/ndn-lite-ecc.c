@@ -50,7 +50,7 @@ ndn_ecc_load_prv_key(ndn_ecc_prv_t* prv_key,
 }
 
 int
-ndn_ecc_set_rng(ndn_ECC_RNG_Function rng)
+ndn_ecc_set_rng(ndn_rng_impl rng)
 {
   return ndn_ecc_backend.set_rng(rng);
 }
@@ -71,7 +71,7 @@ ndn_ecc_dh_shared_secret(const ndn_ecc_pub_t* ecc_pub, const ndn_ecc_prv_t* ecc_
                          uint8_t curve_type, uint8_t* output, uint32_t output_size)
 {
   return ndn_ecc_backend.dh_shared_secret(&ecc_pub->abs_key, &ecc_prv->abs_key,
-                                              curve_type, output, output_size);
+                                          curve_type, output, output_size);
 }
 
 int

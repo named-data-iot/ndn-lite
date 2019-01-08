@@ -9,10 +9,22 @@
  */
 
 #include "ndn-lite-nrf-crypto-sha-impl.h"
+#include "../../ndn-lite-sha.h"
 #include "../../../ndn-error-code.h"
 
+// Includes from the "hash" example of the SDK
+//**************************************//
+#include "boards.h"
+#include "nrf_assert.h"
+#include "nrf_crypto.h"
+#include "nrf_crypto_hash.h"
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
+//**************************************//
+
 int
-ndn_lite_nrf_crypto_sha256_hash(const uint8_t *payload, uint16_t payload_len, uint8_t *output)
+ndn_lite_nrf_crypto_sha256(const uint8_t *payload, uint16_t payload_len, uint8_t *output)
 {
   // taken from the "hash" example of the SDK
   //**************************************//
@@ -42,4 +54,11 @@ ndn_lite_nrf_crypto_sha256_hash(const uint8_t *payload, uint16_t payload_len, ui
   memcpy(output, ext_digest, current_digest_len);
 
   return NDN_SUCCESS;
+}
+
+void
+ndn_lite_nrf_crypto_sha_load_backend(void)
+{
+  ndn_sha_backend_t* backend = ndn_sha_get_backend();
+  backend->sha256 = ndn_lite_nrf_crypto_sha256;
 }

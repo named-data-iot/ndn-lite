@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 /**
- * ndn_rng_function type
+ * ndn_rng_impl type
  *
  * This type is the same as micro-ecc/uECC.h::uECC_RNG_Function
  *
@@ -27,7 +27,17 @@ extern "C" {
  * The filled-in values should be either truly random, or from a cryptographically-secure PRNG.
  * Setting a correctly functioning RNG function improves the resistance to side-channel attacks.
  **/
-typedef int (*ndn_ECC_RNG_Function)(uint8_t* dest, unsigned size);
+typedef int (*ndn_rng_impl)(uint8_t* dest, unsigned size);
+
+/**
+ * The structure to represent the backend implementation.
+ */
+typedef struct ndn_rng_backend {
+  ndn_rng_impl rng;
+} ndn_rng_backend_t;
+
+ndn_rng_backend_t*
+ndn_rng_get_backend(void);
 
 /**
  * Generate a random number.

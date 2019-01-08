@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang
+ * Copyright (C) 2018-2019 Zhiyi Zhang
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -33,7 +33,7 @@ typedef int (*ndn_ecc_load_pub_key_impl)(abstract_ecc_pub_key_t* pub_key,
                                          const uint8_t* key_value, uint32_t key_size);
 typedef int (*ndn_ecc_load_prv_key_impl)(abstract_ecc_prv_key_t* prv_key,
                                          const uint8_t* key_value, uint32_t key_size);
-typedef int (*ndn_ecc_set_rng_impl)(ndn_ECC_RNG_Function rng);
+typedef int (*ndn_ecc_set_rng_impl)(ndn_rng_impl rng);
 typedef int (*ndn_ecdsa_sign_impl)(const uint8_t* payload_value, uint32_t payload_size,
                                    uint8_t* output_value, uint32_t output_max_size,
                                    const abstract_ecc_prv_key_t* prv_key,
@@ -41,8 +41,8 @@ typedef int (*ndn_ecdsa_sign_impl)(const uint8_t* payload_value, uint32_t payloa
 typedef int (*ndn_ecdsa_verify_impl)(const uint8_t* payload_value, uint32_t payload_size,
                                      const uint8_t* sig_value, uint32_t sig_size,
                                      const abstract_ecc_pub_key_t* pub_key, uint8_t ecdsa_type);
-typedef int (*ndn_ecc_make_key_impl)(const abstract_ecc_pub_key_t* pub_key,
-                                     const abstract_ecc_prv_key_t* prv_key,
+typedef int (*ndn_ecc_make_key_impl)(abstract_ecc_pub_key_t* pub_key,
+                                     abstract_ecc_prv_key_t* prv_key,
                                      uint8_t curve_type);
 typedef int (*ndn_ecc_dh_shared_secret_impl)(const abstract_ecc_pub_key_t* ecc_pub,
                                              const abstract_ecc_prv_key_t* ecc_prv,
@@ -186,7 +186,7 @@ ndn_ecc_prv_init(ndn_ecc_prv_t* ecc_prv, const uint8_t* key_value,
  * @param rng. Input. RNG function which will be bound to the backend implementation library.
  */
 int
-ndn_ecc_set_rng(ndn_ECC_RNG_Function rng);
+ndn_ecc_set_rng(ndn_rng_impl rng);
 
 /**
  * Generate an ECC key pair with specific curve type and key id.

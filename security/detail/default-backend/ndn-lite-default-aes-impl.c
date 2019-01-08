@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang, Tianyuan Yu, Edward Lu
+ * Copyright (C) 2018-2019 Zhiyi Zhang, Tianyuan Yu, Edward Lu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -10,6 +10,8 @@
 #include "sec-lib/tinycrypt/tc_cbc_mode.h"
 #include "sec-lib/tinycrypt/tc_constants.h"
 #include "../../ndn-lite-aes.h"
+#include "../../../ndn-constants.h"
+#include <string.h>
 
 uint32_t
 ndn_lite_default_aes_get_key_size(const struct abstract_aes_key* aes_key)
@@ -24,7 +26,7 @@ ndn_lite_default_aes_get_key_value(const struct abstract_aes_key* aes_key)
 }
 
 int
-ndn_lite_default_aes_load_key(const abstract_aes_key* aes_key,
+ndn_lite_default_aes_load_key(struct abstract_aes_key* aes_key,
                               const uint8_t* key_value, uint32_t key_size)
 {
   memset(aes_key->key_value, 0, 32);
@@ -76,7 +78,10 @@ ndn_lite_default_aes_cbc_decrypt(const uint8_t* input_value, uint8_t input_size,
 void
 ndn_lite_default_aes_load_backend(void)
 {
-  ndn_ecc_backend_t* backend = ndn_ecc_get_backend();
-  backend.cbc_encrypt = ndn_lite_default_aes_cbc_encrypt;
-  backend.cbc_decrypt = ndn_lite_default_aes_cbc_decrypt;
+  ndn_aes_backend_t* backend = ndn_aes_get_backend();
+  backend->get_key_size = ndn_lite_default_aes_get_key_size;
+  backend->get_key_value = ndn_lite_default_aes_get_key_value;
+  backend->load_key = ndn_lite_default_aes_load_key;
+  backend->cbc_encrypt = ndn_lite_default_aes_cbc_encrypt;
+  backend->cbc_decrypt = ndn_lite_default_aes_cbc_decrypt;
 }

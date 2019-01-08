@@ -12,6 +12,11 @@
 #include "sec-lib/tinycrypt/tc_ecc_dh.h"
 #include "sec-lib/tinycrypt/tc_constants.h"
 #include "../../ndn-lite-ecc.h"
+#include "../../ndn-lite-sha.h"
+#include "../../../ndn-constants.h"
+#include "../../../ndn-error-code.h"
+#include "../../../ndn-enums.h"
+#include <string.h>
 
 #ifndef FEATURE_PERIPH_HWRNG
 typedef struct uECC_SHA256_HashContext {
@@ -78,10 +83,11 @@ ndn_lite_default_ecc_load_prv_key(struct abstract_ecc_prv_key* prv_key,
   memset(prv_key->key_value, 0, 32);
   memcpy(prv_key->key_value, key_value, key_size);
   prv_key->key_size = key_size;
+  return 0;
 }
 
 int
-ndn_lite_default_ecc_set_rng(ndn_ECC_RNG_Function rng)
+ndn_lite_default_ecc_set_rng(ndn_rng_impl rng)
 {
   tc_uECC_set_rng(rng);
   uECC_set_rng(rng);
@@ -92,8 +98,8 @@ ndn_lite_default_ecc_set_rng(ndn_ECC_RNG_Function rng)
  * @note Current default backend implementation (i.e., tinycrypt) only supports curve type secp256r1.
  */
 int
-ndn_lite_default_ecc_dh_shared_secret(struct abstract_ecc_pub_key* pub_abs_key,
-                                      struct abstract_ecc_prv_key* prv_abs_key,
+ndn_lite_default_ecc_dh_shared_secret(const struct abstract_ecc_pub_key* pub_abs_key,
+                                      const struct abstract_ecc_prv_key* prv_abs_key,
                                       uint8_t curve_type, uint8_t* output, uint32_t output_size)
 {
   if (output_size < 24)
@@ -128,8 +134,8 @@ ndn_lite_default_ecc_dh_shared_secret(struct abstract_ecc_pub_key* pub_abs_key,
  * @note Current default backend implementation (i.e., tinycrypt) only supports curve type secp256r1.
  */
 int
-ndn_lite_default_ecc_make_key(const struct abstract_ecc_pub_key* pub_abs_key,
-                              const struct abstract_ecc_prv_key* prv_abs_key,
+ndn_lite_default_ecc_make_key(struct abstract_ecc_pub_key* pub_abs_key,
+                              struct abstract_ecc_prv_key* prv_abs_key,
                               uint8_t curve_type)
 {
   uECC_Curve curve;
@@ -152,14 +158,14 @@ ndn_lite_default_ecc_make_key(const struct abstract_ecc_pub_key* pub_abs_key,
   default:
     return NDN_SEC_UNSUPPORT_CRYPTO_ALGO;
   }
-  memset(pub_abs_key->key_value, 0, NDN_LITE_DEFAULT_ABS_KEY_MAX_SIZE);
-  memset(prv_abs_key->key_value, 0, NDN_LITE_DEFAULT_ABS_KEY_MAX_SIZE);
+  memset(pub_abs_key->key_value, 0, 64);
+  memset(prv_abs_key->key_value, 0, 32);
   int r = uECC_make_key(pub_abs_key->key_value, prv_abs_key->key_value, curve);
   if (r == 0){
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
-  *pub_abs_key->key_size = uECC_curve_public_key_size(curve);
-  *prv_abs_key->key_size = uECC_curve_private_key_size(curve);
+  pub_abs_key->key_size = uECC_curve_public_key_size(curve);
+  prv_abs_key->key_size = uECC_curve_private_key_size(curve);
   return NDN_SUCCESS;
 }
 
@@ -174,7 +180,7 @@ ndn_lite_default_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
     return NDN_SEC_WRONG_KEY_SIZE;
 
   uint8_t input_hash[NDN_SEC_SHA256_HASH_SIZE] = {0};
-  if (ndn_lite_default_sha256(input_value, input_size, input_hash) != NDN_SUCCESS) {
+  if (ndn_sha256(input_value, input_size, input_hash) != NDN_SUCCESS) {
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
   uECC_Curve curve;
@@ -217,7 +223,7 @@ ndn_lite_default_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
     return NDN_SEC_WRONG_KEY_SIZE;
 
   uint8_t input_hash[NDN_SEC_SHA256_HASH_SIZE] = {0};
-  if (ndn_lite_default_sha256(input_value, input_size, input_hash) != NDN_SUCCESS) {
+  if (ndn_sha256(input_value, input_size, input_hash) != NDN_SUCCESS) {
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
   uECC_Curve curve;

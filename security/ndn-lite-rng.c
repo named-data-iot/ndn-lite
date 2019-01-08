@@ -9,14 +9,16 @@
 #include "ndn-lite-rng.h"
 #include "ndn-lite-sec-config.h"
 
+ndn_rng_backend_t ndn_rng_backend;
+
+ndn_rng_backend_t*
+ndn_rng_get_backend(void)
+{
+  return &ndn_rng_backend;
+}
+
 int
 ndn_rng(uint8_t* dest, unsigned size)
 {
-  (void)dest;
-  (void)size;
-  int result = NDN_SUCCESS;
-#ifdef NDN_LITE_SEC_BACKEND_RANDOM_NRF_CRYPTO
-  resut = ndn_lite_nrf_crypto_rng(dest, size);
-#endif
-  return result;
+  return ndn_rng_backend.rng(dest, size);
 }

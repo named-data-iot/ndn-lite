@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Edward Lu
+ * Copyright (C) 2018-2019 Edward Lu, Zhiyi Zhang
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -11,6 +11,7 @@
 #include "ndn-lite-nrf-crypto-rng-impl.h"
 #include "nrf_crypto.h"
 #include "sdk_common.h"
+#include "../../ndn-lite-rng.h"
 
 int
 ndn_lite_nrf_crypto_rng(uint8_t *dest, unsigned size)
@@ -25,4 +26,11 @@ ndn_lite_nrf_crypto_rng(uint8_t *dest, unsigned size)
     return 0;
   }
   return 1;
+}
+
+void
+ndn_lite_nrf_crypto_rng_load_backend(void)
+{
+  ndn_rng_backend_t* backend = ndn_rng_get_backend();
+  backend.rng = ndn_lite_nrf_crypto_rng;
 }
