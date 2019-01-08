@@ -11,6 +11,8 @@
 #ifndef RNG_NRF_CRYPTO_IMPL_H
 #define RNG_NRF_CRYPTO_IMPL_H
 
+
+
 void
 ndn_lite_nrf_crypto_rng_load_backend(void);
 

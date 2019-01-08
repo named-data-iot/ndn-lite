@@ -11,6 +11,8 @@
 #ifndef SHA_256_NRF_CRYPTO_IMPL_H
 #define SHA_256_NRF_CRYPTO_IMPL_H
 
+#include <stdint.h>
+
 int
 ndn_lite_nrf_crypto_sha256(const uint8_t *payload, uint16_t payload_len, uint8_t *output);
 

@@ -32,5 +32,5 @@ void
 ndn_lite_nrf_crypto_rng_load_backend(void)
 {
   ndn_rng_backend_t* backend = ndn_rng_get_backend();
-  backend.rng = ndn_lite_nrf_crypto_rng;
+  backend->rng = ndn_lite_nrf_crypto_rng;
 }
