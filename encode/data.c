@@ -134,8 +134,7 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
   int result = ndn_ecdsa_sign(encoder->output_value + sign_input_starting,
                               sign_input_ending - sign_input_starting,
                               data->signature.sig_value, data->signature.sig_size,
-                              prv_key->key_value,
-                              prv_key->key_size, prv_key->curve_type, &used_bytes);
+                              prv_key, prv_key->curve_type, &used_bytes);
   if (result < 0)
     return result;
 
@@ -175,8 +174,7 @@ ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
   int result = ndn_hmac_sign(encoder->output_value + sign_input_starting,
                              sign_input_ending - sign_input_starting,
                              data->signature.sig_value, data->signature.sig_size,
-                             hmac_key->key_value, hmac_key->key_size,
-                             &used_bytes);
+                             hmac_key, &used_bytes);
   if (result < 0)
     return result;
 
@@ -290,8 +288,7 @@ ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, u
   int result = ndn_ecdsa_verify(decoder.input_value + input_starting,
                                 input_ending - input_starting,
                                 data->signature.sig_value, data->signature.sig_size,
-                                pub_key->key_value,
-                                pub_key->key_size, pub_key->curve_type);
+                                pub_key, pub_key->curve_type);
   if (result == 0)
     return 0;
   else
@@ -331,7 +328,7 @@ ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, ui
   int result = ndn_hmac_verify(decoder.input_value + input_starting,
                                input_ending - input_starting,
                                data->signature.sig_value, data->signature.sig_size,
-                               hmac_key->key_value, hmac_key->key_size);
+                               hmac_key);
   if (result == 0)
     return 0;
   else
@@ -376,7 +373,7 @@ ndn_data_set_encrypted_content(ndn_data_t* data,
   ndn_aes_cbc_encrypt(content_value, content_size,
                       encoder.output_value + encoder.offset,
                       encoder.output_max_size - encoder.offset,
-                      aes_iv, key->key_value, key->key_size);
+                      aes_iv, key);
   encoder.offset += data->content_size + NDN_AES_BLOCK_SIZE;
   data->content_size = encoder.offset;
   return 0;
@@ -412,7 +409,7 @@ ndn_data_parse_encrypted_content(const ndn_data_t* data,
   *content_used_size = probe - NDN_AES_BLOCK_SIZE;
   ndn_aes_cbc_decrypt(decoder.input_value + decoder.offset, probe,
                       content_value, probe - NDN_AES_BLOCK_SIZE,
-                      aes_iv, key->key_value, key->key_size);
+                      aes_iv, key);
   decoder.offset -= probe;
   return 0;
 }

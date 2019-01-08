@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang, Tianyuan Yu, Edward Lu
+ * Copyright (C) 2018-2019 Zhiyi Zhang, Tianyuan Yu, Edward Lu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -11,20 +11,40 @@
 
 #include "ndn-lite-hmac.h"
 #include "ndn-lite-sec-utils.h"
+#include "../ndn-constants.h"
 
 ndn_hmac_backend_t ndn_hmac_backend;
 
-*ndn_hmac_backend_t
+ndn_hmac_backend_t*
 ndn_hmac_get_backend(void)
 {
   return &ndn_hmac_backend;
+}
+
+uint32_t
+ndn_hmac_get_key_size(const ndn_hmac_key_t* hmac_key)
+{
+  return ndn_hmac_backend.get_key_size(&hmac_key->abs_key);
+}
+
+const uint8_t*
+ndn_hmac_get_key_value(const ndn_hmac_key_t* hmac_key)
+{
+  return ndn_hmac_backend.get_key_value(&hmac_key->abs_key);
+}
+
+int
+ndn_hmac_load_key(ndn_hmac_key_t* hmac_key,
+                  const uint8_t* key_value, uint32_t key_size)
+{
+  return ndn_hmac_backend.load_key(&hmac_key->abs_key, key_value, key_size);
 }
 
 int
 ndn_hmac_sha256(const void* payload, uint32_t payload_length,
                 const ndn_hmac_key_t* hmac_key, uint8_t* hmac_result)
 {
-  return ndn_hmac_backend.hmac_sha256(&hmac_key->abs_key, payload, payload_length, hmac_result);
+  return ndn_hmac_backend.hmac_sha256(payload, payload_length, &hmac_key->abs_key, hmac_result);
 }
 
 int
@@ -60,15 +80,15 @@ ndn_hmac_verify(const uint8_t* input_value, uint32_t input_size,
 }
 
 int
-ndn_hmac_make_key(ndn_hmac_key_t* key, uint32_t key_id,
+ndn_hmac_make_key(ndn_hmac_key_t* hmac_key, uint32_t key_id,
                   const uint8_t* input_value, uint32_t input_size,
                   const uint8_t* personalization, uint32_t personalization_size,
                   const uint8_t* seed_value, uint32_t seed_size,
                   const uint8_t* additional_value, uint32_t additional_size,
                   uint32_t salt_size)
 {
-  key->key_id = key_id;
-  return ndn_hmac_backend.make_key(&key->abs_key,
+  hmac_key->key_id = key_id;
+  return ndn_hmac_backend.make_key(&hmac_key->abs_key,
                                    input_value, input_size,
                                    personalization, personalization_size,
                                    seed_value, seed_size,

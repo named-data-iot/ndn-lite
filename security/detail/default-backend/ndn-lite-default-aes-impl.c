@@ -11,6 +11,28 @@
 #include "sec-lib/tinycrypt/tc_constants.h"
 #include "../../ndn-lite-aes.h"
 
+uint32_t
+ndn_lite_default_aes_get_key_size(const struct abstract_aes_key* aes_key)
+{
+  return aes_key->key_size;
+}
+
+const uint8_t*
+ndn_lite_default_aes_get_key_value(const struct abstract_aes_key* aes_key)
+{
+  return aes_key->key_value;
+}
+
+int
+ndn_lite_default_aes_load_key(const abstract_aes_key* aes_key,
+                              const uint8_t* key_value, uint32_t key_size)
+{
+  memset(aes_key->key_value, 0, 32);
+  memcpy(aes_key->key_value, key_value, key_size);
+  aes_key->key_size = key_size;
+  return 0;
+}
+
 int
 ndn_lite_default_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
                                  uint8_t* output_value, uint8_t output_size,

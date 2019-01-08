@@ -12,9 +12,32 @@
 #include "sec-lib/tinycrypt/tc_constants.h"
 #include "../../ndn-lite-hmac.h"
 
+uint32_t
+ndn_lite_default_hmac_get_key_size(const ndn_hmac_key_t* hmac_key)
+{
+  return hmac_key.key_size;
+}
+
+const uint8_t*
+ndn_lite_default_hmac_get_key_value(const ndn_hmac_key_t* hmac_key)
+{
+  return hmac_key.key_value;
+}
+
 int
-ndn_lite_default_hmac_sha256(const struct abstract_hmac_key* abs_key,
-                             const void* data, unsigned int data_length,
+ndn_lite_default_hmac_load_key(ndn_hmac_key_t* hmac_key,
+                               const uint8_t key_value, uint32_t key_size)
+{
+  memset(hmac_key->key_value, 0, 32);
+  memcpy(hmac_key->key_value, key_value, key_size);
+  hmac_key->key_size = key_size;
+  return 0;
+}
+
+
+int
+ndn_lite_default_hmac_sha256(const void* data, uint32_t data_length,
+                             const abstract_hmac_key_t* abs_key,
                              uint8_t* hmac_result)
 {
   struct tc_hmac_state_struct h;
@@ -143,6 +166,9 @@ void
 ndn_lite_default_hmac_load_backend(void)
 {
   ndn_hmac_backend_t* backend = ndn_hmac_get_backend();
+  backend->get_key_size = ndn_lite_default_get_key_size;
+  backend->get_key_value = ndn_lite_default_get_key_value;
+  backend->load_key = ndn_lite_default_load_key;
   backend->hmac_sha256 = ndn_lite_default_hmac_sha256;
   backend->make_key = ndn_lite_default_make_key;
   backend->hkdf = ndn_lite_default_hkdf;

@@ -11,7 +11,7 @@
 
 ndn_ecc_backend_t ndn_ecc_backend;
 
-*ndn_ecc_backend_t
+ndn_ecc_backend_t*
 ndn_ecc_get_backend(void)
 {
   return &ndn_ecc_backend;
@@ -37,19 +37,19 @@ ndn_ecc_get_pub_key_value(const ndn_ecc_pub_t* pub_key)
 
 int
 ndn_ecc_load_pub_key(ndn_ecc_pub_t* pub_key,
-                     uint8_t* key_value, uint32_t key_size)
+                     const uint8_t* key_value, uint32_t key_size)
 {
   return ndn_ecc_backend.load_pub_key(&pub_key->abs_key, key_value, key_size);
 }
 
 int
 ndn_ecc_load_prv_key(ndn_ecc_prv_t* prv_key,
-                     uint8_t* key_value, uint32_t key_size)
+                     const uint8_t* key_value, uint32_t key_size)
 {
   return ndn_ecc_backend.load_prv_key(&prv_key->abs_key, key_value, key_size);
 }
 
-void
+int
 ndn_ecc_set_rng(ndn_ECC_RNG_Function rng)
 {
   return ndn_ecc_backend.set_rng(rng);

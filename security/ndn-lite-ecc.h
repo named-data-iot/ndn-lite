@@ -30,9 +30,9 @@ typedef uint32_t (*ndn_ecc_get_pub_key_size_impl)(const abstract_ecc_pub_key_t* 
 typedef uint32_t (*ndn_ecc_get_prv_key_size_impl)(const abstract_ecc_prv_key_t* prv_key);
 typedef const uint8_t* (*ndn_ecc_get_pub_key_value_impl)(const abstract_ecc_pub_key_t* pub_key);
 typedef int (*ndn_ecc_load_pub_key_impl)(abstract_ecc_pub_key_t* pub_key,
-                                         uint8_t* key_value, uint32_t key_size);
+                                         const uint8_t* key_value, uint32_t key_size);
 typedef int (*ndn_ecc_load_prv_key_impl)(abstract_ecc_prv_key_t* prv_key,
-                                         uint8_t* key_value, uint32_t key_size);
+                                         const uint8_t* key_value, uint32_t key_size);
 typedef int (*ndn_ecc_set_rng_impl)(ndn_ECC_RNG_Function rng);
 typedef int (*ndn_ecdsa_sign_impl)(const uint8_t* payload_value, uint32_t payload_size,
                                    uint8_t* output_value, uint32_t output_max_size,
@@ -95,7 +95,7 @@ typedef struct ndn_ecc_prv {
   uint8_t curve_type;
 } ndn_ecc_prv_t;
 
-*ndn_ecc_backend_t
+ndn_ecc_backend_t*
 ndn_ecc_get_backend(void);
 
 /**
@@ -127,7 +127,27 @@ ndn_ecc_get_pub_key_value(const ndn_ecc_pub_t* pub_key);
  */
 int
 ndn_ecc_load_pub_key(ndn_ecc_pub_t* pub_key,
-                     uint8_t* key_value, uint32_t key_size);
+                     const uint8_t* key_value, uint32_t key_size);
+
+/**
+ * Initialize an ECC public key.
+ * @param ecc_pub. Input. The ECC public key whose info will be set.
+ * @param key_value. Input. The key value bytes to set.
+ * @param key_size. Input. The key size. Should not larger than 64 bytes.
+ * @param curve_type. Input. Type of ECC Curve. Can be secp160r1, secp192r1, secp224r1,
+ *        secp256r1, secp256k1.
+ * @param key_id. Input. The key id to be set with this ECC public key.
+ * @return 0 if there is no error.
+ */
+static inline int
+ndn_ecc_pub_init(ndn_ecc_pub_t* ecc_pub, const uint8_t* key_value,
+                 uint32_t key_size, uint8_t curve_type, uint32_t key_id)
+{
+  ndn_ecc_load_pub_key(ecc_pub, key_value, key_size);
+  ecc_pub->curve_type = curve_type;
+  ecc_pub->key_id = key_id;
+  return 0;
+}
 
 /**
  * Load in-memory key bits into an NDN private key.
@@ -137,7 +157,27 @@ ndn_ecc_load_pub_key(ndn_ecc_pub_t* pub_key,
  */
 int
 ndn_ecc_load_prv_key(ndn_ecc_prv_t* prv_key,
-                     uint8_t* key_value, uint32_t key_size);
+                     const uint8_t* key_value, uint32_t key_size);
+
+/**
+ * Initialize an ECC private key.
+ * @param ecc_prv. Input. The ECC private key whose info will be set.
+ * @param key_value. Input. The key value bytes to set.
+ * @param key_size. Input. The key size. Should not larger than 32 bytes.
+ * @param curve_type. Input. Type of ECC Curve. Can be secp160r1, secp192r1, secp224r1,
+ *        secp256r1, secp256k1.
+ * @param key_id. Input. The key id to be set with this ECC private key.
+ * @return 0 if there is no error.
+ */
+static inline int
+ndn_ecc_prv_init(ndn_ecc_prv_t* ecc_prv, const uint8_t* key_value,
+                 uint32_t key_size, uint8_t curve_type, uint32_t key_id)
+{
+  ndn_ecc_load_prv_key(ecc_prv, key_value, key_size);
+  ecc_prv->curve_type = curve_type;
+  ecc_prv->key_id = key_id;
+  return 0;
+}
 
 /**
  * Set RNG function for backend implementation library,
@@ -145,7 +185,7 @@ ndn_ecc_load_prv_key(ndn_ecc_prv_t* prv_key,
  * This function should be called before ndn_ecdsa_sign() and ndn_ecc_make_key().
  * @param rng. Input. RNG function which will be bound to the backend implementation library.
  */
-void
+int
 ndn_ecc_set_rng(ndn_ECC_RNG_Function rng);
 
 /**

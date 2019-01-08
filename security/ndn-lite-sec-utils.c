@@ -1,8 +1,13 @@
+/*
+ * Copyright (C) 2018-2019 Zhiyi Zhang, Tianyuan Yu, Edward Lu
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
 
 #include "ndn-lite-sec-utils.h"
-
 #include <stddef.h>
-
 #include "../ndn-error-code.h"
 
 int

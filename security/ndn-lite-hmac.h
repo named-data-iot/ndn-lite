@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang, Tianyuan Yu, Edward Lu
+ * Copyright (C) 2018-2019 Zhiyi Zhang, Tianyuan Yu, Edward Lu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -25,10 +25,14 @@ typedef struct abstract_hmac_key abstract_hmac_key_t;
 /**
  * The APIs that are supposed to be implemented by the backend.
  */
+typedef uint32_t (*ndn_hmac_get_key_size_impl)(const abstract_hmac_key_t* hmac_key);
+typedef const uint8_t* (*ndn_hmac_get_key_value_impl)(const abstract_hmac_key_t* hmac_key);
+typedef int (*ndn_hmac_load_key_impl)(abstract_hmac_key_t* hmac_key,
+                                      const uint8_t* key_value, uint32_t key_size);
 typedef int (*ndn_hmac_sha256_impl)(const void* payload, uint32_t payload_length,
                                     const abstract_hmac_key_t* hmac_key,
                                     uint8_t* hmac_result);
-typedef int (*ndn_hmac_make_key_impl)(abstract_hmac_key_t* key, uint32_t key_id,
+typedef int (*ndn_hmac_make_key_impl)(abstract_hmac_key_t* key,
                                       const uint8_t* input_value, uint32_t input_size,
                                       const uint8_t* personalization, uint32_t personalization_size,
                                       const uint8_t* seed_value, uint32_t seed_size,
@@ -46,6 +50,9 @@ typedef int (*ndn_hmacprng_impl)(const uint8_t* input_value, uint32_t input_size
  * The structure to represent the backend implementation.
  */
 typedef struct ndn_hmac_backend {
+  ndn_hmac_get_key_size_impl get_key_size;
+  ndn_hmac_get_key_value_impl get_key_value;
+  ndn_hmac_load_key_impl load_key;
   ndn_hmac_sha256_impl hmac_sha256;
   ndn_hmac_make_key_impl make_key;
   ndn_hkdf_impl hkdf;
@@ -63,12 +70,53 @@ typedef struct ndn_hmac_key {
   uint32_t key_id;
 } ndn_hmac_key_t;
 
-*ndn_hmac_backend_t
+ndn_hmac_backend_t*
 ndn_hmac_get_backend(void);
 
 /**
+ * Get hmac key size in unit of byte.
+ * @param hmac_key. Input. NDN hmac key.
+ */
+uint32_t
+ndn_hmac_get_key_size(const ndn_hmac_key_t* hmac_key);
+
+/**
+ * Get hmac key bytes.
+ * @param hmac_key. Input. NDN hmac key.
+ */
+const uint8_t*
+ndn_hmac_get_key_value(const ndn_hmac_key_t* hmac_key);
+
+/**
+ * Load in-memory key bits into an NDN hmac key.
+ * @param hmac_key. Output. NDN hmac key.
+ * @param key_value. Input. Key bytes.
+ * @param key_size. Input. The size of the key bytes.
+ */
+int
+ndn_hmac_load_key(ndn_hmac_key_t* hmac_key,
+                  const uint8_t* key_value, uint32_t key_size);
+
+/**
+ * Initialize a HMAC key.
+ * @param hmac_key. Input. The HMAC key whose info will be set.
+ * @param key_value. Input. The key value bytes to set.
+ * @param key_size. Input. The key size. Should not larger than 32 bytes.
+ * @param key_id. Input. The key id to be set with this key.
+ * @return 0 if there is no error.
+ */
+static inline int
+ndn_hmac_key_init(ndn_hmac_key_t* hmac_key, const uint8_t* key_value,
+                  uint32_t key_size, uint32_t key_id)
+{
+  ndn_hmac_load_key(hmac_key, key_value, key_size);
+  hmac_key->key_id = key_id;
+  return 0;
+}
+
+/**
  * Generate HMAC using sha256 digest algorithm.
- * @note This function will invoke different imple depending on the backend.
+ * @note This function will invoke different impl depending on the backend.
  */
 int
 ndn_hmac_sha256(const void* payload, uint32_t payload_length,

@@ -10,6 +10,9 @@
 #define NDN_ENCODING_SIGNED_INTEREST_H
 
 #include "interest.h"
+#include "../security/ndn-lite-hmac.h"
+#include "../security/ndn-lite-sha.h"
+#include "../security/ndn-lite-ecc.h"
 
 #ifdef __cplusplus
 extern "C" {

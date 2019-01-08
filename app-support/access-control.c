@@ -76,10 +76,10 @@ ndn_ac_prepare_key_request_interest(ndn_encoder_t* encoder,
   ndn_ecc_make_key(&unfinished_key.dh_pub, &unfinished_key.dh_prv,
                    NDN_ECDSA_CURVE_SECP256R1, 1234);
   encoder_append_type(&params_encoder, TLV_AC_ECDH_PUB);
-  encoder_append_length(&params_encoder, ndn_ecc_get_pub_key_size(&unfinished_key.dh_pub.abs_key));
+  encoder_append_length(&params_encoder, ndn_ecc_get_pub_key_size(&unfinished_key.dh_pub));
   encoder_append_raw_buffer_value(&params_encoder,
                                   ndn_ecc_get_pub_key_value(&unfinished_key.dh_pub),
-                                  ndn_ecc_get_pub_key_size(&unfinished_key.dh_pub.abs_key));
+                                  ndn_ecc_get_pub_key_size(&unfinished_key.dh_pub));
 
   // finish Interest
   interest.parameters.size = params_encoder.offset;
@@ -178,6 +178,8 @@ ndn_ac_on_dk_response_process(const ndn_data_t* data)
   uint8_t symmetric_key[NDN_APPSUPPORT_AC_EDK_SIZE];
   ndn_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key),
            salt, sizeof(salt));
+  ndn_aes_key_t sym_aes_key;
+  ndn_aes_key_init(&sym_aes_key, symmetric_key, sizeof(symmetric_key), 1);
 
   // dk decryption
   uint8_t ciphertext[NDN_APPSUPPORT_AC_EDK_SIZE + NDN_AES_BLOCK_SIZE] = {0};
@@ -186,8 +188,7 @@ ndn_ac_on_dk_response_process(const ndn_data_t* data)
   decoder_get_length(&decoder, &probe);
   decoder_get_raw_buffer_value(&decoder, ciphertext, sizeof(ciphertext));
   ndn_aes_cbc_decrypt(ciphertext, sizeof(ciphertext),
-                      plaintext, sizeof(plaintext), NULL,
-                      symmetric_key, sizeof(symmetric_key));
+                      plaintext, sizeof(plaintext), NULL, &sym_aes_key);
 
   // insert dk into key storage
   ndn_aes_key_t* aes = NULL;
@@ -298,7 +299,7 @@ ndn_ac_prepare_ek_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
 
   encoder_append_type(&encoder, TLV_AC_ECDH_PUB);
   encoder_append_length(&encoder, 64);
-  encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_key_value(&temp.dh_pub), 64);
+  encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(&temp.dh_pub), 64);
 
   encoder_append_type(&encoder, TLV_AC_SALT);
   encoder_append_length(&encoder, sizeof(salt));
@@ -358,6 +359,8 @@ ndn_ac_prepare_dk_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
   // TODO: update personalization, add, seed with truly randomness
   ndn_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key),
            salt, sizeof(salt));
+  ndn_aes_key_t sym_key;
+  ndn_aes_key_init(&sym_key, symmetric_key, sizeof(symmetric_key), 2);
 
   // fetch ek by key_id
   ndn_aes_key_t* aes = NULL;
@@ -372,9 +375,8 @@ ndn_ac_prepare_dk_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
   // TODO: update personalization, add, seed with truly randomness
   ndn_hmacprng(personalization, sizeof(personalization), aes_iv, NDN_AES_BLOCK_SIZE,
                       seed, sizeof(seed), additional_input, sizeof(additional_input));
-  ndn_aes_cbc_encrypt(aes,
-                      Encrypted, sizeof(Encrypted), aes_iv,
-                      symmetric_key, sizeof(symmetric_key));
+  ndn_aes_cbc_encrypt(ndn_aes_get_key_value(aes), ndn_aes_get_key_size(aes),
+                      Encrypted, sizeof(Encrypted), aes_iv, &sym_key);
 
   // TODO: lifetime calculation
   uint32_t lifetime = 100;
@@ -385,7 +387,7 @@ ndn_ac_prepare_dk_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
   encoder_init(&encoder, response->content_value, NDN_CONTENT_BUFFER_SIZE);
   encoder_append_type(&encoder, TLV_AC_ECDH_PUB);
   encoder_append_length(&encoder, 64);
-  encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_key_value(&temp.dh_pub), 64);
+  encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(&temp.dh_pub), 64);
 
   encoder_append_type(&encoder, TLV_AC_SALT);
   encoder_append_length(&encoder, sizeof(salt));

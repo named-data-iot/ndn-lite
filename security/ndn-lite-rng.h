@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang
+ * Copyright (C) 2018-2019 Zhiyi Zhang
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -30,7 +30,7 @@ extern "C" {
 typedef int (*ndn_ECC_RNG_Function)(uint8_t* dest, unsigned size);
 
 /**
- * Generate a random number. 
+ * Generate a random number.
  *
  * YOU CANNOT USE THIS FUNCTION IF YOU ARE USING THE
  * DEFAULT SECURITY BACKEND.
@@ -38,7 +38,8 @@ typedef int (*ndn_ECC_RNG_Function)(uint8_t* dest, unsigned size);
  * @param dest Buffer to store random number.
  * @param size Length of random number to generate.
  */
-int ndn_rng(uint8_t *dest, unsigned size);
+int
+ndn_rng(uint8_t *dest, unsigned size);
 
 #ifdef __cplusplus
 }

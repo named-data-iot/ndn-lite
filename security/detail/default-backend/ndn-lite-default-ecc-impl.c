@@ -63,16 +63,17 @@ ndn_lite_default_ecc_get_pub_key_value(const struct abstract_ecc_pub_key* pub_ke
 
 int
 ndn_lite_default_ecc_load_pub_key(struct abstract_ecc_pub_key* pub_key,
-                                               uint8_t* key_value, uint32_t key_size)
+                                  const uint8_t* key_value, uint32_t key_size)
 {
   memset(pub_key->key_value, 0, 64);
   memcpy(pub_key->key_value, key_value, key_size);
   pub_key->key_size = key_size;
+  return 0;
 }
 
 int
 ndn_lite_default_ecc_load_prv_key(struct abstract_ecc_prv_key* prv_key,
-                                  uint8_t* key_value, uint32_t key_size)
+                                  const uint8_t* key_value, uint32_t key_size)
 {
   memset(prv_key->key_value, 0, 32);
   memcpy(prv_key->key_value, key_value, key_size);

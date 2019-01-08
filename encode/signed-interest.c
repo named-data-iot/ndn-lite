@@ -191,8 +191,7 @@ ndn_signed_interest_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_interest_t
   result = ndn_ecdsa_sign(&encoder->output_value[name_block_starting],
                           name_block_ending - name_block_starting,
                           interest->signature.sig_value, interest->signature.sig_size,
-                          prv_key->key_value, prv_key->key_size,
-                          prv_key->curve_type, &used_bytes);
+                          prv_key, prv_key->curve_type, &used_bytes);
   if (result < 0)
     return result;
 
@@ -242,7 +241,7 @@ ndn_signed_interest_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_interest_t*
   result = ndn_hmac_sign(&encoder->output_value[name_block_starting],
                          name_block_ending - name_block_starting,
                          interest->signature.sig_value, interest->signature.sig_size,
-                         hmac_key->key_value, hmac_key->key_size, &used_bytes);
+                         hmac_key, &used_bytes);
   if (result < 0)
     return result;
 
@@ -309,8 +308,7 @@ ndn_signed_interest_ecdsa_verify(const ndn_interest_t* interest, const ndn_ecc_p
   ndn_name_tlv_encode(&encoder, &interest->name);
   int result = ndn_ecdsa_verify(encoder.output_value, encoder.offset,
                                 interest->signature.sig_value, interest->signature.sig_size,
-                                pub_key->key_value,
-                                pub_key->key_size, pub_key->curve_type);
+                                pub_key, pub_key->curve_type);
   if (result)
     return result;
   return 0;
@@ -325,7 +323,7 @@ ndn_signed_interest_hmac_verify(const ndn_interest_t* interest, const ndn_hmac_k
   ndn_name_tlv_encode(&encoder, &interest->name);
   int result = ndn_hmac_verify(encoder.output_value, encoder.offset,
                                interest->signature.sig_value, interest->signature.sig_size,
-                               hmac_key->key_value, hmac_key->key_size);
+                               hmac_key);
   if (result)
     return result;
   return 0;
