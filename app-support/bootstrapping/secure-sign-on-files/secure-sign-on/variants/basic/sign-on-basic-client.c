@@ -15,6 +15,7 @@
 #include "../../../../../../ndn-error-code.h"
 
 #include "../../../../../../encode/tlv.h"
+#include "../../../../../../encode/decoder.h"
 
 #include "sign-on-basic-consts.h"
 #include "security/sign-on-basic-sec-consts.h"
@@ -192,6 +193,7 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
 
   sign_on_basic_client->status = SIGN_ON_BASIC_CLIENT_GENERATED_BOOTSTRAPPING_REQUEST;
   return NDN_SUCCESS;
+  
 }
 
 int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
@@ -200,60 +202,116 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
 
   APP_LOG("Process bootstrapping request response got called.\n");
 
+  APP_LOG("Length of bootstrapping request response tlv block: %d\n", btstrp_rqst_rspns_buf_len);
+  APP_LOG_HEX("Full contents of bootstrapping request response:", btstrp_rqst_rspns_buf_p, btstrp_rqst_rspns_buf_len);
+
   // define pointers to data / lengths of data to be copied at the end, after processing is finished,
   // so that no internal state of the sign on basic client object is modified until after the whole
   // message has been processed successfully
-  const uint8_t *N2_pub_p;
+  uint8_t *N2_pub_p;
   uint32_t N2_pub_len;
-  const uint8_t *trust_anchor_p;
+  uint8_t *trust_anchor_p;
   uint32_t trust_anchor_len;
 
-  APP_LOG("Length of bootstrapping request response tlv block: %d\n", btstrp_rqst_rspns_buf_len);
-  APP_LOG_HEX("Contents of bootstrapping request response:", btstrp_rqst_rspns_buf_p, btstrp_rqst_rspns_buf_len);
+  int ndn_decoder_success = 0;
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, btstrp_rqst_rspns_buf_p, btstrp_rqst_rspns_buf_len);
 
-  enum ParseTlvValueResultCode parseResult = PARSE_TLV_VALUE_SUCCESS;
-  uint32_t bootstrappingRequestTlvValueLength;
-  uint32_t bootstrappingRequestTlvValueOffset;
+  uint32_t current_tlv_type;
+  uint32_t current_tlv_length;
+  uint8_t *btstrp_rqst_rspns_tlv_val_buf_p;
+  uint32_t btstrp_rqst_rspns_tlv_val_len;
+  uint8_t *btstrp_rqst_rspns_tlv_sig_p;
 
-  if (parseTlvValue(btstrp_rqst_rspns_buf_p, btstrp_rqst_rspns_buf_len, 
-                    TLV_SSP_BOOTSTRAPPING_REQUEST_RESPONSE,
-                    &bootstrappingRequestTlvValueLength, 
-                    &bootstrappingRequestTlvValueOffset) != PARSE_TLV_VALUE_SUCCESS) {
-    APP_LOG("Failed to get tlv value of bootstrapping request response.\n");
-    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_PACKET_HEADER;
+  if (decoder_get_type(&decoder, &current_tlv_type) != ndn_decoder_success) {
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_BTSTRP_RQST_RSPNS;
   }
-  APP_LOG("Bootstrapping request tlv value length: %d\n", bootstrappingRequestTlvValueLength);
-  APP_LOG("Bootstrapping request tlv value offset: %d\n", bootstrappingRequestTlvValueOffset);
-  APP_LOG_HEX("Value of bootstrapping request tlv block:", btstrp_rqst_rspns_buf_p + bootstrappingRequestTlvValueOffset,
-      bootstrappingRequestTlvValueLength);
-
-  const uint8_t *btstrp_rqst_rspns_tlv_val_buf_p = btstrp_rqst_rspns_buf_p + bootstrappingRequestTlvValueOffset;
-  uint32_t currentTlvValueLength;
-  uint32_t currentTlvValueOffset;
-
-  // first, get the signature and verify it
-  // *** //
-  
-  if (parseTlvValue(btstrp_rqst_rspns_tlv_val_buf_p, bootstrappingRequestTlvValueLength,
-                    TLV_SSP_SIGNATURE, &currentTlvValueLength, 
-                    &currentTlvValueOffset) != PARSE_TLV_VALUE_SUCCESS) {
-    APP_LOG("Failed to get tlv value of bootstrapping request response signature.\n");
-    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_SIG;
+  if (current_tlv_type != TLV_SSP_BOOTSTRAPPING_REQUEST_RESPONSE) {
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_BTSTRP_RQST_RSPNS;
   }
-  APP_LOG("Bootstrapping request response signature tlv block length: %d\n", currentTlvValueLength);
-  APP_LOG("Bootstrapping request response signature tlv value offset: %d\n", currentTlvValueOffset);
-  APP_LOG_HEX("Value of signature tlv block:", btstrp_rqst_rspns_tlv_val_buf_p + currentTlvValueOffset,
-      currentTlvValueLength);
+  if (decoder_get_length(&decoder, &current_tlv_length) != ndn_decoder_success) {
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_BTSTRP_RQST_RSPNS;
+  }
 
-  // need code to verify signature, return appropriate return code if signature validation fails
+  btstrp_rqst_rspns_tlv_val_buf_p = btstrp_rqst_rspns_buf_p + decoder.offset;
+  btstrp_rqst_rspns_tlv_val_len = current_tlv_length;
 
-  APP_LOG_HEX("Value of signature payload:", btstrp_rqst_rspns_tlv_val_buf_p,
-      bootstrappingRequestTlvValueLength - currentTlvValueLength - SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE);
+  APP_LOG("Length of bootstrapping request response: %d\n", btstrp_rqst_rspns_tlv_val_len);
+  APP_LOG_HEX("Value of bootstrapping request response:", btstrp_rqst_rspns_tlv_val_buf_p,
+              btstrp_rqst_rspns_tlv_val_len);
 
-  const uint8_t *sig_begin = btstrp_rqst_rspns_tlv_val_buf_p + currentTlvValueOffset;
-  uint32_t sig_len = currentTlvValueLength;
+  // check for the N2 pub tlv block and move the decoder offset past it
+  if (decoder_get_type(&decoder, &current_tlv_type) != ndn_decoder_success) {
+    APP_LOG("Failed to get tlv type of N2 pub.\n");
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_N2_PUB;
+  }
+  if (current_tlv_type != TLV_SSP_N2_PUB) {
+    APP_LOG("Did not get expected tlv type when parsing for N2 pub in bootstrapping "
+            "request response: got %d.\n", current_tlv_type);
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_N2_PUB;
+  }
+  if (decoder_get_length(&decoder, &current_tlv_length) != ndn_decoder_success) {
+    APP_LOG("Failed to get tlv length of N2 pub.\n");
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_N2_PUB;
+  }
+  N2_pub_p = btstrp_rqst_rspns_buf_p + decoder.offset;
+  N2_pub_len = current_tlv_length;
+  APP_LOG_HEX("Value of N2 pub (ndn decoder):", N2_pub_p, N2_pub_len);
+  if (decoder_move_forward(&decoder, current_tlv_length) != ndn_decoder_success) {
+    APP_LOG("Failed to move ndn decoder offset past N2 pub tlv value.\n");
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_N2_PUB;
+  }
+
+  // check for the trust anchor certificate tlv block and move the decoder offset past it
+  if (decoder_get_type(&decoder, &current_tlv_type) != ndn_decoder_success) {
+    APP_LOG("Failed to get tlv type of trust anchor certificate.\n");
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_TRUST_ANCHOR_CERT;
+  }
+  if (current_tlv_type != TLV_SSP_ANCHOR_CERTIFICATE) {
+    APP_LOG("Did not get expected tlv type when parsing for trust anchor cert in bootstrapping "
+            "request response: got %d.\n", current_tlv_type);
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_TRUST_ANCHOR_CERT;
+  } 
+  if (decoder_get_length(&decoder, &current_tlv_length) != ndn_decoder_success) {
+    APP_LOG("Failed to get tlv length of trust anchor certificate.\n");
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_TRUST_ANCHOR_CERT;
+  }
+  trust_anchor_p = btstrp_rqst_rspns_buf_p + decoder.offset;
+  trust_anchor_len = current_tlv_length;
+  APP_LOG("Length of trust anchor certificate (ndn_decoder): %d\n", trust_anchor_len);
+  APP_LOG_HEX("Value of trust anchor certificate (ndn decoder):", trust_anchor_p, trust_anchor_len);
+  if (decoder_move_forward(&decoder, current_tlv_length) != ndn_decoder_success) {
+    APP_LOG("Failed to move ndn decoder offset past trust anchor cert tlv value.\n");
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_TRUST_ANCHOR_CERT;
+  }
+
+  // check for signature tlv block and move the decoder to its tlv value
+
+  btstrp_rqst_rspns_tlv_sig_p = btstrp_rqst_rspns_buf_p + decoder.offset;
+
+  if (decoder_get_type(&decoder, &current_tlv_type) != ndn_decoder_success) {
+    APP_LOG("Failed to get tlv type of bootstrapping request response signature.\n");
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_SIG;
+  }
+  if (current_tlv_type != TLV_SSP_SIGNATURE) {
+    APP_LOG("Did not get expected tlv type when parsing for signature in bootstrapping "
+            "request response: got %d.\n", current_tlv_type);
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_SIG;
+  }
+  if (decoder_get_length(&decoder, &current_tlv_length) != ndn_decoder_success) {
+    APP_LOG("Failed to get tlv length of bootstrapping request response signature.\n");
+    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_SIG;
+  }
+
+  APP_LOG_HEX("First three bytes after btstrp_rqst_rspns_tlv_sig_p:", btstrp_rqst_rspns_tlv_sig_p, 3);
+
+  const uint8_t *sig_begin = btstrp_rqst_rspns_buf_p + decoder.offset;
+  uint32_t sig_len = current_tlv_length;
   const uint8_t *sig_payload_begin = btstrp_rqst_rspns_tlv_val_buf_p;
-  uint32_t sig_payload_len = bootstrappingRequestTlvValueLength - currentTlvValueLength - SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
+  uint32_t sig_payload_len = btstrp_rqst_rspns_tlv_sig_p - btstrp_rqst_rspns_tlv_val_buf_p;
+
+  APP_LOG_HEX("Value of signature of bootstrapping request response", sig_begin, sig_len);
+  APP_LOG_HEX("Value of signature payload of bootstrapping request response", sig_payload_begin, sig_payload_len);
 
   if (!sign_on_basic_client->sec_intf.vrfy_btstrp_rqst_rspns_sig(
           sig_payload_begin, sig_payload_len,
@@ -264,18 +322,7 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_VERIFY_SIGNATURE;
   }
 
-  parseTlvValue(btstrp_rqst_rspns_tlv_val_buf_p, bootstrappingRequestTlvValueLength,
-      TLV_SSP_N2_PUB, &currentTlvValueLength, &currentTlvValueOffset);
-  if (parseResult != PARSE_TLV_VALUE_SUCCESS) {
-    APP_LOG("Failed to get tlv value of N2 pub.\n");
-    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_N2_PUB;
-  }
-  APP_LOG("N2 pub tlv block length: %d\n", currentTlvValueLength);
-  APP_LOG("N2 pub tlv value offset: %d\n", currentTlvValueOffset);
-  N2_pub_p = btstrp_rqst_rspns_tlv_val_buf_p + currentTlvValueOffset;
-  N2_pub_len = currentTlvValueLength;
-  APP_LOG_HEX("N2 pub hex from copied pointers:", N2_pub_p, N2_pub_len);
-  APP_LOG("Value of N2_pub_len before doing anything else: %d\n", N2_pub_len);
+  //***************************************************//
 
   if (!sign_on_basic_client->sec_intf.gen_kt(N2_pub_p, N2_pub_len,
                                              sign_on_basic_client->N1_pri_p, sign_on_basic_client->N1_pri_len,
@@ -288,21 +335,8 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
 
   //***************************************************//
 
-  parseTlvValue(btstrp_rqst_rspns_tlv_val_buf_p, bootstrappingRequestTlvValueLength,
-      TLV_SSP_ANCHOR_CERTIFICATE, &currentTlvValueLength, &currentTlvValueOffset);
-  if (parseResult != PARSE_TLV_VALUE_SUCCESS) {
-    APP_LOG("Failed to get tlv value of anchor certificate.\n");
-    return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_TRUST_ANCHOR_CERT;
-  }
-  APP_LOG("Value of N2_pub_len after parseTlvValue for anchor certificate: %d\n", N2_pub_len);
-  APP_LOG("Anchor certificate tlv block length: %d\n", currentTlvValueLength);
-  APP_LOG("Anchor certificate tlv value offset: %d\n", currentTlvValueOffset);
-  trust_anchor_p = btstrp_rqst_rspns_tlv_val_buf_p + currentTlvValueOffset;
-  trust_anchor_len = currentTlvValueLength;
-  APP_LOG_HEX("Trust anchor from copied pointers:", trust_anchor_p, trust_anchor_len);
-
-//  // now that the entire bootstrapping request respone has been processed successfully, can modify internal state
-//  // of sign on client object
+  // now that the entire bootstrapping request respone has been processed successfully, can modify internal state
+  // of sign on client object
   memcpy(sign_on_basic_client->N2_pub_p, N2_pub_p, (size_t) N2_pub_len);
   sign_on_basic_client->N2_pub_len = N2_pub_len;
   memcpy(sign_on_basic_client->trust_anchor_cert_p, trust_anchor_p, (size_t) trust_anchor_len);
@@ -458,54 +492,114 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
   // declare pointers to KD pri decrypted and KD pub certificate ahead of time,
   // so that modification of internal state of sign on basic client isn't done until after
   // entire certificate request response message is successfully processed
-  const uint8_t *KD_pri_decrypted_p;
+  uint8_t *KD_pri_encrypted_p;
+  uint32_t KD_pri_encrypted_len;
+  uint8_t *KD_pri_decrypted_p;
   uint32_t KD_pri_decrypted_len;
-  const uint8_t *KD_pub_cert_p;
+  uint8_t *KD_pub_cert_p;
   uint32_t KD_pub_cert_len;
 
   APP_LOG("Process certificate request response got called.\n");
 
-  enum ParseTlvValueResultCode parseResult = PARSE_TLV_VALUE_SUCCESS;
-  uint32_t certificateRequestTlvValueLength;
-  uint32_t certificateRequestTlvValueOffset;
+  int ndn_decoder_success = 0;
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, cert_rqst_rspns_buf_p, cert_rqst_rspns_buf_len);
 
-  if (parseTlvValue(cert_rqst_rspns_buf_p, cert_rqst_rspns_buf_len, 
-                    TLV_SSP_CERTIFICATE_REQUEST_RESPONSE,
-                    &certificateRequestTlvValueLength, 
-                    &certificateRequestTlvValueOffset) != PARSE_TLV_VALUE_SUCCESS) {
-    APP_LOG("Failed to get tlv value of certificate request.\n");
-    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_PACKET_HEADER;
+  uint32_t current_tlv_type;
+  uint32_t current_tlv_length;
+  uint8_t *cert_rqst_rspns_tlv_val_buf_p;
+  uint32_t cert_rqst_rspns_tlv_val_len;
+  uint8_t *cert_rqst_rspns_tlv_sig_p;
+
+  if (decoder_get_type(&decoder, &current_tlv_type) != ndn_decoder_success) {
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_CERT_RQST_RSPNS;
   }
-  APP_LOG("Certificate request tlv value length: %d\n", certificateRequestTlvValueLength);
-  APP_LOG("Certificate request tlv value offset: %d\n", certificateRequestTlvValueOffset);
-  APP_LOG_HEX("Value of certificate request tlv block:", cert_rqst_rspns_buf_p + certificateRequestTlvValueOffset,
-      certificateRequestTlvValueLength);
-
-  const uint8_t *cert_rqst_rspns_tlv_val_buf_p = cert_rqst_rspns_buf_p + certificateRequestTlvValueOffset;
-  uint32_t currentTlvValueLength;
-  uint32_t currentTlvValueOffset;
-
-  // verify signature of the certificate request response
-  //***************************************************************************//
-
-  if (parseTlvValue(cert_rqst_rspns_tlv_val_buf_p, certificateRequestTlvValueLength,
-                    TLV_SSP_SIGNATURE, &currentTlvValueLength, 
-                    &currentTlvValueOffset) != PARSE_TLV_VALUE_SUCCESS) {
-    APP_LOG("Failed to get tlv value of cert request response signature.\n");
-    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_KD_PRI_ENC;
+  if (current_tlv_type != TLV_SSP_CERTIFICATE_REQUEST_RESPONSE) {
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_CERT_RQST_RSPNS;
   }
-  APP_LOG_HEX("Bytes of signature of cert request response:", cert_rqst_rspns_tlv_val_buf_p + currentTlvValueOffset,
-      currentTlvValueLength);
+  if (decoder_get_length(&decoder, &current_tlv_length) != ndn_decoder_success) {
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_CERT_RQST_RSPNS;
+  }
 
-  const uint8_t *sig_begin = cert_rqst_rspns_tlv_val_buf_p + currentTlvValueOffset;
-  uint32_t sig_len = currentTlvValueLength;
+  cert_rqst_rspns_tlv_val_buf_p = cert_rqst_rspns_buf_p + decoder.offset;
+  cert_rqst_rspns_tlv_val_len = current_tlv_length;
+
+  APP_LOG("Length of certificate request response: %d\n", cert_rqst_rspns_tlv_val_len);
+  APP_LOG_HEX("Value of certificate request response:", cert_rqst_rspns_tlv_val_buf_p,
+               cert_rqst_rspns_tlv_val_len);
+
+  // check for the KD pri encrypted tlv block and move the decoder offset past it
+  if (decoder_get_type(&decoder, &current_tlv_type) != ndn_decoder_success) {
+    APP_LOG("Failed to get tlv type of KD pri encrypted.\n");
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_KD_PRI_ENC;
+  }
+  if (current_tlv_type != TLV_SSP_KD_PRI_ENCRYPTED) {
+    APP_LOG("Did not get expected tlv type when parsing for KD pri encrypted in bootstrapping "
+            "request response: got %d.\n", current_tlv_type);
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_KD_PRI_ENC;
+  }
+  if (decoder_get_length(&decoder, &current_tlv_length) != ndn_decoder_success) {
+    APP_LOG("Failed to get tlv length of KD pri encrypted.\n");
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_KD_PRI_ENC;
+  }
+  KD_pri_encrypted_p = cert_rqst_rspns_buf_p + decoder.offset;
+  KD_pri_encrypted_len = current_tlv_length;
+  APP_LOG_HEX("Value of KD pri encrypted (ndn decoder):", KD_pri_encrypted_p, KD_pri_encrypted_len);
+  if (decoder_move_forward(&decoder, current_tlv_length) != ndn_decoder_success) {
+    APP_LOG("Failed to move ndn decoder offset past KD pri encrypted tlv value.\n");
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_KD_PRI_ENC;
+  }
+
+  // check for the KD pub certificate tlv block and move the decoder offset past it
+  if (decoder_get_type(&decoder, &current_tlv_type) != ndn_decoder_success) {
+    APP_LOG("Failed to get tlv type of KD pub certificate.\n");
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_KD_PUB_CERT;
+  }
+  if (current_tlv_type != TLV_SSP_KD_PUB_CERTIFICATE) {
+    APP_LOG("Did not get expected tlv type when parsing for KD pub certificate in bootstrapping "
+            "request response: got %d.\n", current_tlv_type);
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_KD_PUB_CERT;
+  } 
+  if (decoder_get_length(&decoder, &current_tlv_length) != ndn_decoder_success) {
+    APP_LOG("Failed to get tlv length of KD pub certificate.\n");
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_KD_PUB_CERT;
+  }
+  KD_pub_cert_p = cert_rqst_rspns_buf_p + decoder.offset;
+  KD_pub_cert_len = current_tlv_length;
+  APP_LOG_HEX("Value of KD pub certificate (ndn decoder):", KD_pub_cert_p, KD_pub_cert_len);
+  if (decoder_move_forward(&decoder, current_tlv_length) != ndn_decoder_success) {
+    APP_LOG("Failed to move ndn decoder offset past KD pub cert tlv value.\n");
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_KD_PUB_CERT;
+  }
+
+  // check for signature tlv block and move the decoder to its tlv value
+
+  cert_rqst_rspns_tlv_sig_p = cert_rqst_rspns_buf_p + decoder.offset;
+
+  if (decoder_get_type(&decoder, &current_tlv_type) != ndn_decoder_success) {
+    APP_LOG("Failed to get tlv type of certificate request response signature.\n");
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_SIG;
+  }
+  if (current_tlv_type != TLV_SSP_SIGNATURE) {
+    APP_LOG("Did not get expected tlv type when parsing for signature in certificate "
+            "request response: got %d.\n", current_tlv_type);
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_SIG;
+  }
+  if (decoder_get_length(&decoder, &current_tlv_length) != ndn_decoder_success) {
+    APP_LOG("Failed to get tlv length of certificate request response signature.\n");
+    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_SIG;
+  }
+
+  const uint8_t *sig_begin = cert_rqst_rspns_buf_p + decoder.offset;
+  uint32_t sig_len = current_tlv_length;
   const uint8_t *sig_payload_begin = cert_rqst_rspns_tlv_val_buf_p;
-  uint32_t sig_payload_len = certificateRequestTlvValueLength - currentTlvValueLength - SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
+  uint32_t sig_payload_len = cert_rqst_rspns_tlv_sig_p - cert_rqst_rspns_tlv_val_buf_p;
 
-  APP_LOG_HEX("Bytes over which cert request response signature was calculated:",
-      sig_payload_begin, sig_payload_len);
+  APP_LOG_HEX("Value of signature of certificate request response", sig_begin, sig_len);
+  APP_LOG_HEX("Value of signature payload of certificate request response", sig_payload_begin, sig_payload_len);
 
-  if (!sign_on_basic_client->sec_intf.vrfy_cert_rqst_rspns_sig(sig_payload_begin, sig_payload_len,
+  if (!sign_on_basic_client->sec_intf.vrfy_cert_rqst_rspns_sig(
+          sig_payload_begin, sig_payload_len,
           sig_begin, sig_len,
           sign_on_basic_client->KT_p,
           sign_on_basic_client->KT_len)) {
@@ -513,21 +607,7 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_VERIFY_SIGNATURE;
   }
 
-  //***************************************************************************//
-
-  if (parseTlvValue(cert_rqst_rspns_tlv_val_buf_p, certificateRequestTlvValueLength,
-                    TLV_SSP_KD_PRI_ENCRYPTED, &currentTlvValueLength, 
-                    &currentTlvValueOffset) != PARSE_TLV_VALUE_SUCCESS) {
-    APP_LOG("Failed to get tlv value of kd pri encrypted.\n");
-    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_KD_PRI_ENC;
-  }
-  APP_LOG("Kd pri encrypted tlv block length: %d\n", currentTlvValueLength);
-  APP_LOG("Kd pri encrypted tlv value offset: %d\n", currentTlvValueOffset);
-  const uint8_t *kd_pri_enc_begin = cert_rqst_rspns_tlv_val_buf_p + currentTlvValueOffset;
-  uint32_t kd_pri_enc_len = currentTlvValueLength;
-
-  // do decryption of Kd pri here
-  //*********************************************************//
+  //***************************************************//
 
   APP_LOG("Doing decryption of Kd pri by Kt.\n");
 
@@ -538,7 +618,7 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
   if (!sign_on_basic_client->sec_intf.decrypt_kd_pri(
       sign_on_basic_client->KT_p,
       sign_on_basic_client->KT_len,
-      kd_pri_enc_begin, kd_pri_enc_len,
+      KD_pri_encrypted_p, KD_pri_encrypted_len,
       KD_pri_decrypted_temp_buf, 
       sizeof(KD_pri_decrypted_temp_buf),
       &KD_pri_decrypted_len)) {
@@ -550,18 +630,6 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
   KD_pri_decrypted_p = KD_pri_decrypted_temp_buf;
 
   //**********************************************************//
-
-  
-  if (parseTlvValue(cert_rqst_rspns_tlv_val_buf_p, certificateRequestTlvValueLength,
-                    TLV_SSP_KD_PUB_CERTIFICATE, &currentTlvValueLength, 
-                    &currentTlvValueOffset) != PARSE_TLV_VALUE_SUCCESS) {
-    APP_LOG("Failed to get tlv value of kd pub certificate.\n");
-    return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_KD_PUB_CERT;
-  }
-  APP_LOG("Kd pub certificate tlv block length: %d\n", currentTlvValueLength);
-  APP_LOG("Kd pub certificate tlv value offset: %d\n", currentTlvValueOffset);
-  KD_pub_cert_p = cert_rqst_rspns_tlv_val_buf_p + currentTlvValueOffset;
-  KD_pub_cert_len = currentTlvValueLength;
 
   // now that entire message has been processed successfully, modify internal state of sign on basic client
   memcpy(sign_on_basic_client->KD_pri_p, KD_pri_decrypted_p, KD_pri_decrypted_len);

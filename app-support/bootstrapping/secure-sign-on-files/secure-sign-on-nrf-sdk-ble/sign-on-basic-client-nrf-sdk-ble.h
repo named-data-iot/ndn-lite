@@ -16,7 +16,6 @@
 #include "../secure-sign-on/variants/basic/sign-on-basic-client.h"
 #include "../secure-sign-on/variants/basic/sign-on-basic-client-consts.h"
 #include "../secure-sign-on/variants/basic/sign-on-basic-consts.h"
-#include "../secure-sign-on/tlv/sign-on-basic-tlv-consts.h"
 
 /**@brief Structure for keeping track of state for a given Sign-on Basic nRF SDK BLE client.
  *          This is an implementation of a client for the sign-on protocol, utilizing Bluetooth Low

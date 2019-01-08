@@ -11,7 +11,6 @@
 #ifndef SIGN_ON_BASIC_TLV_HELPERS_H
 #define SIGN_ON_BASIC_TLV_HELPERS_H
 
-#include "sign-on-basic-tlv-consts.h"
 #include <stdint.h>
 #include <stddef.h>
 
