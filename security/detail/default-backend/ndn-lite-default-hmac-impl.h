@@ -23,28 +23,7 @@ struct abstract_hmac_key {
   uint32_t key_size;
 };
 
-int
-ndn_lite_default_hmac_sha256(const struct abstract_hmac_key* abs_key,
-                             const void* data, unsigned int data_length,
-                             uint8_t* hmac_result);
-
-int
-ndn_lite_default_make_hmac_key(struct abstract_hmac_key* abs_key,
-                               const uint8_t* input_value, uint32_t input_size,
-                               const uint8_t* personalization, uint32_t personalization_size,
-                               const uint8_t* seed_value, uint32_t seed_size,
-                               const uint8_t* additional_value, uint32_t additional_size,
-                               uint32_t salt_size);
-
-int
-ndn_lite_default_hkdf(const uint8_t* input_value, uint32_t input_size,
-                      uint8_t* output_value, uint32_t output_size,
-                      const uint8_t* seed_value, uint32_t seed_size);
-
-int
-ndn_lite_default_hmacprng(const uint8_t* input_value, uint32_t input_size,
-                          uint8_t* output_value, uint32_t output_size,
-                          const uint8_t* seed_value, uint32_t seed_size,
-                          const uint8_t* additional_value, uint32_t additional_size);
+void
+ndn_lite_default_hmac_load_backend(void);
 
 #endif // NDN_LITE_DEFAULT_HMAC_IMPL_H

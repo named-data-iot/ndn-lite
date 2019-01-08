@@ -10,9 +10,7 @@
 #include "sec-lib/tinycrypt/tc_hmac.h"
 #include "sec-lib/tinycrypt/tc_hmac_prng.h"
 #include "sec-lib/tinycrypt/tc_constants.h"
-#include "../../../ndn-error-code.h"
-#include "../../../ndn-constants.h"
-#include <string.h>
+#include "../../ndn-lite-hmac.h"
 
 int
 ndn_lite_default_hmac_sha256(const struct abstract_hmac_key* abs_key,
@@ -37,12 +35,12 @@ ndn_lite_default_hmac_sha256(const struct abstract_hmac_key* abs_key,
 }
 
 int
-ndn_lite_default_make_hmac_key(struct abstract_hmac_key* abs_key,
-                               const uint8_t* input_value, uint32_t input_size,
-                               const uint8_t* personalization, uint32_t personalization_size,
-                               const uint8_t* seed_value, uint32_t seed_size,
-                               const uint8_t* additional_value, uint32_t additional_size,
-                               uint32_t salt_size)
+ndn_lite_default_make_key(struct abstract_hmac_key* abs_key,
+                          const uint8_t* input_value, uint32_t input_size,
+                          const uint8_t* personalization, uint32_t personalization_size,
+                          const uint8_t* seed_value, uint32_t seed_size,
+                          const uint8_t* additional_value, uint32_t additional_size,
+                          uint32_t salt_size)
 {
   uint8_t salt[salt_size];
   int r = ndn_lite_default_hmacprng(personalization, personalization_size,
@@ -139,4 +137,14 @@ ndn_lite_default_hmacprng(const uint8_t* input_value, uint32_t input_size,
     }
   }
   return NDN_SUCCESS;
+}
+
+void
+ndn_lite_default_hmac_load_backend(void)
+{
+  ndn_hmac_backend_t* backend = ndn_hmac_get_backend();
+  backend->hmac_sha256 = ndn_lite_default_hmac_sha256;
+  backend->make_key = ndn_lite_default_make_key;
+  backend->hkdf = ndn_lite_default_hkdf;
+  backend->hmacprng = ndn_lite_default_hmacprng;
 }

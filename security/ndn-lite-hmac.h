@@ -23,6 +23,36 @@ extern "C" {
 typedef struct abstract_hmac_key abstract_hmac_key_t;
 
 /**
+ * The APIs that are supposed to be implemented by the backend.
+ */
+typedef int (*ndn_hmac_sha256_impl)(const void* payload, uint32_t payload_length,
+                                    const abstract_hmac_key_t* hmac_key,
+                                    uint8_t* hmac_result);
+typedef int (*ndn_hmac_make_key_impl)(abstract_hmac_key_t* key, uint32_t key_id,
+                                      const uint8_t* input_value, uint32_t input_size,
+                                      const uint8_t* personalization, uint32_t personalization_size,
+                                      const uint8_t* seed_value, uint32_t seed_size,
+                                      const uint8_t* additional_value, uint32_t additional_size,
+                                      uint32_t salt_size);
+typedef int (*ndn_hkdf_impl)(const uint8_t* input_value, uint32_t input_size,
+                             uint8_t* output_value, uint32_t output_size,
+                             const uint8_t* seed_value, uint32_t seed_size);
+typedef int (*ndn_hmacprng_impl)(const uint8_t* input_value, uint32_t input_size,
+                                 uint8_t* output_value, uint32_t output_size,
+                                 const uint8_t* seed_value, uint32_t seed_size,
+                                 const uint8_t* additional_value, uint32_t additional_size);
+
+/**
+ * The structure to represent the backend implementation.
+ */
+typedef struct ndn_hmac_backend {
+  ndn_hmac_sha256_impl hmac_sha256;
+  ndn_hmac_make_key_impl make_key;
+  ndn_hkdf_impl hkdf;
+  ndn_hmacprng_impl hmacprng;
+} ndn_hmac_backend_t;
+
+/**
  * The structure to keep a HMAC key.
  */
 typedef struct ndn_hmac_key {
@@ -33,14 +63,17 @@ typedef struct ndn_hmac_key {
   uint32_t key_id;
 } ndn_hmac_key_t;
 
+*ndn_hmac_backend_t
+ndn_hmac_get_backend(void);
+
 /**
  * Generate HMAC using sha256 digest algorithm.
  * @note This function will invoke different imple depending on the backend.
  */
 int
-hmac_sha256(const void* payload, uint32_t payload_length,
-            const ndn_hmac_key_t* hmac_key,
-            uint8_t* hmac_result);
+ndn_hmac_sha256(const void* payload, uint32_t payload_length,
+                const ndn_hmac_key_t* hmac_key,
+                uint8_t* hmac_result);
 
 /**
  * Sign a buffer using HMAC algorithm.

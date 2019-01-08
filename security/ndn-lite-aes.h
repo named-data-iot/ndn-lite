@@ -17,25 +17,27 @@ extern "C" {
 #endif
 
 /**
- * To create a AES backend, one needs to
- *   1. provide the definition of structure abstract_aes_key
- *   2. provide implementation of the following two functions.
- *
- * int backend_encrypt_impl(const uint8_t* input_value, uint8_t input_size,
- *                          uint8_t* output_value, uint8_t output_size,
- *                          const uint8_t* aes_iv, const abstract_aes_key_t* aes_key);
- *
- * int backend_decrypt_impl(const uint8_t* input_value, uint8_t input_size,
- *                          uint8_t* output_value, uint8_t output_size,
- *                          const uint8_t* aes_iv, const abstract_aes_key_t* aes_key);
- *
- *   3. In the ndn-lite-aes.c, add your own #ifdef condition to invoke backend impls.
- */
-
-/**
  * The opaque abstract aes key struct to be implemented by the backend.
  */
 typedef struct abstract_aes_key abstract_aes_key_t;
+
+/**
+ * The APIs that are supposed to be implemented by the backend.
+ */
+typedef int (*ndn_aes_cbc_encrypt_impl)(const uint8_t* input_value, uint8_t input_size,
+                                        uint8_t* output_value, uint8_t output_size,
+                                        const uint8_t* aes_iv, const abstract_aes_key_t* aes_key);
+typedef int (*ndn_aes_cbc_decrypt_impl)(const uint8_t* input_value, uint8_t input_size,
+                                        uint8_t* output_value, uint8_t output_size,
+                                        const uint8_t* aes_iv, const abstract_aes_key_t* aes_key);
+
+/**
+ * The structure to represent the backend implementation.
+ */
+typedef struct ndn_aes_backend {
+  ndn_aes_cbc_encrypt_impl cbc_encrypt;
+  ndn_aes_cbc_decrypt_impl cbc_decrypt;
+} ndn_aes_backend_t;
 
 /**
  * The structure to keep an AES-128 key.
@@ -47,6 +49,9 @@ typedef struct ndn_aes_key {
    */
   uint32_t key_id;
 } ndn_aes_key_t;
+
+*ndn_aes_backend_t
+ndn_aes_get_backend(void);
 
 /**
  * Use AES-128-CBC algorithm to encrypt a buffer. This function does not perform any padding.

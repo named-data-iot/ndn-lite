@@ -8,16 +8,22 @@
 
 #include "ndn-lite-aes.h"
 
+ndn_aes_backend_t ndn_aes_backend;
+
+*ndn_aes_backend_t
+ndn_aes_get_backend(void)
+{
+  return &ndn_aes_backend;
+}
+
 int
 ndn_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
                     uint8_t* output_value, uint8_t output_size,
                     const uint8_t* aes_iv, const ndn_aes_key* aes_key)
 {
-#ifdef NDN_LITE_SEC_BACKEND_AES_DEFAULT
-  return ndn_lite_default_aes_cbc_encrypt(input_value, input_size,
-                                          output_value, output_size,
-                                          aes_iv, &aes_key->abs_key);
-#endif
+  return ndn_aes_backend.cbc_encrypt(input_value, input_size,
+                                     output_value, output_size,
+                                     aes_iv, &aes_key->abs_key);
 }
 
 int
@@ -25,9 +31,7 @@ ndn_aes_cbc_decrypt(const uint8_t* input_value, uint8_t input_size,
                     uint8_t* output_value, uint8_t output_size,
                     const uint8_t* aes_iv, const ndn_aes_key* aes_key)
 {
-#ifdef NDN_LITE_SEC_BACKEND_AES_DEFAULT
-  return ndn_lite_default_aes_cbc_decrypt(input_value, input_size,
-                                          output_value, output_size,
-                                          aes_iv, &aes_key->abs_key);
-#endif
+  return ndn_aes_backend.cbc_decrypt(input_value, input_size,
+                                     output_value, output_size,
+                                     aes_iv, &aes_key->abs_key);
 }

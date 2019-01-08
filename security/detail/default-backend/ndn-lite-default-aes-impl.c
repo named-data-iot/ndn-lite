@@ -9,8 +9,7 @@
 #include "ndn-lite-default-aes-impl.h"
 #include "sec-lib/tinycrypt/tc_cbc_mode.h"
 #include "sec-lib/tinycrypt/tc_constants.h"
-#include "../../../ndn-error-code.h"
-#include "../../../ndn-constants.h"
+#include "../../ndn-lite-aes.h"
 
 int
 ndn_lite_default_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
@@ -50,4 +49,12 @@ ndn_lite_default_aes_cbc_decrypt(const uint8_t* input_value, uint8_t input_size,
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
   return NDN_SUCCESS;
+}
+
+void
+ndn_lite_default_aes_load_backend(void)
+{
+  ndn_ecc_backend_t* backend = ndn_ecc_get_backend();
+  backend.cbc_encrypt = ndn_lite_default_aes_cbc_encrypt;
+  backend.cbc_decrypt = ndn_lite_default_aes_cbc_decrypt;
 }

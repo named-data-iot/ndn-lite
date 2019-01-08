@@ -49,6 +49,9 @@ typedef int (*ndn_ecc_dh_shared_secret_impl)(const abstract_ecc_pub_key_t* ecc_p
                                              uint8_t curve_type, uint8_t* output,
                                              uint32_t output_size);
 
+/**
+ * The structure to represent the backend implementation.
+ */
 typedef struct ndn_ecc_backend {
   ndn_ecc_get_pub_key_size_impl get_pub_key_size;
   ndn_ecc_get_prv_key_size_impl get_prv_key_size;
