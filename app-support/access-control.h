@@ -15,7 +15,7 @@
 #include "../encode/data.h"
 
 /**
- * The structure to present an unfinished key only used in 
+ * The structure to present an unfinished key only used in
  * Access Control EK/DK process.
  * Library users should not declare this structure in application.
  */
@@ -40,7 +40,7 @@ typedef struct ndn_ac_unfinished_key {
 typedef struct ndn_ac_state {
   /**
    * The identity of local state manager.
-   */  
+   */
   ndn_name_t self_identity;
   /**
    * The identity ECC public key.
@@ -88,7 +88,7 @@ ndn_ac_prepare_key_request_interest(ndn_encoder_t* encoder,
                                     uint8_t is_ek);
 
 /**
- * Process Encryption Request's Response. This function will automatically set and 
+ * Process Encryption Request's Response. This function will automatically set and
  * update Access Control State.
  * @param data. Input. Decoded and signature verified Encryption Request's Response Packet.
  * @return 0 if there is no error.
@@ -97,7 +97,7 @@ int
 ndn_ac_on_ek_response_process(const ndn_data_t* data);
 
 /**
- * Process Deryption Request's Response. This function will automatically set and 
+ * Process Deryption Request's Response. This function will automatically set and
  * update Access Control State.
  * @param data. Input. Decoded and signature verified Decryption Request's Response Packet.
  * @return 0 if there is no error.
@@ -110,7 +110,7 @@ ndn_ac_on_dk_response_process(const ndn_data_t* data);
 /*************************/
 
 /**
- * Process Access Control Request. This function will automatically set and 
+ * Process Access Control Request. This function will automatically set and
  * update Access Control State on the access controller side.
  * @param response. Output. Prepared Response.
  * @param interest. Input. Decoded and signature verified signed interest.

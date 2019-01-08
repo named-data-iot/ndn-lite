@@ -10,17 +10,38 @@
 #define NDN_SECURITY_AES_H_
 
 #include "../ndn-error-code.h"
-#include <inttypes.h>
+#include "ndn-lite-sec-config.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
+ * To create a AES backend, one needs to
+ *   1. provide the definition of structure abstract_aes_key
+ *   2. provide implementation of the following two functions.
+ *
+ * int backend_encrypt_impl(const uint8_t* input_value, uint8_t input_size,
+ *                          uint8_t* output_value, uint8_t output_size,
+ *                          const uint8_t* aes_iv, const abstract_aes_key_t* aes_key);
+ *
+ * int backend_decrypt_impl(const uint8_t* input_value, uint8_t input_size,
+ *                          uint8_t* output_value, uint8_t output_size,
+ *                          const uint8_t* aes_iv, const abstract_aes_key_t* aes_key);
+ *
+ *   3. In the ndn-lite-aes.c, add your own #ifdef condition to invoke backend impls.
+ */
+
+/**
+ * The opaque abstract aes key struct to be implemented by the backend.
+ */
+typedef struct abstract_aes_key abstract_aes_key_t;
+
+/**
  * The structure to keep an AES-128 key.
  */
 typedef struct ndn_aes_key {
-  abstract_key_t abs_key;
+  abstract_aes_key_t abs_key;
   /**
    * The KEY ID of current key. Should be unique.
    */
@@ -42,7 +63,7 @@ typedef struct ndn_aes_key {
 int
 ndn_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
                     uint8_t* output_value, uint8_t output_size,
-                    const uint8_t* aes_iv, const abstract_key_t* abs_key);
+                    const uint8_t* aes_iv, const ndn_aes_key_t* aes_key);
 
 /**
  * Use AES-128-CBC algorithm to decrypt an encrypted buffer. This function is implemented without padding.
@@ -59,7 +80,7 @@ ndn_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
 int
 ndn_aes_cbc_decrypt(const uint8_t* input_value, uint8_t input_size,
                     uint8_t* output_value, uint8_t output_size,
-                    const uint8_t* aes_iv, const abstract_key_t* abs_key);
+                    const uint8_t* aes_iv, const ndn_aes_key_t* aes_key);
 
 #ifdef __cplusplus
 }

@@ -15,13 +15,13 @@
 #include <string.h>
 
 int
-ndn_lite_default_hmac_sha256(const uint8_t* key, unsigned int key_size,
+ndn_lite_default_hmac_sha256(const struct abstract_hmac_key* abs_key,
                              const void* data, unsigned int data_length,
                              uint8_t* hmac_result)
 {
   struct tc_hmac_state_struct h;
   (void)memset(&h, 0x00, sizeof(h));
-  if (tc_hmac_set_key(&h, key, key_size) != TC_CRYPTO_SUCCESS) {
+  if (tc_hmac_set_key(&h, abs_key->key_value, abs_key->key_size) != TC_CRYPTO_SUCCESS) {
     return NDN_SEC_INIT_FAILURE;
   }
   if (tc_hmac_init(&h) != TC_CRYPTO_SUCCESS) {
@@ -37,7 +37,7 @@ ndn_lite_default_hmac_sha256(const uint8_t* key, unsigned int key_size,
 }
 
 int
-ndn_lite_default_make_hmac_key(uint8_t* key_value, uint32_t* key_size,
+ndn_lite_default_make_hmac_key(struct abstract_hmac_key* abs_key,
                                const uint8_t* input_value, uint32_t input_size,
                                const uint8_t* personalization, uint32_t personalization_size,
                                const uint8_t* seed_value, uint32_t seed_size,
@@ -51,8 +51,8 @@ ndn_lite_default_make_hmac_key(uint8_t* key_value, uint32_t* key_size,
 
   if (r != NDN_SUCCESS)
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
-  *key_size = NDN_SEC_SHA256_HASH_SIZE;
-  r = ndn_lite_default_hkdf(input_value, input_size, key_value, *key_size,
+  abs_key->key_size = NDN_SEC_SHA256_HASH_SIZE;
+  r = ndn_lite_default_hkdf(input_value, input_size, abs_key->key_value, abs_key->key_size,
                             salt, sizeof(salt));
   if (r != NDN_SUCCESS)
     return NDN_SEC_CRYPTO_ALGO_FAILURE;

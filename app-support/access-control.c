@@ -73,14 +73,13 @@ ndn_ac_prepare_key_request_interest(ndn_encoder_t* encoder,
   encoder_append_uint32_value(&params_encoder, ac_key_id);
 
   // encode ECDH Pub into Parameters
-  unfinished_key.dh_pub.key_size = 64;
-  unfinished_key.dh_prv.key_size = 32;
   ndn_ecc_make_key(&unfinished_key.dh_pub, &unfinished_key.dh_prv,
                    NDN_ECDSA_CURVE_SECP256R1, 1234);
   encoder_append_type(&params_encoder, TLV_AC_ECDH_PUB);
-  encoder_append_length(&params_encoder, unfinished_key.dh_pub.key_size);
+  encoder_append_length(&params_encoder, ndn_ecc_get_pub_key_size(&unfinished_key.dh_pub.abs_key));
   encoder_append_raw_buffer_value(&params_encoder,
-                                  unfinished_key.dh_pub.key_value, unfinished_key.dh_pub.key_size);
+                                  ndn_ecc_get_pub_key_value(&unfinished_key.dh_pub),
+                                  ndn_ecc_get_pub_key_size(&unfinished_key.dh_pub.abs_key));
 
   // finish Interest
   interest.parameters.size = params_encoder.offset;
@@ -299,7 +298,7 @@ ndn_ac_prepare_ek_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
 
   encoder_append_type(&encoder, TLV_AC_ECDH_PUB);
   encoder_append_length(&encoder, 64);
-  encoder_append_raw_buffer_value(&encoder, temp.dh_pub.key_value, 64);
+  encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_key_value(&temp.dh_pub), 64);
 
   encoder_append_type(&encoder, TLV_AC_SALT);
   encoder_append_length(&encoder, sizeof(salt));
@@ -373,7 +372,7 @@ ndn_ac_prepare_dk_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
   // TODO: update personalization, add, seed with truly randomness
   ndn_hmacprng(personalization, sizeof(personalization), aes_iv, NDN_AES_BLOCK_SIZE,
                       seed, sizeof(seed), additional_input, sizeof(additional_input));
-  ndn_aes_cbc_encrypt(aes->key_value, aes->key_size,
+  ndn_aes_cbc_encrypt(aes,
                       Encrypted, sizeof(Encrypted), aes_iv,
                       symmetric_key, sizeof(symmetric_key));
 
@@ -386,7 +385,7 @@ ndn_ac_prepare_dk_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
   encoder_init(&encoder, response->content_value, NDN_CONTENT_BUFFER_SIZE);
   encoder_append_type(&encoder, TLV_AC_ECDH_PUB);
   encoder_append_length(&encoder, 64);
-  encoder_append_raw_buffer_value(&encoder, temp.dh_pub.key_value, 64);
+  encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_key_value(&temp.dh_pub), 64);
 
   encoder_append_type(&encoder, TLV_AC_SALT);
   encoder_append_length(&encoder, sizeof(salt));

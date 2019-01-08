@@ -10,7 +10,7 @@
 #define NDN_SECURITY_ECC_H_
 
 #include "../ndn-error-code.h"
-#include "ndn-lite-crypto-key.h"
+#include "ndn-lite-sec-config.h"
 #include "ndn-lite-rng.h"
 
 #ifdef __cplusplus
@@ -18,10 +18,55 @@ extern "C" {
 #endif
 
 /**
+ * The opaque abstract ecc key struct to be implemented by the backend.
+ */
+typedef struct abstract_ecc_pub_key abstract_ecc_pub_key_t;
+typedef struct abstract_ecc_prv_key abstract_ecc_prv_key_t;
+
+/**
+ * The APIs that are supposed to be implemented by the backend.
+ */
+typedef uint32_t (*ndn_ecc_get_pub_key_size_impl)(const abstract_ecc_pub_key_t* pub_key);
+typedef uint32_t (*ndn_ecc_get_prv_key_size_impl)(const abstract_ecc_prv_key_t* prv_key);
+typedef const uint8_t* (*ndn_ecc_get_pub_key_value_impl)(const abstract_ecc_pub_key_t* pub_key);
+typedef int (*ndn_ecc_load_pub_key_impl)(abstract_ecc_pub_key_t* pub_key,
+                                         uint8_t* key_value, uint32_t key_size);
+typedef int (*ndn_ecc_load_prv_key_impl)(abstract_ecc_prv_key_t* prv_key,
+                                         uint8_t* key_value, uint32_t key_size);
+typedef int (*ndn_ecc_set_rng_impl)(ndn_ECC_RNG_Function rng);
+typedef int (*ndn_ecdsa_sign_impl)(const uint8_t* payload_value, uint32_t payload_size,
+                                   uint8_t* output_value, uint32_t output_max_size,
+                                   const abstract_ecc_prv_key_t* prv_key,
+                                   uint8_t ecdsa_type, uint32_t* output_used_size);
+typedef int (*ndn_ecdsa_verify_impl)(const uint8_t* payload_value, uint32_t payload_size,
+                                     const uint8_t* sig_value, uint32_t sig_size,
+                                     const abstract_ecc_pub_key_t* pub_key, uint8_t ecdsa_type);
+typedef int (*ndn_ecc_make_key_impl)(const abstract_ecc_pub_key_t* pub_key,
+                                     const abstract_ecc_prv_key_t* prv_key,
+                                     uint8_t curve_type);
+typedef int (*ndn_ecc_dh_shared_secret_impl)(const abstract_ecc_pub_key_t* ecc_pub,
+                                             const abstract_ecc_prv_key_t* ecc_prv,
+                                             uint8_t curve_type, uint8_t* output,
+                                             uint32_t output_size);
+
+typedef struct ndn_ecc_backend {
+  ndn_ecc_get_pub_key_size_impl get_pub_key_size;
+  ndn_ecc_get_prv_key_size_impl get_prv_key_size;
+  ndn_ecc_get_pub_key_value_impl get_pub_key_value;
+  ndn_ecc_load_pub_key_impl load_pub_key;
+  ndn_ecc_load_prv_key_impl load_prv_key;
+  ndn_ecc_set_rng_impl set_rng;
+  ndn_ecc_make_key_impl make_key;
+  ndn_ecc_dh_shared_secret_impl dh_shared_secret;
+  ndn_ecdsa_sign_impl ecdsa_sign;
+  ndn_ecdsa_verify_impl ecdsa_verify;
+} ndn_ecc_backend_t;
+
+/**
  * The structure to keep an ECC public key.
  */
 typedef struct ndn_ecc_pub {
-  abstract_key_t abs_key;
+  abstract_ecc_pub_key_t abs_key;
   /**
    * The KEY ID of current key. Should be unique.
    */
@@ -36,7 +81,7 @@ typedef struct ndn_ecc_pub {
  * The structure to keep an ECC private key.
  */
 typedef struct ndn_ecc_prv {
-  abstract_key_t abs_key;
+  abstract_ecc_prv_key_t abs_key;
   /**
    * The KEY ID of current key. Should be unique.
    */
@@ -47,6 +92,50 @@ typedef struct ndn_ecc_prv {
   uint8_t curve_type;
 } ndn_ecc_prv_t;
 
+*ndn_ecc_backend_t
+ndn_ecc_get_backend(void);
+
+/**
+ * Get public key size in unit of byte.
+ * @param pub_key. Input. NDN ECC public key.
+ */
+uint32_t
+ndn_ecc_get_pub_key_size(const ndn_ecc_pub_t* pub_key);
+
+/**
+ * Get private key size in unit of byte.
+ * @param prv_key. Input. NDN ECC private key.
+ */
+uint32_t
+ndn_ecc_get_prv_key_size(const ndn_ecc_prv_t* prv_key);
+
+/**
+ * Get public key bytes.
+ * @param pub_key. Input. NDN ECC public key.
+ */
+const uint8_t*
+ndn_ecc_get_pub_key_value(const ndn_ecc_pub_t* pub_key);
+
+/**
+ * Load in-memory key bits into an NDN public key.
+ * @param pub_key. Output. NDN ECC public key.
+ * @param key_value. Input. Key bytes.
+ * @param key_size. Input. The size of the key bytes.
+ */
+int
+ndn_ecc_load_pub_key(ndn_ecc_pub_t* pub_key,
+                     uint8_t* key_value, uint32_t key_size);
+
+/**
+ * Load in-memory key bits into an NDN private key.
+ * @param prv_key. Output. NDN ECC private key.
+ * @param key_value. Input. Key bytes.
+ * @param key_size. Input. The size of the key bytes.
+ */
+int
+ndn_ecc_load_prv_key(ndn_ecc_prv_t* prv_key,
+                     uint8_t* key_value, uint32_t key_size);
+
 /**
  * Set RNG function for backend implementation library,
  * which need this to perform non-deterministic signing.
@@ -55,6 +144,31 @@ typedef struct ndn_ecc_prv {
  */
 void
 ndn_ecc_set_rng(ndn_ECC_RNG_Function rng);
+
+/**
+ * Generate an ECC key pair with specific curve type and key id.
+ * @param ecc_pub. Output. ECC public key whose key bytes to be generated.
+ * @param ecc_prv. Output. ECC private key whose key bytes to be generated.
+ * @param curve_type. Input. The chosen ECC curve type to generate the key pair.
+ * @param key_id. Input. The key id to be set with public and private key.
+ * @return NDN_SUCCESS if there is no error.
+ */
+int
+ndn_ecc_make_key(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
+                 uint8_t curve_type, uint32_t key_id);
+
+/**
+ * Negotiate a shared secret wih given ECC public and private keys via ECDH.
+ * @param ecc_pub. Input. Input ECC public key.
+ * @param ecc_prv. Input. Input ECC private key.
+ * @param curve_type. Input. ECC curve type. Should be the same type of input public and private key.
+ * @param output. Output. Buffer to receive negotiated shared secret.
+ * @param output_size. Input. Size of the output buffer. Should not be smaller than 24 bytes.
+ * @return NDN_SUCCESS if there is no error.
+ */
+int
+ndn_ecc_dh_shared_secret(const ndn_ecc_pub_t* ecc_pub, const ndn_ecc_prv_t* ecc_prv,
+                         uint8_t curve_type, uint8_t* output, uint32_t output_size);
 
 /**
  * Sign a buffer using ECDSA algorithm. This function will automatically use
@@ -74,7 +188,7 @@ ndn_ecc_set_rng(ndn_ECC_RNG_Function rng);
 int
 ndn_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
                uint8_t* output_value, uint32_t output_max_size,
-               const abstract_key_t* abs_key,
+               const ndn_ecc_prv_t* ecc_prv_key,
                uint8_t ecdsa_type, uint32_t* output_used_size);
 
 /**
@@ -90,35 +204,8 @@ ndn_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
 int
 ndn_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
                  const uint8_t* sig_value, uint32_t sig_size,
-                 const uint8_t* pub_key_value,
-                 uint32_t pub_key_size, uint8_t ecdsa_type);
-
-/**
- * Generate an ECC key pair with specific curve type and key id.
- * @note Current default backend implementation (i.e., tinycrypt) only supports curve type secp256r1.
- * @param ecc_pub. Output. ECC public key whose key bytes to be generated.
- * @param ecc_prv. Output. ECC private key whose key bytes to be generated.
- * @param curve_type. Input. The chosen ECC curve type to generate the key pair.
- * @param key_id. Input. The key id to be set with public and private key.
- * @return NDN_SUCCESS if there is no error.
- */
-int
-ndn_ecc_make_key(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
-                 uint8_t curve_type, uint32_t key_id);
-
-/**
- * Negotiate a shared secret wih given ECC public and private keys via ECDH.
- * @note Current default backend implementation (i.e., tinycrypt) only supports curve type secp256r1.
- * @param ecc_pub. Input. Input ECC public key.
- * @param ecc_prv. Input. Input ECC private key.
- * @param curve_type. Input. ECC curve type. Should be the same type of input public and private key.
- * @param output. Output. Buffer to receive negotiated shared secret.
- * @param output_size. Input. Size of the output buffer. Should not be smaller than 24 bytes.
- * @return NDN_SUCCESS if there is no error.
- */
-int
-ndn_ecc_dh_shared_secret(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
-                         uint8_t curve_type, uint8_t* output, uint32_t output_size);
+                 const ndn_ecc_pub_t* ecc_pub_key,
+                 uint8_t ecdsa_type);
 
 #ifdef __cplusplus
 }

@@ -22,7 +22,7 @@
 /**
  * The default software backend provided by NDN-Lite
  * CFLAG += -DNDN_LITE_SEC_BACKEND_DEFAULT
- * 
+ *
  * NOTE: If you select this backend, you will have to use an
  *       rng function other than ndn_lite_rng; other backends, such as
  *       NDN_LITE_SEC_BACKEND_NRF_CRYPTO, will automatically

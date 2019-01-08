@@ -12,13 +12,24 @@
 #include <stddef.h>
 #include <stdint.h>
 
+struct abstract_hmac_key {
+  /**
+   * The key bytes buffer of current key.
+   */
+  uint8_t key_value[32];
+  /**
+   * The key size of key bytes.
+   */
+  uint32_t key_size;
+};
+
 int
-ndn_lite_default_hmac_sha256(const uint8_t* key, unsigned int key_size,
+ndn_lite_default_hmac_sha256(const struct abstract_hmac_key* abs_key,
                              const void* data, unsigned int data_length,
                              uint8_t* hmac_result);
 
 int
-ndn_lite_default_make_hmac_key(uint8_t* key_value, uint32_t* key_size,
+ndn_lite_default_make_hmac_key(struct abstract_hmac_key* abs_key,
                                const uint8_t* input_value, uint32_t input_size,
                                const uint8_t* personalization, uint32_t personalization_size,
                                const uint8_t* seed_value, uint32_t seed_size,

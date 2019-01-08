@@ -11,16 +11,25 @@
 
 #include <stdint.h>
 
+struct abstract_aes_key {
+  /**
+   * The key bytes buffer of current key.
+   */
+  uint8_t key_value[32];
+  /**
+   * The key size of key bytes.
+   */
+  uint32_t key_size;
+};
+
 int
 ndn_lite_default_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
                                  uint8_t* output_value, uint8_t output_size,
-                                 const uint8_t* aes_iv,
-                                 const uint8_t* key_value, uint8_t key_size);
+                                 const uint8_t* aes_iv, const struct abstract_aes_key* aes_key);
 
 int
 ndn_lite_default_aes_cbc_decrypt(const uint8_t* input_value, uint8_t input_size,
                                  uint8_t* output_value, uint8_t output_size,
-                                 const uint8_t* aes_iv,
-                                 const uint8_t* key_value, uint8_t key_size);
+                                 const uint8_t* aes_iv, const struct abstract_aes_key* aes_key);
 
 #endif // NDN_LITE_AES_TINYCRIPT_IMPL_H

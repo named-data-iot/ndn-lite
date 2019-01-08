@@ -10,7 +10,7 @@
 #define NDN_SECURITY_HMAC_H_
 
 #include "../ndn-error-code.h"
-#include "ndn-lite-crypto-key.h"
+#include "ndn-lite-sec-config.h"
 #include <inttypes.h>
 
 #ifdef __cplusplus
@@ -18,20 +18,28 @@ extern "C" {
 #endif
 
 /**
+ * The opaque abstract hmac key struct to be implemented by the backend.
+ */
+typedef struct abstract_hmac_key abstract_hmac_key_t;
+
+/**
  * The structure to keep a HMAC key.
  */
 typedef struct ndn_hmac_key {
-  abstract_key_t abs_key;
+  abstract_hmac_key_t abs_key;
   /**
    * The KEY ID of current key. Should be unique.
    */
   uint32_t key_id;
 } ndn_hmac_key_t;
 
-
+/**
+ * Generate HMAC using sha256 digest algorithm.
+ * @note This function will invoke different imple depending on the backend.
+ */
 int
 hmac_sha256(const void* payload, uint32_t payload_length,
-            const abstract_key_t* abs_key,
+            const ndn_hmac_key_t* hmac_key,
             uint8_t* hmac_result);
 
 /**
@@ -49,7 +57,7 @@ hmac_sha256(const void* payload, uint32_t payload_length,
 int
 ndn_hmac_sign(const uint8_t* input_value, uint32_t input_size,
               uint8_t* output_value, uint32_t output_max_size,
-              const abstract_key_t* abs_key,
+              const ndn_hmac_key_t* hmac_key,
               uint32_t* output_used_size);
 
 /**
@@ -65,11 +73,12 @@ ndn_hmac_sign(const uint8_t* input_value, uint32_t input_size,
 int
 ndn_hmac_verify(const uint8_t* input_value, uint32_t input_size,
                 const uint8_t* sig_value, uint32_t sig_size,
-                const abstract_key_t* abs_key);
+                const ndn_hmac_key_t* hmac_key);
 
 /**
  * Generate a HMAC key with specific key size and key id.
  * This function requires proper entropy source.
+ * @note This function will invoke different imple depending on the backend.
  * @param input_value. Input. Personalization string.
  * @param input_size. Input. Personalization length in bytes.
  * @param output_value. Output. Buffer to receive output.
