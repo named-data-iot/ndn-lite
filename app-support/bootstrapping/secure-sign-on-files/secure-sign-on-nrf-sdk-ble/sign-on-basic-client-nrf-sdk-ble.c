@@ -10,6 +10,8 @@
 
 #include "sign-on-basic-client-nrf-sdk-ble.h"
 
+#include "../../../../encode/tlv.h"
+
 #include "../secure-sign-on/variants/basic/sign-on-basic-client.h"
 #include "../../../../adaptation/ndn-nrf-ble-adaptation/nrf-sdk-ble-consts.h"
 
@@ -101,7 +103,7 @@ void m_on_recvd_data_callback(const uint8_t *payload, uint32_t payload_len) {
     return;
   }
 
-  if (payload[0] == SECURE_SIGN_ON_BOOTSTRAPPING_REQUEST_RESPONSE_TLV_TYPE) {
+  if (payload[0] == TLV_SSP_BOOTSTRAPPING_REQUEST_RESPONSE) {
     APP_LOG("Received bootstrapping request response.\n");
 
     int result = prcs_btstrp_rqst_rspns(payload, payload_len, &m_sign_on_basic_client);
@@ -140,7 +142,7 @@ void m_on_recvd_data_callback(const uint8_t *payload, uint32_t payload_len) {
       m_on_sign_on_completed(SIGN_ON_BASIC_CLIENT_BLE_FAILED_TO_SEND_CERTIFICATE_REQUEST);
     }
 
-  } else if (payload[0] == SECURE_SIGN_ON_CERTIFICATE_REQUEST_RESPONSE_TLV_TYPE) {
+  } else if (payload[0] == TLV_SSP_CERTIFICATE_REQUEST_RESPONSE) {
     APP_LOG("Received certificate request response.\n");
 
     int result = prcs_cert_rqst_rspns(payload, payload_len, &m_sign_on_basic_client);

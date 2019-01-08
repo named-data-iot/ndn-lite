@@ -14,6 +14,8 @@
 
 #include "../../../../../../ndn-error-code.h"
 
+#include "../../../../../../encode/tlv.h"
+
 #include "sign-on-basic-consts.h"
 #include "security/sign-on-basic-sec-consts.h"
 #include "sign-on-basic-impl-consts.h"
@@ -109,7 +111,7 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
     sign_on_basic_client->device_identifier_p, sign_on_basic_client->device_identifier_len);
 
   uint8_t device_identifier_len = sign_on_basic_client->device_identifier_len;
-  buf_p[currentOffset] = SECURE_SIGN_ON_DEVICE_IDENTIFIER_TLV_TYPE;
+  buf_p[currentOffset] = TLV_SSP_DEVICE_IDENTIFIER;
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
   buf_p[currentOffset] = device_identifier_len;
   currentOffset += SIGN_ON_BASIC_TLV_LENGTH_SIZE;
@@ -118,7 +120,7 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
   currentOffset += device_identifier_len;
 
   uint8_t device_capabilities_len = sign_on_basic_client->device_capabilities_len;
-  buf_p[currentOffset] = SECURE_SIGN_ON_DEVICE_CAPABILITIES_TLV_TYPE;
+  buf_p[currentOffset] = TLV_SSP_DEVICE_CAPABILITIES;
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
   buf_p[currentOffset] = device_capabilities_len;
   currentOffset += SIGN_ON_BASIC_TLV_LENGTH_SIZE;
@@ -127,7 +129,7 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
   currentOffset += device_capabilities_len;
 
   uint8_t N1_pub_len = sign_on_basic_client->N1_pub_len;
-  buf_p[currentOffset] = SECURE_SIGN_ON_N1_PUB_TLV_TYPE;
+  buf_p[currentOffset] = TLV_SSP_N1_PUB;
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
   buf_p[currentOffset] = N1_pub_len;
   currentOffset += SIGN_ON_BASIC_TLV_LENGTH_SIZE;
@@ -167,14 +169,14 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
   // add the signature to the packet
   memcpy(buf_p + currentOffset + SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE, btstrpRqstSigBuf, encodedSignatureSize);
 
-  buf_p[currentOffset] = SECURE_SIGN_ON_SIGNATURE_TLV_TYPE;
+  buf_p[currentOffset] = TLV_SSP_SIGNATURE;
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
   buf_p[currentOffset] = (uint8_t)encodedSignatureSize;
   currentOffset += SIGN_ON_BASIC_TLV_LENGTH_SIZE;
   currentOffset += encodedSignatureSize;
 
   // set the first byte of the buffer to be the bootstrapping request tlv type
-  buf_p[bootstrappingRequestTlvTypePosition] = SECURE_SIGN_ON_BOOTSTRAPPING_REQUEST_TLV_TYPE;
+  buf_p[bootstrappingRequestTlvTypePosition] = TLV_SSP_BOOTSTRAPPING_REQUEST;
 
   // set the second byte of the buffer to be the length of the entire bootstrapping request, excluding the
   // bootstrapping request tlv type and bootstrapping request tlv length (i.e., total buffer size - 2)
@@ -206,7 +208,7 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
   const uint8_t *trust_anchor_p;
   uint32_t trust_anchor_len;
 
-  APP_LOG("Length of bootstrapping request tlv block: %d\n", btstrp_rqst_rspns_buf_len);
+  APP_LOG("Length of bootstrapping request response tlv block: %d\n", btstrp_rqst_rspns_buf_len);
   APP_LOG_HEX("Contents of bootstrapping request response:", btstrp_rqst_rspns_buf_p, btstrp_rqst_rspns_buf_len);
 
   enum ParseTlvValueResultCode parseResult = PARSE_TLV_VALUE_SUCCESS;
@@ -214,10 +216,10 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
   uint32_t bootstrappingRequestTlvValueOffset;
 
   if (parseTlvValue(btstrp_rqst_rspns_buf_p, btstrp_rqst_rspns_buf_len, 
-                    SECURE_SIGN_ON_BOOTSTRAPPING_REQUEST_RESPONSE_TLV_TYPE,
+                    TLV_SSP_BOOTSTRAPPING_REQUEST_RESPONSE,
                     &bootstrappingRequestTlvValueLength, 
                     &bootstrappingRequestTlvValueOffset) != PARSE_TLV_VALUE_SUCCESS) {
-    APP_LOG("Failed to get tlv value of bootstrapping request.");
+    APP_LOG("Failed to get tlv value of bootstrapping request response.\n");
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_PACKET_HEADER;
   }
   APP_LOG("Bootstrapping request tlv value length: %d\n", bootstrappingRequestTlvValueLength);
@@ -233,7 +235,7 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
   // *** //
   
   if (parseTlvValue(btstrp_rqst_rspns_tlv_val_buf_p, bootstrappingRequestTlvValueLength,
-                    SECURE_SIGN_ON_SIGNATURE_TLV_TYPE, &currentTlvValueLength, 
+                    TLV_SSP_SIGNATURE, &currentTlvValueLength, 
                     &currentTlvValueOffset) != PARSE_TLV_VALUE_SUCCESS) {
     APP_LOG("Failed to get tlv value of bootstrapping request response signature.\n");
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_SIG;
@@ -263,7 +265,7 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
   }
 
   parseTlvValue(btstrp_rqst_rspns_tlv_val_buf_p, bootstrappingRequestTlvValueLength,
-      SECURE_SIGN_ON_N2_PUB_TLV_TYPE, &currentTlvValueLength, &currentTlvValueOffset);
+      TLV_SSP_N2_PUB, &currentTlvValueLength, &currentTlvValueOffset);
   if (parseResult != PARSE_TLV_VALUE_SUCCESS) {
     APP_LOG("Failed to get tlv value of N2 pub.\n");
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_N2_PUB;
@@ -287,7 +289,7 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
   //***************************************************//
 
   parseTlvValue(btstrp_rqst_rspns_tlv_val_buf_p, bootstrappingRequestTlvValueLength,
-      SECURE_SIGN_ON_ANCHOR_CERTIFICATE_TLV_TYPE, &currentTlvValueLength, &currentTlvValueOffset);
+      TLV_SSP_ANCHOR_CERTIFICATE, &currentTlvValueLength, &currentTlvValueOffset);
   if (parseResult != PARSE_TLV_VALUE_SUCCESS) {
     APP_LOG("Failed to get tlv value of anchor certificate.\n");
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_TRUST_ANCHOR_CERT;
@@ -333,7 +335,7 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
 
   uint8_t device_identifier_len = sign_on_basic_client->device_identifier_len;
-  buf_p[currentOffset] = SECURE_SIGN_ON_DEVICE_IDENTIFIER_TLV_TYPE;
+  buf_p[currentOffset] = TLV_SSP_DEVICE_IDENTIFIER;
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
   buf_p[currentOffset] = device_identifier_len;
   currentOffset += SIGN_ON_BASIC_TLV_LENGTH_SIZE;
@@ -344,7 +346,7 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
   APP_LOG_HEX("Value of N1_pub in sign_on_basic_client", sign_on_basic_client->N1_pub_p, sign_on_basic_client->N1_pub_len);
 
   uint8_t N1_pub_len = sign_on_basic_client->N1_pub_len;
-  buf_p[currentOffset] = SECURE_SIGN_ON_N1_PUB_TLV_TYPE;
+  buf_p[currentOffset] = TLV_SSP_N1_PUB;
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
   buf_p[currentOffset] = N1_pub_len;
   currentOffset += SIGN_ON_BASIC_TLV_LENGTH_SIZE;
@@ -366,7 +368,7 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
 
   uint32_t N2_pub_digest_len = SIGN_ON_BASIC_SHA256_HASH_SIZE;
 
-  buf_p[currentOffset] = SECURE_SIGN_ON_N2_PUB_DIGEST_TLV_TYPE;
+  buf_p[currentOffset] = TLV_SSP_N2_PUB_DIGEST;
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
   buf_p[currentOffset] = N2_pub_digest_len;
   currentOffset += SIGN_ON_BASIC_TLV_LENGTH_SIZE;
@@ -385,7 +387,7 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
 
   uint32_t trust_anchor_cert_digest_len = SIGN_ON_BASIC_SHA256_HASH_SIZE;
 
-  buf_p[currentOffset] = SECURE_SIGN_ON_TRUST_ANCHOR_CERTIFICATE_DIGEST_TLV_TYPE;
+  buf_p[currentOffset] = TLV_SSP_TRUST_ANCHOR_CERTIFICATE_DIGEST;
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
   buf_p[currentOffset] = trust_anchor_cert_digest_len;
   currentOffset += SIGN_ON_BASIC_TLV_LENGTH_SIZE;
@@ -423,14 +425,14 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
   // add the signature to the packet
   memcpy(buf_p + currentOffset + SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE, certRqstSigBuf, encodedSignatureSize);
 
-  buf_p[currentOffset] = SECURE_SIGN_ON_SIGNATURE_TLV_TYPE;
+  buf_p[currentOffset] = TLV_SSP_SIGNATURE;
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
   buf_p[currentOffset] = (uint8_t)encodedSignatureSize;
   currentOffset += SIGN_ON_BASIC_TLV_LENGTH_SIZE;
   currentOffset += encodedSignatureSize;
 
   // set the first byte of the buffer to be the certificate request tlv type
-  buf_p[certificateRequestTlvTypePosition] = SECURE_SIGN_ON_CERTIFICATE_REQUEST_TLV_TYPE;
+  buf_p[certificateRequestTlvTypePosition] = TLV_SSP_CERTIFICATE_REQUEST;
 
   // set the second byte of the buffer to be the length of the entire certificate request, excluding the
   // certificate request tlv type and certificate request tlv length (i.e., total buffer size - 2)
@@ -468,7 +470,7 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
   uint32_t certificateRequestTlvValueOffset;
 
   if (parseTlvValue(cert_rqst_rspns_buf_p, cert_rqst_rspns_buf_len, 
-                    SECURE_SIGN_ON_CERTIFICATE_REQUEST_RESPONSE_TLV_TYPE,
+                    TLV_SSP_CERTIFICATE_REQUEST_RESPONSE,
                     &certificateRequestTlvValueLength, 
                     &certificateRequestTlvValueOffset) != PARSE_TLV_VALUE_SUCCESS) {
     APP_LOG("Failed to get tlv value of certificate request.\n");
@@ -487,7 +489,7 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
   //***************************************************************************//
 
   if (parseTlvValue(cert_rqst_rspns_tlv_val_buf_p, certificateRequestTlvValueLength,
-                    SECURE_SIGN_ON_SIGNATURE_TLV_TYPE, &currentTlvValueLength, 
+                    TLV_SSP_SIGNATURE, &currentTlvValueLength, 
                     &currentTlvValueOffset) != PARSE_TLV_VALUE_SUCCESS) {
     APP_LOG("Failed to get tlv value of cert request response signature.\n");
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_KD_PRI_ENC;
@@ -514,7 +516,7 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
   //***************************************************************************//
 
   if (parseTlvValue(cert_rqst_rspns_tlv_val_buf_p, certificateRequestTlvValueLength,
-                    SECURE_SIGN_ON_KD_PRI_ENCRYPTED_TLV_TYPE, &currentTlvValueLength, 
+                    TLV_SSP_KD_PRI_ENCRYPTED, &currentTlvValueLength, 
                     &currentTlvValueOffset) != PARSE_TLV_VALUE_SUCCESS) {
     APP_LOG("Failed to get tlv value of kd pri encrypted.\n");
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_KD_PRI_ENC;
@@ -551,7 +553,7 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
 
   
   if (parseTlvValue(cert_rqst_rspns_tlv_val_buf_p, certificateRequestTlvValueLength,
-                    SECURE_SIGN_ON_KD_PUB_CERTIFICATE_TLV_TYPE, &currentTlvValueLength, 
+                    TLV_SSP_KD_PUB_CERTIFICATE, &currentTlvValueLength, 
                     &currentTlvValueOffset) != PARSE_TLV_VALUE_SUCCESS) {
     APP_LOG("Failed to get tlv value of kd pub certificate.\n");
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_GET_TLV_VAL_KD_PUB_CERT;
@@ -593,7 +595,7 @@ int cnstrct_fin_msg(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
 
   uint8_t device_identifier_len = sign_on_basic_client->device_identifier_len;
-  buf_p[currentOffset] = SECURE_SIGN_ON_DEVICE_IDENTIFIER_TLV_TYPE;
+  buf_p[currentOffset] = TLV_SSP_DEVICE_IDENTIFIER;
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
   buf_p[currentOffset] = device_identifier_len;
   currentOffset += SIGN_ON_BASIC_TLV_LENGTH_SIZE;
@@ -602,7 +604,7 @@ int cnstrct_fin_msg(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
   currentOffset += device_identifier_len;
 
   uint8_t N1_pub_len = sign_on_basic_client->N1_pub_len;
-  buf_p[currentOffset] = SECURE_SIGN_ON_N1_PUB_TLV_TYPE;
+  buf_p[currentOffset] = TLV_SSP_N1_PUB;
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
   buf_p[currentOffset] = N1_pub_len;
   currentOffset += SIGN_ON_BASIC_TLV_LENGTH_SIZE;
@@ -622,7 +624,7 @@ int cnstrct_fin_msg(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
 
   uint32_t N2_pub_digest_len = SIGN_ON_BASIC_SHA256_HASH_SIZE;
 
-  buf_p[currentOffset] = SECURE_SIGN_ON_N2_PUB_DIGEST_TLV_TYPE;
+  buf_p[currentOffset] = TLV_SSP_N2_PUB_DIGEST;
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
   buf_p[currentOffset] = N2_pub_digest_len;
   currentOffset += SIGN_ON_BASIC_TLV_LENGTH_SIZE;
@@ -641,7 +643,7 @@ int cnstrct_fin_msg(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
 
   uint32_t trust_anchor_cert_digest_len = SIGN_ON_BASIC_SHA256_HASH_SIZE;
 
-  buf_p[currentOffset] = SECURE_SIGN_ON_TRUST_ANCHOR_CERTIFICATE_DIGEST_TLV_TYPE;
+  buf_p[currentOffset] = TLV_SSP_TRUST_ANCHOR_CERTIFICATE_DIGEST;
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
   buf_p[currentOffset] = trust_anchor_cert_digest_len;
   currentOffset += SIGN_ON_BASIC_TLV_LENGTH_SIZE;
@@ -679,14 +681,14 @@ int cnstrct_fin_msg(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
   // add the signature to the packet
   memcpy(buf_p + currentOffset + SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE, certRqstSigBuf, encodedSignatureSize);
 
-  buf_p[currentOffset] = SECURE_SIGN_ON_SIGNATURE_TLV_TYPE;
+  buf_p[currentOffset] = TLV_SSP_SIGNATURE;
   currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
   buf_p[currentOffset] = (uint8_t)encodedSignatureSize;
   currentOffset += SIGN_ON_BASIC_TLV_LENGTH_SIZE;
   currentOffset += encodedSignatureSize;
 
   // set the first byte of the buffer to be the certificate request tlv type
-  buf_p[finishMessageTlvTypePosition] = SECURE_SIGN_ON_FINISH_MESSAGE_TLV_TYPE;
+  buf_p[finishMessageTlvTypePosition] = TLV_SSP_FINISH_MESSAGE;
 
   // set the second byte of the buffer to be the length of the entire certificate request, excluding the
   // certificate request tlv type and certificate request tlv length (i.e., total buffer size - 2)
