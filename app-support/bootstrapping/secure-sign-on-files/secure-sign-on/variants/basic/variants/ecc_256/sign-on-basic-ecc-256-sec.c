@@ -12,7 +12,7 @@
 
 #include "../../security/sign-on-basic-sec-consts.h"
 
-#include "../../security/detail/sec-impl.h"
+#include "../../security/sign-on-basic-sec-impl.h"
 
 int sign_on_basic_ecc_256_gen_sha256_hash(const uint8_t *payload, uint32_t payload_len, uint8_t *output) {
 

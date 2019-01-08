@@ -8,29 +8,21 @@
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
-#include "sec-impl.h"
+#include "sign-on-basic-sec-impl.h"
 
-#include "../sign-on-basic-sec-consts.h"
+#include "sign-on-basic-sec-consts.h"
 
-#ifdef nRF52840
-  #include "detail-sha256/sha256-nrf-crypto-impl.h"
-  #include "detail-aes/aes-nrf-crypto-impl.h"
-  #include "detail-hmac/hmac-nrf-crypto-impl.h"
-  #include "detail-ecc/ecc-nrf-crypto-impl.h"
-  #include "detail-ecc/ecc-microecc-impl.h"
-#endif
+#include "../../../../../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
 
-#include "../../../../../../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
+#include "../../../../../../../ndn-enums.h"
+#include "../../../../../../../ndn-error-code.h"
 
-#include "../../../../../../../../ndn-enums.h"
-#include "../../../../../../../../ndn-error-code.h"
-
-#include "../../../../../../../../security/ndn-lite-aes.h"
-#include "../../../../../../../../security/ndn-lite-ecc.h"
-#include "../../../../../../../../security/ndn-lite-hmac.h"
-#include "../../../../../../../../security/ndn-lite-sha.h"
-#include "../../../../../../../../security/ndn-lite-rng.h"
-#include "../../../../../../../../security/ndn-lite-crypto-key.h"
+#include "../../../../../../../security/ndn-lite-aes.h"
+#include "../../../../../../../security/ndn-lite-ecc.h"
+#include "../../../../../../../security/ndn-lite-hmac.h"
+#include "../../../../../../../security/ndn-lite-sha.h"
+#include "../../../../../../../security/ndn-lite-rng.h"
+#include "../../../../../../../security/ndn-lite-crypto-key.h"
 
 // this is a temporary function to convert a uECC curve to an ndn-lite
 // ecdsa curve enum; this really should not be here, because none of these function
@@ -52,11 +44,7 @@ int sign_on_basic_gen_sha256_hash(const uint8_t *payload, uint32_t payload_len, 
 int sign_on_basic_aes_cbc_decrypt(uint8_t *key, uint32_t key_len, 
                                            const uint8_t *encrypted_payload, uint32_t encrypted_payload_len,
                                            uint8_t *decrypted_payload, uint32_t decrypted_payload_buf_len) {
-//  #ifdef nRF52840
-//  return sign_on_basic_nrf_crypto_decrypt_aes_cbc_pkcs5pad(key, key_len, encrypted_payload,
-//                                                           encrypted_payload_len, decrypted_payload,
-//                                                           decrypted_payload_len);
-//  #endif
+
   uint8_t aes_iv[NDN_SEC_AES_IV_LENGTH] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   uint8_t decrypted_payload_buf_len_byte = (uint8_t) decrypted_payload_buf_len;
   uint8_t key_len_byte = (uint8_t) key_len;
