@@ -10,11 +10,12 @@
 
 #include "ndn-lite-default-sha-impl.h"
 #include "../../../ndn-error-code.h"
+#include "../../ndn-lite-sha.h"
 #include "sec-lib/tinycrypt/tc_sha256.h"
 #include "sec-lib/tinycrypt/tc_constants.h"
 
 int
-ndn_lite_default_sha256(const uint8_t* data, size_t datalen, uint8_t* hash_result)
+ndn_lite_default_sha256(const uint8_t* data, uint32_t datalen, uint8_t* hash_result)
 {
   struct tc_sha256_state_struct s;
   if (tc_sha256_init(&s) != TC_CRYPTO_SUCCESS) {
@@ -27,4 +28,11 @@ ndn_lite_default_sha256(const uint8_t* data, size_t datalen, uint8_t* hash_resul
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
   return NDN_SUCCESS;
+}
+
+void
+ndn_lite_default_sha_load_backend(void)
+{
+  ndn_sha_backend_t* backend = ndn_sha_get_backend();
+  backend->sha256 = ndn_lite_default_sha256;
 }

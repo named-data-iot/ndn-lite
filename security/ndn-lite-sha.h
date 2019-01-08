@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang
+ * Copyright (C) 2018-2019 Zhiyi Zhang
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -16,8 +16,20 @@
 extern "C" {
 #endif
 
+typedef int (*ndn_sha256_impl)(const uint8_t* data, uint32_t datalen, uint8_t* hash_result);
+
+/**
+ * The structure to represent the backend implementation.
+ */
+typedef struct ndn_sha_backend {
+  ndn_sha256_impl sha256;
+} ndn_sha_backend_t;
+
+ndn_sha_backend_t*
+ndn_sha_get_backend(void);
+
 int
-sha256(const uint8_t* data, uint32_t datalen, uint8_t* hash_result);
+ndn_sha256(const uint8_t* data, uint32_t datalen, uint8_t* hash_result);
 
 /**
  * Sign a buffer using SHA-256 algorithm.

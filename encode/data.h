@@ -13,7 +13,10 @@
 
 #include "signature.h"
 #include "metainfo.h"
-#include "../security/ndn-lite-crypto-key.h"
+#include "../security/ndn-lite-hmac.h"
+#include "../security/ndn-lite-ecc.h"
+#include "../security/ndn-lite-sha.h"
+#include "../security/ndn-lite-aes.h"
 
 #ifdef __cplusplus
 extern "C" {
