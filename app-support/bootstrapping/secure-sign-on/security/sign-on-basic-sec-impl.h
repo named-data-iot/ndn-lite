@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "../../../../../../../security/detail/default-backend/sec-lib/micro-ecc/uECC.h"
+#include "../../../../security/detail/default-backend/sec-lib/micro-ecc/uECC.h"
 
 int sign_on_basic_gen_sha256_hash(const uint8_t *payload, uint32_t payload_len, uint8_t *output);
 

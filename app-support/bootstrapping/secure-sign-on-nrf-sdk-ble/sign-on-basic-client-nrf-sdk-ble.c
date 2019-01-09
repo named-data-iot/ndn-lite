@@ -10,14 +10,14 @@
 
 #include "sign-on-basic-client-nrf-sdk-ble.h"
 
-#include "../../../../encode/tlv.h"
+#include "../../../encode/tlv.h"
 
-#include "../secure-sign-on/variants/basic/sign-on-basic-client.h"
-#include "../../../../adaptation/ndn-nrf-ble-adaptation/nrf-sdk-ble-consts.h"
+#include "../secure-sign-on/sign-on-basic-client.h"
+#include "../../../adaptation/ndn-nrf-ble-adaptation/nrf-sdk-ble-consts.h"
 
-#include "../../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
+#include "../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
 
-#include "../../../../ndn-error-code.h"
+#include "../../../ndn-error-code.h"
 
 #define TEMP_BUF_LENGTH 500
 

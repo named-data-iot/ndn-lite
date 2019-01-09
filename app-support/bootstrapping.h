@@ -12,6 +12,6 @@
 #ifndef BOOTSTRAPPING_H
 #define BOOTSTRAPPING_H
 
-#include "bootstrapping/secure-sign-on-files/secure-sign-on-nrf-sdk-ble/sign-on-basic-client-nrf-sdk-ble.h"
+#include "bootstrapping/secure-sign-on-nrf-sdk-ble/sign-on-basic-client-nrf-sdk-ble.h"
 
 #endif // BOOTSTRAPPING_H

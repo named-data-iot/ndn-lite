@@ -12,7 +12,7 @@
 
 #include "sign-on-basic-consts.h"
 
-#include "../../../../../../ndn-error-code.h"
+#include "../../../ndn-error-code.h"
 
 #include "variants/ecc_256/sign-on-basic-ecc-256-sec.h"
 
