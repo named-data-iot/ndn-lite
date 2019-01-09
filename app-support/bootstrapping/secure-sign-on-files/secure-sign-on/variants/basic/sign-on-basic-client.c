@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "../../../../../../ndn-error-code.h"
+#include "../../../../../../ndn-constants.h"
 
 #include "../../../../../../encode/tlv.h"
 #include "../../../../../../encode/decoder.h"
@@ -81,11 +82,6 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
     uint32_t *output_len_p,
     struct sign_on_basic_client_t *sign_on_basic_client) {
 
-  uint8_t digest_buffer[SIGN_ON_BASIC_SHA256_HASH_SIZE];
-
-  if (buf_len < 1)
-    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_BUFFER_TOO_SHORT;
-
   // generate N1 key pair here
   if (!sign_on_basic_client->sec_intf.gen_n1_keypair(
           sign_on_basic_client->N1_pub_p, SIGN_ON_BASIC_CLIENT_N1_PUB_MAX_LENGTH,
@@ -95,103 +91,129 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_FAILED_TO_GENERATE_N1_KEYPAIR;
   }
 
-  APP_LOG_HEX("Bytes of generated N1 pub:", sign_on_basic_client->N1_pub_p, sign_on_basic_client->N1_pub_len);
-  APP_LOG_HEX("Bytes of generated N1 pri:", sign_on_basic_client->N1_pri_p, sign_on_basic_client->N1_pri_len);
+  uint8_t digest_buffer[SIGN_ON_BASIC_SHA256_HASH_SIZE];
 
-  int bootstrappingRequestTlvTypePosition = 0;
-  int bootstrappingRequestTlvLengthPosition = 1;
+  int ndn_encoder_success = 0;
+  uint32_t btstrp_rqst_tlv_val_len = 0;
+  uint32_t btstrp_rqst_sig_tlv_val_len = 0;
 
-  int currentOffset = 0;
-  uint8_t arbitraryValue = 0x03;
+  btstrp_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_DEVICE_IDENTIFIER,
+                                                      sign_on_basic_client->device_identifier_len);
+  APP_LOG("btstrp_rqst_tlv_val_len after adding device identifier tlv block length: %d\n", btstrp_rqst_tlv_val_len);
+  btstrp_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_DEVICE_CAPABILITIES,
+                                                      sign_on_basic_client->device_capabilities_len);
+  APP_LOG("btstrp_rqst_tlv_val_len after adding device capabilities tlv block length: %d\n", btstrp_rqst_tlv_val_len);
+  btstrp_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_N1_PUB,
+                                                      sign_on_basic_client->N1_pub_len);
+  APP_LOG("btstrp_rqst_tlv_val_len after adding N1 pub tlv block length: %d\n", btstrp_rqst_tlv_val_len);
+  btstrp_rqst_sig_tlv_val_len = sign_on_basic_client->sec_intf.get_btstrp_rqst_sig_len();
+  uint32_t btstrp_rqst_sig_tlv_len_field_size = encoder_get_var_size(btstrp_rqst_sig_tlv_val_len);
+  uint32_t btstrp_rqst_sig_tlv_type_field_size = encoder_get_var_size(TLV_SSP_SIGNATURE);
+  btstrp_rqst_tlv_val_len += btstrp_rqst_sig_tlv_type_field_size;
+  btstrp_rqst_tlv_val_len += btstrp_rqst_sig_tlv_len_field_size;
+  btstrp_rqst_tlv_val_len += btstrp_rqst_sig_tlv_val_len;
+  APP_LOG("btstrp_rqst_tlv_val_len after adding signature tlv block length: %d\n", btstrp_rqst_tlv_val_len);
 
-  // add TLV_TYPE_AND_LENGTH_SIZE to account for the bootstrapping request tlv type and length;
-  // these will be filled in at the end
-  currentOffset += SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
+  APP_LOG("btstrp_rqst_tlv_val_len: %d\n", btstrp_rqst_tlv_val_len);
 
-  APP_LOG_HEX("Value of device identifier within cnstrct_btstrp_rqst:", 
-    sign_on_basic_client->device_identifier_p, sign_on_basic_client->device_identifier_len);
+  uint32_t btstrp_rqst_tlv_type_field_size = encoder_get_var_size(TLV_SSP_BOOTSTRAPPING_REQUEST);
+  uint32_t btstrp_rqst_tlv_len_field_size = encoder_get_var_size(btstrp_rqst_tlv_val_len);
 
-  uint8_t device_identifier_len = sign_on_basic_client->device_identifier_len;
-  buf_p[currentOffset] = TLV_SSP_DEVICE_IDENTIFIER;
-  currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
-  buf_p[currentOffset] = device_identifier_len;
-  currentOffset += SIGN_ON_BASIC_TLV_LENGTH_SIZE;
-  memcpy(buf_p + currentOffset, sign_on_basic_client->device_identifier_p,
-      device_identifier_len * sizeof(uint8_t));
-  currentOffset += device_identifier_len;
+  uint32_t btstrp_rqst_total_len = btstrp_rqst_tlv_val_len + btstrp_rqst_tlv_type_field_size + 
+                                   btstrp_rqst_tlv_len_field_size;
+  if (buf_len < btstrp_rqst_total_len) {
+    APP_LOG("In cnstrct_btstrp_rqst, buf_len (%d) was less than total size of bootstrapping request (%d)\n",
+            buf_len, btstrp_rqst_total_len);
+    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_BUFFER_TOO_SHORT;
+  }
 
-  uint8_t device_capabilities_len = sign_on_basic_client->device_capabilities_len;
-  buf_p[currentOffset] = TLV_SSP_DEVICE_CAPABILITIES;
-  currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
-  buf_p[currentOffset] = device_capabilities_len;
-  currentOffset += SIGN_ON_BASIC_TLV_LENGTH_SIZE;
-  memcpy(buf_p + currentOffset, sign_on_basic_client->device_capabilities_p,
-      device_capabilities_len * sizeof(uint8_t));
-  currentOffset += device_capabilities_len;
+  ndn_encoder_t encoder;
+  encoder_init(&encoder, buf_p, buf_len);
 
-  uint8_t N1_pub_len = sign_on_basic_client->N1_pub_len;
-  buf_p[currentOffset] = TLV_SSP_N1_PUB;
-  currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
-  buf_p[currentOffset] = N1_pub_len;
-  currentOffset += SIGN_ON_BASIC_TLV_LENGTH_SIZE;
-  memcpy(buf_p + currentOffset, sign_on_basic_client->N1_pub_p, N1_pub_len * sizeof(uint8_t));
-  currentOffset += N1_pub_len;
+  // append the bootstrapping request tlv type and length
+  if (encoder_append_type(&encoder, TLV_SSP_BOOTSTRAPPING_REQUEST) != ndn_encoder_success) {
+     APP_LOG("In cnstrct_btstrp_rqst, encoder_append_type for bootstrapping request tlv type failed.\n");
+    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;   
+  }
+  if (encoder_append_length(&encoder, btstrp_rqst_tlv_val_len) != ndn_encoder_success) {
+     APP_LOG("In cnstrct_btstrp_rqst, encoder_append_length for bootstrapping request tlv length failed.\n");
+    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;   
+  }
+  
+  // append the device identifier
+  if (encoder_append_type(&encoder, TLV_SSP_DEVICE_IDENTIFIER) != ndn_encoder_success) {
+    APP_LOG("In cnstrct_btstrp_rqst, encoder_append_type for device identifier failed.\n");
+    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
+  }
+  if (encoder_append_length(&encoder, sign_on_basic_client->device_identifier_len) != ndn_encoder_success)  {
+    APP_LOG("In cnstrct_btstrp_rqst, encoder_append_length for device identifier failed.\n");
+    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
+  }
+  if (encoder_append_raw_buffer_value(&encoder, sign_on_basic_client->device_identifier_p,
+                                      sign_on_basic_client->device_identifier_len) != ndn_encoder_success) {
+    APP_LOG("In cnstrct_btstrp_rqst, encoder_raw_buffer_value for device identifier failed.\n");
+    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
+  }
 
-  // special part of construction: calculate signature over all bytes of bootstrapping request besides the signature
-  // tlv block, and append it to the end
+  // append the device capabilities
+  if (encoder_append_type(&encoder, TLV_SSP_DEVICE_CAPABILITIES) != ndn_encoder_success) {
+    APP_LOG("In cnstrct_btstrp_rqst, encoder_append_type for device capabilities failed.\n");
+    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
+  }
+  if (encoder_append_length(&encoder, sign_on_basic_client->device_capabilities_len) != ndn_encoder_success) {
+    APP_LOG("In cnstrct_btstrp_rqst, encoder_append_length for device capabilities failed.\n");
+    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
+  }
+  if (encoder_append_raw_buffer_value(&encoder, sign_on_basic_client->device_capabilities_p,
+                                      sign_on_basic_client->device_capabilities_len) != ndn_encoder_success) {
+    APP_LOG("In cnstrct_btstrp_rqst, encoder_append_raw_buffer_value for device capabilities failed.\n");
+    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
+  }
 
-  uint32_t signatureSize = 0;
-  uint32_t offsetForSignatureEncoding = 8;
-  uint32_t encodedSignatureSize;
+  // append N1 pub
+  if (encoder_append_type(&encoder, TLV_SSP_N1_PUB) != ndn_encoder_success) {
+    APP_LOG("In cnstrct_btstrp_rqst, encoder_append_type for N1 pub failed.\n");
+    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
+  }
+  if (encoder_append_length(&encoder, sign_on_basic_client->N1_pub_len) != ndn_encoder_success) {
+    APP_LOG("In cnstrct_btstrp_rqst, encoder_append_length for N1 pub failed.\n");
+    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
+  }
+  if (encoder_append_raw_buffer_value(&encoder, sign_on_basic_client->N1_pub_p,
+                                      sign_on_basic_client->N1_pub_len) != ndn_encoder_success) {
+    APP_LOG("In cnstrct_btstrp_rqst, encoder_append_raw_buffer_value for N1 pub failed.\n");
+    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
+  }
 
-  // generate bootstrapping request signature
-  //**************************************//
+  uint8_t *sig_payload_begin = buf_p + btstrp_rqst_tlv_type_field_size + btstrp_rqst_tlv_len_field_size;
+  uint32_t sig_payload_size = encoder.offset - btstrp_rqst_tlv_type_field_size - btstrp_rqst_tlv_len_field_size;
 
-  uint32_t sig_payload_end_offset = currentOffset;
-  // need to subtract TLV_TYPE_AND_LENGTH_SIZE to account for fact that packet header is not included in signature
-  uint32_t sig_payload_size = sig_payload_end_offset - SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
-  // need to add TLV_TYPE_AND_LENGTH_SIZE to buf_p to account for fact that packet header is not included in signature
-  uint8_t *sig_payload_begin = buf_p + SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE;
+  APP_LOG_HEX("Signature payload of bootstrapping request:", sig_payload_begin, sig_payload_size);
 
-  uint8_t btstrpRqstSigBuf[SIG_GENERATION_BUF_LENGTH];
-
+  // calculate the signature 
+  uint8_t temp_sig_buf[SIG_GENERATION_BUF_LENGTH];
+  uint32_t sig_size = 0;
   if (!sign_on_basic_client->sec_intf.gen_btstrp_rqst_sig(sign_on_basic_client->KS_pri_p,
                                                           sig_payload_begin, sig_payload_size,
-                                                          btstrpRqstSigBuf, SIG_GENERATION_BUF_LENGTH, 
-                                                          &encodedSignatureSize)) {
+                                                          temp_sig_buf, SIG_GENERATION_BUF_LENGTH, 
+                                                          &sig_size)) {
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_FAILED_TO_GENERATE_SIG;
   }
 
-  APP_LOG_HEX("Value of generated bootstrapping request signature", btstrpRqstSigBuf,
-   encodedSignatureSize);
+  if (btstrp_rqst_sig_tlv_val_len != sig_size) {
+    APP_LOG("Signature size returned by get_btstrp_rqst_sig_len (%d) "
+            "and gen_btstrp_rqst_sig (%d) did not match.\n", btstrp_rqst_sig_tlv_val_len, sig_size);
+    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
+  }
 
-  //**************************************//
+  encoder_append_type(&encoder, TLV_SSP_SIGNATURE);
+  encoder_append_length(&encoder, sig_size);
+  encoder_append_raw_buffer_value(&encoder, temp_sig_buf, sig_size);
 
-  // add the signature to the packet
-  memcpy(buf_p + currentOffset + SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE, btstrpRqstSigBuf, encodedSignatureSize);
+  *output_len_p = encoder.offset;
 
-  buf_p[currentOffset] = TLV_SSP_SIGNATURE;
-  currentOffset += SIGN_ON_BASIC_TLV_TYPE_SIZE;
-  buf_p[currentOffset] = (uint8_t)encodedSignatureSize;
-  currentOffset += SIGN_ON_BASIC_TLV_LENGTH_SIZE;
-  currentOffset += encodedSignatureSize;
+  APP_LOG_HEX("Hex of fully generated bootstrapping request:", buf_p, *output_len_p);
 
-  // set the first byte of the buffer to be the bootstrapping request tlv type
-  buf_p[bootstrappingRequestTlvTypePosition] = TLV_SSP_BOOTSTRAPPING_REQUEST;
-
-  // set the second byte of the buffer to be the length of the entire bootstrapping request, excluding the
-  // bootstrapping request tlv type and bootstrapping request tlv length (i.e., total buffer size - 2)
-  buf_p[bootstrappingRequestTlvLengthPosition] =
-      SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE + sign_on_basic_client->device_identifier_len +   // to account for device identifier TLV
-      SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE + sign_on_basic_client->device_capabilities_len + // to account for device capabilities TLV
-      SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE + sign_on_basic_client->N1_pub_len +              // to account for the N1 pub TLV
-      SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE + encodedSignatureSize;                               // to account for signature TLV
-
-  *output_len_p = SIGN_ON_BASIC_TLV_TYPE_AND_LENGTH_SIZE + buf_p[1]; // length of packet header tlv type and length plus rest of packet
-
-  APP_LOG_HEX("Bytes of generated bootstrapping request:", buf_p, *output_len_p);
-
-  sign_on_basic_client->status = SIGN_ON_BASIC_CLIENT_GENERATED_BOOTSTRAPPING_REQUEST;
   return NDN_SUCCESS;
   
 }

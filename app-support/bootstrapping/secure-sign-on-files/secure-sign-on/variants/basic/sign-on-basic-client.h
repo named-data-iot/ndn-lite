@@ -98,6 +98,13 @@ typedef int (*sign_on_basic_sec_gen_btstrp_rqst_sig)(const uint8_t *KS_pri_p, co
                                                      uint32_t payload_len, uint8_t *output_buf,  
                                                      uint32_t output_buf_len, uint32_t *output_len);
 
+/**@brief Generic function interface for getting length of signature of bootstrapping request.
+ *
+ * @return Returns length of bootstrapping request signature.
+ *
+ */
+typedef uint32_t (*sign_on_basic_sec_get_btstrp_rqst_sig_len)();
+
 /**@brief Generic function interface for verifying signature of bootstrapping request response. Specific
  *          details regarding the signature of the bootstrapping request are described in the sign on
  *          basic variant implementation.
@@ -146,6 +153,13 @@ typedef int (*sign_on_basic_sec_vrfy_btstrp_rqst_rspns_sig)(const uint8_t *paylo
 typedef int (*sign_on_basic_sec_gen_cert_rqst_sig)(const uint8_t *KS_pri_p, const uint8_t *payload, 
                                                    uint32_t payload_len, uint8_t *output_buf,  
                                                    uint32_t output_buf_len, uint32_t *output_len);
+
+/**@brief Generic function interface for getting length of signature of certificate request.
+ *
+ * @return Returns length of certificate request signature.
+ *
+ */
+typedef uint32_t (*sign_on_basic_sec_get_cert_rqst_sig_len)();
 
 /**@brief Generic function interface for verifying signature of certificate request response. Specific
  *          details regarding the certificate request response signature are described in the sign on
@@ -216,6 +230,13 @@ typedef int (*sign_on_basic_sec_gen_fin_msg_sig)(const uint8_t *KS_pri_p, const 
                                                    uint32_t payload_len, uint8_t *output_buf,  
                                                    uint32_t output_buf_len, uint32_t *output_len);
 
+/**@brief Generic function interface for getting length of signature of finish message.
+ *
+ * @return Returns length of finish message signature.
+ *
+ */
+typedef uint32_t (*sign_on_basic_sec_get_fin_msg_sig_len)();
+
 /**@brief Structure for holding abstract functions that should be implemented by Sign-on basic variants.
  *          All functions here return SEC_OP_SUCCESS on success and SEC_OP_FAILURE on failure.
  *          See sign-on-basic-sec-consts.h for the actual values.
@@ -251,11 +272,14 @@ struct sign_on_basic_sec_intf {
   sign_on_basic_sec_gen_n1_keypair gen_n1_keypair;
   sign_on_basic_sec_gen_kt gen_kt;
   sign_on_basic_sec_gen_btstrp_rqst_sig gen_btstrp_rqst_sig;
+  sign_on_basic_sec_get_btstrp_rqst_sig_len get_btstrp_rqst_sig_len;
   sign_on_basic_sec_vrfy_btstrp_rqst_rspns_sig vrfy_btstrp_rqst_rspns_sig;
   sign_on_basic_sec_gen_cert_rqst_sig gen_cert_rqst_sig;
+  sign_on_basic_sec_get_cert_rqst_sig_len get_cert_rqst_sig_len;
   sign_on_basic_sec_vrfy_cert_rqst_rspns_sig vrfy_cert_rqst_rspns_sig;
   sign_on_basic_sec_decrypt_kd_pri decrypt_kd_pri;
   sign_on_basic_sec_gen_fin_msg_sig gen_fin_msg_sig;
+  sign_on_basic_sec_get_fin_msg_sig_len get_fin_msg_sig_len;
 };
 
 /**@brief Structure for keeping track of state for a given Sign-on Basic client.

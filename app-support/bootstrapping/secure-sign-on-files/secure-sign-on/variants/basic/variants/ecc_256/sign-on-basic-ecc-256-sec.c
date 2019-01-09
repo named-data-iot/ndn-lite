@@ -10,8 +10,9 @@
 
 #include "sign-on-basic-ecc-256-sec.h"
 
-#include "../../security/sign-on-basic-sec-consts.h"
+#include "../../../../../../../../ndn-constants.h"
 
+#include "../../security/sign-on-basic-sec-consts.h"
 #include "../../security/sign-on-basic-sec-impl.h"
 
 int sign_on_basic_ecc_256_gen_sha256_hash(const uint8_t *payload, uint32_t payload_len, uint8_t *output) {
@@ -49,17 +50,6 @@ int sign_on_basic_ecc_256_vrfy_cert_rqst_rspns_sig(const uint8_t *payload, uint3
                                                            key, key_len);
 }
 
-int sign_on_basic_ecc_256_gen_cert_rqst_sig(const uint8_t *pri_key,
-                                            const uint8_t *payload, uint32_t payload_len,
-                                            uint8_t *output_buf, uint32_t output_buf_len,
-                                            uint32_t *output_len) {
-  return sign_on_basic_gen_sha256_ecdsa_sig(
-                     pri_key, 
-                     uECC_secp256r1(),
-                     payload, payload_len, output_buf,
-                     output_buf_len, output_len);
-}
-
 int sign_on_basic_ecc_256_gen_btstrp_rqst_sig(const uint8_t *pri_key,
                                               const uint8_t *payload, uint32_t payload_len,
                                               uint8_t *output_buf, uint32_t output_buf_len,
@@ -71,6 +61,25 @@ int sign_on_basic_ecc_256_gen_btstrp_rqst_sig(const uint8_t *pri_key,
                      output_buf_len, output_len);
 }
 
+uint32_t sign_on_basic_ecc_256_get_btstrp_rqst_sig_len() {
+  return NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE;
+}
+
+int sign_on_basic_ecc_256_gen_cert_rqst_sig(const uint8_t *pri_key,
+                                            const uint8_t *payload, uint32_t payload_len,
+                                            uint8_t *output_buf, uint32_t output_buf_len,
+                                            uint32_t *output_len) {
+  return sign_on_basic_gen_sha256_ecdsa_sig(
+                     pri_key, 
+                     uECC_secp256r1(),
+                     payload, payload_len, output_buf,
+                     output_buf_len, output_len);
+}
+
+uint32_t sign_on_basic_ecc_256_get_cert_rqst_sig_len() {
+  return NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE;
+}
+
 int sign_on_basic_ecc_256_gen_fin_msg_sig(const uint8_t *pri_key,
                                           const uint8_t *payload, uint32_t payload_len,
                                           uint8_t *output_buf, uint32_t output_buf_len,
@@ -80,6 +89,10 @@ int sign_on_basic_ecc_256_gen_fin_msg_sig(const uint8_t *pri_key,
                      uECC_secp256r1(), 
                      payload, payload_len, output_buf,
                      output_buf_len, output_len);
+}
+
+uint32_t sign_on_basic_ecc_256_get_fin_msg_sig_len() {
+  return NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE;
 }
 
 int sign_on_basic_ecc_256_gen_n1_keypair(uint8_t *pub_key_buf, uint32_t pub_key_buf_len, 
