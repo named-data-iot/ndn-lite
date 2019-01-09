@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang
+ * Copyright (C) 2018-2019 Zhiyi Zhang
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -11,8 +11,13 @@
 int
 name_component_tlv_decode(ndn_decoder_t* decoder, name_component_t* component)
 {
+  uint32_t probe = 0;
   decoder_get_type(decoder, &component->type);
-  decoder_get_length(decoder, &component->size);
+  decoder_get_length(decoder, &probe);
+  if (probe > NDN_NAME_COMPONENT_BUFFER_SIZE) {
+    return NDN_OVERSIZE;
+  }
+  component->size = probe;
   return decoder_get_raw_buffer_value(decoder, component->value, component->size);
 }
 
