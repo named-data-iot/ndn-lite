@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 2018 Zhiyi Zhang, Edward Lu
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
 
 #include "ndn-lite-sec-config.h"
 

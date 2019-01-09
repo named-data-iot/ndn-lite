@@ -92,7 +92,11 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
       decoder_get_type(&decoder, &probe);
       if (probe == TLV_Parameters) {
         interest->enable_Parameters = 1;
-        decoder_get_length(&decoder, &interest->parameters.size);
+        decoder_get_length(&decoder, &probe);
+        if (probe > NDN_INTEREST_PARAMS_BUFFER_SIZE) {
+          return NDN_OVERSIZE;
+        }
+        interest->parameters.size = probe;
         decoder_get_raw_buffer_value(&decoder, interest->parameters.value,
                                      interest->parameters.size);
         decoder_get_type(&decoder, &probe);
