@@ -9,11 +9,15 @@ ndn_metainfo_tlv_decode(ndn_decoder_t* decoder, ndn_metainfo_t* meta)
   if (probe != TLV_MetaInfo) {
     if (probe == TLV_Content || probe == TLV_SignatureInfo) {
       ndn_metainfo_init(meta);
+      decoder_move_backward(decoder, 1);
       return 0;
     }
-    else
+    else {
+      decoder_move_backward(decoder, 1);
       return NDN_WRONG_TLV_TYPE;
+    }
   }
+  
   ndn_metainfo_init(meta);
   uint32_t buffer_length = 0;
   decoder_get_length(decoder, &buffer_length);
