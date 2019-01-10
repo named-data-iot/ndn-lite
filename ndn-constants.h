@@ -73,4 +73,21 @@
 #define NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE 64
 #define NDN_SEC_ECC_SECP256R1_PRIVATE_KEY_SIZE 32
 
+// asn1 encoding
+// the below constants are based on the number of bytes in the
+// micro-ecc curve, which can be found here:
+// https://github.com/kmackay/micro-ecc/blob/master/curve-specific.inc
+// the maximum asn signature encoding size is found by taking the
+// size of the raw signature (the number of bytes in its micro-ecc curve * 2)
+// and then adding 8, to account for the ASN1.SEQUENCE tlv type and length fields,
+// the two ASN1.INTEGER tlv type and length fields, and the two potential extra
+// 0's if the integers of the signature containing a leading 1 bit
+#define NDN_ASN1_ECDSA_ENCODING_MAX_EXTRA_BYTES 8
+#define NDN_ASN1_ECDSA_SECP256R1_MAX_ENCODED_SIG_SIZE (64 + NDN_ASN1_ECDSA_ENCODING_MAX_EXTRA_BYTES)
+#define NDN_ASN1_ECDSA_SECP256K1_MAX_ENCODED_SIG_SIZE (64 + NDN_ASN1_ECDSA_ENCODING_MAX_EXTRA_BYTES)
+#define NDN_ASN1_ECDSA_SECP224R1_MAX_ENCODED_SIG_SIZE (56 + NDN_ASN1_ECDSA_ENCODING_MAX_EXTRA_BYTES)
+#define NDN_ASN1_ECDSA_SECP192R1_MAX_ENCODED_SIG_SIZE (48 + NDN_ASN1_ECDSA_ENCODING_MAX_EXTRA_BYTES)
+#define NDN_ASN1_ECDSA_SECP160R1_MAX_ENCODED_SIG_SIZE (40 + NDN_ASN1_ECDSA_ENCODING_MAX_EXTRA_BYTES)
+#define NDN_ASN1_ECDSA_MIN_RAW_SIG_SIZE (NDN_ASN1_ECDSA_SECP160R1_MAX_ENCODED_SIG_SIZE - NDN_ASN1_ECDSA_ENCODING_MAX_EXTRA_BYTES)
+
 #endif // NDN_CONSTANTS_H

@@ -250,6 +250,7 @@ ndn_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
                  const ndn_ecc_pub_t* ecc_pub_key,
                  uint8_t ecdsa_type);
 
+
 #ifdef __cplusplus
 }
 #endif
