@@ -215,7 +215,7 @@ ndn_frag_assembler_assemble_frag(ndn_frag_assembler_t* assembler, uint8_t* frag,
 
   // get MF bit
   uint8_t mf = frag[0] & NDN_FRAG_MF_MASK;
-  if (mf == 0) {
+  if (mf == NDN_FRAG_MF_MASK) {
     // no more frags
     assembler->is_finished = 1;
   }
