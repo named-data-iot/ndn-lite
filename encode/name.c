@@ -35,6 +35,8 @@ ndn_name_tlv_decode(ndn_decoder_t* decoder, ndn_name_t* name)
   while (decoder->offset < start_offset + length) {
     uint32_t comp_type = 0;
     decoder_get_type(decoder, &comp_type);
+    if (counter >= NDN_NAME_COMPONENTS_SIZE)
+      return NDN_OVERSIZE;
     name->components[counter].type = comp_type;
     if (!(name->components[counter].type == TLV_GenericNameComponent
           || name->components[counter].type == TLV_ImplicitSha256DigestComponent
