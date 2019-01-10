@@ -203,6 +203,11 @@ ndn_data_tlv_decode_no_verify(ndn_data_t* data, const uint8_t* block_value, uint
   // content
   decoder_get_type(&decoder, &probe);
   decoder_get_length(&decoder, &data->content_size);
+  decoder_get_length(&decoder, &probe);
+  if (probe > NDN_CONTENT_BUFFER_SIZE) {
+    return NDN_OVERSIZE;
+  }
+  data->content_size = probe;
   decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
 
   // signature info
