@@ -202,12 +202,26 @@ ndn_data_tlv_decode_no_verify(ndn_data_t* data, const uint8_t* block_value, uint
 
   // content
   decoder_get_type(&decoder, &probe);
-  decoder_get_length(&decoder, &probe);
-  if (probe > NDN_CONTENT_BUFFER_SIZE) {
-    return NDN_OVERSIZE;
+  switch(probe)
+  {
+    case TLV_Content:
+      decoder_get_length(&decoder, &probe);
+      if (probe > NDN_CONTENT_BUFFER_SIZE) {
+        return NDN_OVERSIZE;
+      }
+      data->content_size = probe;
+      decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+      break;
+
+    case TLV_SignatureInfo:
+      data->content_size = 0;
+      decoder_move_backward(&decoder, 1);
+      break; 
+
+    default:
+      return NDN_WRONG_TLV_TYPE; 
   }
-  data->content_size = probe;
-  decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+
 
   // signature info
   ndn_signature_info_tlv_decode(&decoder, &data->signature);
@@ -240,12 +254,26 @@ ndn_data_tlv_decode_digest_verify(ndn_data_t* data, const uint8_t* block_value, 
 
   // content
   decoder_get_type(&decoder, &probe);
-  decoder_get_length(&decoder, &probe);
-  if (probe > NDN_CONTENT_BUFFER_SIZE) {
-    return NDN_OVERSIZE;
+  switch(probe)
+  {
+    case TLV_Content:
+      decoder_get_length(&decoder, &probe);
+      if (probe > NDN_CONTENT_BUFFER_SIZE) {
+        return NDN_OVERSIZE;
+      }
+      data->content_size = probe;
+      decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+      break;
+
+    case TLV_SignatureInfo:
+      data->content_size = 0;
+      decoder_move_backward(&decoder, 1);
+      break; 
+
+    default:
+      return NDN_WRONG_TLV_TYPE; 
   }
-  data->content_size = probe;
-  decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+
 
   // signature info
   ndn_signature_info_tlv_decode(&decoder, &data->signature);
@@ -283,12 +311,26 @@ ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, u
 
   // content
   decoder_get_type(&decoder, &probe);
-  decoder_get_length(&decoder, &probe);
-  if (probe > NDN_CONTENT_BUFFER_SIZE) {
-    return NDN_OVERSIZE;
+  switch(probe)
+  {
+    case TLV_Content:
+      decoder_get_length(&decoder, &probe);
+      if (probe > NDN_CONTENT_BUFFER_SIZE) {
+        return NDN_OVERSIZE;
+      }
+      data->content_size = probe;
+      decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+      break;
+
+    case TLV_SignatureInfo:
+      data->content_size = 0;
+      decoder_move_backward(&decoder, 1);
+      break; 
+
+    default:
+      return NDN_WRONG_TLV_TYPE; 
   }
-  data->content_size = probe;
-  decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+
 
   // signature info
   ndn_signature_info_tlv_decode(&decoder, &data->signature);
@@ -327,12 +369,25 @@ ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, ui
 
   // content
   decoder_get_type(&decoder, &probe);
-  decoder_get_length(&decoder, &probe);
-  if (probe > NDN_CONTENT_BUFFER_SIZE) {
-    return NDN_OVERSIZE;
+  switch(probe)
+  {
+    case TLV_Content:
+      decoder_get_length(&decoder, &probe);
+      if (probe > NDN_CONTENT_BUFFER_SIZE) {
+        return NDN_OVERSIZE;
+      }
+      data->content_size = probe;
+      decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+      break;
+
+    case TLV_SignatureInfo:
+      data->content_size = 0;
+      decoder_move_backward(&decoder, 1);
+      break; 
+
+    default:
+      return NDN_WRONG_TLV_TYPE; 
   }
-  data->content_size = probe;
-  decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
 
   // signature info
   ndn_signature_info_tlv_decode(&decoder, &data->signature);
