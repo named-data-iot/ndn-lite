@@ -222,7 +222,6 @@ ndn_data_tlv_decode_no_verify(ndn_data_t* data, const uint8_t* block_value, uint
       return NDN_WRONG_TLV_TYPE; 
   }
 
-
   // signature info
   ndn_signature_info_tlv_decode(&decoder, &data->signature);
 
@@ -273,7 +272,6 @@ ndn_data_tlv_decode_digest_verify(ndn_data_t* data, const uint8_t* block_value, 
     default:
       return NDN_WRONG_TLV_TYPE; 
   }
-
 
   // signature info
   ndn_signature_info_tlv_decode(&decoder, &data->signature);
@@ -330,7 +328,6 @@ ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, u
     default:
       return NDN_WRONG_TLV_TYPE; 
   }
-
 
   // signature info
   ndn_signature_info_tlv_decode(&decoder, &data->signature);
