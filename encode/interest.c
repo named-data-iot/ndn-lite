@@ -27,7 +27,7 @@ ndn_interest_probe_block_internals_size(const ndn_interest_t* interest)
   if (interest->enable_Parameters)
     interest_buffer_internals_size += encoder_probe_block_size(TLV_Parameters, interest->parameters.size);
   interest_buffer_internals_size += 6; // nonce
-  interest_buffer_internals_size += 4; // lifetime
+  interest_buffer_internals_size += 6; // lifetime
   return interest_buffer_internals_size;
 }
 
@@ -72,7 +72,7 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
     }
     else if (type == TLV_InterestLifetime) {
       decoder_get_length(&decoder, &length);
-      decoder_get_uint16_value(&decoder, &interest->lifetime);
+      decoder_get_uint32_value(&decoder, &interest->lifetime);
     }
     else if (type == TLV_HopLimit) {
       interest->enable_HopLimit = 1;
@@ -150,8 +150,8 @@ ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest)
 
   // lifetime
   encoder_append_type(encoder, TLV_InterestLifetime);
-  encoder_append_length(encoder, 2);
-  encoder_append_uint16_value(encoder, interest->lifetime);
+  encoder_append_length(encoder, 4);
+  encoder_append_uint32_value(encoder, interest->lifetime);
   if (interest->enable_HopLimit) {
     encoder_append_type(encoder, TLV_HopLimit);
     encoder_append_length(encoder, 1);
