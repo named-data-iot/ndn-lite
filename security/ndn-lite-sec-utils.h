@@ -45,4 +45,21 @@ int
 ndn_asn1_probe_ecdsa_signature_encoding_size(uint8_t *raw_ecdsa_sig, uint32_t raw_ecdsa_sig_len, 
                                              uint32_t *encoded_ecdsa_sig_len);
 
+/**
+ * Decode a signature in ASN.1, DER format into the format used by the micro-ecc library.
+ * The curve type of signature will be inferred from the length of the signature passed in.
+ * @param encoded_ecdsa_sig. Input. Signature to be decoded, in ASN.1 DER format.
+ * @param encoded_ecdsa_sig_len. Input. Length of the encoded signature.
+ * @param decoded_ecdsa_sig. Output. Length of the buffer to store decoded signature. Should
+ *                                        be long enough to hold final decoding.
+ * @param decoded_ecdsa_sig_buf_len. Input. Length of buffer to hold decoded signature.
+ * @param raw_ecdsa_sig_len. Output. Length of the decoded signature, in the same format used
+ *                                   by the micro-ecc library.
+ * @return NDN_SUCCESS if there is no error.
+ */
+int
+ndn_asn1_decode_ecdsa_signature(uint8_t *encoded_ecdsa_sig, uint32_t encoded_ecdsa_sig_len, 
+                                uint8_t *decoded_ecdsa_sig, uint32_t decoded_ecdsa_sig_buf_len,
+                                uint32_t *raw_ecdsa_sig_len);
+
 #endif // NDN_SECURITY_UTILS_H_
