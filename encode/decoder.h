@@ -127,7 +127,7 @@ decoder_get_raw_buffer_value(ndn_decoder_t* decoder, uint8_t* value, uint32_t si
 }
 
 /**
- * Get the variable size Value (V) to a single byte.
+ * Get the fixed size Value (V) to a single byte.
  * This function is supposed to be invoked after decoder_get_length().
  * @param decoder. Input/Output. The decoder's offset will be updated.
  * @param value. Output. The variable to keep the byte value.
@@ -144,28 +144,7 @@ decoder_get_byte_value(ndn_decoder_t* decoder, uint8_t* value)
 }
 
 /**
- * Get the variable size Value (V) to a uint32_t.
- * This function is supposed to be invoked after decoder_get_length().
- * @param decoder. Input/Output. The decoder's offset will be updated.
- * @param value. Output. The variable to keep the uint32_t value.
- * @return 0 if there is no error.
- */
-static inline int
-decoder_get_uint32_value(ndn_decoder_t* decoder, uint32_t* value)
-{
-  if (decoder->offset + 4 > decoder->input_size)
-    return NDN_OVERSIZE;
-
-  *value = ((uint32_t)decoder->input_value[decoder->offset] << 24)
-    + ((uint32_t)decoder->input_value[decoder->offset + 1] << 16)
-    + ((uint32_t)decoder->input_value[decoder->offset + 2] << 8)
-    + decoder->input_value[decoder->offset + 3];
-  decoder->offset += 4;
-  return 0;
-}
-
-/**
- * Get the variable size Value (V) to a uint16_t.
+ * Get the fixed size Value (V) to a uint16_t.
  * This function is supposed to be invoked after decoder_get_length().
  * @param decoder. Input/Output. The decoder's offset will be updated.
  * @param value. Output. The variable to keep the uint16_t value.
@@ -180,6 +159,83 @@ decoder_get_uint16_value(ndn_decoder_t* decoder, uint16_t* value)
   *value = ((uint16_t)decoder->input_value[decoder->offset] << 8)
     + decoder->input_value[decoder->offset + 1];
   decoder->offset += 2;
+  return 0;
+}
+
+/**
+ * Get the fixed size Value (V) to a uint32_t.
+ * This function is supposed to be invoked after decoder_get_length().
+ * @param decoder. Input/Output. The decoder's offset will be updated.
+ * @param value. Output. The variable to keep the uint32_t value.
+ * @return 0 if there is no error.
+ */
+static inline int
+decoder_get_uint32_value(ndn_decoder_t* decoder, uint32_t* value)
+{
+  if (decoder->offset + 4 > decoder->input_size)
+    return NDN_OVERSIZE;
+  *value = 0;
+  for (int i = 0; i < 4; i++) {
+    *value += (uint32_t)decoder->input_value[decoder->offset + i] << (8 * (3 - i));
+  }
+  decoder->offset += 4;
+  return 0;
+}
+
+/**
+ * Get the fixed size Value (V) to a uint64_t.
+ * This function is supposed to be invoked after decoder_get_length().
+ * @param decoder. Input/Output. The decoder's offset will be updated.
+ * @param value. Output. The variable to keep the uint64_t value.
+ * @return 0 if there is no error.
+ */
+static inline int
+decoder_get_uint64_value(ndn_decoder_t* decoder, uint64_t* value)
+{
+  if (decoder->offset + 8 > decoder->input_size)
+    return NDN_OVERSIZE;
+  *value = 0;
+  for (int i = 0; i < 8; i++) {
+    *value += (uint64_t)decoder->input_value[decoder->offset + i] << (8 * (7 - i));
+  }
+  decoder->offset += 8;
+  return 0;
+}
+
+/**
+ * Get the non-negative int Value (V) to a uint64_t.
+ * This function is supposed to be invoked after decoder_get_length().
+ * TLV-LENGTH of the TLV element MUST be either 1, 2, 4, or 8.
+ * @note For more details, go https://named-data.net/doc/NDN-packet-spec/current/tlv.html
+ * @param decoder. Input/Output. The decoder's offset will be updated.
+ * @param length. Input. The Length (L) obtained from decoder_get_length().
+ * @param value. Output. The variable to keep the non-negative int value.
+ * @return 0 if there is no error.
+ */
+static inline int
+decoder_get_uint_value(ndn_decoder_t* decoder, uint32_t length, uint64_t* value)
+{
+  if (length == 1) {
+    uint8_t temp_value = 0;
+    decoder_get_byte_value(decoder, &temp_value);
+    *value = (uint64_t)temp_value;
+  }
+  else if (length == 2) {
+    uint16_t temp_value = 0;
+    decoder_get_uint16_value(decoder, &temp_value);
+    *value = (uint64_t)temp_value;
+  }
+  else if (length == 4) {
+    uint32_t temp_value = 0;
+    decoder_get_uint32_value(decoder, &temp_value);
+    *value = (uint64_t)temp_value;
+  }
+  else if (length == 8) {
+    decoder_get_uint64_value(decoder, value);
+  }
+  else {
+    return NDN_WRONG_TLV_LENGTH;
+  }
   return 0;
 }
 

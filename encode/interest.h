@@ -40,7 +40,7 @@ typedef struct ndn_interest {
   /**
    * The lifetime of the Interest.
    */
-  uint32_t lifetime;
+  uint64_t lifetime;
 
   uint8_t enable_CanBePrefix;
   uint8_t enable_MustBeFresh;

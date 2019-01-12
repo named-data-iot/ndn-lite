@@ -27,7 +27,7 @@ ndn_interest_probe_block_internals_size(const ndn_interest_t* interest)
   if (interest->enable_Parameters)
     interest_buffer_internals_size += encoder_probe_block_size(TLV_Parameters, interest->parameters.size);
   interest_buffer_internals_size += 6; // nonce
-  interest_buffer_internals_size += 6; // lifetime
+  interest_buffer_internals_size += 2 + encoder_probe_uint_length(interest->lifetime); // lifetime
   return interest_buffer_internals_size;
 }
 
@@ -72,7 +72,7 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
     }
     else if (type == TLV_InterestLifetime) {
       decoder_get_length(&decoder, &length);
-      decoder_get_uint32_value(&decoder, &interest->lifetime);
+      decoder_get_uint_value(&decoder, length, &interest->lifetime);
     }
     else if (type == TLV_HopLimit) {
       interest->enable_HopLimit = 1;
@@ -124,6 +124,10 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
 int
 ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest)
 {
+  if (interest->enable_Parameters) {
+    // TODO added by Zhiyi: add a InterestParameters Digest Name component to Interest.name
+  }
+
   uint32_t interest_block_value_size = ndn_interest_probe_block_internals_size(interest);
   int required_size = encoder_probe_block_size(TLV_Interest, interest_block_value_size);
   int rest_size = encoder->output_max_size - encoder->offset;
@@ -150,13 +154,17 @@ ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest)
 
   // lifetime
   encoder_append_type(encoder, TLV_InterestLifetime);
-  encoder_append_length(encoder, 4);
-  encoder_append_uint32_value(encoder, interest->lifetime);
+  encoder_append_length(encoder, encoder_probe_uint_length(interest->lifetime));
+  encoder_append_uint_value(encoder, interest->lifetime);
+
+  // hop limit
   if (interest->enable_HopLimit) {
     encoder_append_type(encoder, TLV_HopLimit);
     encoder_append_length(encoder, 1);
     encoder_append_byte_value(encoder, interest->hop_limit);
   }
+
+  // parameters
   if (interest->enable_Parameters) {
     encoder_append_type(encoder, TLV_Parameters);
     encoder_append_length(encoder, interest->parameters.size);

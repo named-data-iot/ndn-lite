@@ -207,12 +207,78 @@ encoder_append_uint32_value(ndn_encoder_t* encoder, uint32_t value)
 {
   if (encoder->offset + 4 > encoder->output_max_size)
     return NDN_OVERSIZE;
-  encoder->output_value[encoder->offset] = (value >> 24) & 0xFF;
-  encoder->output_value[encoder->offset + 1] = (value >> 16) & 0xFF;
-  encoder->output_value[encoder->offset + 2] = (value >> 8) & 0xFF;
-  encoder->output_value[encoder->offset + 3] = value & 0xFF;
+  for (int i = 0; i < 4; i++) {
+    encoder->output_value[encoder->offset + i] = (value >> (8 * (3 - i))) & 0xFF;
+  }
   encoder->offset += 4;
   return 0;
+}
+
+/**
+ * Append a uint64_t as the value (V) to the wire format buffer.
+ * @param encoder. Output. The encoder will keep the encoding result and the offset will be updated.
+ * @param value. Input. The uint64_t to be encoded.
+ * @return 0 if there is no error.
+ */
+static inline int
+encoder_append_uint64_value(ndn_encoder_t* encoder, uint64_t value)
+{
+  if (encoder->offset + 8 > encoder->output_max_size)
+    return NDN_OVERSIZE;
+  for (int i = 0; i < 8; i++) {
+    encoder->output_value[encoder->offset + i] = (value >> (8 * (7 - i))) & 0xFF;
+  }
+  encoder->offset += 8;
+  return 0;
+}
+
+/**
+ * Probe the length of a non-negative int as the value (V).
+ * TLV-LENGTH of the TLV element MUST be either 1, 2, 4, or 8.
+ * @note For more details, go https://named-data.net/doc/NDN-packet-spec/current/tlv.html
+ * @param value. Input. The uint to be checked.
+ * @return 0 if there is no error.
+ */
+static inline int
+encoder_probe_uint_length(uint64_t value)
+{
+  if (value <= 255) {
+    return 1;
+  }
+  else if (value <= 0xFFFF) {
+    return 2;
+  }
+  else if (value <= 0xFFFFFFFF) {
+    return 4;
+  }
+  else {
+    return 8;
+  }
+}
+
+/**
+ * Append a non-negative int as the value (V) to the wire format buffer.
+ * TLV-LENGTH of the TLV element MUST be either 1, 2, 4, or 8.
+ * @note For more details, go https://named-data.net/doc/NDN-packet-spec/current/tlv.html
+ * @param encoder. Output. The encoder will keep the encoding result and the offset will be updated.
+ * @param value. Input. The uint to be encoded.
+ * @return 0 if there is no error.
+ */
+static inline int
+encoder_append_uint_value(ndn_encoder_t* encoder, uint64_t value)
+{
+  if (value <= 255) {
+    return encoder_append_byte_value(encoder, (uint8_t)value);
+  }
+  else if (value <= 0xFFFF) {
+    return encoder_append_byte_value(encoder, (uint16_t)value);
+  }
+  else if (value <= 0xFFFFFFFF) {
+    return encoder_append_byte_value(encoder, (uint32_t)value);
+  }
+  else {
+    return encoder_append_uint64_value(encoder, value);
+  }
 }
 
 /**
