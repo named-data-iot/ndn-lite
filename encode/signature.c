@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2018-2019 Zhiyi Zhang
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
+
 #include "signature.h"
 #include <stdio.h>
 
@@ -8,14 +16,21 @@ ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* sig
   uint32_t key_name_block_size = 0;
   uint32_t validity_period_buffer_size = 0;
 
-  if (signature->enable_KeyLocator) {
+  if (signature->enable_KeyLocator > 0) {
     key_name_block_size = ndn_name_probe_block_size(&signature->key_locator_name);
     info_buffer_size += encoder_probe_block_size(TLV_KeyLocator, key_name_block_size);
   }
-  if (signature->enable_ValidityPeriod) {
+  if (signature->enable_ValidityPeriod > 0) {
     validity_period_buffer_size = encoder_probe_block_size(TLV_NotBefore, 15);
     validity_period_buffer_size += encoder_probe_block_size(TLV_NotAfter, 15);
     info_buffer_size += encoder_probe_block_size(TLV_ValidityPeriod, validity_period_buffer_size);
+  }
+  if (signature->enable_SignatureInfoNonce > 0) {
+    info_buffer_size += encoder_probe_block_size(TLV_Nonce, 4);
+  }
+  if (signature->enable_Timestamp > 0) {
+    info_buffer_size += encoder_probe_block_size(TLV_SignedInterestTimestamp,
+                                                 encoder_probe_uint_length(signature->timestamp));
   }
 
   // signatureinfo header
@@ -32,6 +47,20 @@ ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* sig
     encoder_append_type(encoder, TLV_KeyLocator);
     encoder_append_length(encoder, key_name_block_size);
     ndn_name_tlv_encode(encoder, &signature->key_locator_name);
+  }
+
+  // signature info nonce
+  if (signature->enable_SignatureInfoNonce > 0) {
+    encoder_append_type(encoder, TLV_Nonce);
+    encoder_append_length(encoder, 4);
+    encoder_append_uint32_value(encoder, signature->signature_info_nonce);
+  }
+
+  // timestamp
+  if (signature->enable_Timestamp > 0) {
+    encoder_append_type(encoder, TLV_SignedInterestTimestamp);
+    encoder_append_length(encoder, encoder_probe_uint_length(signature->timestamp));
+    encoder_append_uint_value(encoder, signature->timestamp);
   }
 
   // validity period
@@ -93,6 +122,19 @@ ndn_signature_info_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signature
       decoder_get_type(decoder, &probe);
       decoder_get_length(decoder, &probe);
       decoder_get_raw_buffer_value(decoder, signature->validity_period.not_after, 15);
+    }
+    else if (probe == TLV_Nonce) {
+      signature->enable_SignatureInfoNonce = 1;
+      decoder_get_length(decoder, &probe);
+      if (probe != 4) {
+        return NDN_WRONG_TLV_LENGTH;
+      }
+      decoder_get_uint32_value(decoder, &signature->signature_info_nonce);
+    }
+    else if (probe == TLV_SignedInterestTimestamp) {
+      signature->enable_Timestamp = 1;
+      decoder_get_length(decoder, &probe);
+      decoder_get_uint_value(decoder, probe, &signature->timestamp);
     }
     else
       return NDN_WRONG_TLV_TYPE;

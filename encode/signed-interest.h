@@ -19,28 +19,6 @@ extern "C" {
 #endif
 
 /**
- * Set Nonce of the Signed Interest.
- * @param interest. Output. The Interest whose Nonce will be set.
- * @param nonce. Input. Nonce value.
- */
-static inline void
-ndn_signed_interest_set_signature_nonce(ndn_interest_t* interest, uint32_t nonce)
-{
-  interest->signature_nonce = nonce;
-}
-
-/**
- * Set Timestamp of the Signed Interest.
- * @param interest. Output. The Interest whose Timestamp will be set.
- * @param timestamp. Input. Timestamp value.
- */
-static inline void
-ndn_signed_interest_set_signature_timestamp(ndn_interest_t* interest, uint32_t timestamp)
-{
-  interest->signature_timestamp = timestamp;
-}
-
-/**
  * Use Digest (SHA256) to sign the Interest and encode the Signed Interest into wire format.
  * This function will automatically set signature info and signature value.
  * @param encoder. Output. The encoder to keep the encoded Signed Interest.
@@ -49,7 +27,7 @@ ndn_signed_interest_set_signature_timestamp(ndn_interest_t* interest, uint32_t t
  * @return 0 if there is no error.
  */
 int
-ndn_signed_interest_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_interest_t* interest);
+ndn_signed_interest_digest_sign(ndn_interest_t* interest);
 
 /**
  * Use ECDSA Algorithm to sign the Interest and encode the Signed Interest into wire format.
@@ -62,9 +40,9 @@ ndn_signed_interest_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_interest_
  * @return 0 if there is no error.
  */
 int
-ndn_signed_interest_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_interest_t* interest,
-                                          const ndn_name_t* identity,
-                                          const ndn_ecc_prv_t* prv_key);
+ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
+                               const ndn_name_t* identity,
+                               const ndn_ecc_prv_t* prv_key);
 
 /**
  * Use HMAC Algorithm to sign the Interest and encode the Signed Interest into wire format.
@@ -77,9 +55,9 @@ ndn_signed_interest_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_interest_t
  * @return 0 if there is no error.
  */
 int
-ndn_signed_interest_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_interest_t* interest,
-                                         const ndn_name_t* identity,
-                                         const ndn_hmac_key_t* hmac_key);
+ndn_signed_interest_hmac_sign(ndn_interest_t* interest,
+                              const ndn_name_t* identity,
+                              const ndn_hmac_key_t* hmac_key);
 
 /**
  * Verify the Digest (SHA256) signature of a decoded Signed Interest.

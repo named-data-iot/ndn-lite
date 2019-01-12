@@ -271,10 +271,10 @@ encoder_append_uint_value(ndn_encoder_t* encoder, uint64_t value)
     return encoder_append_byte_value(encoder, (uint8_t)value);
   }
   else if (value <= 0xFFFF) {
-    return encoder_append_byte_value(encoder, (uint16_t)value);
+    return encoder_append_uint16_value(encoder, (uint16_t)value);
   }
   else if (value <= 0xFFFFFFFF) {
-    return encoder_append_byte_value(encoder, (uint32_t)value);
+    return encoder_append_uint32_value(encoder, (uint32_t)value);
   }
   else {
     return encoder_append_uint64_value(encoder, value);
