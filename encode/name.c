@@ -35,7 +35,7 @@ ndn_name_tlv_decode(ndn_decoder_t* decoder, ndn_name_t* name)
   while (decoder->offset < start_offset + length) {
     if (counter >= NDN_NAME_COMPONENTS_SIZE)
       return NDN_OVERSIZE;
-    int result = name_component_tlv_decode(&decoder, &name->components[counter]);
+    int result = name_component_tlv_decode(decoder, &name->components[counter]);
     if (result < 0)
       return result;
     ++counter;
