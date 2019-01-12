@@ -91,6 +91,8 @@ ndn_signature_value_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* si
 int
 ndn_signature_info_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signature)
 {
+  ndn_signature_init(signature);
+
   uint32_t probe = 0;
   decoder_get_type(decoder, &probe);
   if (probe != TLV_SignatureInfo)

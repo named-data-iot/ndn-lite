@@ -77,7 +77,19 @@ typedef struct ndn_signature {
  * @return 0 if there is no error.
  */
 static inline int
-ndn_signature_init(ndn_signature_t* signature, uint8_t type)
+ndn_signature_init(ndn_signature_t* signature)
+{
+  signature->enable_KeyLocator = 0;
+  signature->enable_ValidityPeriod = 0;
+  signature->enable_SignatureInfoNonce = 0;
+  signature->signature_info_nonce = 0;
+  signature->enable_Timestamp = 0;
+  signature->timestamp = 0;
+  return 0;
+}
+
+static inline int
+ndn_signature_set_signature_type(ndn_signature_t* signature, uint8_t type)
 {
   switch (type) {
   case NDN_SIG_TYPE_DIGEST_SHA256:
@@ -92,13 +104,7 @@ ndn_signature_init(ndn_signature_t* signature, uint8_t type)
   default:
     return NDN_SEC_UNSUPPORT_SIGN_TYPE;
   }
-  signature->enable_KeyLocator = 0;
-  signature->enable_ValidityPeriod = 0;
   signature->sig_type = type;
-  signature->enable_SignatureInfoNonce = 0;
-  signature->signature_info_nonce = 0;
-  signature->enable_Timestamp = 0;
-  signature->timestamp = 0;
   return 0;
 }
 

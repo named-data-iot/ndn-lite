@@ -27,7 +27,8 @@ _prepare_signature_info(ndn_interest_t* interest, uint8_t signature_type,
   raw_key_id[2] = (key_id >> 8) & 0xFF;
   raw_key_id[3] = key_id & 0xFF;
 
-  ndn_signature_init(&interest->signature, signature_type);
+  ndn_signature_init(&interest->signature);
+  ndn_signature_set_signature_type(&interest->signature, signature_type);
   ndn_signature_set_key_locator(&interest->signature, identity);
 
   // append /KEY and /<KEY-ID> in key locator name
@@ -177,7 +178,8 @@ ndn_signed_interest_digest_sign(ndn_interest_t* interest)
     return NDN_OVERSIZE;
 
   // set signature info
-  ndn_signature_init(&interest->signature, NDN_SIG_TYPE_DIGEST_SHA256);
+  ndn_signature_init(&interest->signature);
+  ndn_signature_set_signature_type(&interest->signature, NDN_SIG_TYPE_DIGEST_SHA256);
   // set signature nonce
   ndn_signature_set_signature_info_nonce(&interest->signature, 0);
   // set timestamp
@@ -289,7 +291,6 @@ ndn_signed_interest_hmac_verify(const ndn_interest_t* interest, const ndn_hmac_k
   // the signing input ends at signature info
   uint32_t siginfo_block_ending = temp_encoder.offset;
   ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
-
   int result = ndn_hmac_verify(temp_encoder.output_value, siginfo_block_ending,
                                interest->signature.sig_value, interest->signature.sig_size,
                                hmac_key);
