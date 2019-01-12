@@ -25,7 +25,7 @@ ndn_metainfo_tlv_decode(ndn_decoder_t* decoder, ndn_metainfo_t* meta)
       return NDN_WRONG_TLV_TYPE;
     }
   }
-  
+
   ndn_metainfo_init(meta);
   uint32_t buffer_length = 0;
   decoder_get_length(decoder, &buffer_length);
@@ -40,7 +40,7 @@ ndn_metainfo_tlv_decode(ndn_decoder_t* decoder, ndn_metainfo_t* meta)
     }
     else if (probe == TLV_FreshnessPeriod) {
       decoder_get_length(decoder, &probe);
-      decoder_get_uint32_value(decoder, meta->freshness_period);
+      decoder_get_uint32_value(decoder, &meta->freshness_period);
       meta->enable_FreshnessPeriod = 1;
     }
     else if (probe == TLV_FinalBlockId) {
