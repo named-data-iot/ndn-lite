@@ -7,7 +7,6 @@
  */
 
 #include "interest.h"
-#include <stdio.h>
 
 /************************************************************/
 /*  Definition of helper functions                          */
@@ -108,7 +107,6 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
       ndn_signature_value_tlv_decode(&decoder, &interest->signature);
     }
     else {
-      printf("wrong: %d", (int)type);
       return NDN_WRONG_TLV_TYPE;
     }
   }

@@ -88,8 +88,9 @@ ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
   uint32_t used_bytes = 0;
   int result = NDN_SUCCESS;
   result = ndn_ecdsa_sign(temp_encoder.output_value, siginfo_block_ending,
-                          interest->signature.sig_value, interest->signature.sig_size,
+                          interest->signature.sig_value, NDN_SIGNATURE_BUFFER_SIZE,
                           prv_key, prv_key->curve_type, &used_bytes);
+  interest->signature.sig_size = used_bytes;
   if (result < 0)
     return result;
   ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
@@ -146,8 +147,9 @@ ndn_signed_interest_hmac_sign(ndn_interest_t* interest,
   uint32_t used_bytes = 0;
   int result = NDN_SUCCESS;
   result = ndn_hmac_sign(temp_encoder.output_value, siginfo_block_ending,
-                         interest->signature.sig_value, interest->signature.sig_size,
+                         interest->signature.sig_value, NDN_SIGNATURE_BUFFER_SIZE,
                          hmac_key, &used_bytes);
+  interest->signature.sig_size = used_bytes;
   if (result < 0)
     return result;
   ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
@@ -204,8 +206,9 @@ ndn_signed_interest_digest_sign(ndn_interest_t* interest)
   uint32_t used_bytes = 0;
   int result = NDN_SUCCESS;
   result = ndn_sha256_sign(temp_encoder.output_value, siginfo_block_ending,
-                           interest->signature.sig_value, interest->signature.sig_size,
+                           interest->signature.sig_value, NDN_SIGNATURE_BUFFER_SIZE,
                            &used_bytes);
+  interest->signature.sig_size = used_bytes;
   if (result < 0)
     return result;
   ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
@@ -233,7 +236,7 @@ ndn_signed_interest_ecdsa_verify(const ndn_interest_t* interest, const ndn_ecc_p
   ndn_encoder_t temp_encoder;
   encoder_init(&temp_encoder, be_signed, NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE);
 
-  // the signing input starts at Name's Value (V)
+  // the signing input starts at Name's Value (V) excluding the ending component
   for (size_t i = 0; i < interest->name.components_size - 1; i++) {
     name_component_tlv_encode(&temp_encoder, &interest->name.components[i]);
   }
@@ -257,10 +260,10 @@ ndn_signed_interest_ecdsa_verify(const ndn_interest_t* interest, const ndn_ecc_p
 
   result = ndn_sha256_verify(&temp_encoder.output_value[param_block_starting],
                              temp_encoder.offset - param_block_starting,
-                             interest->name.components[interest->name.components_size].value,
-                             interest->name.components[interest->name.components_size].size);
+                             interest->name.components[interest->name.components_size - 1].value,
+                             interest->name.components[interest->name.components_size - 1].size);
   if (result < 0)
-    return result;
+    return NDN_SEC_SIGNED_INTEREST_INVALID_DIGEST;
   return NDN_SUCCESS;
 }
 
@@ -295,10 +298,10 @@ ndn_signed_interest_hmac_verify(const ndn_interest_t* interest, const ndn_hmac_k
 
   result = ndn_sha256_verify(&temp_encoder.output_value[param_block_starting],
                              temp_encoder.offset - param_block_starting,
-                             interest->name.components[interest->name.components_size].value,
-                             interest->name.components[interest->name.components_size].size);
+                             interest->name.components[interest->name.components_size - 1].value,
+                             interest->name.components[interest->name.components_size - 1].size);
   if (result < 0)
-    return result;
+    return NDN_SEC_SIGNED_INTEREST_INVALID_DIGEST;
   return NDN_SUCCESS;
 }
 
@@ -333,9 +336,9 @@ ndn_signed_interest_digest_verify(const ndn_interest_t* interest)
 
   result = ndn_sha256_verify(&temp_encoder.output_value[param_block_starting],
                              temp_encoder.offset - param_block_starting,
-                             interest->name.components[interest->name.components_size].value,
-                             interest->name.components[interest->name.components_size].size);
+                             interest->name.components[interest->name.components_size - 1].value,
+                             interest->name.components[interest->name.components_size - 1].size);
   if (result < 0)
-    return result;
+    return NDN_SEC_SIGNED_INTEREST_INVALID_DIGEST;
   return NDN_SUCCESS;
 }
