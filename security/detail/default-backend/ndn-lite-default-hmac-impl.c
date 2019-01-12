@@ -32,6 +32,9 @@ int
 ndn_lite_default_hmac_load_key(struct abstract_hmac_key* hmac_key,
                                const uint8_t* key_value, uint32_t key_size)
 {
+  if (key_size > 32) {
+    return NDN_SEC_WRONG_KEY_SIZE;
+  }
   memset(hmac_key->key_value, 0, 32);
   memcpy(hmac_key->key_value, key_value, key_size);
   hmac_key->key_size = key_size;
