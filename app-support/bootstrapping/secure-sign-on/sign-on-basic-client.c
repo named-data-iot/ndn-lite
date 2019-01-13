@@ -23,8 +23,6 @@
 #include "sign-on-basic-impl-consts.h"
 #include "variants/ecc_256/sign-on-basic-ecc-256-consts.h"
 
-#include "../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
-
 int sign_on_basic_client_init(
     uint8_t variant,
     struct sign_on_basic_client_t *sign_on_basic_client,
@@ -33,16 +31,9 @@ int sign_on_basic_client_init(
     const uint8_t *secure_sign_on_code_p,
     const uint8_t *KS_pub_p, uint32_t KS_pub_len,
     const uint8_t *KS_pri_p, uint32_t KS_pri_len) {
-
-  APP_LOG_HEX("In sign_on_basic_client_init, value of device identifier:", device_identifier_p,
-              device_identifier_len);
-  APP_LOG_HEX("In sign_on_basic_client_init, value of device capabilities:", device_capabilities_p,
-              device_capabilities_len);
-
   switch (variant) {
     case SIGN_ON_BASIC_VARIANT_ECC_256:
       sign_on_basic_client->secure_sign_on_code_len = SIGN_ON_BASIC_ECC_256_SECURE_SIGN_ON_CODE_LENGTH;
-      APP_LOG("Secure sign-on ble basic client being initialized with ecc_256 variant\n");
       break;
     default:
       return NDN_SIGN_ON_BASIC_CLIENT_INIT_FAILED_UNRECOGNIZED_VARIANT;
@@ -68,8 +59,6 @@ int sign_on_basic_client_init(
   memcpy(sign_on_basic_client->KS_pri_p, KS_pri_p, KS_pri_len);
   sign_on_basic_client->KS_pri_len = KS_pri_len;
 
-  APP_LOG("Initialized sign-on client with variant type: %d\n", variant);
-
   sign_on_basic_client->status = SIGN_ON_BASIC_CLIENT_NOT_STARTED;
 
   return NDN_SUCCESS;
@@ -78,8 +67,6 @@ int sign_on_basic_client_init(
 int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
     uint32_t *output_len_p,
     struct sign_on_basic_client_t *sign_on_basic_client) {
-
-  APP_LOG("cnstrct_btstrp_rqst got called\n");
 
   // generate N1 key pair here
   if (!sign_on_basic_client->sec_intf.gen_n1_keypair(
@@ -98,22 +85,16 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
 
   btstrp_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_DEVICE_IDENTIFIER,
                                                       sign_on_basic_client->device_identifier_len);
-  APP_LOG("btstrp_rqst_tlv_val_len after adding device identifier tlv block length: %d\n", btstrp_rqst_tlv_val_len);
   btstrp_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_DEVICE_CAPABILITIES,
                                                       sign_on_basic_client->device_capabilities_len);
-  APP_LOG("btstrp_rqst_tlv_val_len after adding device capabilities tlv block length: %d\n", btstrp_rqst_tlv_val_len);
   btstrp_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_N1_PUB,
                                                       sign_on_basic_client->N1_pub_len);
-  APP_LOG("btstrp_rqst_tlv_val_len after adding N1 pub tlv block length: %d\n", btstrp_rqst_tlv_val_len);
   btstrp_rqst_sig_tlv_val_len = sign_on_basic_client->sec_intf.get_btstrp_rqst_sig_len();
   uint32_t btstrp_rqst_sig_tlv_len_field_size = encoder_get_var_size(btstrp_rqst_sig_tlv_val_len);
   uint32_t btstrp_rqst_sig_tlv_type_field_size = encoder_get_var_size(TLV_SSP_SIGNATURE);
   btstrp_rqst_tlv_val_len += btstrp_rqst_sig_tlv_type_field_size;
   btstrp_rqst_tlv_val_len += btstrp_rqst_sig_tlv_len_field_size;
   btstrp_rqst_tlv_val_len += btstrp_rqst_sig_tlv_val_len;
-  APP_LOG("btstrp_rqst_tlv_val_len after adding signature tlv block length: %d\n", btstrp_rqst_tlv_val_len);
-
-  APP_LOG("btstrp_rqst_tlv_val_len: %d\n", btstrp_rqst_tlv_val_len);
 
   uint32_t btstrp_rqst_tlv_type_field_size = encoder_get_var_size(TLV_SSP_BOOTSTRAPPING_REQUEST);
   uint32_t btstrp_rqst_tlv_len_field_size = encoder_get_var_size(btstrp_rqst_tlv_val_len);
@@ -121,8 +102,6 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
   uint32_t btstrp_rqst_total_len = btstrp_rqst_tlv_val_len + btstrp_rqst_tlv_type_field_size + 
                                    btstrp_rqst_tlv_len_field_size;
   if (buf_len < btstrp_rqst_total_len) {
-    APP_LOG("In cnstrct_btstrp_rqst, buf_len (%d) was less than total size of bootstrapping request (%d)\n",
-            buf_len, btstrp_rqst_total_len);
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_BUFFER_TOO_SHORT;
   }
 
@@ -131,63 +110,50 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
 
   // append the bootstrapping request tlv type and length
   if (encoder_append_type(&encoder, TLV_SSP_BOOTSTRAPPING_REQUEST) != ndn_encoder_success) {
-     APP_LOG("In cnstrct_btstrp_rqst, encoder_append_type for bootstrapping request tlv type failed.\n");
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;   
   }
   if (encoder_append_length(&encoder, btstrp_rqst_tlv_val_len) != ndn_encoder_success) {
-     APP_LOG("In cnstrct_btstrp_rqst, encoder_append_length for bootstrapping request tlv length failed.\n");
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;   
   }
   
   // append the device identifier
   if (encoder_append_type(&encoder, TLV_SSP_DEVICE_IDENTIFIER) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_btstrp_rqst, encoder_append_type for device identifier failed.\n");
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
   }
   if (encoder_append_length(&encoder, sign_on_basic_client->device_identifier_len) != ndn_encoder_success)  {
-    APP_LOG("In cnstrct_btstrp_rqst, encoder_append_length for device identifier failed.\n");
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
   }
   if (encoder_append_raw_buffer_value(&encoder, sign_on_basic_client->device_identifier_p,
                                       sign_on_basic_client->device_identifier_len) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_btstrp_rqst, encoder_raw_buffer_value for device identifier failed.\n");
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
   }
 
   // append the device capabilities
   if (encoder_append_type(&encoder, TLV_SSP_DEVICE_CAPABILITIES) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_btstrp_rqst, encoder_append_type for device capabilities failed.\n");
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
   }
   if (encoder_append_length(&encoder, sign_on_basic_client->device_capabilities_len) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_btstrp_rqst, encoder_append_length for device capabilities failed.\n");
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
   }
   if (encoder_append_raw_buffer_value(&encoder, sign_on_basic_client->device_capabilities_p,
                                       sign_on_basic_client->device_capabilities_len) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_btstrp_rqst, encoder_append_raw_buffer_value for device capabilities failed.\n");
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
   }
 
   // append N1 pub
   if (encoder_append_type(&encoder, TLV_SSP_N1_PUB) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_btstrp_rqst, encoder_append_type for N1 pub failed.\n");
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
   }
   if (encoder_append_length(&encoder, sign_on_basic_client->N1_pub_len) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_btstrp_rqst, encoder_append_length for N1 pub failed.\n");
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
   }
   if (encoder_append_raw_buffer_value(&encoder, sign_on_basic_client->N1_pub_p,
                                       sign_on_basic_client->N1_pub_len) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_btstrp_rqst, encoder_append_raw_buffer_value for N1 pub failed.\n");
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
   }
 
   uint8_t *sig_payload_begin = buf_p + btstrp_rqst_tlv_type_field_size + btstrp_rqst_tlv_len_field_size;
   uint32_t sig_payload_size = encoder.offset - btstrp_rqst_tlv_type_field_size - btstrp_rqst_tlv_len_field_size;
-
-  APP_LOG_HEX("Signature payload of bootstrapping request:", sig_payload_begin, sig_payload_size);
 
   // calculate the signature 
   uint8_t temp_sig_buf[SIG_GENERATION_BUF_LENGTH];
@@ -200,8 +166,6 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
   }
 
   if (btstrp_rqst_sig_tlv_val_len != sig_size) {
-    APP_LOG("Signature size returned by get_btstrp_rqst_sig_len (%d) "
-            "and gen_btstrp_rqst_sig (%d) did not match.\n", btstrp_rqst_sig_tlv_val_len, sig_size);
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
   }
 
@@ -211,8 +175,6 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
 
   *output_len_p = encoder.offset;
 
-  APP_LOG_HEX("Hex of fully generated bootstrapping request:", buf_p, *output_len_p);
-
   return NDN_SUCCESS;
   
 }
@@ -220,11 +182,6 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
 int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
     uint32_t btstrp_rqst_rspns_buf_len,
     struct sign_on_basic_client_t *sign_on_basic_client) {
-
-  APP_LOG("Process bootstrapping request response got called.\n");
-
-  APP_LOG("Length of bootstrapping request response tlv block: %d\n", btstrp_rqst_rspns_buf_len);
-  APP_LOG_HEX("Full contents of bootstrapping request response:", btstrp_rqst_rspns_buf_p, btstrp_rqst_rspns_buf_len);
 
   // define pointers to data / lengths of data to be copied at the end, after processing is finished,
   // so that no internal state of the sign on basic client object is modified until after the whole
@@ -257,52 +214,35 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
   btstrp_rqst_rspns_tlv_val_buf_p = btstrp_rqst_rspns_buf_p + decoder.offset;
   btstrp_rqst_rspns_tlv_val_len = current_tlv_length;
 
-  APP_LOG("Length of bootstrapping request response: %d\n", btstrp_rqst_rspns_tlv_val_len);
-  APP_LOG_HEX("Value of bootstrapping request response:", btstrp_rqst_rspns_tlv_val_buf_p,
-              btstrp_rqst_rspns_tlv_val_len);
-
   // check for the N2 pub tlv block and move the decoder offset past it
   if (decoder_get_type(&decoder, &current_tlv_type) != ndn_decoder_success) {
-    APP_LOG("Failed to get tlv type of N2 pub.\n");
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_N2_PUB;
   }
   if (current_tlv_type != TLV_SSP_N2_PUB) {
-    APP_LOG("Did not get expected tlv type when parsing for N2 pub in bootstrapping "
-            "request response: got %d.\n", current_tlv_type);
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_N2_PUB;
   }
   if (decoder_get_length(&decoder, &current_tlv_length) != ndn_decoder_success) {
-    APP_LOG("Failed to get tlv length of N2 pub.\n");
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_N2_PUB;
   }
   N2_pub_p = btstrp_rqst_rspns_buf_p + decoder.offset;
   N2_pub_len = current_tlv_length;
-  APP_LOG_HEX("Value of N2 pub (ndn decoder):", N2_pub_p, N2_pub_len);
   if (decoder_move_forward(&decoder, current_tlv_length) != ndn_decoder_success) {
-    APP_LOG("Failed to move ndn decoder offset past N2 pub tlv value.\n");
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_N2_PUB;
   }
 
   // check for the trust anchor certificate tlv block and move the decoder offset past it
   if (decoder_get_type(&decoder, &current_tlv_type) != ndn_decoder_success) {
-    APP_LOG("Failed to get tlv type of trust anchor certificate.\n");
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_TRUST_ANCHOR_CERT;
   }
   if (current_tlv_type != TLV_SSP_ANCHOR_CERTIFICATE) {
-    APP_LOG("Did not get expected tlv type when parsing for trust anchor cert in bootstrapping "
-            "request response: got %d.\n", current_tlv_type);
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_TRUST_ANCHOR_CERT;
   } 
   if (decoder_get_length(&decoder, &current_tlv_length) != ndn_decoder_success) {
-    APP_LOG("Failed to get tlv length of trust anchor certificate.\n");
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_TRUST_ANCHOR_CERT;
   }
   trust_anchor_p = btstrp_rqst_rspns_buf_p + decoder.offset;
   trust_anchor_len = current_tlv_length;
-  APP_LOG("Length of trust anchor certificate (ndn_decoder): %d\n", trust_anchor_len);
-  APP_LOG_HEX("Value of trust anchor certificate (ndn decoder):", trust_anchor_p, trust_anchor_len);
   if (decoder_move_forward(&decoder, current_tlv_length) != ndn_decoder_success) {
-    APP_LOG("Failed to move ndn decoder offset past trust anchor cert tlv value.\n");
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_TRUST_ANCHOR_CERT;
   }
 
@@ -311,35 +251,25 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
   btstrp_rqst_rspns_tlv_sig_p = btstrp_rqst_rspns_buf_p + decoder.offset;
 
   if (decoder_get_type(&decoder, &current_tlv_type) != ndn_decoder_success) {
-    APP_LOG("Failed to get tlv type of bootstrapping request response signature.\n");
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_SIG;
   }
   if (current_tlv_type != TLV_SSP_SIGNATURE) {
-    APP_LOG("Did not get expected tlv type when parsing for signature in bootstrapping "
-            "request response: got %d.\n", current_tlv_type);
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_SIG;
   }
   if (decoder_get_length(&decoder, &current_tlv_length) != ndn_decoder_success) {
-    APP_LOG("Failed to get tlv length of bootstrapping request response signature.\n");
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_SIG;
   }
-
-  APP_LOG_HEX("First three bytes after btstrp_rqst_rspns_tlv_sig_p:", btstrp_rqst_rspns_tlv_sig_p, 3);
 
   const uint8_t *sig_begin = btstrp_rqst_rspns_buf_p + decoder.offset;
   uint32_t sig_len = current_tlv_length;
   const uint8_t *sig_payload_begin = btstrp_rqst_rspns_tlv_val_buf_p;
   uint32_t sig_payload_len = btstrp_rqst_rspns_tlv_sig_p - btstrp_rqst_rspns_tlv_val_buf_p;
 
-  APP_LOG_HEX("Value of signature of bootstrapping request response", sig_begin, sig_len);
-  APP_LOG_HEX("Value of signature payload of bootstrapping request response", sig_payload_begin, sig_payload_len);
-
   if (!sign_on_basic_client->sec_intf.vrfy_btstrp_rqst_rspns_sig(
           sig_payload_begin, sig_payload_len,
           sig_begin, sig_len,
           sign_on_basic_client->secure_sign_on_code_p,
           sign_on_basic_client->secure_sign_on_code_len)) {
-    APP_LOG("Failed to verify bootstrapping request signature.\n");
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_VERIFY_SIGNATURE;
   }
 
@@ -350,7 +280,6 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
                                              sign_on_basic_client->KT_p,
                                              SIGN_ON_BASIC_CLIENT_KT_MAX_LENGTH,
                                              &sign_on_basic_client->KT_len)) {
-    APP_LOG("Failed to generate shared secret.\n");
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_GENERATE_KT;
   }
 
@@ -370,8 +299,6 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
 int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
     struct sign_on_basic_client_t *sign_on_basic_client) {
 
-  APP_LOG("cnstrct_cert_rqst got called.\n");
-
   uint8_t digest_buffer[SIGN_ON_BASIC_SHA256_HASH_SIZE];
 
   int ndn_encoder_success = 0;
@@ -380,25 +307,18 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
 
   cert_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_DEVICE_IDENTIFIER,
                                                     sign_on_basic_client->device_identifier_len);
-  APP_LOG("cert_rqst_tlv_val_len after adding device identifier tlv block length: %d\n", cert_rqst_tlv_val_len);
   cert_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_N1_PUB,
                                                     sign_on_basic_client->N1_pub_len);
-  APP_LOG("cert_rqst_tlv_val_len after adding N1 pub tlv block length: %d\n", cert_rqst_tlv_val_len);
   cert_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_N2_PUB_DIGEST,
                                                     SIGN_ON_BASIC_SHA256_HASH_SIZE);
-  APP_LOG("cert_rqst_tlv_val_len after adding N2 pub digest tlv block length: %d\n", cert_rqst_tlv_val_len);
   cert_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_TRUST_ANCHOR_CERTIFICATE_DIGEST,
                                                     SIGN_ON_BASIC_SHA256_HASH_SIZE);
-  APP_LOG("cert_rqst_tlv_val_len after adding trust anchor cert digest tlv block length: %d\n", cert_rqst_tlv_val_len);
   cert_rqst_sig_tlv_val_len = sign_on_basic_client->sec_intf.get_cert_rqst_sig_len();
   uint32_t cert_rqst_sig_tlv_len_field_size = encoder_get_var_size(cert_rqst_sig_tlv_val_len);
   uint32_t cert_rqst_sig_tlv_type_field_size = encoder_get_var_size(TLV_SSP_SIGNATURE);
   cert_rqst_tlv_val_len += cert_rqst_sig_tlv_type_field_size;
   cert_rqst_tlv_val_len += cert_rqst_sig_tlv_len_field_size;
   cert_rqst_tlv_val_len += cert_rqst_sig_tlv_val_len;
-  APP_LOG("cert_rqst_tlv_val_len after adding signature tlv block length: %d\n", cert_rqst_tlv_val_len);
-
-  APP_LOG("cert_rqst_tlv_val_len: %d\n", cert_rqst_tlv_val_len);
 
   uint32_t cert_rqst_tlv_type_field_size = encoder_get_var_size(TLV_SSP_CERTIFICATE_REQUEST);
   uint32_t cert_rqst_tlv_len_field_size = encoder_get_var_size(cert_rqst_tlv_val_len);
@@ -406,8 +326,6 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
   uint32_t cert_rqst_total_len = cert_rqst_tlv_val_len + cert_rqst_tlv_type_field_size + 
                                  cert_rqst_tlv_len_field_size;
   if (buf_len < cert_rqst_total_len) {
-    APP_LOG("In cnstrct_cert_rqst, buf_len (%d) was less than total size of certificate request (%d)\n",
-            buf_len, cert_rqst_total_len);
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_BUFFER_TOO_SHORT;
   }
 
@@ -416,41 +334,33 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
 
   // append the certificate request tlv type and length
   if (encoder_append_type(&encoder, TLV_SSP_CERTIFICATE_REQUEST) != ndn_encoder_success) {
-     APP_LOG("In cnstrct_cert_rqst, encoder_append_type for certificate request tlv type failed.\n");
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;   
   }
   if (encoder_append_length(&encoder, cert_rqst_tlv_val_len) != ndn_encoder_success) {
-     APP_LOG("In cnstrct_cert_rqst, encoder_append_length for certificate request tlv length failed.\n");
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;   
   }
   
   // append the device identifier
   if (encoder_append_type(&encoder, TLV_SSP_DEVICE_IDENTIFIER) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_cert_rqst, encoder_append_type for device identifier failed.\n");
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;
   }
   if (encoder_append_length(&encoder, sign_on_basic_client->device_identifier_len) != ndn_encoder_success)  {
-    APP_LOG("In cnstrct_cert_rqst, encoder_append_length for device identifier failed.\n");
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;
   }
   if (encoder_append_raw_buffer_value(&encoder, sign_on_basic_client->device_identifier_p,
                                       sign_on_basic_client->device_identifier_len) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_cert_rqst, encoder_raw_buffer_value for device identifier failed.\n");
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;
   }
 
   // append N1 pub
   if (encoder_append_type(&encoder, TLV_SSP_N1_PUB) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_cert_rqst, encoder_append_type for N1 pub failed.\n");
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;
   }
   if (encoder_append_length(&encoder, sign_on_basic_client->N1_pub_len) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_cert_rqst, encoder_append_length for N1 pub failed.\n");
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;
   }
   if (encoder_append_raw_buffer_value(&encoder, sign_on_basic_client->N1_pub_p,
                                       sign_on_basic_client->N1_pub_len) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_cert_rqst, encoder_append_raw_buffer_value for N1 pub failed.\n");
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;
   }
 
@@ -462,16 +372,13 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
 
   // append N2 pub digest
   if (encoder_append_type(&encoder, TLV_SSP_N2_PUB_DIGEST) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_cert_rqst, encoder_append_type for N2 pub digest failed.\n");
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;
   }
   if (encoder_append_length(&encoder, SIGN_ON_BASIC_SHA256_HASH_SIZE) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_cert_rqst, encoder_append_length for N2 pub digest failed.\n");
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;
   }
   if (encoder_append_raw_buffer_value(&encoder, digest_buffer,
                                       SIGN_ON_BASIC_SHA256_HASH_SIZE) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_cert_rqst, encoder_append_raw_buffer_value for N2 pub digest failed.\n");
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;
   }
 
@@ -483,23 +390,18 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
 
   // append trust anchor cert digest
   if (encoder_append_type(&encoder, TLV_SSP_TRUST_ANCHOR_CERTIFICATE_DIGEST) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_cert_rqst, encoder_append_type for trust anchor cert digest failed.\n");
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;
   }
   if (encoder_append_length(&encoder, SIGN_ON_BASIC_SHA256_HASH_SIZE) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_cert_rqst, encoder_append_length for trust anchor cert digest failed.\n");
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;
   }
   if (encoder_append_raw_buffer_value(&encoder, digest_buffer,
                                       SIGN_ON_BASIC_SHA256_HASH_SIZE) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_cert_rqst, encoder_append_raw_buffer_value for trust anchor cert digest failed.\n");
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;
   }
 
   uint8_t *sig_payload_begin = buf_p + cert_rqst_tlv_type_field_size + cert_rqst_tlv_len_field_size;
   uint32_t sig_payload_size = encoder.offset - cert_rqst_tlv_type_field_size - cert_rqst_tlv_len_field_size;
-
-  APP_LOG_HEX("Signature payload of certificate request:", sig_payload_begin, sig_payload_size);
 
   // calculate the signature 
   uint8_t temp_sig_buf[SIG_GENERATION_BUF_LENGTH];
@@ -512,8 +414,6 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
   }
 
   if (cert_rqst_sig_tlv_val_len != sig_size) {
-    APP_LOG("Signature size returned by get_cert_rqst_sig_len (%d) "
-            "and gen_cert_rqst_sig (%d) did not match.\n", cert_rqst_sig_tlv_val_len, sig_size);
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;
   }
 
@@ -522,8 +422,6 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
   encoder_append_raw_buffer_value(&encoder, temp_sig_buf, sig_size);
 
   *output_len_p = encoder.offset;
-
-  APP_LOG_HEX("Hex of fully generated certificate request:", buf_p, *output_len_p);
 
   return NDN_SUCCESS;
 }
@@ -541,8 +439,6 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
   uint32_t KD_pri_decrypted_len;
   uint8_t *KD_pub_cert_p;
   uint32_t KD_pub_cert_len;
-
-  APP_LOG("Process certificate request response got called.\n");
 
   int ndn_decoder_success = 0;
   ndn_decoder_t decoder;
@@ -567,51 +463,35 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
   cert_rqst_rspns_tlv_val_buf_p = cert_rqst_rspns_buf_p + decoder.offset;
   cert_rqst_rspns_tlv_val_len = current_tlv_length;
 
-  APP_LOG("Length of certificate request response: %d\n", cert_rqst_rspns_tlv_val_len);
-  APP_LOG_HEX("Value of certificate request response:", cert_rqst_rspns_tlv_val_buf_p,
-               cert_rqst_rspns_tlv_val_len);
-
   // check for the KD pri encrypted tlv block and move the decoder offset past it
   if (decoder_get_type(&decoder, &current_tlv_type) != ndn_decoder_success) {
-    APP_LOG("Failed to get tlv type of KD pri encrypted.\n");
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_KD_PRI_ENC;
   }
   if (current_tlv_type != TLV_SSP_KD_PRI_ENCRYPTED) {
-    APP_LOG("Did not get expected tlv type when parsing for KD pri encrypted in bootstrapping "
-            "request response: got %d.\n", current_tlv_type);
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_KD_PRI_ENC;
   }
   if (decoder_get_length(&decoder, &current_tlv_length) != ndn_decoder_success) {
-    APP_LOG("Failed to get tlv length of KD pri encrypted.\n");
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_KD_PRI_ENC;
   }
   KD_pri_encrypted_p = cert_rqst_rspns_buf_p + decoder.offset;
   KD_pri_encrypted_len = current_tlv_length;
-  APP_LOG_HEX("Value of KD pri encrypted (ndn decoder):", KD_pri_encrypted_p, KD_pri_encrypted_len);
   if (decoder_move_forward(&decoder, current_tlv_length) != ndn_decoder_success) {
-    APP_LOG("Failed to move ndn decoder offset past KD pri encrypted tlv value.\n");
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_KD_PRI_ENC;
   }
 
   // check for the KD pub certificate tlv block and move the decoder offset past it
   if (decoder_get_type(&decoder, &current_tlv_type) != ndn_decoder_success) {
-    APP_LOG("Failed to get tlv type of KD pub certificate.\n");
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_KD_PUB_CERT;
   }
   if (current_tlv_type != TLV_SSP_KD_PUB_CERTIFICATE) {
-    APP_LOG("Did not get expected tlv type when parsing for KD pub certificate in bootstrapping "
-            "request response: got %d.\n", current_tlv_type);
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_KD_PUB_CERT;
   } 
   if (decoder_get_length(&decoder, &current_tlv_length) != ndn_decoder_success) {
-    APP_LOG("Failed to get tlv length of KD pub certificate.\n");
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_KD_PUB_CERT;
   }
   KD_pub_cert_p = cert_rqst_rspns_buf_p + decoder.offset;
   KD_pub_cert_len = current_tlv_length;
-  APP_LOG_HEX("Value of KD pub certificate (ndn decoder):", KD_pub_cert_p, KD_pub_cert_len);
   if (decoder_move_forward(&decoder, current_tlv_length) != ndn_decoder_success) {
-    APP_LOG("Failed to move ndn decoder offset past KD pub cert tlv value.\n");
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_KD_PUB_CERT;
   }
 
@@ -620,16 +500,12 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
   cert_rqst_rspns_tlv_sig_p = cert_rqst_rspns_buf_p + decoder.offset;
 
   if (decoder_get_type(&decoder, &current_tlv_type) != ndn_decoder_success) {
-    APP_LOG("Failed to get tlv type of certificate request response signature.\n");
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_SIG;
   }
   if (current_tlv_type != TLV_SSP_SIGNATURE) {
-    APP_LOG("Did not get expected tlv type when parsing for signature in certificate "
-            "request response: got %d.\n", current_tlv_type);
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_SIG;
   }
   if (decoder_get_length(&decoder, &current_tlv_length) != ndn_decoder_success) {
-    APP_LOG("Failed to get tlv length of certificate request response signature.\n");
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_SIG;
   }
 
@@ -638,23 +514,15 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
   const uint8_t *sig_payload_begin = cert_rqst_rspns_tlv_val_buf_p;
   uint32_t sig_payload_len = cert_rqst_rspns_tlv_sig_p - cert_rqst_rspns_tlv_val_buf_p;
 
-  APP_LOG_HEX("Value of signature of certificate request response", sig_begin, sig_len);
-  APP_LOG_HEX("Value of signature payload of certificate request response", sig_payload_begin, sig_payload_len);
-
   if (!sign_on_basic_client->sec_intf.vrfy_cert_rqst_rspns_sig(
           sig_payload_begin, sig_payload_len,
           sig_begin, sig_len,
           sign_on_basic_client->KT_p,
           sign_on_basic_client->KT_len)) {
-    APP_LOG("Failed to verify certificate request signature.\n");
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_VERIFY_SIGNATURE;
   }
 
   //***************************************************//
-
-  APP_LOG("Doing decryption of Kd pri by Kt.\n");
-
-  APP_LOG_HEX("Value of Kt:", sign_on_basic_client->KT_p, sign_on_basic_client->KT_len);
 
   uint8_t KD_pri_decrypted_temp_buf[SIGN_ON_BASIC_CLIENT_KD_PRI_MAX_LENGTH];
 
@@ -667,8 +535,6 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
       &KD_pri_decrypted_len)) {
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_DECRYPT_KD_PRI;
   }
-
-  APP_LOG_HEX("Kd pri decrypted:", KD_pri_decrypted_temp_buf, KD_pri_decrypted_len);
 
   KD_pri_decrypted_p = KD_pri_decrypted_temp_buf;
 
@@ -687,24 +553,18 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
 int cnstrct_fin_msg(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
                             struct sign_on_basic_client_t *sign_on_basic_client) {
 
-  APP_LOG("cnstrct_fin_msg got called.\n");
-
   int ndn_encoder_success = 0;
   uint32_t fin_msg_tlv_val_len = 0;
   uint32_t fin_msg_sig_tlv_val_len = 0;
 
   fin_msg_tlv_val_len += encoder_probe_block_size(TLV_SSP_DEVICE_IDENTIFIER,
                                                   sign_on_basic_client->device_identifier_len);
-  APP_LOG("fin_msg_tlv_val_len after adding device identifier tlv block length: %d\n", fin_msg_tlv_val_len);
   fin_msg_sig_tlv_val_len = sign_on_basic_client->sec_intf.get_fin_msg_sig_len();
   uint32_t fin_msg_sig_tlv_len_field_size = encoder_get_var_size(fin_msg_sig_tlv_val_len);
   uint32_t fin_msg_sig_tlv_type_field_size = encoder_get_var_size(TLV_SSP_SIGNATURE);
   fin_msg_tlv_val_len += fin_msg_sig_tlv_type_field_size;
   fin_msg_tlv_val_len += fin_msg_sig_tlv_len_field_size;
   fin_msg_tlv_val_len += fin_msg_sig_tlv_val_len;
-  APP_LOG("fin_msg_tlv_val_len after adding signature tlv block length: %d\n", fin_msg_tlv_val_len);
-
-  APP_LOG("fin_msg_tlv_val_len: %d\n", fin_msg_tlv_val_len);
 
   uint32_t fin_msg_tlv_type_field_size = encoder_get_var_size(TLV_SSP_BOOTSTRAPPING_REQUEST);
   uint32_t fin_msg_tlv_len_field_size = encoder_get_var_size(fin_msg_tlv_val_len);
@@ -712,8 +572,6 @@ int cnstrct_fin_msg(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
   uint32_t fin_msg_total_len = fin_msg_tlv_val_len + fin_msg_tlv_type_field_size + 
                                fin_msg_tlv_len_field_size;
   if (buf_len < fin_msg_total_len) {
-    APP_LOG("In cnstrct_fin_msg, buf_len (%d) was less than total size of finish message (%d)\n",
-            buf_len, fin_msg_total_len);
     return NDN_SIGN_ON_CNSTRCT_FIN_MSG_BUFFER_TOO_SHORT;
   }
 
@@ -722,33 +580,26 @@ int cnstrct_fin_msg(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
 
   // append the fin msg tlv type and length
   if (encoder_append_type(&encoder, TLV_SSP_FINISH_MESSAGE) != ndn_encoder_success) {
-     APP_LOG("In cnstrct_fin_msg, encoder_append_type for finish message tlv type failed.\n");
     return NDN_SIGN_ON_CNSTRCT_FIN_MSG_ENCODING_FAILED;   
   }
   if (encoder_append_length(&encoder, fin_msg_tlv_val_len) != ndn_encoder_success) {
-     APP_LOG("In cnstrct_fin_msg, encoder_append_length for finish message tlv length failed.\n");
     return NDN_SIGN_ON_CNSTRCT_FIN_MSG_ENCODING_FAILED;   
   }
   
   // append the device identifier
   if (encoder_append_type(&encoder, TLV_SSP_DEVICE_IDENTIFIER) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_fin_msg, encoder_append_type for device identifier failed.\n");
     return NDN_SIGN_ON_CNSTRCT_FIN_MSG_ENCODING_FAILED;
   }
   if (encoder_append_length(&encoder, sign_on_basic_client->device_identifier_len) != ndn_encoder_success)  {
-    APP_LOG("In cnstrct_fin_msg, encoder_append_length for device identifier failed.\n");
     return NDN_SIGN_ON_CNSTRCT_FIN_MSG_ENCODING_FAILED;
   }
   if (encoder_append_raw_buffer_value(&encoder, sign_on_basic_client->device_identifier_p,
                                       sign_on_basic_client->device_identifier_len) != ndn_encoder_success) {
-    APP_LOG("In cnstrct_fin_msg, encoder_raw_buffer_value for device identifier failed.\n");
     return NDN_SIGN_ON_CNSTRCT_FIN_MSG_ENCODING_FAILED;
   }
 
   uint8_t *sig_payload_begin = buf_p + fin_msg_tlv_type_field_size + fin_msg_tlv_len_field_size;
   uint32_t sig_payload_size = encoder.offset - fin_msg_tlv_type_field_size - fin_msg_tlv_len_field_size;
-
-  APP_LOG_HEX("Signature payload of finish message:", sig_payload_begin, sig_payload_size);
 
   // calculate the signature 
   uint8_t temp_sig_buf[SIG_GENERATION_BUF_LENGTH];
@@ -761,8 +612,6 @@ int cnstrct_fin_msg(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
   }
 
   if (fin_msg_sig_tlv_val_len != sig_size) {
-    APP_LOG("Signature size returned by get_fin_msg_sig_len (%d) "
-            "and gen_fin_msg_sig (%d) did not match.\n", fin_msg_sig_tlv_val_len, sig_size);
     return NDN_SIGN_ON_CNSTRCT_FIN_MSG_ENCODING_FAILED;
   }
 
@@ -771,8 +620,6 @@ int cnstrct_fin_msg(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
   encoder_append_raw_buffer_value(&encoder, temp_sig_buf, sig_size);
 
   *output_len_p = encoder.offset;
-
-  APP_LOG_HEX("Hex of fully generated finish message:", buf_p, *output_len_p);
 
   return NDN_SUCCESS;
 }
