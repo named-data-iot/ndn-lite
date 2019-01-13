@@ -12,8 +12,6 @@
 
 #include "sign-on-basic-sec-consts.h"
 
-#include "../../../../adaptation/ndn-nrf-ble-adaptation/logger.h"
-
 #include "../../../../ndn-enums.h"
 #include "../../../../ndn-error-code.h"
 
