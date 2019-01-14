@@ -17,7 +17,7 @@
 
 #include "../nrf-sdk-ble-consts.h"
 
-#include "../logger.h"
+#include "../nrf-logger.h"
 
 #define TEMP_BUF_LENGTH 500
 
@@ -33,7 +33,7 @@ static void ble_evt_handler(ble_evt_t const * p_evt, void * p_context)
     switch (p_evt->header.evt_id)
     {
         case BLE_GAP_EVT_DISCONNECTED:
-            APP_LOG("Disconnected.\n");
+            NRF_APP_LOG("Disconnected.\n");
 
             m_is_connected = false;
 
@@ -44,7 +44,7 @@ static void ble_evt_handler(ble_evt_t const * p_evt, void * p_context)
             break;
 
         case BLE_GAP_EVT_CONNECTED:
-            APP_LOG("Connected.\n");
+            NRF_APP_LOG("Connected.\n");
 
             m_is_connected = true;
 
@@ -56,7 +56,7 @@ static void ble_evt_handler(ble_evt_t const * p_evt, void * p_context)
 
         case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
         {
-            APP_LOG("PHY update request.\n");
+            NRF_APP_LOG("PHY update request.\n");
             ble_gap_phys_t const phys =
             {
                 .rx_phys = BLE_GAP_PHY_AUTO,
@@ -68,7 +68,7 @@ static void ble_evt_handler(ble_evt_t const * p_evt, void * p_context)
 
         case BLE_GATTC_EVT_TIMEOUT:
             // Disconnect on GATT Client timeout event.
-            APP_LOG("GATT Client Timeout.\n");
+            NRF_APP_LOG("GATT Client Timeout.\n");
             err_code = sd_ble_gap_disconnect(p_evt->evt.gattc_evt.conn_handle,
                                              BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
             APP_ERROR_CHECK(err_code);
@@ -76,14 +76,14 @@ static void ble_evt_handler(ble_evt_t const * p_evt, void * p_context)
 
         case BLE_GATTS_EVT_TIMEOUT:
             // Disconnect on GATT Server timeout event.
-            APP_LOG("GATT Server Timeout.\n");
+            NRF_APP_LOG("GATT Server Timeout.\n");
             err_code = sd_ble_gap_disconnect(p_evt->evt.gatts_evt.conn_handle,
                                              BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
             APP_ERROR_CHECK(err_code);
             break;
 
         case BLE_GATTS_EVT_EXCHANGE_MTU_REQUEST:
-            APP_LOG("Got a GATTS_EVT_EXCHANGE_MTU_REQUEST\n");
+            NRF_APP_LOG("Got a GATTS_EVT_EXCHANGE_MTU_REQUEST\n");
 
             for (int i = 0; i < m_num_nrf_sdk_ble_stack_observers; i++) {
               m_nrf_sdk_ble_stack_observers[i].on_mtu_rqst(p_evt->evt.gap_evt.conn_handle);
@@ -92,7 +92,7 @@ static void ble_evt_handler(ble_evt_t const * p_evt, void * p_context)
             break;
         
         case BLE_GATTS_EVT_HVN_TX_COMPLETE:
-            APP_LOG("Got a BLE_GATTS_EVT_HVN_TX_COMPLETE\n");
+            NRF_APP_LOG("Got a BLE_GATTS_EVT_HVN_TX_COMPLETE\n");
 
             for (int i = 0; i < m_num_nrf_sdk_ble_stack_observers; i++) {
               m_nrf_sdk_ble_stack_observers[i].on_hvn_tx_complete(p_evt->evt.gap_evt.conn_handle);
@@ -101,7 +101,7 @@ static void ble_evt_handler(ble_evt_t const * p_evt, void * p_context)
             break;
 
         case BLE_GATTC_EVT_EXCHANGE_MTU_RSP:
-            APP_LOG("Got a BLE_GATTC_EVT_EXCHANGE_MTU_RSP\n");
+            NRF_APP_LOG("Got a BLE_GATTC_EVT_EXCHANGE_MTU_RSP\n");
 
             break;
 
@@ -118,7 +118,7 @@ ble_stack_init(void)
 
   err_code = nrf_sdh_enable_request();
   if (err_code != NRF_SUCCESS) {
-    APP_LOG("in ble_stack_init, nrf_sdh_enable_request failed.\n");
+    NRF_APP_LOG("in ble_stack_init, nrf_sdh_enable_request failed.\n");
     return NRF_BLE_OP_FAILURE;
   }
 
@@ -127,7 +127,7 @@ ble_stack_init(void)
   uint32_t ram_start = 0;
   err_code = nrf_sdh_ble_default_cfg_set(APP_BLE_CONN_CFG_TAG, &ram_start);
   if (err_code != NRF_SUCCESS) {
-    APP_LOG("in ble_stack_init, nf_sdh_ble_default_cfg_set failed.\n");
+    NRF_APP_LOG("in ble_stack_init, nf_sdh_ble_default_cfg_set failed.\n");
     return NRF_BLE_OP_FAILURE;
   }
 
@@ -137,7 +137,7 @@ ble_stack_init(void)
   // Enable BLE stack.
   err_code = nrf_sdh_ble_enable(&ram_start);
   if (err_code != NRF_SUCCESS) {
-    APP_LOG("in ble_stack_init, nrf_sdh_ble_enable failed.\n");
+    NRF_APP_LOG("in ble_stack_init, nrf_sdh_ble_enable failed.\n");
     return NRF_BLE_OP_FAILURE;
   }
 
@@ -154,7 +154,7 @@ int nrf_sdk_ble_stack_init()
     return NRF_BLE_OP_SUCCESS;
 
   if (ble_stack_init() != NRF_BLE_OP_SUCCESS) {
-    APP_LOG("in ble_init(), ble_stack_init() failed.\n");
+    NRF_APP_LOG("in ble_init(), ble_stack_init() failed.\n");
     return NRF_BLE_OP_FAILURE;
   }
 
@@ -166,7 +166,7 @@ int nrf_sdk_ble_stack_init()
 
 int nrf_sdk_ble_stack_add_observer(nrf_sdk_ble_stack_observer_t observer) {
   m_nrf_sdk_ble_stack_observers[m_num_nrf_sdk_ble_stack_observers++] = observer;
-  APP_LOG("Current number of observers of nrf sdk ble stack: %d\n", m_num_nrf_sdk_ble_stack_observers);
+  NRF_APP_LOG("Current number of observers of nrf sdk ble stack: %d\n", m_num_nrf_sdk_ble_stack_observers);
 
   return NRF_BLE_OP_SUCCESS;
 }

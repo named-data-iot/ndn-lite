@@ -13,14 +13,15 @@
 #include <stdint.h>
 #include "sec-lib/tinycrypt/tc_ecc.h"
 #include "sec-lib/micro-ecc/uECC.h"
+#include "../../../ndn-constants.h"
 
 struct abstract_ecc_pub_key {
-  uint8_t key_value[64];
+  uint8_t key_value[NDN_SEC_ECC_MAX_PUBLIC_KEY_SIZE];
   uint32_t key_size;
 };
 
 struct abstract_ecc_prv_key {
-  uint8_t key_value[32];
+  uint8_t key_value[NDN_SEC_ECC_MAX_PRIVATE_KEY_SIZE];
   uint32_t key_size;
 };
 

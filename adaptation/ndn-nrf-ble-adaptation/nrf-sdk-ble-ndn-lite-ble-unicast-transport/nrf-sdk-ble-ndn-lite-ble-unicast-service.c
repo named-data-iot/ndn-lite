@@ -15,7 +15,7 @@
 
 //#include "../../../../sdk_config.h"
 #include "nrf-sdk-ble-ndn-lite-ble-unicast-service.h"
-#include "../logger.h"
+#include "../nrf-logger.h"
 
 static const uint8_t DataTransferCharName[] = "Data Transfer";
 
@@ -47,12 +47,12 @@ static void on_write(nrf_sdk_ble_ndn_lite_ble_unicast_service_t *nrf_sdk_ble_ndn
   ble_gatts_evt_write_t const *p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
 
   if ((p_evt_write->handle == nrf_sdk_ble_ndn_lite_ble_unicast_service_p->data_transfer_char_handles.value_handle) && (nrf_sdk_ble_ndn_lite_ble_unicast_service_p->nrf_sdk_ble_ndn_lite_ble_unicast_service_data_transfer_write_handler != NULL)) {
-    //APP_LOG("Calling secure_sign_on_write_handler in on_write");
+    //NRF_APP_LOG("Calling secure_sign_on_write_handler in on_write");
     nrf_sdk_ble_ndn_lite_ble_unicast_service_p->nrf_sdk_ble_ndn_lite_ble_unicast_service_data_transfer_write_handler(p_ble_evt->evt.gap_evt.conn_handle,
         nrf_sdk_ble_ndn_lite_ble_unicast_service_p, p_evt_write->data, p_evt_write->len);
   } else {
-    APP_LOG("Did not call secure_sign_on_write_handler in on_write\n");
-    APP_LOG_HEX("Data that got written:", p_evt_write->data, p_evt_write->len);
+    NRF_APP_LOG("Did not call secure_sign_on_write_handler in on_write\n");
+    NRF_APP_LOG_HEX("Data that got written:", p_evt_write->data, p_evt_write->len);
   }
 }
 
@@ -167,8 +167,8 @@ void nrf_sdk_ble_ndn_lite_ble_unicast_service_on_ble_evt(ble_evt_t const *p_ble_
     break;
 
   case BLE_GATTS_EVT_WRITE:
-    // APP_LOG("Got a BLE_GATTS_EVT_WRITE event.");
-    // APP_LOG("Length of data written: %d", p_ble_evt->evt.gatts_evt.params.write.len);
+    // NRF_APP_LOG("Got a BLE_GATTS_EVT_WRITE event.");
+    // NRF_APP_LOG("Length of data written: %d", p_ble_evt->evt.gatts_evt.params.write.len);
     on_write(nrf_sdk_ble_ndn_lite_ble_unicast_service_p, p_ble_evt);
     break;
 

@@ -10,6 +10,7 @@
 #define NDN_ENCODING_SIGNATURE_H
 
 #include "name.h"
+#include "../ndn-constants.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -93,13 +94,13 @@ ndn_signature_set_signature_type(ndn_signature_t* signature, uint8_t type)
 {
   switch (type) {
   case NDN_SIG_TYPE_DIGEST_SHA256:
-    signature->sig_size = 32;
+    signature->sig_size = NDN_SEC_SHA256_HASH_SIZE;
     break;
   case NDN_SIG_TYPE_ECDSA_SHA256:
-    signature->sig_size = 64;
+    signature->sig_size = NDN_ASN1_ECDSA_MAX_ENCODED_SIG_SIZE;
     break;
   case NDN_SIG_TYPE_HMAC_SHA256:
-    signature->sig_size = 32;
+    signature->sig_size = NDN_SEC_SHA256_HASH_SIZE;
     break;
   default:
     return NDN_SEC_UNSUPPORT_SIGN_TYPE;

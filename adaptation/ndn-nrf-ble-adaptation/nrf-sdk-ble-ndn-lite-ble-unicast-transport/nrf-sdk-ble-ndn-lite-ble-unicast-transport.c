@@ -24,7 +24,7 @@
 #include "../nrf-sdk-ble-error-check.h"
 #include "../nrf-sdk-ble-consts.h"
 
-#include "../logger.h"
+#include "../nrf-logger.h"
 
 NRF_BLE_QWR_DEF(m_qwr); /**< Context for the Queued Write module.*/
 uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID; /**< Handle of the current connection. */
@@ -41,7 +41,7 @@ static bool m_init_success = false; /**< Will be true if this module was already
 ret_code_t sendPacket(uint16_t conn_handle, nrf_sdk_ble_ndn_lite_ble_unicast_service_t *ndn_lite_ble_unicast_service_p, uint8_t *cert_rqst_buf, uint16_t *cert_rqst_buf_len_p);
 
 void on_advertising_stopped(void) {
-  APP_LOG("on_advertising_stopped in nrf-sdk-ble-transport got called\n");
+  NRF_APP_LOG("on_advertising_stopped in nrf-sdk-ble-transport got called\n");
 
   for (int i = 0; i < m_num_nrf_sdk_ble_ndn_lite_ble_unicast_transport_observers; i++) {
     m_nrf_sdk_ble_ndn_lite_ble_unicast_transport_observers[i].on_adv_stopped();
@@ -58,8 +58,8 @@ int nrf_sdk_ble_ndn_lite_ble_unicast_transport_adv_start() {
 }
 
 void recvd_data_callback(const uint8_t *data_recvd_p, uint16_t data_recvd_len) {
-  APP_LOG("recvd_data_callback got called.\n");
-  APP_LOG_HEX("Received data:", data_recvd_p, data_recvd_len);
+  NRF_APP_LOG("recvd_data_callback got called.\n");
+  NRF_APP_LOG_HEX("Received data:", data_recvd_p, data_recvd_len);
 
   for (int i = 0; i < m_num_nrf_sdk_ble_ndn_lite_ble_unicast_transport_observers; i++) {
     m_nrf_sdk_ble_ndn_lite_ble_unicast_transport_observers[i].on_recvd_data(data_recvd_p, data_recvd_len);
@@ -67,9 +67,9 @@ void recvd_data_callback(const uint8_t *data_recvd_p, uint16_t data_recvd_len) {
 }
 
 void got_connected_callback(uint16_t conn_handle) {
-  APP_LOG("got_connected_callback got called inside of nrf-sdk-ble-transport.\n");
+  NRF_APP_LOG("got_connected_callback got called inside of nrf-sdk-ble-transport.\n");
 
-  APP_LOG("Value of conn_handle in the got_connected_callback: %d\n", conn_handle);
+  NRF_APP_LOG("Value of conn_handle in the got_connected_callback: %d\n", conn_handle);
 
   for (int i = 0; i < m_num_nrf_sdk_ble_ndn_lite_ble_unicast_transport_observers; i++) {
     m_nrf_sdk_ble_ndn_lite_ble_unicast_transport_observers[i].on_connected(conn_handle);
@@ -84,7 +84,7 @@ void got_connected_callback(uint16_t conn_handle) {
 }
 
 void got_disconnected_callback() {
-  APP_LOG("got_disconnected_callback got called.\n");
+  NRF_APP_LOG("got_disconnected_callback got called.\n");
 
   nrf_sdk_ble_adv_stop();
 
@@ -94,9 +94,9 @@ void got_disconnected_callback() {
 }
 
 void got_mtu_rqst_callback(uint16_t conn_handle) {
-  APP_LOG("got_mtu_rqst_callback got called.\n");
+  NRF_APP_LOG("got_mtu_rqst_callback got called.\n");
 
-  APP_LOG("Value of got_mtu_rqst_callback: %d\n", conn_handle);
+  NRF_APP_LOG("Value of got_mtu_rqst_callback: %d\n", conn_handle);
 
   for (int i = 0; i < m_num_nrf_sdk_ble_ndn_lite_ble_unicast_transport_observers; i++) {
     m_nrf_sdk_ble_ndn_lite_ble_unicast_transport_observers[i].on_mtu_rqst(conn_handle);
@@ -104,7 +104,7 @@ void got_mtu_rqst_callback(uint16_t conn_handle) {
 }
 
 void got_hvn_tx_complete_callback(uint16_t conn_handle) {
-  APP_LOG("got_hvn_tx_complete_callback got called.\n");
+  NRF_APP_LOG("got_hvn_tx_complete_callback got called.\n");
 
   for (int i = 0; i < m_num_nrf_sdk_ble_ndn_lite_ble_unicast_transport_observers; i++) {
     m_nrf_sdk_ble_ndn_lite_ble_unicast_transport_observers[i].on_hvn_tx_complete(conn_handle);
@@ -138,8 +138,8 @@ ret_code_t nrf_sdk_ble_ndn_lite_ble_unicast_service_data_transfer_send_notificat
 ret_code_t sendPacket(uint16_t conn_handle, nrf_sdk_ble_ndn_lite_ble_unicast_service_t *ndn_lite_ble_unicast_service,
     uint8_t *cert_rqst_buf, uint16_t *cert_rqst_buf_len_p) {
 
-  APP_LOG("Send packet got called, bytes being sent:\n");
-  APP_LOG_HEX("Bytes being sent in sendPacket in nrf-sdk-ble-transport", cert_rqst_buf, *cert_rqst_buf_len_p);
+  NRF_APP_LOG("Send packet got called, bytes being sent:\n");
+  NRF_APP_LOG_HEX("Bytes being sent in sendPacket in nrf-sdk-ble-transport", cert_rqst_buf, *cert_rqst_buf_len_p);
 
   return nrf_sdk_ble_ndn_lite_ble_unicast_service_data_transfer_send_notification(conn_handle, ndn_lite_ble_unicast_service,
       cert_rqst_buf, cert_rqst_buf_len_p);
@@ -164,8 +164,8 @@ static void nrf_qwr_error_handler(uint32_t nrf_error) {
 static void nrf_sdk_ble_ndn_lite_ble_unicast_service_data_transfer_write_handler(uint16_t conn_handle, 
                     nrf_sdk_ble_ndn_lite_ble_unicast_service_t *ndn_lite_ble_unicast_service_p,
     const uint8_t *received_data, uint16_t data_len) {
-  APP_LOG("In ndn_lite_ble_unicast_service_data_transfer_write, got write of length %d\n", data_len);
-  APP_LOG_HEX("Data of write:", received_data, data_len);
+  NRF_APP_LOG("In ndn_lite_ble_unicast_service_data_transfer_write, got write of length %d\n", data_len);
+  NRF_APP_LOG_HEX("Data of write:", received_data, data_len);
 
   recvd_data_callback(received_data, data_len);
 }
@@ -219,7 +219,7 @@ int nrf_sdk_ble_ndn_lite_ble_unicast_transport_init() {
     return NRF_BLE_OP_SUCCESS;
 
   if (nrf_sdk_ble_stack_init() != NRF_BLE_OP_SUCCESS) {
-    APP_LOG("in nrf_sdk_ble_ndn_lite_ble_unicast_transport_init, nrf_sdk_ble_stack_init failed.\n");
+    NRF_APP_LOG("in nrf_sdk_ble_ndn_lite_ble_unicast_transport_init, nrf_sdk_ble_stack_init failed.\n");
     return NRF_BLE_OP_FAILURE;
   }
   
@@ -231,31 +231,31 @@ int nrf_sdk_ble_ndn_lite_ble_unicast_transport_init() {
   nrf_sdk_ble_stack_add_observer(observer);
 
   if (nrf_sdk_ble_gap_init() != NRF_BLE_OP_SUCCESS) {
-    APP_LOG("in nrf_sdk_ble_ndn_lite_ble_unicast_transport_init, nrf_sdk_ble_gap_init.\n");
+    NRF_APP_LOG("in nrf_sdk_ble_ndn_lite_ble_unicast_transport_init, nrf_sdk_ble_gap_init.\n");
     return NRF_BLE_OP_FAILURE;
   }
   if (nrf_sdk_ble_gatt_init() != NRF_BLE_OP_SUCCESS) {
-    APP_LOG("in nrf_sdk_ble_ndn_lite_ble_unicast_transport_init, nrf_sdk_ble_gatt_init.\n");
+    NRF_APP_LOG("in nrf_sdk_ble_ndn_lite_ble_unicast_transport_init, nrf_sdk_ble_gatt_init.\n");
     return NRF_BLE_OP_FAILURE;
   }
   // make sure services are initialized before advertising for custom UUID, according to
   // https://devzone.nordicsemi.com/f/nordic-q-a/15153/proper-setup-of-m_adv_uuids-for-custom-service
   if (nrf_sdk_ble_ndn_lite_ble_unicast_transport_nrf_ble_qwr_init() != NRF_SUCCESS) {
-    APP_LOG("in nrf_sdk_ble_ndn_lite_ble_unicast_transport_init, nrf_sdk_ble_ndn_lite_ble_unicast_transport_nrf_ble_qwr_init failed.\n");
+    NRF_APP_LOG("in nrf_sdk_ble_ndn_lite_ble_unicast_transport_init, nrf_sdk_ble_ndn_lite_ble_unicast_transport_nrf_ble_qwr_init failed.\n");
     return NRF_BLE_OP_FAILURE;
   }
   if (nrf_sdk_ble_ndn_lite_ble_unicast_transport_ndn_lite_ble_unicast_service_init(
       &m_nrf_sdk_ble_ndn_lite_ble_unicast_service) != NRF_SUCCESS) {
-        APP_LOG("in nrf_sdk_ble_ndn_lite_ble_unicast_transport_init, nrf_sdk_ble_ndn_lite_ble_unicast_transport_ndn_lite_ble_unicast_service_init failed.\n");
+        NRF_APP_LOG("in nrf_sdk_ble_ndn_lite_ble_unicast_transport_init, nrf_sdk_ble_ndn_lite_ble_unicast_transport_ndn_lite_ble_unicast_service_init failed.\n");
     return NRF_BLE_OP_FAILURE;
   }
   if (nrf_sdk_ble_conn_params_init() != NRF_BLE_OP_SUCCESS) {
-    APP_LOG("in nrf_sdk_ble_ndn_lite_ble_unicast_transport_init, nrf_sdk_ble_conn_params_init.\n");
+    NRF_APP_LOG("in nrf_sdk_ble_ndn_lite_ble_unicast_transport_init, nrf_sdk_ble_conn_params_init.\n");
     return NRF_BLE_OP_FAILURE;
   }
 
   if (nrf_sdk_ble_ndn_lite_ble_unicast_transport_adv_start() != NRF_BLE_OP_SUCCESS) {
-    APP_LOG("in nrf_sdk_ble_ndn_lite_ble_unicast_transport_init, nrf_sdk_ble_ndn_lite_ble_unicast_transport_adv_start failed.\n");
+    NRF_APP_LOG("in nrf_sdk_ble_ndn_lite_ble_unicast_transport_init, nrf_sdk_ble_ndn_lite_ble_unicast_transport_adv_start failed.\n");
     return NRF_BLE_OP_FAILURE;
   }
 
@@ -267,14 +267,14 @@ int nrf_sdk_ble_ndn_lite_ble_unicast_transport_init() {
 int nrf_sdk_ble_ndn_lite_ble_unicast_transport_disconnect() {
 
   if (nrf_sdk_ble_stack_connected() == true) {
-    APP_LOG("ndn_lite_ble_unicast_transport_disconnect was called, and we were connected.\n");
+    NRF_APP_LOG("ndn_lite_ble_unicast_transport_disconnect was called, and we were connected.\n");
     ret_code_t err_code = sd_ble_gap_disconnect(m_conn_handle,
         BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
     if (err_code != NRF_ERROR_INVALID_STATE && err_code != NRF_SUCCESS) {
       APP_ERROR_CHECK_IGNORE_INVALID_STATE(err_code, "nrf-sdk-ble-transport.c, ndn_lite_ble_unicast_transport_disconnect, sd_ble_gap_disconnect");
     }
   } else {
-    APP_LOG("ndn_lite_ble_unicast_transport_disconnect was called, but we were not connected.\n");
+    NRF_APP_LOG("ndn_lite_ble_unicast_transport_disconnect was called, but we were not connected.\n");
     return NRF_BLE_OP_FAILURE;
   }
 
@@ -286,7 +286,7 @@ int nrf_sdk_ble_ndn_lite_ble_unicast_transport_add_observer(
 
   m_nrf_sdk_ble_ndn_lite_ble_unicast_transport_observers[m_num_nrf_sdk_ble_ndn_lite_ble_unicast_transport_observers++] =
     observer;
-  APP_LOG("Current number of observers in nrf_sdk_ble_ndn_lite_ble_unicast_transport: %d\n", 
+  NRF_APP_LOG("Current number of observers in nrf_sdk_ble_ndn_lite_ble_unicast_transport: %d\n", 
     m_num_nrf_sdk_ble_ndn_lite_ble_unicast_transport_observers);
 
   return NRF_BLE_OP_SUCCESS;
@@ -294,9 +294,9 @@ int nrf_sdk_ble_ndn_lite_ble_unicast_transport_add_observer(
 
 int nrf_sdk_ble_ndn_lite_ble_unicast_transport_send(const uint8_t *payload, uint16_t payload_len) {
   ret_code_t err_code;
-  APP_LOG("ndn_lite_ble_unicast_transport_send got called\n");
+  NRF_APP_LOG("ndn_lite_ble_unicast_transport_send got called\n");
   if (nrf_sdk_ble_stack_connected()) {
-    APP_LOG("in ndn_lite_ble_unicast_transport_send, nrf_sdk_ble_stack_connected was true\n");
+    NRF_APP_LOG("in ndn_lite_ble_unicast_transport_send, nrf_sdk_ble_stack_connected was true\n");
     err_code = sendPacket(m_conn_handle, &m_nrf_sdk_ble_ndn_lite_ble_unicast_service, payload, &payload_len);
     return err_code;
   }
