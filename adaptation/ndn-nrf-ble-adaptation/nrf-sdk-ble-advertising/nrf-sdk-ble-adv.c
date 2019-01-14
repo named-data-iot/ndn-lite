@@ -19,7 +19,7 @@
 #include "nrf_sdh_ble.h"
 #include "nrf_sdh_soc.h"
 
-#include "../logger.h"
+#include "../nrf-logger.h"
 #include "../nrf-sdk-ble-consts.h"
 #include "../nrf-sdk-ble-error-check.h"
 
@@ -39,31 +39,31 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t *p_file_name) {
 
 int nrf_sdk_ble_adv_stop() {
 
-  APP_LOG("nrf_sdk_ble_adv_stop was called.\n");
+  NRF_APP_LOG("nrf_sdk_ble_adv_stop was called.\n");
 
   ret_code_t ret = sd_ble_gap_adv_stop(m_advertising.adv_handle);
   switch (ret) {
   case NRF_SUCCESS: {
-    APP_LOG("sd_ble_gap_adv_stop returned NRF_SUCCESS\n");
+    NRF_APP_LOG("sd_ble_gap_adv_stop returned NRF_SUCCESS\n");
     break;
   }
   case NRF_ERROR_INVALID_STATE: {
-    APP_LOG("sd_ble_gap_adv_stop returned NRF_ERROR_INVALID_STATE\n");
+    NRF_APP_LOG("sd_ble_gap_adv_stop returned NRF_ERROR_INVALID_STATE\n");
     break;
   }
   case BLE_ERROR_INVALID_ADV_HANDLE: {
-    APP_LOG("sd_ble_gap_adv_stop returned BLE_ERROR_INVALID_ADV_HANDLE\n");
+    NRF_APP_LOG("sd_ble_gap_adv_stop returned BLE_ERROR_INVALID_ADV_HANDLE\n");
     break;
   }
   default: {
-    APP_LOG("sd_ble_gap_adv_stop returned unexpected: %d\n", ret);
+    NRF_APP_LOG("sd_ble_gap_adv_stop returned unexpected: %d\n", ret);
     break;
   }
   }
 
   // it is okay if the return value is NRF_ERROR_INVALID_STATE, that means we weren't advertising
   if (ret != NRF_SUCCESS && ret != NRF_ERROR_INVALID_STATE) {
-    APP_LOG("in nrf_sdk_ble_adv_stop, return of sd_ble_gap_adv_stop was not NRF_SUCCESS or NRF_ERROR_INVALID_STATE\n");
+    NRF_APP_LOG("in nrf_sdk_ble_adv_stop, return of sd_ble_gap_adv_stop was not NRF_SUCCESS or NRF_ERROR_INVALID_STATE\n");
     return NRF_BLE_OP_FAILURE;
   }
 
@@ -81,7 +81,7 @@ int nrf_sdk_ble_adv_start(const uint8_t *payload, uint32_t payload_len, ble_uuid
 
   m_current_adv_count = 0;
 
-  APP_LOG("Value of m_current_adv_count in nrf_sdk_ble_adv_start: %d\n", m_current_adv_count);
+  NRF_APP_LOG("Value of m_current_adv_count in nrf_sdk_ble_adv_start: %d\n", m_current_adv_count);
 
   m_adv_burst_num = num_adverts;
 
@@ -89,27 +89,27 @@ int nrf_sdk_ble_adv_start(const uint8_t *payload, uint32_t payload_len, ble_uuid
 
   // stop any advertising that was already happening
   if (nrf_sdk_ble_adv_stop() != NRF_BLE_OP_SUCCESS) {
-    APP_LOG("in nrf_sdk_ble_adv_start, nrf_sdk_ble_adv_stop failed.\n");
+    NRF_APP_LOG("in nrf_sdk_ble_adv_start, nrf_sdk_ble_adv_stop failed.\n");
     return NRF_BLE_OP_FAILURE;
   }
 
   m_on_adv_stop = on_adv_stop;
 
   if (advertising_init(payload, payload_len, adv_uuid, extended) != NRF_BLE_OP_SUCCESS) {
-    APP_LOG("in nrf_sdk_ble_adv_start, advertising_init failed.\n");
+    NRF_APP_LOG("in nrf_sdk_ble_adv_start, advertising_init failed.\n");
     return NRF_BLE_OP_FAILURE;
   }
 
   err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
   if (err_code != NRF_SUCCESS) {
-    APP_LOG("in nrf_sdk_ble_adv_start, ble_advertising_start failed.\n");
+    NRF_APP_LOG("in nrf_sdk_ble_adv_start, ble_advertising_start failed.\n");
     return NRF_BLE_OP_FAILURE;
   }
 
   if (extended) {
-    APP_LOG("Successfully started extended advertising.\n");
+    NRF_APP_LOG("Successfully started extended advertising.\n");
   } else {
-    APP_LOG("Successfully started legacy advertising.\n");
+    NRF_APP_LOG("Successfully started legacy advertising.\n");
   }
 
   return NRF_BLE_OP_SUCCESS;
@@ -118,20 +118,20 @@ int nrf_sdk_ble_adv_start(const uint8_t *payload, uint32_t payload_len, ble_uuid
 void on_adv_evt(ble_adv_evt_t ble_adv_evt) {
   switch (ble_adv_evt) {
   case BLE_ADV_EVT_FAST: {
-    APP_LOG("Started ble advertising.\n");
+    NRF_APP_LOG("Started ble advertising.\n");
     m_current_adv_count++;
-    APP_LOG("Current adv count: %d\n", m_current_adv_count);
+    NRF_APP_LOG("Current adv count: %d\n", m_current_adv_count);
     if (m_current_adv_count > m_adv_burst_num) {
-      APP_LOG("in on_adv_evt, m_current_adv_count exceeded m_adv_burst_num (current value %d), stopping advertisement.\n", m_adv_burst_num);
+      NRF_APP_LOG("in on_adv_evt, m_current_adv_count exceeded m_adv_burst_num (current value %d), stopping advertisement.\n", m_adv_burst_num);
       nrf_sdk_ble_adv_stop();
     }
   } break;
 
   case BLE_ADV_EVT_IDLE: {
-    APP_LOG("BLE_ADV_EVT_IDLE was detected in on_adv_evt\n");
+    NRF_APP_LOG("BLE_ADV_EVT_IDLE was detected in on_adv_evt\n");
     ret_code_t err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
     if (err_code != NRF_SUCCESS)
-      APP_LOG("in on_adv_evt, ble_advertising_start failed.\n");
+      NRF_APP_LOG("in on_adv_evt, ble_advertising_start failed.\n");
   } break;
 
   default:
@@ -142,7 +142,7 @@ void on_adv_evt(ble_adv_evt_t ble_adv_evt) {
 
 int advertising_init(const uint8_t *payload, uint32_t payload_len, ble_uuid_t adv_uuid, bool extended) {
   if (payload_len > NRF_BLE_EXT_ADV_MAX_PAYLOAD) {
-    APP_LOG("advertising_init failed; payload_len was larger than NRF_BLE_EXT_ADV_MAX_PAYLOAD\n");
+    NRF_APP_LOG("advertising_init failed; payload_len was larger than NRF_BLE_EXT_ADV_MAX_PAYLOAD\n");
     return NRF_BLE_OP_FAILURE;
   }
 
@@ -167,7 +167,7 @@ int advertising_init(const uint8_t *payload, uint32_t payload_len, ble_uuid_t ad
     manuf_data.data.size = payload_len;
     init.advdata.p_manuf_specific_data = &manuf_data;
 
-    APP_LOG("Size of manufacturer specific data: %d", manuf_data.data.size);
+    NRF_APP_LOG("Size of manufacturer specific data: %d", manuf_data.data.size);
   }
 
   init.config.ble_adv_extended_enabled = extended;
@@ -179,7 +179,7 @@ int advertising_init(const uint8_t *payload, uint32_t payload_len, ble_uuid_t ad
 
   err_code = ble_advertising_init_custom(&m_advertising, &init);
   if (err_code != NRF_SUCCESS) {
-    APP_LOG("in advertising_init, ble_advertising_init_custom_failed.\n");
+    NRF_APP_LOG("in advertising_init, ble_advertising_init_custom_failed.\n");
     return NRF_BLE_OP_FAILURE;
   }
 

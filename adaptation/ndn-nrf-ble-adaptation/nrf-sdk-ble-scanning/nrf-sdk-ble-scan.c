@@ -17,7 +17,7 @@
 
 #include "../nrf-sdk-ble-consts.h"
 
-#include "../logger.h"
+#include "../nrf-logger.h"
 
 NRF_BLE_SCAN_DEF(m_scan); /**< Scanning module instance. */
 void (*m_on_scan)(const uint8_t *scan_data, uint8_t scan_data_len) = NULL; /**< Callback function for scan events. */
@@ -37,7 +37,7 @@ int scan_start(void) {
 
   err_code = nrf_ble_scan_start(&m_scan);
   if (err_code != NRF_SUCCESS) {
-    APP_LOG("in scan_start, nrf_ble_scan_start failed\n");
+    NRF_APP_LOG("in scan_start, nrf_ble_scan_start failed\n");
     return NRF_BLE_OP_FAILURE;
   }
 
@@ -47,11 +47,11 @@ int scan_start(void) {
 void scan_evt_handler(scan_evt_t const *p_scan_evt) {
   switch (p_scan_evt->scan_evt_id) {
   case NRF_BLE_SCAN_EVT_SCAN_TIMEOUT: {
-    APP_LOG("Scan timed out.\n");
+    NRF_APP_LOG("Scan timed out.\n");
     scan_start();
   } break;
   case NRF_BLE_SCAN_EVT_FILTER_MATCH: {
-    APP_LOG("Got a filter match!\n");
+    NRF_APP_LOG("Got a filter match!\n");
     const ble_gap_evt_adv_report_t *p_adv_report = p_scan_evt->params.filter_match.p_adv_report;
     if (m_on_scan != NULL) {
       m_on_scan(p_adv_report->data.p_data, p_adv_report->data.len);
@@ -75,19 +75,19 @@ int scan_init(ble_uuid_t scan_uuid) {
 
   err_code = nrf_ble_scan_init(&m_scan, &init_scan, scan_evt_handler);
   if (err_code != NRF_SUCCESS) {
-    APP_LOG("in scan_init, nrf_ble_scan_init failed\n");
+    NRF_APP_LOG("in scan_init, nrf_ble_scan_init failed\n");
     return NRF_BLE_OP_FAILURE;
   }
 
   err_code = nrf_ble_scan_filter_set(&m_scan, SCAN_UUID_FILTER, &scan_uuid);
   if (err_code != NRF_SUCCESS) {
-    APP_LOG("in scan_init, nrf_ble_scan_filter_set failed\n");
+    NRF_APP_LOG("in scan_init, nrf_ble_scan_filter_set failed\n");
     return NRF_BLE_OP_FAILURE;
   }
 
   err_code = nrf_ble_scan_filters_enable(&m_scan,NRF_BLE_SCAN_ALL_FILTER, false);
   if (err_code != NRF_SUCCESS) {
-    APP_LOG("in scan_init, nrf_ble_scan_filters_enable failed\n");
+    NRF_APP_LOG("in scan_init, nrf_ble_scan_filters_enable failed\n");
     return NRF_BLE_OP_FAILURE;
   }
 
@@ -98,7 +98,7 @@ int nrf_sdk_ble_scan_start(void (*on_scan)(const uint8_t *scan_data, uint8_t sca
   m_on_scan = on_scan;
 
   if (scan_start() != NRF_BLE_OP_SUCCESS) {
-    APP_LOG("in nrf_sdk_ble_scan_start, scan_start failed.\n");
+    NRF_APP_LOG("in nrf_sdk_ble_scan_start, scan_start failed.\n");
     return NRF_BLE_OP_FAILURE;
   }
 
@@ -107,7 +107,7 @@ int nrf_sdk_ble_scan_start(void (*on_scan)(const uint8_t *scan_data, uint8_t sca
 
 int nrf_sdk_ble_scan_init(ble_uuid_t scan_uuid) {
   if (scan_init(scan_uuid) != NRF_BLE_OP_SUCCESS) {
-    APP_LOG("in ble_init(), scan_init() failed.\n");
+    NRF_APP_LOG("in ble_init(), scan_init() failed.\n");
     return NRF_BLE_OP_FAILURE;
   }
 

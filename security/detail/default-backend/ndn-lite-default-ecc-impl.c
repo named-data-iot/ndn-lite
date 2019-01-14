@@ -13,6 +13,7 @@
 #include "sec-lib/tinycrypt/tc_constants.h"
 #include "../../ndn-lite-ecc.h"
 #include "../../ndn-lite-sha.h"
+#include "../../ndn-lite-sec-utils.h"
 #include "../../../ndn-constants.h"
 #include "../../../ndn-error-code.h"
 #include "../../../ndn-enums.h"
@@ -174,7 +175,8 @@ ndn_lite_default_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
                               const uint8_t* sig_value, uint32_t sig_size,
                               const struct abstract_ecc_pub_key* abs_key, uint8_t ecdsa_type)
 {
-  if (sig_size > NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE)
+
+  if (sig_size > NDN_ASN1_ECDSA_MAX_ENCODED_SIG_SIZE)
     return NDN_SEC_WRONG_SIG_SIZE;
   if (abs_key->key_size > NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE)
     return NDN_SEC_WRONG_KEY_SIZE;
@@ -184,6 +186,7 @@ ndn_lite_default_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
   uECC_Curve curve;
+  uint32_t raw_signature_size = 0;
   switch(ecdsa_type){
   case NDN_ECDSA_CURVE_SECP160R1:
     curve = uECC_secp160r1();
@@ -203,9 +206,19 @@ ndn_lite_default_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
   default:
     return NDN_SEC_UNSUPPORT_CRYPTO_ALGO;
   }
+  raw_signature_size = uECC_curve_public_key_size(curve);
+  uint8_t raw_sig_temp_buf[raw_signature_size];
+
+  uint32_t decoded_raw_signature_size;
+  int ret_val = ndn_asn1_decode_ecdsa_signature(sig_value, sig_size, raw_sig_temp_buf, 
+                                  raw_signature_size, &decoded_raw_signature_size);
+  if (ret_val != NDN_SUCCESS) {
+    return ret_val;
+  }
+
   if (uECC_verify(abs_key->key_value, input_hash, sizeof(input_hash),
-                  sig_value, curve) == 0) {
-    return NDN_SEC_CRYPTO_ALGO_FAILURE;
+                  raw_sig_temp_buf, curve) == 0) {
+    return NDN_SEC_FAIL_VERIFY_SIG;
   }
   else
     return NDN_SUCCESS;
@@ -227,6 +240,7 @@ ndn_lite_default_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
   uECC_Curve curve;
+  uint32_t signature_size = 0;
   switch (ecdsa_type) {
   case NDN_ECDSA_CURVE_SECP160R1:
     curve = uECC_secp160r1();
@@ -246,6 +260,8 @@ ndn_lite_default_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
   default:
     return NDN_SEC_UNSUPPORT_CRYPTO_ALGO;
   }
+  signature_size = uECC_curve_public_key_size(curve);
+
   int ecc_sign_result = 0;
 
 #ifndef FEATURE_PERIPH_HWRNG
@@ -270,7 +286,20 @@ ndn_lite_default_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
 
-  *output_used_size = NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE;
+  uint32_t encoded_sig_length;
+  int ret_val = ndn_asn1_probe_ecdsa_signature_encoding_size(output_value, signature_size, 
+                                                   &encoded_sig_length);
+  if (ret_val != NDN_SUCCESS) {
+    return ret_val;
+  }
+
+  ret_val = ndn_asn1_encode_ecdsa_signature(output_value, signature_size, output_max_size);
+  if (ret_val != NDN_SUCCESS) {
+    return ret_val;
+  }
+
+  *output_used_size = encoded_sig_length;
+
   return NDN_SUCCESS;
 }
 

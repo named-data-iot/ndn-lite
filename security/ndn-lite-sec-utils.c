@@ -109,7 +109,7 @@ _write_asn1_integer(uint8_t *val, uint32_t val_len, uint8_t *output) {
  *   enough to hold the raw integer (without the possible zero padding byte).
  * @return Length of raw integer if there is no error, -1 if there is an error.
  */
-uint32_t
+int
 _read_asn1_integer(uint8_t *asn1_int, uint32_t asn1_int_len, uint8_t *output) {
 
   if (asn1_int_len < 0 || asn1_int[0] != ASN1_INTEGER) {
@@ -157,12 +157,12 @@ ndn_asn1_probe_ecdsa_signature_encoding_size(uint8_t *raw_ecdsa_sig, uint32_t ra
     return 0;
   }
 
-  uint32_t sig_int_size = raw_ecdsa_sig_len / 2;
-  uint32_t r_encoded_len = _probe_raw_integer_asn1_encoded_size(raw_ecdsa_sig, sig_int_size);
+  int sig_int_size = raw_ecdsa_sig_len / 2;
+  int r_encoded_len = _probe_raw_integer_asn1_encoded_size(raw_ecdsa_sig, sig_int_size);
   if (r_encoded_len == -1) {
     return NDN_ASN1_ECDSA_SIG_FAILED_TO_PROBE_ASN1_INT_SIZE;
   }
-  uint32_t s_encoded_len = _probe_raw_integer_asn1_encoded_size(raw_ecdsa_sig + sig_int_size, sig_int_size);
+  int s_encoded_len = _probe_raw_integer_asn1_encoded_size(raw_ecdsa_sig + sig_int_size, sig_int_size);
   if (s_encoded_len == -1) {
     return NDN_ASN1_ECDSA_SIG_FAILED_TO_PROBE_ASN1_INT_SIZE;
   }
@@ -273,7 +273,7 @@ ndn_asn1_decode_ecdsa_signature(uint8_t *encoded_ecdsa_sig, uint32_t encoded_ecd
     return NDN_ASN1_ECDSA_SIG_BUFFER_TOO_SMALL;
   }
 
-  uint32_t ret;
+  int ret;
   ret = _read_asn1_integer(encoded_ecdsa_sig + r_tlv_block_offset, 2 + r_tlv_block_val_len, decoded_ecdsa_sig);
   if (ret == -1) {
     return NDN_ASN1_ECDSA_SIG_FAILED_TO_READ_ASN1_INT;
