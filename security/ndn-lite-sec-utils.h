@@ -42,7 +42,7 @@ ndn_asn1_encode_ecdsa_signature(uint8_t* raw_ecdsa_sig, uint32_t raw_ecdsa_sig_l
  * @return NDN_SUCCESS if there is no error.
  */
 int
-ndn_asn1_probe_ecdsa_signature_encoding_size(uint8_t *raw_ecdsa_sig, uint32_t raw_ecdsa_sig_len,
+ndn_asn1_probe_ecdsa_signature_encoding_size(const uint8_t *raw_ecdsa_sig, uint32_t raw_ecdsa_sig_len,
                                              uint32_t *encoded_ecdsa_sig_len);
 
 /**
@@ -58,7 +58,7 @@ ndn_asn1_probe_ecdsa_signature_encoding_size(uint8_t *raw_ecdsa_sig, uint32_t ra
  * @return NDN_SUCCESS if there is no error.
  */
 int
-ndn_asn1_decode_ecdsa_signature(uint8_t *encoded_ecdsa_sig, uint32_t encoded_ecdsa_sig_len,
+ndn_asn1_decode_ecdsa_signature(const uint8_t *encoded_ecdsa_sig, uint32_t encoded_ecdsa_sig_len,
                                 uint8_t *decoded_ecdsa_sig, uint32_t decoded_ecdsa_sig_buf_len,
                                 uint32_t *raw_ecdsa_sig_len);
 
