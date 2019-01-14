@@ -32,7 +32,7 @@ ndn_const_time_memcmp(const uint8_t* a, const uint8_t* b, uint32_t size)
  *           -1 if there is an error.
  */
 int
-_probe_raw_integer_asn1_encoded_size(uint8_t *val, uint32_t val_len)
+_probe_raw_integer_asn1_encoded_size(const uint8_t *val, uint32_t val_len)
 {
   if (val_len <= 0) {
     return 0;
@@ -55,7 +55,7 @@ _probe_raw_integer_asn1_encoded_size(uint8_t *val, uint32_t val_len)
  *           -1 if there is an error.
  */
 int
-_probe_asn1_encoded_integer_raw_size(uint8_t *val, uint32_t val_len)
+_probe_asn1_encoded_integer_raw_size(const uint8_t *val, uint32_t val_len)
 {
   if (val_len <= 0) {
     return -1;
@@ -82,7 +82,7 @@ _probe_asn1_encoded_integer_raw_size(uint8_t *val, uint32_t val_len)
  * @return 0 if there is no error, -1 if there is an error.
  */
 int
-_write_asn1_integer(uint8_t *val, uint32_t val_len, uint8_t *output)
+_write_asn1_integer(const uint8_t *val, uint32_t val_len, uint8_t *output)
 {
   int encoded_int_size = _probe_raw_integer_asn1_encoded_size(val, val_len);
   if (encoded_int_size == -1) {
@@ -106,7 +106,7 @@ _write_asn1_integer(uint8_t *val, uint32_t val_len, uint8_t *output)
  * @return Length of raw integer if there is no error, -1 if there is an error.
  */
 int
-_read_asn1_integer(uint8_t *asn1_int, uint32_t asn1_int_len, uint8_t *output)
+_read_asn1_integer(const uint8_t *asn1_int, uint32_t asn1_int_len, uint8_t *output)
 {
   if (asn1_int[0] != ASN1_INTEGER) {
     return -1;
@@ -137,7 +137,7 @@ _read_asn1_integer(uint8_t *asn1_int, uint32_t asn1_int_len, uint8_t *output)
 }
 
 int
-ndn_asn1_probe_ecdsa_signature_encoding_size(uint8_t *raw_ecdsa_sig, uint32_t raw_ecdsa_sig_len,
+ndn_asn1_probe_ecdsa_signature_encoding_size(const uint8_t *raw_ecdsa_sig, uint32_t raw_ecdsa_sig_len,
                                              uint32_t *encoded_ecdsa_sig_len)
 {
   if (raw_ecdsa_sig_len < NDN_ASN1_ECDSA_MIN_RAW_SIG_SIZE) {
@@ -238,7 +238,7 @@ ndn_asn1_encode_ecdsa_signature(uint8_t* sig_buf, uint32_t raw_ecdsa_sig_len,
 }
 
 int
-ndn_asn1_decode_ecdsa_signature(uint8_t *encoded_ecdsa_sig, uint32_t encoded_ecdsa_sig_len,
+ndn_asn1_decode_ecdsa_signature(const uint8_t *encoded_ecdsa_sig, uint32_t encoded_ecdsa_sig_len,
                                 uint8_t *decoded_ecdsa_sig, uint32_t decoded_ecdsa_sig_buf_len,
                                 uint32_t *raw_ecdsa_sig_len)
 {
