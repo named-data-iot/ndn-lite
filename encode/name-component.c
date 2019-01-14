@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2019 Zhiyi Zhang
+ * Copyright (C) 2018-2019 Zhiyi Zhang, Tianyuan Yu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -13,6 +13,12 @@ name_component_tlv_decode(ndn_decoder_t* decoder, name_component_t* component)
 {
   uint32_t probe = 0;
   decoder_get_type(decoder, &component->type);
+  if (!(component->type == TLV_GenericNameComponent
+        || component->type == TLV_ImplicitSha256DigestComponent
+        || component->type == TLV_ParametersSha256DigestComponent
+        || component->type == TLV_SignedInterestSha256DigestComponent)) {
+    return NDN_WRONG_TLV_TYPE;
+  }
   decoder_get_length(decoder, &probe);
   if (probe > NDN_NAME_COMPONENT_BUFFER_SIZE) {
     return NDN_OVERSIZE;

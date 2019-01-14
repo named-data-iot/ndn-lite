@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2018-2019 Zhiyi Zhang, Tianyuan Yu
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
+
 #ifndef NDN_ENCODING_METAINFO_H
 #define NDN_ENCODING_METAINFO_H
 
@@ -18,7 +26,7 @@ typedef struct ndn_metainfo {
   /**
    * The freshness period of the Data packet.
    */
-  uint8_t freshness_period[4];
+  uint32_t freshness_period;
   /**
    * The last name component in Name.
    */
@@ -92,10 +100,7 @@ static inline void
 ndn_metainfo_set_freshness_period(ndn_metainfo_t* meta, uint32_t freshness_period)
 {
   meta->enable_FreshnessPeriod = 1;
-  meta->freshness_period[0] = (freshness_period >> 24) & 0xFF;
-  meta->freshness_period[1] = (freshness_period >> 16) & 0xFF;
-  meta->freshness_period[2] = (freshness_period >> 8) & 0xFF;
-  meta->freshness_period[3] = freshness_period & 0xFF;
+  meta->freshness_period = freshness_period;
 }
 
 /**

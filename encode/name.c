@@ -33,22 +33,11 @@ ndn_name_tlv_decode(ndn_decoder_t* decoder, ndn_name_t* name)
   uint32_t start_offset = decoder->offset;
   int counter = 0;
   while (decoder->offset < start_offset + length) {
-    uint32_t comp_type = 0;
-    decoder_get_type(decoder, &comp_type);
     if (counter >= NDN_NAME_COMPONENTS_SIZE)
       return NDN_OVERSIZE;
-    name->components[counter].type = comp_type;
-    if (!(name->components[counter].type == TLV_GenericNameComponent
-          || name->components[counter].type == TLV_ImplicitSha256DigestComponent
-          || name->components[counter].type == TLV_ParametersSha256DigestComponent)) {
-      return NDN_WRONG_TLV_TYPE;
-    }
-    decoder_get_length(decoder, &name->components[counter].size);
-    int result = decoder_get_raw_buffer_value(decoder, name->components[counter].value,
-                                              name->components[counter].size);
-    if (result < 0) {
+    int result = name_component_tlv_decode(decoder, &name->components[counter]);
+    if (result < 0)
       return result;
-    }
     ++counter;
   }
   name->components_size = counter;

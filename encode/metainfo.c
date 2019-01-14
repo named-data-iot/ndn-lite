@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2018-2019 Zhiyi Zhang, Tianyuan Yu
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
+
 #include "metainfo.h"
 
 int
@@ -17,7 +25,7 @@ ndn_metainfo_tlv_decode(ndn_decoder_t* decoder, ndn_metainfo_t* meta)
       return NDN_WRONG_TLV_TYPE;
     }
   }
-  
+
   ndn_metainfo_init(meta);
   uint32_t buffer_length = 0;
   decoder_get_length(decoder, &buffer_length);
@@ -32,7 +40,7 @@ ndn_metainfo_tlv_decode(ndn_decoder_t* decoder, ndn_metainfo_t* meta)
     }
     else if (probe == TLV_FreshnessPeriod) {
       decoder_get_length(decoder, &probe);
-      decoder_get_raw_buffer_value(decoder, meta->freshness_period, 4);
+      decoder_get_uint32_value(decoder, &meta->freshness_period);
       meta->enable_FreshnessPeriod = 1;
     }
     else if (probe == TLV_FinalBlockId) {
@@ -88,7 +96,7 @@ ndn_metainfo_tlv_encode(ndn_encoder_t* encoder, const ndn_metainfo_t* meta)
   if (meta->enable_FreshnessPeriod) {
     encoder_append_type(encoder, TLV_FreshnessPeriod);
     encoder_append_length(encoder, 4);
-    encoder_append_raw_buffer_value(encoder, meta->freshness_period, 4);
+    encoder_append_uint32_value(encoder, meta->freshness_period);
   }
   if (meta->enable_FinalBlockId) {
     encoder_append_type(encoder, TLV_FinalBlockId);

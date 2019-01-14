@@ -88,7 +88,8 @@ ndn_ac_prepare_key_request_interest(ndn_encoder_t* encoder,
   // sign Interest
   ndn_name_t self_name = *home_prefix;
   ndn_name_append_component(&self_name, self_identity);
-  ndn_signed_interest_tlv_encode_ecdsa_sign(encoder, &interest, &self_name, prv_key);
+  ndn_signed_interest_ecdsa_sign(&interest, &self_name, prv_key);
+  ndn_interest_tlv_encode(encoder, &interest);
   return 0;
 }
 
