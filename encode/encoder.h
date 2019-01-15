@@ -237,7 +237,7 @@ encoder_append_uint64_value(ndn_encoder_t* encoder, uint64_t value)
  * TLV-LENGTH of the TLV element MUST be either 1, 2, 4, or 8.
  * @note For more details, go https://named-data.net/doc/NDN-packet-spec/current/tlv.html
  * @param value. Input. The uint to be checked.
- * @return 0 if there is no error.
+ * @return the length of a non-negative int.
  */
 static inline int
 encoder_probe_uint_length(uint64_t value)
