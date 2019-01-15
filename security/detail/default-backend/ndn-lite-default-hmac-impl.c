@@ -32,6 +32,9 @@ int
 ndn_lite_default_hmac_load_key(struct abstract_hmac_key* hmac_key,
                                const uint8_t* key_value, uint32_t key_size)
 {
+  if (key_size > 32) {
+    return NDN_SEC_WRONG_KEY_SIZE;
+  }
   memset(hmac_key->key_value, 0, 32);
   memcpy(hmac_key->key_value, key_value, key_size);
   hmac_key->key_size = key_size;
@@ -80,13 +83,13 @@ ndn_lite_default_hkdf(const uint8_t* input_value, uint32_t input_size,
   else
     iter = output_size / NDN_SEC_SHA256_HASH_SIZE;
   uint8_t t[NDN_SEC_SHA256_HASH_SIZE] = {0};
-  uint8_t cat[NDN_SEC_SHA256_HASH_SIZE+1] = {0};
+  uint8_t cat[NDN_SEC_SHA256_HASH_SIZE + 1] = {0};
   uint8_t okm[NDN_SEC_SHA256_HASH_SIZE * iter];
   for (uint8_t i = 0; i < NDN_SEC_SHA256_HASH_SIZE * iter; i++)
     okm[i] = 0;
   uint8_t table[16] = {0x01, 0x02, 0x03, 0x03, 0x04, 0x05, 0x06, 0x07,
                        0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};
-  uint8_t t_first[2] = {0x00, 0x01};
+  uint8_t t_first[1] = {0x01};
   for (int i = 0; i < iter; ++i) {
     if (i == 0) {
       struct abstract_hmac_key t_key;

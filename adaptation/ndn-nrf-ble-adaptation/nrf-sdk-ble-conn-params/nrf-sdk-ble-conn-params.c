@@ -18,7 +18,7 @@
 #include "../nrf-sdk-ble-consts.h"
 #include "../nrf-sdk-ble-error-check.h"
 
-#include "../logger.h"
+#include "../nrf-logger.h"
 
 static bool m_init_success = false; /**< Will be true if this module was already initialized successfully. */
 
@@ -33,7 +33,7 @@ void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
 
     if (p_evt->evt_type == BLE_CONN_PARAMS_EVT_FAILED)
     {
-        APP_LOG("Got BLE_CONN_PARAMS_EVT_FAILED in on_conn_params_evt.\n");
+        NRF_APP_LOG("Got BLE_CONN_PARAMS_EVT_FAILED in on_conn_params_evt.\n");
         err_code = sd_ble_gap_disconnect(p_evt->conn_handle, BLE_HCI_CONN_INTERVAL_UNACCEPTABLE);
         APP_ERROR_CHECK_IGNORE_INVALID_STATE(err_code, "on_conn_params_evt, sd_ble_gap_disconnect");
     }

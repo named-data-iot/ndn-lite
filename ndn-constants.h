@@ -17,9 +17,13 @@
 #define NDN_FWD_INVALID_NAME_SIZE ((uint32_t)(-1))
 #define NDN_FWD_INVALID_NAME_COMPONENT_SIZE ((uint32_t)(-1))
 
+// tlv
+#define NDN_TLV_LENGTH_FIELD_MAX_SIZE 9
+#define NDN_TLV_TYPE_FIELD_MAX_SIZE 1
+
 // interest
 #define NDN_INTEREST_PARAMS_BUFFER_SIZE 248
-#define NDN_SIGNED_INTEREST_PARAMS_MAX_SIZE 680
+#define NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE 680
 #define NDN_DEFAULT_INTEREST_LIFETIME 4000
 
 // data
@@ -72,5 +76,40 @@
 #define NDN_SEC_AES_IV_LENGTH 16
 #define NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE 64
 #define NDN_SEC_ECC_SECP256R1_PRIVATE_KEY_SIZE 32
+#define NDN_SEC_ECC_MAX_PUBLIC_KEY_SIZE (NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE)
+#define NDN_SEC_ECC_MAX_PRIVATE_KEY_SIZE (NDN_SEC_ECC_SECP256R1_PRIVATE_KEY_SIZE)
+
+// asn1 encoding
+// the below constants are based on the number of bytes in the
+// micro-ecc curve, which can be found here:
+// https://github.com/kmackay/micro-ecc/blob/master/curve-specific.inc
+// the maximum asn signature encoding size is found by taking the
+// size of the raw signature (the number of bytes in its micro-ecc curve * 2)
+// and then adding 8, to account for the ASN1.SEQUENCE tlv type and length fields,
+// the two ASN1.INTEGER tlv type and length fields, and the two potential extra
+// 0's if the integers of the signature containing a leading 1 bit
+#define NDN_ASN1_ECDSA_ENCODING_MAX_EXTRA_BYTES 8
+#define NDN_ASN1_ECDSA_ENCODING_MIN_EXTRA_BYTES 6
+#define NDN_ASN1_ECDSA_SECP256R1_RAW_SIG_SIZE 64
+#define NDN_ASN1_ECDSA_SECP256K1_RAW_SIG_SIZE 64
+#define NDN_ASN1_ECDSA_SECP224R1_RAW_SIG_SIZE 56
+#define NDN_ASN1_ECDSA_SECP192R1_RAW_SIG_SIZE 48
+#define NDN_ASN1_ECDSA_SECP160R1_RAW_SIG_SIZE 40
+#define NDN_ASN1_ECDSA_SECP256R1_MAX_ENCODED_SIG_SIZE (NDN_ASN1_ECDSA_SECP256R1_RAW_SIG_SIZE + \
+                                                       NDN_ASN1_ECDSA_ENCODING_MAX_EXTRA_BYTES)
+#define NDN_ASN1_ECDSA_SECP256K1_MAX_ENCODED_SIG_SIZE (NDN_ASN1_ECDSA_SECP256K1_RAW_SIG_SIZE + \
+                                                       NDN_ASN1_ECDSA_ENCODING_MAX_EXTRA_BYTES)
+#define NDN_ASN1_ECDSA_SECP224R1_MAX_ENCODED_SIG_SIZE (NDN_ASN1_ECDSA_SECP224R1_RAW_SIG_SIZE + \
+                                                       NDN_ASN1_ECDSA_ENCODING_MAX_EXTRA_BYTES)
+#define NDN_ASN1_ECDSA_SECP192R1_MAX_ENCODED_SIG_SIZE (NDN_ASN1_ECDSA_SECP192R1_RAW_SIG_SIZE + \
+NDN_ASN1_ECDSA_ENCODING_MAX_EXTRA_BYTES)
+#define NDN_ASN1_ECDSA_SECP160R1_MAX_ENCODED_SIG_SIZE (NDN_ASN1_ECDSA_SECP160R1_RAW_SIG_SIZE + \
+                                                       NDN_ASN1_ECDSA_ENCODING_MAX_EXTRA_BYTES)
+#define NDN_ASN1_ECDSA_MIN_RAW_SIG_SIZE (NDN_ASN1_ECDSA_SECP160R1_RAW_SIG_SIZE)
+#define NDN_ASN1_ECDSA_MIN_ENCODED_SIG_SIZE (NDN_ASN1_ECDSA_MIN_RAW_SIG_SIZE + \
+                                             NDN_ASN1_ECDSA_ENCODING_MIN_EXTRA_BYTES)
+#define NDN_ASN1_ECDSA_MAX_RAW_SIG_SIZE (NDN_ASN1_ECDSA_SECP256R1_RAW_SIG_SIZE)
+#define NDN_ASN1_ECDSA_MAX_ENCODED_SIG_SIZE (NDN_ASN1_ECDSA_MAX_RAW_SIG_SIZE + \
+                                             NDN_ASN1_ECDSA_ENCODING_MAX_EXTRA_BYTES)
 
 #endif // NDN_CONSTANTS_H

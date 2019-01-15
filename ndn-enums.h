@@ -55,4 +55,10 @@ enum {
   NDN_AC_DK = 1,
 };
 
+// asn encoding
+enum {
+  ASN1_SEQUENCE = 0x30,
+  ASN1_INTEGER  = 0x02,
+};
+
 #endif // NDN_ENUMS_H

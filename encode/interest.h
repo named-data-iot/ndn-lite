@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang
+ * Copyright (C) 2018-2019 Zhiyi Zhang
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -40,7 +40,7 @@ typedef struct ndn_interest {
   /**
    * The lifetime of the Interest.
    */
-  uint16_t lifetime;
+  uint64_t lifetime;
 
   uint8_t enable_CanBePrefix;
   uint8_t enable_MustBeFresh;
@@ -58,14 +58,6 @@ typedef struct ndn_interest {
   uint8_t enable_HopLimit;
 
   uint8_t is_SignedInterest;
-  /**
-   * The signature timestamp. Used when is_SignedInterest > 0.
-   */
-  uint32_t signature_timestamp;
-  /**
-   * The signature nonce. Used when is_SignedInterest > 0.
-   */
-  uint32_t signature_nonce;
   /**
    * The signature structure. Used when is_SignedInterest > 0.
    */
@@ -90,8 +82,6 @@ ndn_interest_init(ndn_interest_t* interest)
   interest->nonce = 0;
   interest->lifetime = NDN_DEFAULT_INTEREST_LIFETIME;
   interest->hop_limit = 0;
-  interest->signature_timestamp = 0;
-  interest->signature_nonce = 0;
 }
 
 /**
@@ -115,8 +105,6 @@ ndn_interest_from_name(ndn_interest_t* interest, const ndn_name_t* name)
   interest->nonce = 0;
   interest->lifetime = NDN_DEFAULT_INTEREST_LIFETIME;
   interest->hop_limit = 0;
-  interest->signature_timestamp = 0;
-  interest->signature_nonce = 0;
 }
 
 /**
