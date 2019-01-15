@@ -26,14 +26,11 @@ int sign_on_basic_set_sec_intf(uint8_t variant, struct sign_on_basic_client_t *s
       sign_on_basic_client->sec_intf.gen_n1_keypair = sign_on_basic_ecc_256_gen_n1_keypair;
       sign_on_basic_client->sec_intf.gen_kt = sign_on_basic_ecc_256_gen_kt;
       sign_on_basic_client->sec_intf.gen_btstrp_rqst_sig = sign_on_basic_ecc_256_gen_btstrp_rqst_sig;
-      sign_on_basic_client->sec_intf.get_btstrp_rqst_sig_len = sign_on_basic_ecc_256_get_btstrp_rqst_sig_len;
       sign_on_basic_client->sec_intf.vrfy_btstrp_rqst_rspns_sig = sign_on_basic_ecc_256_vrfy_btstrp_rqst_rspns_sig;
       sign_on_basic_client->sec_intf.gen_cert_rqst_sig = sign_on_basic_ecc_256_gen_cert_rqst_sig;
-      sign_on_basic_client->sec_intf.get_cert_rqst_sig_len = sign_on_basic_ecc_256_get_cert_rqst_sig_len;
       sign_on_basic_client->sec_intf.vrfy_cert_rqst_rspns_sig = sign_on_basic_ecc_256_vrfy_cert_rqst_rspns_sig;
       sign_on_basic_client->sec_intf.decrypt_kd_pri = sign_on_basic_ecc_256_decrypt_kd_pri;
       sign_on_basic_client->sec_intf.gen_fin_msg_sig = sign_on_basic_ecc_256_gen_fin_msg_sig;
-      sign_on_basic_client->sec_intf.get_fin_msg_sig_len = sign_on_basic_ecc_256_get_fin_msg_sig_len;
 
       break;
     }

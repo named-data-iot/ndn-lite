@@ -80,41 +80,20 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
   uint8_t digest_buffer[SIGN_ON_BASIC_SHA256_HASH_SIZE];
 
   int ndn_encoder_success = 0;
-  uint32_t btstrp_rqst_tlv_val_len = 0;
-  uint32_t btstrp_rqst_sig_tlv_val_len = 0;
-
-  btstrp_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_DEVICE_IDENTIFIER,
-                                                      sign_on_basic_client->device_identifier_len);
-  btstrp_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_DEVICE_CAPABILITIES,
-                                                      sign_on_basic_client->device_capabilities_len);
-  btstrp_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_N1_PUB,
-                                                      sign_on_basic_client->N1_pub_len);
-  btstrp_rqst_sig_tlv_val_len = sign_on_basic_client->sec_intf.get_btstrp_rqst_sig_len();
-  uint32_t btstrp_rqst_sig_tlv_len_field_size = encoder_get_var_size(btstrp_rqst_sig_tlv_val_len);
-  uint32_t btstrp_rqst_sig_tlv_type_field_size = encoder_get_var_size(TLV_SSP_SIGNATURE);
-  btstrp_rqst_tlv_val_len += btstrp_rqst_sig_tlv_type_field_size;
-  btstrp_rqst_tlv_val_len += btstrp_rqst_sig_tlv_len_field_size;
-  btstrp_rqst_tlv_val_len += btstrp_rqst_sig_tlv_val_len;
-
-  uint32_t btstrp_rqst_tlv_type_field_size = encoder_get_var_size(TLV_SSP_BOOTSTRAPPING_REQUEST);
-  uint32_t btstrp_rqst_tlv_len_field_size = encoder_get_var_size(btstrp_rqst_tlv_val_len);
-
-  uint32_t btstrp_rqst_total_len = btstrp_rqst_tlv_val_len + btstrp_rqst_tlv_type_field_size + 
-                                   btstrp_rqst_tlv_len_field_size;
-  if (buf_len < btstrp_rqst_total_len) {
-    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_BUFFER_TOO_SHORT;
-  }
 
   ndn_encoder_t encoder;
   encoder_init(&encoder, buf_p, buf_len);
 
-  // append the bootstrapping request tlv type and length
-  if (encoder_append_type(&encoder, TLV_SSP_BOOTSTRAPPING_REQUEST) != ndn_encoder_success) {
-    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;   
-  }
-  if (encoder_append_length(&encoder, btstrp_rqst_tlv_val_len) != ndn_encoder_success) {
-    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;   
-  }
+  uint8_t *sig_payload_begin;
+  uint8_t *sig_payload_end;
+  uint8_t *btstrp_rqst_tlv_val_begin;
+  uint8_t *btstrp_rqst_tlv_val_end;
+
+  uint32_t initial_offset = NDN_TLV_TYPE_FIELD_MAX_SIZE + NDN_TLV_LENGTH_FIELD_MAX_SIZE;
+
+  encoder_move_forward(&encoder, initial_offset);
+  btstrp_rqst_tlv_val_begin = encoder.output_value + encoder.offset;
+  sig_payload_begin = btstrp_rqst_tlv_val_begin;
   
   // append the device identifier
   if (encoder_append_type(&encoder, TLV_SSP_DEVICE_IDENTIFIER) != ndn_encoder_success) {
@@ -152,26 +131,63 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
   }
 
-  uint8_t *sig_payload_begin = buf_p + btstrp_rqst_tlv_type_field_size + btstrp_rqst_tlv_len_field_size;
-  uint32_t sig_payload_size = encoder.offset - btstrp_rqst_tlv_type_field_size - btstrp_rqst_tlv_len_field_size;
+  sig_payload_end = encoder.output_value + encoder.offset;
 
   // calculate the signature 
   uint8_t temp_sig_buf[SIG_GENERATION_BUF_LENGTH];
   uint32_t sig_size = 0;
   if (!sign_on_basic_client->sec_intf.gen_btstrp_rqst_sig(sign_on_basic_client->KS_pri_p,
-                                                          sig_payload_begin, sig_payload_size,
+                                                          sig_payload_begin, sig_payload_end - sig_payload_begin,
                                                           temp_sig_buf, SIG_GENERATION_BUF_LENGTH, 
                                                           &sig_size)) {
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_FAILED_TO_GENERATE_SIG;
   }
 
-  if (btstrp_rqst_sig_tlv_val_len != sig_size) {
-    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
-  }
-
   encoder_append_type(&encoder, TLV_SSP_SIGNATURE);
   encoder_append_length(&encoder, sig_size);
   encoder_append_raw_buffer_value(&encoder, temp_sig_buf, sig_size);
+
+  btstrp_rqst_tlv_val_end = encoder.output_value + encoder.offset;
+
+  uint32_t btstrp_rqst_tlv_val_len = 0;
+
+  btstrp_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_DEVICE_IDENTIFIER,
+                                                      sign_on_basic_client->device_identifier_len);
+  btstrp_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_DEVICE_CAPABILITIES,
+                                                      sign_on_basic_client->device_capabilities_len);
+  btstrp_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_N1_PUB,
+                                                      sign_on_basic_client->N1_pub_len);
+  uint32_t btstrp_rqst_sig_tlv_type_field_size = encoder_get_var_size(TLV_SSP_SIGNATURE);
+  uint32_t btstrp_rqst_sig_tlv_len_field_size = encoder_get_var_size(sig_size);
+  btstrp_rqst_tlv_val_len += btstrp_rqst_sig_tlv_type_field_size;
+  btstrp_rqst_tlv_val_len += btstrp_rqst_sig_tlv_len_field_size;
+  btstrp_rqst_tlv_val_len += sig_size;
+
+  uint32_t btstrp_rqst_tlv_type_field_size = encoder_get_var_size(TLV_SSP_BOOTSTRAPPING_REQUEST);
+  uint32_t btstrp_rqst_tlv_len_field_size = encoder_get_var_size(btstrp_rqst_tlv_val_len);
+
+  encoder_move_backward(&encoder, btstrp_rqst_tlv_val_end - btstrp_rqst_tlv_val_begin);
+
+  encoder_move_backward(&encoder, btstrp_rqst_tlv_len_field_size);
+  if (encoder_append_length(&encoder, btstrp_rqst_tlv_val_len) != ndn_encoder_success) {
+    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;   
+  }
+
+  encoder_move_backward(&encoder, btstrp_rqst_tlv_type_field_size + btstrp_rqst_tlv_len_field_size);
+  // append the bootstrapping request tlv type and length
+  if (encoder_append_type(&encoder, TLV_SSP_BOOTSTRAPPING_REQUEST) != ndn_encoder_success) {
+    return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;   
+  }
+
+  uint32_t total_packet_length = btstrp_rqst_tlv_type_field_size + btstrp_rqst_tlv_len_field_size + btstrp_rqst_tlv_val_len;
+
+  memmove(encoder.output_value, 
+          encoder.output_value + initial_offset - (btstrp_rqst_tlv_type_field_size + btstrp_rqst_tlv_len_field_size),
+          total_packet_length
+  );
+
+  encoder.offset = 0;
+  encoder_move_forward(&encoder, total_packet_length);
 
   *output_len_p = encoder.offset;
 
@@ -302,43 +318,19 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
   uint8_t digest_buffer[SIGN_ON_BASIC_SHA256_HASH_SIZE];
 
   int ndn_encoder_success = 0;
-  uint32_t cert_rqst_tlv_val_len = 0;
-  uint32_t cert_rqst_sig_tlv_val_len = 0;
-
-  cert_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_DEVICE_IDENTIFIER,
-                                                    sign_on_basic_client->device_identifier_len);
-  cert_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_N1_PUB,
-                                                    sign_on_basic_client->N1_pub_len);
-  cert_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_N2_PUB_DIGEST,
-                                                    SIGN_ON_BASIC_SHA256_HASH_SIZE);
-  cert_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_TRUST_ANCHOR_CERTIFICATE_DIGEST,
-                                                    SIGN_ON_BASIC_SHA256_HASH_SIZE);
-  cert_rqst_sig_tlv_val_len = sign_on_basic_client->sec_intf.get_cert_rqst_sig_len();
-  uint32_t cert_rqst_sig_tlv_len_field_size = encoder_get_var_size(cert_rqst_sig_tlv_val_len);
-  uint32_t cert_rqst_sig_tlv_type_field_size = encoder_get_var_size(TLV_SSP_SIGNATURE);
-  cert_rqst_tlv_val_len += cert_rqst_sig_tlv_type_field_size;
-  cert_rqst_tlv_val_len += cert_rqst_sig_tlv_len_field_size;
-  cert_rqst_tlv_val_len += cert_rqst_sig_tlv_val_len;
-
-  uint32_t cert_rqst_tlv_type_field_size = encoder_get_var_size(TLV_SSP_CERTIFICATE_REQUEST);
-  uint32_t cert_rqst_tlv_len_field_size = encoder_get_var_size(cert_rqst_tlv_val_len);
-
-  uint32_t cert_rqst_total_len = cert_rqst_tlv_val_len + cert_rqst_tlv_type_field_size + 
-                                 cert_rqst_tlv_len_field_size;
-  if (buf_len < cert_rqst_total_len) {
-    return NDN_SIGN_ON_CNSTRCT_CERT_RQST_BUFFER_TOO_SHORT;
-  }
 
   ndn_encoder_t encoder;
   encoder_init(&encoder, buf_p, buf_len);
 
-  // append the certificate request tlv type and length
-  if (encoder_append_type(&encoder, TLV_SSP_CERTIFICATE_REQUEST) != ndn_encoder_success) {
-    return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;   
-  }
-  if (encoder_append_length(&encoder, cert_rqst_tlv_val_len) != ndn_encoder_success) {
-    return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;   
-  }
+  uint8_t *sig_payload_begin;
+  uint8_t *sig_payload_end;
+  uint8_t *cert_rqst_tlv_val_begin;
+  uint8_t *cert_rqst_tlv_val_end;
+
+  uint32_t initial_offset = NDN_TLV_TYPE_FIELD_MAX_SIZE + NDN_TLV_LENGTH_FIELD_MAX_SIZE;
+  encoder_move_forward(&encoder, initial_offset);
+  cert_rqst_tlv_val_begin = encoder.output_value + encoder.offset;
+  sig_payload_begin = cert_rqst_tlv_val_begin;
   
   // append the device identifier
   if (encoder_append_type(&encoder, TLV_SSP_DEVICE_IDENTIFIER) != ndn_encoder_success) {
@@ -400,26 +392,64 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;
   }
 
-  uint8_t *sig_payload_begin = buf_p + cert_rqst_tlv_type_field_size + cert_rqst_tlv_len_field_size;
-  uint32_t sig_payload_size = encoder.offset - cert_rqst_tlv_type_field_size - cert_rqst_tlv_len_field_size;
+  sig_payload_end = encoder.output_value + encoder.offset;
 
   // calculate the signature 
   uint8_t temp_sig_buf[SIG_GENERATION_BUF_LENGTH];
   uint32_t sig_size = 0;
   if (!sign_on_basic_client->sec_intf.gen_cert_rqst_sig(sign_on_basic_client->KS_pri_p,
-                                                        sig_payload_begin, sig_payload_size,
+                                                        sig_payload_begin, sig_payload_end - sig_payload_begin,
                                                         temp_sig_buf, SIG_GENERATION_BUF_LENGTH, 
                                                         &sig_size)) {
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_FAILED_TO_GENERATE_SIG;
   }
 
-  if (cert_rqst_sig_tlv_val_len != sig_size) {
-    return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;
-  }
-
   encoder_append_type(&encoder, TLV_SSP_SIGNATURE);
   encoder_append_length(&encoder, sig_size);
   encoder_append_raw_buffer_value(&encoder, temp_sig_buf, sig_size);
+
+  cert_rqst_tlv_val_end = encoder.output_value + encoder.offset;
+
+  uint32_t cert_rqst_tlv_val_len = 0;
+
+  cert_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_DEVICE_IDENTIFIER,
+                                                    sign_on_basic_client->device_identifier_len);
+  cert_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_N1_PUB,
+                                                    sign_on_basic_client->N1_pub_len);
+  cert_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_N2_PUB_DIGEST,
+                                                    SIGN_ON_BASIC_SHA256_HASH_SIZE);
+  cert_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_TRUST_ANCHOR_CERTIFICATE_DIGEST,
+                                                    SIGN_ON_BASIC_SHA256_HASH_SIZE);
+  uint32_t cert_rqst_sig_tlv_type_field_size = encoder_get_var_size(TLV_SSP_SIGNATURE);
+  uint32_t cert_rqst_sig_tlv_len_field_size = encoder_get_var_size(sig_size);
+  cert_rqst_tlv_val_len += cert_rqst_sig_tlv_type_field_size;
+  cert_rqst_tlv_val_len += cert_rqst_sig_tlv_len_field_size;
+  cert_rqst_tlv_val_len += sig_size;
+  
+  uint32_t cert_rqst_tlv_type_field_size = encoder_get_var_size(TLV_SSP_CERTIFICATE_REQUEST);
+  uint32_t cert_rqst_tlv_len_field_size = encoder_get_var_size(cert_rqst_tlv_val_len);
+
+  encoder_move_backward(&encoder, cert_rqst_tlv_val_end - cert_rqst_tlv_val_begin);
+
+  encoder_move_backward(&encoder, cert_rqst_tlv_len_field_size);
+  if (encoder_append_length(&encoder, cert_rqst_tlv_val_len) != ndn_encoder_success) {
+    return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;   
+  }
+
+  encoder_move_backward(&encoder, cert_rqst_tlv_len_field_size + cert_rqst_tlv_type_field_size);
+  if (encoder_append_type(&encoder, TLV_SSP_CERTIFICATE_REQUEST) != ndn_encoder_success) {
+    return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;   
+  }
+
+  uint32_t total_packet_length = cert_rqst_tlv_type_field_size + cert_rqst_tlv_len_field_size + cert_rqst_tlv_val_len;
+
+  memmove(encoder.output_value, 
+          encoder.output_value + initial_offset - (cert_rqst_tlv_type_field_size + cert_rqst_tlv_len_field_size),
+          total_packet_length
+  );
+
+  encoder.offset = 0;
+  encoder_move_forward(&encoder, total_packet_length);
 
   *output_len_p = encoder.offset;
 
@@ -554,37 +584,19 @@ int cnstrct_fin_msg(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
                             struct sign_on_basic_client_t *sign_on_basic_client) {
 
   int ndn_encoder_success = 0;
-  uint32_t fin_msg_tlv_val_len = 0;
-  uint32_t fin_msg_sig_tlv_val_len = 0;
-
-  fin_msg_tlv_val_len += encoder_probe_block_size(TLV_SSP_DEVICE_IDENTIFIER,
-                                                  sign_on_basic_client->device_identifier_len);
-  fin_msg_sig_tlv_val_len = sign_on_basic_client->sec_intf.get_fin_msg_sig_len();
-  uint32_t fin_msg_sig_tlv_len_field_size = encoder_get_var_size(fin_msg_sig_tlv_val_len);
-  uint32_t fin_msg_sig_tlv_type_field_size = encoder_get_var_size(TLV_SSP_SIGNATURE);
-  fin_msg_tlv_val_len += fin_msg_sig_tlv_type_field_size;
-  fin_msg_tlv_val_len += fin_msg_sig_tlv_len_field_size;
-  fin_msg_tlv_val_len += fin_msg_sig_tlv_val_len;
-
-  uint32_t fin_msg_tlv_type_field_size = encoder_get_var_size(TLV_SSP_BOOTSTRAPPING_REQUEST);
-  uint32_t fin_msg_tlv_len_field_size = encoder_get_var_size(fin_msg_tlv_val_len);
-
-  uint32_t fin_msg_total_len = fin_msg_tlv_val_len + fin_msg_tlv_type_field_size + 
-                               fin_msg_tlv_len_field_size;
-  if (buf_len < fin_msg_total_len) {
-    return NDN_SIGN_ON_CNSTRCT_FIN_MSG_BUFFER_TOO_SHORT;
-  }
 
   ndn_encoder_t encoder;
   encoder_init(&encoder, buf_p, buf_len);
 
-  // append the fin msg tlv type and length
-  if (encoder_append_type(&encoder, TLV_SSP_FINISH_MESSAGE) != ndn_encoder_success) {
-    return NDN_SIGN_ON_CNSTRCT_FIN_MSG_ENCODING_FAILED;   
-  }
-  if (encoder_append_length(&encoder, fin_msg_tlv_val_len) != ndn_encoder_success) {
-    return NDN_SIGN_ON_CNSTRCT_FIN_MSG_ENCODING_FAILED;   
-  }
+  uint8_t *sig_payload_begin;
+  uint8_t *sig_payload_end;
+  uint8_t *fin_msg_tlv_val_begin;
+  uint8_t *fin_msg_tlv_val_end;
+
+  uint32_t initial_offset = NDN_TLV_TYPE_FIELD_MAX_SIZE + NDN_TLV_LENGTH_FIELD_MAX_SIZE;
+  encoder_move_forward(&encoder, initial_offset);
+  fin_msg_tlv_val_begin = encoder.output_value + encoder.offset;
+  sig_payload_begin = fin_msg_tlv_val_begin;
   
   // append the device identifier
   if (encoder_append_type(&encoder, TLV_SSP_DEVICE_IDENTIFIER) != ndn_encoder_success) {
@@ -598,26 +610,58 @@ int cnstrct_fin_msg(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
     return NDN_SIGN_ON_CNSTRCT_FIN_MSG_ENCODING_FAILED;
   }
 
-  uint8_t *sig_payload_begin = buf_p + fin_msg_tlv_type_field_size + fin_msg_tlv_len_field_size;
-  uint32_t sig_payload_size = encoder.offset - fin_msg_tlv_type_field_size - fin_msg_tlv_len_field_size;
+  sig_payload_end = encoder.output_value + encoder.offset;
 
   // calculate the signature 
   uint8_t temp_sig_buf[SIG_GENERATION_BUF_LENGTH];
   uint32_t sig_size = 0;
   if (!sign_on_basic_client->sec_intf.gen_fin_msg_sig(sign_on_basic_client->KS_pri_p,
-                                                      sig_payload_begin, sig_payload_size,
+                                                      sig_payload_begin, sig_payload_end - sig_payload_begin,
                                                       temp_sig_buf, SIG_GENERATION_BUF_LENGTH, 
                                                       &sig_size)) {
     return NDN_SIGN_ON_CNSTRCT_FIN_MSG_FAILED_TO_GENERATE_SIG;
   }
 
-  if (fin_msg_sig_tlv_val_len != sig_size) {
-    return NDN_SIGN_ON_CNSTRCT_FIN_MSG_ENCODING_FAILED;
-  }
-
   encoder_append_type(&encoder, TLV_SSP_SIGNATURE);
   encoder_append_length(&encoder, sig_size);
   encoder_append_raw_buffer_value(&encoder, temp_sig_buf, sig_size);
+
+  fin_msg_tlv_val_end = encoder.output_value + encoder.offset;
+
+  uint32_t fin_msg_tlv_val_len = 0;
+
+  fin_msg_tlv_val_len += encoder_probe_block_size(TLV_SSP_DEVICE_IDENTIFIER,
+                                                  sign_on_basic_client->device_identifier_len);
+  uint32_t fin_msg_sig_tlv_type_field_size = encoder_get_var_size(TLV_SSP_SIGNATURE);
+  uint32_t fin_msg_sig_tlv_len_field_size = encoder_get_var_size(sig_size);
+  fin_msg_tlv_val_len += fin_msg_sig_tlv_type_field_size;
+  fin_msg_tlv_val_len += fin_msg_sig_tlv_len_field_size;
+  fin_msg_tlv_val_len += sig_size;
+
+  uint32_t fin_msg_tlv_type_field_size = encoder_get_var_size(TLV_SSP_BOOTSTRAPPING_REQUEST);
+  uint32_t fin_msg_tlv_len_field_size = encoder_get_var_size(fin_msg_tlv_val_len);
+
+  encoder_move_backward(&encoder, fin_msg_tlv_val_end - fin_msg_tlv_val_begin);
+
+  encoder_move_backward(&encoder, fin_msg_tlv_len_field_size);
+  if (encoder_append_length(&encoder, fin_msg_tlv_val_len) != ndn_encoder_success) {
+    return NDN_SIGN_ON_CNSTRCT_FIN_MSG_ENCODING_FAILED;   
+  }
+
+  encoder_move_backward(&encoder, fin_msg_tlv_len_field_size + fin_msg_tlv_type_field_size);
+  if (encoder_append_type(&encoder, TLV_SSP_FINISH_MESSAGE) != ndn_encoder_success) {
+    return NDN_SIGN_ON_CNSTRCT_FIN_MSG_ENCODING_FAILED;   
+  }
+
+  uint32_t total_packet_length = fin_msg_tlv_type_field_size + fin_msg_tlv_len_field_size + fin_msg_tlv_val_len;
+
+  memmove(encoder.output_value, 
+          encoder.output_value + initial_offset - (fin_msg_tlv_type_field_size + fin_msg_tlv_len_field_size),
+          total_packet_length
+  );
+
+  encoder.offset = 0;
+  encoder_move_forward(&encoder, total_packet_length);
 
   *output_len_p = encoder.offset;
 
