@@ -86,39 +86,6 @@ ndn_nrf_802154_face_up(struct ndn_face_intf* self)
   return 0;
 }
 
-int
-ndn_nrf_802154_face_send(struct ndn_face_intf* self, const ndn_name_t* name,
-                         const uint8_t* packet, uint32_t size)
-{
-  (void)self;
-  (void)name;
-  uint8_t packet_block[NDN_NRF_802154_MAX_MESSAGE_SIZE];
-
-  // init header
-  ndn_nrf_init_802154_packet(packet_block);
-  packet_block[2] = nrf_802154_face.packet_id & 0xff;
-
-  // init payload
-  if (size <= NDN_NRF_802154_MAX_PAYLOAD_SIZE) {
-    memcpy(&packet_block[9], packet, size);
-    _nrf_802154_transmission(packet_block, size + 9, true);
-  }
-  else {
-    // fragmentation
-    ndn_fragmenter_t fragmenter;
-    uint16_t id = 99; // only for test, should be random
-    ndn_fragmenter_init(&fragmenter, packet, size, NDN_NRF_802154_MAX_PAYLOAD_SIZE, 
-                        id);
-    printf("%d pieces needed\n", fragmenter.total_frag_num);
-    while (fragmenter.counter < fragmenter.total_frag_num) {
-      ndn_fragmenter_fragment(&fragmenter, &packet_block[9]); 
-      printf("fragmentation output ONE piece, No. %d\n", fragmenter.counter);
-      _nrf_802154_transmission(packet_block, size + 9, true);
-    }
-  }
-  return 0;
-}
-
 static int
 _nrf_802154_transmission(uint8_t* packet_block, uint32_t packet_size, bool flag)
 {
@@ -151,6 +118,39 @@ _nrf_802154_transmission(uint8_t* packet_block, uint32_t packet_size, bool flag)
     }
   }
   return -3;
+}
+
+int
+ndn_nrf_802154_face_send(struct ndn_face_intf* self, const ndn_name_t* name,
+                         const uint8_t* packet, uint32_t size)
+{
+  (void)self;
+  (void)name;
+  uint8_t packet_block[NDN_NRF_802154_MAX_MESSAGE_SIZE];
+
+  // init header
+  ndn_nrf_init_802154_packet(packet_block);
+  packet_block[2] = nrf_802154_face.packet_id & 0xff;
+
+  // init payload
+  if (size <= NDN_NRF_802154_MAX_PAYLOAD_SIZE) {
+    memcpy(&packet_block[9], packet, size);
+    _nrf_802154_transmission(packet_block, size + 9, true);
+  }
+  else {
+    // fragmentation
+    ndn_fragmenter_t fragmenter;
+    uint16_t id = 99; // only for test, should be random
+    ndn_fragmenter_init(&fragmenter, packet, size, NDN_NRF_802154_MAX_PAYLOAD_SIZE, 
+                        id);
+    printf("%d pieces needed\n", fragmenter.total_frag_num);
+    while (fragmenter.counter < fragmenter.total_frag_num) {
+      ndn_fragmenter_fragment(&fragmenter, &packet_block[9]); 
+      printf("fragmentation output ONE piece, No. %d\n", fragmenter.counter);
+      _nrf_802154_transmission(packet_block, size + 9, true);
+    }
+  }
+  return 0;
 }
 
 int
