@@ -165,7 +165,7 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
     return result;
 
   // reset the encoder's offset to be at the beginning of the signature tlv block
-  encoder->offset += data_tlv_type_field_size + data_tlv_length_field_size + data_buffer_size - sig_len;
+  encoder->offset += data_tlv_type_field_size + data_tlv_length_field_size + data_buffer_size - sig_len - initial_offset + 1;
 
   // set the signature size of the signature to the size of the ASN.1 encoded ecdsa signature
   data->signature.sig_size = sig_len;
