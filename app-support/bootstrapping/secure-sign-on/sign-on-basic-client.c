@@ -83,7 +83,7 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
 
   ndn_encoder_t encoder;
   encoder_init(&encoder, buf_p, buf_len);
-
+  
   uint8_t *sig_payload_begin;
   uint8_t *sig_payload_end;
   uint8_t *btstrp_rqst_tlv_val_begin;
@@ -130,8 +130,9 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
                                       sign_on_basic_client->N1_pub_len) != ndn_encoder_success) {
     return NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_ENCODING_FAILED;
   }
-
-  sig_payload_end = encoder.output_value + encoder.offset;
+  
+  uint8_t *sig_payload_begin = buf_p + btstrp_rqst_tlv_type_field_size + btstrp_rqst_tlv_len_field_size;
+  uint32_t sig_payload_size = encoder.offset - btstrp_rqst_tlv_type_field_size - btstrp_rqst_tlv_len_field_size;
 
   // calculate the signature 
   uint8_t temp_sig_buf[SIG_GENERATION_BUF_LENGTH];
@@ -392,7 +393,8 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;
   }
 
-  sig_payload_end = encoder.output_value + encoder.offset;
+  uint8_t *sig_payload_begin = buf_p + cert_rqst_tlv_type_field_size + cert_rqst_tlv_len_field_size;
+  uint32_t sig_payload_size = encoder.offset - cert_rqst_tlv_type_field_size - cert_rqst_tlv_len_field_size;
 
   // calculate the signature 
   uint8_t temp_sig_buf[SIG_GENERATION_BUF_LENGTH];
@@ -404,13 +406,9 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
     return NDN_SIGN_ON_CNSTRCT_CERT_RQST_FAILED_TO_GENERATE_SIG;
   }
 
-  encoder_append_type(&encoder, TLV_SSP_SIGNATURE);
-  encoder_append_length(&encoder, sig_size);
-  encoder_append_raw_buffer_value(&encoder, temp_sig_buf, sig_size);
-
-  cert_rqst_tlv_val_end = encoder.output_value + encoder.offset;
-
-  uint32_t cert_rqst_tlv_val_len = 0;
+  if (cert_rqst_sig_tlv_val_len != sig_size) {
+    return NDN_SIGN_ON_CNSTRCT_CERT_RQST_ENCODING_FAILED;
+  }
 
   cert_rqst_tlv_val_len += encoder_probe_block_size(TLV_SSP_DEVICE_IDENTIFIER,
                                                     sign_on_basic_client->device_identifier_len);
@@ -610,7 +608,8 @@ int cnstrct_fin_msg(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
     return NDN_SIGN_ON_CNSTRCT_FIN_MSG_ENCODING_FAILED;
   }
 
-  sig_payload_end = encoder.output_value + encoder.offset;
+  uint8_t *sig_payload_begin = buf_p + fin_msg_tlv_type_field_size + fin_msg_tlv_len_field_size;
+  uint32_t sig_payload_size = encoder.offset - fin_msg_tlv_type_field_size - fin_msg_tlv_len_field_size;
 
   // calculate the signature 
   uint8_t temp_sig_buf[SIG_GENERATION_BUF_LENGTH];
