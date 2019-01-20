@@ -26,7 +26,15 @@ typedef struct ndn_metainfo {
   /**
    * The freshness period of the Data packet.
    */
+<<<<<<< HEAD
   uint64_t freshness_period;
+=======
+<<<<<<< HEAD
+  uint8_t freshness_period[4];
+=======
+  uint64_t freshness_period;
+>>>>>>> 2ea899b... fix issue Incorrect decoding of FreshnessPeriod #33
+>>>>>>> fix metainfo encoding issue
   /**
    * The last name component in Name.
    */
