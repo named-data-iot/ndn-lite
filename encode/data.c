@@ -165,7 +165,7 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
     return result;
 
   // reset the encoder's offset to be at the beginning of the signature tlv block
-  encoder->offset += data_tlv_type_field_size + data_tlv_length_field_size + data_buffer_size - sig_len - initial_offset + 1;
+  encoder->offset += data_tlv_type_field_size + data_tlv_length_field_size + data_buffer_size - sig_len;
 
   // set the signature size of the signature to the size of the ASN.1 encoded ecdsa signature
   data->signature.sig_size = sig_len;
@@ -285,7 +285,6 @@ ndn_data_tlv_decode_digest_verify(ndn_data_t* data, const uint8_t* block_value, 
 
   // content
   decoder_get_type(&decoder, &probe);
-<<<<<<< HEAD
   switch(probe)
   {
     case TLV_Content:
@@ -305,14 +304,6 @@ ndn_data_tlv_decode_digest_verify(ndn_data_t* data, const uint8_t* block_value, 
     default:
       return NDN_WRONG_TLV_TYPE;
   }
-=======
-  decoder_get_length(&decoder, &probe);
-  if (probe > NDN_CONTENT_BUFFER_SIZE) {
-    return NDN_OVERSIZE;
-  }
-  data->content_size = probe;
-  decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
->>>>>>> further fix issue #18
 
   // signature info
   ndn_signature_info_tlv_decode(&decoder, &data->signature);
@@ -350,7 +341,6 @@ ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, u
 
   // content
   decoder_get_type(&decoder, &probe);
-<<<<<<< HEAD
   switch(probe)
   {
     case TLV_Content:
@@ -370,14 +360,6 @@ ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, u
     default:
       return NDN_WRONG_TLV_TYPE;
   }
-=======
-  decoder_get_length(&decoder, &probe);
-  if (probe > NDN_CONTENT_BUFFER_SIZE) {
-    return NDN_OVERSIZE;
-  }
-  data->content_size = probe;
-  decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
->>>>>>> further fix issue #18
 
   // signature info
   ndn_signature_info_tlv_decode(&decoder, &data->signature);
