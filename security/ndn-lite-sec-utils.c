@@ -244,6 +244,9 @@ ndn_asn1_decode_ecdsa_signature(const uint8_t *encoded_ecdsa_sig, uint32_t encod
   if (encoded_ecdsa_sig_len < NDN_ASN1_ECDSA_MIN_ENCODED_SIG_SIZE) {
     return NDN_ASN1_ECDSA_SIG_INVALID_SIZE;
   }
+  if (encoded_ecdsa_sig_len > NDN_ASN1_ECDSA_MAX_ENCODED_SIG_SIZE) {
+    return NDN_ASN1_ECDSA_SIG_INVALID_SIZE;
+  }
 
   if (encoded_ecdsa_sig[0] != ASN1_SEQUENCE) {
     return NDN_ASN1_ECDSA_SIG_FAILED_TO_READ_ASN1_SEQUENCE;
@@ -263,6 +266,10 @@ ndn_asn1_decode_ecdsa_signature(const uint8_t *encoded_ecdsa_sig, uint32_t encod
                                                        s_tlv_block_val_len);
   if (s_raw_len == -1) {
     return NDN_ASN1_ECDSA_SIG_FAILED_TO_READ_ASN1_INT;
+  }
+
+  if (encoded_ecdsa_sig_len != 2 + 2 + r_tlv_block_val_len + 2 + s_tlv_block_val_len) {
+    return NDN_ASN1_ECDSA_SIG_INVALID_SIZE;
   }
 
   if (decoded_ecdsa_sig_buf_len < (uint32_t)(r_raw_len + s_raw_len)) {
