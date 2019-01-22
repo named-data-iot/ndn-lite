@@ -92,6 +92,7 @@ ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
                           interest->signature.sig_value, NDN_SIGNATURE_BUFFER_SIZE,
                           prv_key, prv_key->curve_type, &used_bytes);
   interest->signature.sig_size = used_bytes;
+
   if (result < 0)
     return result;
   ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
@@ -253,7 +254,7 @@ ndn_signed_interest_ecdsa_verify(const ndn_interest_t* interest, const ndn_ecc_p
   // the signing input ends at signature info
   uint32_t siginfo_block_ending = temp_encoder.offset;
   ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
-
+  
   int result = ndn_ecdsa_verify(temp_encoder.output_value, siginfo_block_ending,
                                 interest->signature.sig_value, interest->signature.sig_size,
                                 pub_key, pub_key->curve_type);
