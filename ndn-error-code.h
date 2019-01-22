@@ -19,6 +19,7 @@
 #define NDN_WRONG_TLV_TYPE -12
 #define NDN_WRONG_TLV_LENGTH -13
 #define NDN_OVERSIZE_VAR -14
+#define NDN_TLV_OP_FAILED -15
 
 // Security Error
 #define NDN_SEC_WRONG_KEY_SIZE -22

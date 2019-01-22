@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2019 Zhiyi Zhang
+ * Copyright (C) 2018-2019 Zhiyi Zhang, Edward Lu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -7,7 +7,8 @@
  */
 
 #include "signature.h"
-#include <stdio.h>
+
+#include "ndn-lite/ndn-constants.h"
 
 int
 ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* signature)
@@ -152,8 +153,10 @@ ndn_signature_value_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signatur
   if (probe != TLV_SignatureValue)
     return NDN_WRONG_TLV_TYPE;
   decoder_get_length(decoder, &probe);
-  if (probe > 64)
-    return NDN_OVERSIZE;
+  if (probe > NDN_SEC_MAX_SIG_SIZE)
+    return NDN_WRONG_TLV_LENGTH;
+  if (probe < NDN_SEC_MIN_SIG_SIZE)
+    return NDN_WRONG_TLV_LENGTH;
   signature->sig_size = probe;
   decoder_get_raw_buffer_value(decoder, signature->sig_value, signature->sig_size);
   return 0;

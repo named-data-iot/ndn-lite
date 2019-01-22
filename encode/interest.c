@@ -93,7 +93,7 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
       interest->enable_Parameters = 1;
       decoder_get_length(&decoder, &interest->parameters.size);
       decoder_get_raw_buffer_value(&decoder, interest->parameters.value,
-                                   interest->parameters.size);
+				   interest->parameters.size);
     }
     else if (type == TLV_SignatureInfo) {
       interest->is_SignedInterest = 1;
