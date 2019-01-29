@@ -143,7 +143,7 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
   // signature info
   data_buffer_size += ndn_signature_info_probe_block_size(&data->signature);
   // signature value
-  data_buffer_size += sig_len;
+  data_buffer_size += encoder_probe_block_size(TLV_SignatureValue, sig_len);
 
   // add the data's tlv type and length
   uint32_t data_tlv_length_field_size = encoder_get_var_size(data_buffer_size);
@@ -169,13 +169,12 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
   uint32_t sig_tlv_length_field_size = encoder_get_var_size(sig_len);
   
   // reset the encoder's offset to be at the beginning of the signature tlv block
+  encoder->offset = 0;
   encoder->offset += data_tlv_type_field_size +
                      data_tlv_length_field_size +
                      data_buffer_size -
                      sig_len -
-                     initial_offset +
-                     1 +
-                     sig_tlv_type_field_size +
+                     sig_tlv_type_field_size -
                      sig_tlv_length_field_size;
 
   // set the signature size of the signature to the size of the ASN.1 encoded ecdsa signature
