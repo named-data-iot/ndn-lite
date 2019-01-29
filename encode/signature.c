@@ -8,8 +8,6 @@
 
 #include "signature.h"
 
-#include "ndn-lite/ndn-constants.h"
-
 int
 ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* signature)
 {
