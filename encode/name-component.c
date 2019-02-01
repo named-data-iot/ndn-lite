@@ -11,15 +11,20 @@
 int
 name_component_tlv_decode(ndn_decoder_t* decoder, name_component_t* component)
 {
+
+  int ret_val = -1;
+  
   uint32_t probe = 0;
-  decoder_get_type(decoder, &component->type);
+  ret_val = decoder_get_type(decoder, &component->type);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   if (!(component->type == TLV_GenericNameComponent
         || component->type == TLV_ImplicitSha256DigestComponent
         || component->type == TLV_ParametersSha256DigestComponent
         || component->type == TLV_SignedInterestSha256DigestComponent)) {
     return NDN_WRONG_TLV_TYPE;
   }
-  decoder_get_length(decoder, &probe);
+  ret_val = decoder_get_length(decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   if (probe > NDN_NAME_COMPONENT_BUFFER_SIZE) {
     return NDN_OVERSIZE;
   }
@@ -50,7 +55,12 @@ name_component_compare(const name_component_t* lhs, const name_component_t* rhs)
 int
 name_component_tlv_encode(ndn_encoder_t* encoder, const name_component_t* component)
 {
-  encoder_append_type(encoder, component->type);
-  encoder_append_length(encoder, component->size);
+
+  int ret_val = -1;
+  
+  ret_val = encoder_append_type(encoder, component->type);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_length(encoder, component->size);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   return encoder_append_raw_buffer_value(encoder, component->value, component->size);
 }

@@ -49,16 +49,21 @@ ndn_interest_probe_block_value_size(const ndn_interest_t* interest)
 int
 ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, uint32_t block_size)
 {
+
+  int ret_val = -1;
+  
   ndn_interest_init(interest);
   ndn_decoder_t decoder;
   decoder_init(&decoder, block_value, block_size);
   uint32_t type = 0;
-  decoder_get_type(&decoder, &type);
+  ret_val = decoder_get_type(&decoder, &type);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   if (type != TLV_Interest) {
     return NDN_WRONG_TLV_TYPE;
   }
   uint32_t interest_buffer_length = 0;
-  decoder_get_length(&decoder, &interest_buffer_length);
+  ret_val = decoder_get_length(&decoder, &interest_buffer_length);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   // name
   int result = ndn_name_tlv_decode(&decoder, &interest->name);
@@ -66,44 +71,58 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
     return result;
   }
   while (decoder.offset < block_size) {
-    decoder_get_type(&decoder, &type);
+    ret_val = decoder_get_type(&decoder, &type);
     uint32_t length = 0;
     if (type == TLV_CanBePrefix) {
       interest->enable_CanBePrefix = 1;
-      decoder_get_length(&decoder, &length);
+      ret_val = decoder_get_length(&decoder, &length);
+      if (ret_val != NDN_SUCCESS) return ret_val;
     }
     else if (type == TLV_MustBeFresh) {
       interest->enable_MustBeFresh = 1;
-      decoder_get_length(&decoder, &length);
+      ret_val = decoder_get_length(&decoder, &length);
+      if (ret_val != NDN_SUCCESS) return ret_val;
     }
     else if (type == TLV_Nonce) {
-      decoder_get_length(&decoder, &length);
-      decoder_get_uint32_value(&decoder, &interest->nonce);
+      ret_val = decoder_get_length(&decoder, &length);
+      if (ret_val != NDN_SUCCESS) return ret_val;
+      ret_val = decoder_get_uint32_value(&decoder, &interest->nonce);
+      if (ret_val != NDN_SUCCESS) return ret_val;
     }
     else if (type == TLV_InterestLifetime) {
-      decoder_get_length(&decoder, &length);
-      decoder_get_uint_value(&decoder, length, &interest->lifetime);
+      ret_val = decoder_get_length(&decoder, &length);
+      if (ret_val != NDN_SUCCESS) return ret_val;
+      ret_val = decoder_get_uint_value(&decoder, length, &interest->lifetime);
+      if (ret_val != NDN_SUCCESS) return ret_val;
     }
     else if (type == TLV_HopLimit) {
       interest->enable_HopLimit = 1;
-      decoder_get_length(&decoder, &length);
-      decoder_get_byte_value(&decoder, &interest->hop_limit);
+      ret_val = decoder_get_length(&decoder, &length);
+      if (ret_val != NDN_SUCCESS) return ret_val;
+      ret_val = decoder_get_byte_value(&decoder, &interest->hop_limit);
+      if (ret_val != NDN_SUCCESS) return ret_val;
     }
     else if (type == TLV_Parameters) {
       interest->enable_Parameters = 1;
-      decoder_get_length(&decoder, &interest->parameters.size);
-      decoder_get_raw_buffer_value(&decoder, interest->parameters.value,
+      ret_val = decoder_get_length(&decoder, &interest->parameters.size);
+      if (ret_val != NDN_SUCCESS) return ret_val;
+      ret_val = decoder_get_raw_buffer_value(&decoder, interest->parameters.value,
 				   interest->parameters.size);
+      if (ret_val != NDN_SUCCESS) return ret_val;
     }
     else if (type == TLV_SignatureInfo) {
       interest->is_SignedInterest = 1;
-      decoder_move_backward(&decoder, encoder_get_var_size(TLV_SignatureInfo));
-      ndn_signature_info_tlv_decode(&decoder, &interest->signature);
+      ret_val = decoder_move_backward(&decoder, encoder_get_var_size(TLV_SignatureInfo));
+      if (ret_val != NDN_SUCCESS) return ret_val;
+      ret_val = ndn_signature_info_tlv_decode(&decoder, &interest->signature);
+      if (ret_val != NDN_SUCCESS) return ret_val;
     }
     else if (type == TLV_SignatureValue) {
       interest->is_SignedInterest = 1;
-      decoder_move_backward(&decoder, encoder_get_var_size(TLV_SignatureValue));
-      ndn_signature_value_tlv_decode(&decoder, &interest->signature);
+      ret_val = decoder_move_backward(&decoder, encoder_get_var_size(TLV_SignatureValue));
+      if (ret_val != NDN_SUCCESS) return ret_val;
+      ret_val = ndn_signature_value_tlv_decode(&decoder, &interest->signature);
+      if (ret_val != NDN_SUCCESS) return ret_val;
     }
     else {
       return NDN_WRONG_TLV_TYPE;
@@ -115,6 +134,9 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
 int
 ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest)
 {
+
+  int ret_val = -1;
+  
   if (interest->is_SignedInterest <= 0 && interest->enable_Parameters) {
     // TODO added by Zhiyi: add a InterestParameters Digest Name component to Interest.name
   }
@@ -125,45 +147,66 @@ ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest)
   if (required_size > rest_size)
     return NDN_OVERSIZE;
 
-  encoder_append_type(encoder, TLV_Interest);
-  encoder_append_length(encoder, interest_block_value_size);
+  ret_val = encoder_append_type(encoder, TLV_Interest);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_length(encoder, interest_block_value_size);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   // name
-  ndn_name_tlv_encode(encoder, &interest->name);
+  ret_val = ndn_name_tlv_encode(encoder, &interest->name);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   // can be prefix
   if (interest->enable_CanBePrefix > 0) {
-    encoder_append_type(encoder, TLV_CanBePrefix);
-    encoder_append_length(encoder, 0);
+    ret_val = encoder_append_type(encoder, TLV_CanBePrefix);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(encoder, 0);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
   // must be fresh
   if (interest->enable_MustBeFresh > 0) {
-    encoder_append_type(encoder, TLV_MustBeFresh);
-    encoder_append_length(encoder, 0);
+    ret_val = encoder_append_type(encoder, TLV_MustBeFresh);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(encoder, 0);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
   // nonce
-  encoder_append_type(encoder, TLV_Nonce);
-  encoder_append_length(encoder, 4);
-  encoder_append_uint32_value(encoder, interest->nonce);
+  ret_val = encoder_append_type(encoder, TLV_Nonce);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_length(encoder, 4);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_uint32_value(encoder, interest->nonce);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   // lifetime
-  encoder_append_type(encoder, TLV_InterestLifetime);
-  encoder_append_length(encoder, encoder_probe_uint_length(interest->lifetime));
-  encoder_append_uint_value(encoder, interest->lifetime);
+  ret_val = encoder_append_type(encoder, TLV_InterestLifetime);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_length(encoder, encoder_probe_uint_length(interest->lifetime));
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_uint_value(encoder, interest->lifetime);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   // hop limit
   if (interest->enable_HopLimit > 0) {
-    encoder_append_type(encoder, TLV_HopLimit);
-    encoder_append_length(encoder, 1);
-    encoder_append_byte_value(encoder, interest->hop_limit);
+    ret_val = encoder_append_type(encoder, TLV_HopLimit);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(encoder, 1);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_byte_value(encoder, interest->hop_limit);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
   // parameters
   if (interest->enable_Parameters > 0) {
-    encoder_append_type(encoder, TLV_Parameters);
-    encoder_append_length(encoder, interest->parameters.size);
-    encoder_append_raw_buffer_value(encoder, interest->parameters.value, interest->parameters.size);
+    ret_val = encoder_append_type(encoder, TLV_Parameters);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(encoder, interest->parameters.size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_raw_buffer_value(encoder, interest->parameters.value, interest->parameters.size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
   if (interest->is_SignedInterest > 0) {
     // signature info
-    ndn_signature_info_tlv_encode(encoder, &interest->signature);
+    ret_val = ndn_signature_info_tlv_encode(encoder, &interest->signature);
+    if (ret_val != NDN_SUCCESS) return ret_val;
     // signature value
-    ndn_signature_value_tlv_encode(encoder, &interest->signature);
+    ret_val = ndn_signature_value_tlv_encode(encoder, &interest->signature);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
   return 0;
 }
