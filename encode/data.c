@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Zhiyi Zhang
+ * Copyright (C) Zhiyi Zhang, Edward Lu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -13,6 +13,7 @@
 #include "../security/ndn-lite-sha.h"
 #include "../security/ndn-lite-aes.h"
 #include "../security/ndn-lite-ecc.h"
+#include "encoder.h"
 
 /************************************************************/
 /*  Helper functions for signed interest APIs               */
@@ -142,7 +143,7 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
   // signature info
   data_buffer_size += ndn_signature_info_probe_block_size(&data->signature);
   // signature value
-  data_buffer_size += sig_len;
+  data_buffer_size += encoder_probe_block_size(TLV_SignatureValue, sig_len);
 
   // add the data's tlv type and length
   uint32_t data_tlv_length_field_size = encoder_get_var_size(data_buffer_size);
@@ -164,8 +165,17 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
   if (result < 0)
     return result;
 
+  uint32_t sig_tlv_type_field_size = encoder_get_var_size(TLV_SignatureValue);
+  uint32_t sig_tlv_length_field_size = encoder_get_var_size(sig_len);
+  
   // reset the encoder's offset to be at the beginning of the signature tlv block
-  encoder->offset += data_tlv_type_field_size + data_tlv_length_field_size + data_buffer_size - sig_len - initial_offset + 1;
+  encoder->offset = 0;
+  encoder->offset += data_tlv_type_field_size +
+                     data_tlv_length_field_size +
+                     data_buffer_size -
+                     sig_len -
+                     sig_tlv_type_field_size -
+                     sig_tlv_length_field_size;
 
   // set the signature size of the signature to the size of the ASN.1 encoded ecdsa signature
   data->signature.sig_size = sig_len;
