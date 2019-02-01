@@ -11,41 +11,55 @@
 int
 ndn_metainfo_tlv_decode(ndn_decoder_t* decoder, ndn_metainfo_t* meta)
 {
-  uint32_t probe = 0;
-  decoder_get_type(decoder, &probe);
 
+  int ret_val = -1;
+  
+  uint32_t probe = 0;
+  ret_val = decoder_get_type(decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  
   if (probe != TLV_MetaInfo) {
     if (probe == TLV_Content || probe == TLV_SignatureInfo) {
       ndn_metainfo_init(meta);
-      decoder_move_backward(decoder, 1);
+      ret_val = decoder_move_backward(decoder, 1);
+      if (ret_val != NDN_SUCCESS) return ret_val;
       return 0;
     }
     else {
-      decoder_move_backward(decoder, 1);
+      ret_val = decoder_move_backward(decoder, 1);
+      if (ret_val != NDN_SUCCESS) return ret_val;
       return NDN_WRONG_TLV_TYPE;
     }
   }
 
   ndn_metainfo_init(meta);
   uint32_t buffer_length = 0;
-  decoder_get_length(decoder, &buffer_length);
+  ret_val = decoder_get_length(decoder, &buffer_length);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   uint32_t value_starting = decoder->offset;
 
   while (decoder->offset < value_starting + buffer_length) {
-    decoder_get_type(decoder, &probe);
+    ret_val = decoder_get_type(decoder, &probe);
+    if (ret_val != NDN_SUCCESS) return ret_val;
     if (probe == TLV_ContentType) {
-      decoder_get_length(decoder, &probe);
-      decoder_get_byte_value(decoder, &meta->content_type);
+      ret_val = decoder_get_length(decoder, &probe);
+      if (ret_val != NDN_SUCCESS) return ret_val;
+      ret_val = decoder_get_byte_value(decoder, &meta->content_type);
+      if (ret_val != NDN_SUCCESS) return ret_val;
       meta->enable_ContentType = 1;
     }
     else if (probe == TLV_FreshnessPeriod) {
-      decoder_get_length(decoder, &probe);
-      decoder_get_uint_value(decoder, probe, &meta->freshness_period);
+      ret_val = decoder_get_length(decoder, &probe);
+      if (ret_val != NDN_SUCCESS) return ret_val;
+      ret_val = decoder_get_uint_value(decoder, probe, &meta->freshness_period);
+      if (ret_val != NDN_SUCCESS) return ret_val;
       meta->enable_FreshnessPeriod = 1;
     }
     else if (probe == TLV_FinalBlockId) {
-      decoder_get_length(decoder, &probe);
-      name_component_tlv_decode(decoder, &meta->final_block_id);
+      ret_val = decoder_get_length(decoder, &probe);
+      if (ret_val != NDN_SUCCESS) return ret_val;
+      ret_val = name_component_tlv_decode(decoder, &meta->final_block_id);
+      if (ret_val != NDN_SUCCESS) return ret_val;
       meta->enable_FinalBlockId = 1;
     }
     else
@@ -65,6 +79,9 @@ ndn_metainfo_from_tlv_block(ndn_metainfo_t* meta, const uint8_t* block_value, ui
 int
 ndn_metainfo_tlv_encode(ndn_encoder_t* encoder, const ndn_metainfo_t* meta)
 {
+
+  int ret_val = -1;
+  
   uint32_t meta_value_size = 0;
   uint32_t comp_tlv_size = 0;
   if (meta->enable_ContentType) {
@@ -86,23 +103,34 @@ ndn_metainfo_tlv_encode(ndn_encoder_t* encoder, const ndn_metainfo_t* meta)
       > encoder->output_max_size)
     return NDN_OVERSIZE;
 
-  encoder_append_type(encoder, TLV_MetaInfo);
-  encoder_append_length(encoder, meta_value_size);
+  ret_val = encoder_append_type(encoder, TLV_MetaInfo);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_length(encoder, meta_value_size);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   if (meta->enable_ContentType) {
-    encoder_append_type(encoder, TLV_ContentType);
-    encoder_append_length(encoder, 1);
-    encoder_append_byte_value(encoder, meta->content_type);
+    ret_val = encoder_append_type(encoder, TLV_ContentType);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(encoder, 1);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_byte_value(encoder, meta->content_type);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
   if (meta->enable_FreshnessPeriod) {
-    encoder_append_type(encoder, TLV_FreshnessPeriod);
-    encoder_append_length(encoder, encoder_probe_uint_length(meta->freshness_period));
-    encoder_append_uint_value(encoder, meta->freshness_period);
+    ret_val = encoder_append_type(encoder, TLV_FreshnessPeriod);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(encoder, encoder_probe_uint_length(meta->freshness_period));
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_uint_value(encoder, meta->freshness_period);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
   if (meta->enable_FinalBlockId) {
-    encoder_append_type(encoder, TLV_FinalBlockId);
-    encoder_append_length(encoder, comp_tlv_size);
-    name_component_tlv_encode(encoder, &meta->final_block_id);
+    ret_val = encoder_append_type(encoder, TLV_FinalBlockId);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(encoder, comp_tlv_size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = name_component_tlv_encode(encoder, &meta->final_block_id);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
   return 0;
 }
