@@ -23,13 +23,18 @@ ndn_name_init(ndn_name_t *name, const name_component_t* components, uint32_t siz
 int
 ndn_name_tlv_decode(ndn_decoder_t* decoder, ndn_name_t* name)
 {
+
+  int ret_val = -1;
+  
   uint32_t type = 0;
-  decoder_get_type(decoder, &type);
+  ret_val = decoder_get_type(decoder, &type);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   if (type != TLV_Name) {
     return NDN_WRONG_TLV_TYPE;
   }
   uint32_t length = 0;
-  decoder_get_length(decoder, &length);
+  ret_val = decoder_get_length(decoder, &length);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   uint32_t start_offset = decoder->offset;
   int counter = 0;
   while (decoder->offset < start_offset + length) {
@@ -67,6 +72,9 @@ ndn_name_append_component(ndn_name_t *name, const name_component_t* component)
 int
 ndn_name_from_string(ndn_name_t *name, const char* string, uint32_t size)
 {
+
+  int ret_val = -1;
+  
   name->components_size = 0;
 
   uint32_t i = 0;
@@ -78,7 +86,8 @@ ndn_name_from_string(ndn_name_t *name, const char* string, uint32_t size)
   while (i < size) {
     if (string[i] == '/') {
       name_component_t component;
-      name_component_from_string(&component, &string[last_divider + 1], i - last_divider - 1);
+      ret_val = name_component_from_string(&component, &string[last_divider + 1], i - last_divider - 1);
+      if (ret_val != NDN_SUCCESS) return ret_val;
       int result = ndn_name_append_component(name, &component);
       if (result < 0) {
         return result;
@@ -87,7 +96,8 @@ ndn_name_from_string(ndn_name_t *name, const char* string, uint32_t size)
     }
     if (i == size - 1) {
       name_component_t component;
-      name_component_from_string(&component, &string[last_divider + 1], i - last_divider);
+      ret_val = name_component_from_string(&component, &string[last_divider + 1], i - last_divider);
+      if (ret_val != NDN_SUCCESS) return ret_val;
       int result = ndn_name_append_component(name, &component);
       if (result < 0) {
         return result;
@@ -101,14 +111,19 @@ ndn_name_from_string(ndn_name_t *name, const char* string, uint32_t size)
 int
 ndn_name_tlv_encode(ndn_encoder_t* encoder, const ndn_name_t *name)
 {
+
+  int ret_val = -1;
+  
   int block_sizes[name->components_size];
-  encoder_append_type(encoder, TLV_Name);
+  ret_val = encoder_append_type(encoder, TLV_Name);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   size_t value_size = 0;
   for (size_t i = 0; i < name->components_size; i++) {
     block_sizes[i] = name_component_probe_block_size(&name->components[i]);
     value_size += block_sizes[i];
   }
-  encoder_append_length(encoder, value_size);
+  ret_val = encoder_append_length(encoder, value_size);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   for (size_t i = 0; i < name->components_size; i++) {
     int result = name_component_tlv_encode(encoder, &name->components[i]);
