@@ -9,6 +9,7 @@
 #ifndef NDN_SECURITY_SHA_H_
 #define NDN_SECURITY_SHA_H_
 
+#include "ndn-lite-sec-config.h"
 #include "../ndn-error-code.h"
 #include "../ndn-constants.h"
 
@@ -18,17 +19,17 @@ extern "C" {
 
 typedef struct abstract_sha256_state abstract_sha256_state_t;
 
-typedef int (*ndn_sha256_init)(abstract_sha256_state_t* state);
-typedef int (*ndn_sha256_update)(abstract_sha256_state_t* state, const uint8_t* data, uint32_t datalen);
-typedef int (*ndn_sha256_finish)(abstract_sha256_state_t* state, uint8_t* hash_result);
+typedef int (*ndn_sha256_init_impl)(abstract_sha256_state_t* state);
+typedef int (*ndn_sha256_update_impl)(abstract_sha256_state_t* state, const uint8_t* data, uint32_t datalen);
+typedef int (*ndn_sha256_finish_impl)(abstract_sha256_state_t* state, uint8_t* hash_result);
 
 /**
  * The structure to represent the backend implementation.
  */
 typedef struct ndn_sha_backend {
-  ndn_sha256_init sha256_init;
-  ndn_sha256_update sha256_update;
-  ndn_sha256_finish sha256_finish;
+  ndn_sha256_init_impl sha256_init;
+  ndn_sha256_update_impl sha256_update;
+  ndn_sha256_finish_impl sha256_finish;
 } ndn_sha_backend_t;
 
 

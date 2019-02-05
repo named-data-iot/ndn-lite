@@ -46,6 +46,7 @@ ndn_sha256(const uint8_t* data, uint32_t datalen, uint8_t* hash_result)
     return NDN_SEC_INIT_FAILURE;
   if (ndn_sha256_finish(&state, hash_result) != NDN_SUCCESS)
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
+  return NDN_SUCCESS;
 }
 
 int

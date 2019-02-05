@@ -31,6 +31,7 @@ ndn_lite_default_sha256_update(struct abstract_sha256_state* state, const uint8_
   return NDN_SUCCESS;
 }
 
+int
 ndn_lite_default_sha256_finish(struct abstract_sha256_state* state, uint8_t* hash_result)
 {
   if (tc_sha256_final(hash_result, &state->s) != TC_CRYPTO_SUCCESS) {
