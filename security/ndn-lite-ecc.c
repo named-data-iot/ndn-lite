@@ -7,6 +7,7 @@
  */
 
 #include "ndn-lite-ecc.h"
+#include "ndn-lite-sha.h"
 #include "ndn-lite-sec-utils.h"
 
 ndn_ecc_backend_t ndn_ecc_backend;
@@ -80,7 +81,11 @@ ndn_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
                const ndn_ecc_prv_t* ecc_prv_key,
                uint8_t ecdsa_type, uint32_t* output_used_size)
 {
-  return ndn_ecc_backend.ecdsa_sign(input_value, input_size,
+  uint8_t hash_result[NDN_SEC_SHA256_HASH_SIZE] = {0};
+  if (ndn_sha256(input_value, input_size, hash_result) != NDN_SUCCESS)
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
+
+  return ndn_ecc_backend.ecdsa_sign(hash_result, sizeof(hash_result),
                                     output_value, output_max_size,
                                     &ecc_prv_key->abs_key,
                                     ecdsa_type, output_used_size);
@@ -92,7 +97,11 @@ ndn_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
                  const ndn_ecc_pub_t* ecc_pub_key,
                  uint8_t ecdsa_type)
 {
-  return ndn_ecc_backend.ecdsa_verify(input_value, input_size,
+  uint8_t hash_result[NDN_SEC_SHA256_HASH_SIZE] = {0};
+  if (ndn_sha256(input_value, input_size, hash_result) != NDN_SUCCESS)
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
+
+  return ndn_ecc_backend.ecdsa_verify(hash_result, sizeof(hash_result),
                                       sig_value, sig_size,
                                       &ecc_pub_key->abs_key, ecdsa_type);
 }

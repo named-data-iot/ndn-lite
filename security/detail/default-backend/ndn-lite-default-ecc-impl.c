@@ -181,10 +181,6 @@ ndn_lite_default_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
   if (abs_key->key_size > NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE)
     return NDN_SEC_WRONG_KEY_SIZE;
 
-  uint8_t input_hash[NDN_SEC_SHA256_HASH_SIZE] = {0};
-  if (ndn_sha256(input_value, input_size, input_hash) != NDN_SUCCESS) {
-    return NDN_SEC_CRYPTO_ALGO_FAILURE;
-  }
   uECC_Curve curve;
   uint32_t raw_signature_size = 0;
   switch(ecdsa_type){
@@ -216,7 +212,7 @@ ndn_lite_default_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
     return ret_val;
   }
 
-  if (uECC_verify(abs_key->key_value, input_hash, sizeof(input_hash),
+  if (uECC_verify(abs_key->key_value, input_value, input_size,
                   raw_sig_temp_buf, curve) == 0) {
     return NDN_SEC_FAIL_VERIFY_SIG;
   }
@@ -235,10 +231,6 @@ ndn_lite_default_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
   if (abs_key->key_size > NDN_SEC_ECC_SECP256R1_PRIVATE_KEY_SIZE)
     return NDN_SEC_WRONG_KEY_SIZE;
 
-  uint8_t input_hash[NDN_SEC_SHA256_HASH_SIZE] = {0};
-  if (ndn_sha256(input_value, input_size, input_hash) != NDN_SUCCESS) {
-    return NDN_SEC_CRYPTO_ALGO_FAILURE;
-  }
   uECC_Curve curve;
   uint32_t signature_size = 0;
   switch (ecdsa_type) {
@@ -276,10 +268,10 @@ ndn_lite_default_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
   ctx->uECC.block_size = NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE;
   ctx->uECC.result_size = NDN_SEC_ECC_SECP256R1_PRIVATE_KEY_SIZE;
   ctx->uECC.tmp = tmp;
-  ecc_sign_result = uECC_sign_deterministic(abs_key->key_value, input_hash, sizeof(input_hash),
+  ecc_sign_result = uECC_sign_deterministic(abs_key->key_value, input_value, input_size,
                                             &ctx->uECC, output_value, curve);
 #else
-  ecc_sign_result = uECC_sign(abs_key->key_value, input_hash, sizeof(input_hash),
+  ecc_sign_result = uECC_sign(abs_key->key_value, input_value, input_size,
                               output_value, curve);
 #endif
   if (ecc_sign_result == 0) {
