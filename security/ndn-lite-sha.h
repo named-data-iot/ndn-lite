@@ -17,8 +17,14 @@
 extern "C" {
 #endif
 
+/**
+ * The opaque abstract SHA256 state struct to be implemented by the backend.
+ */
 typedef struct abstract_sha256_state abstract_sha256_state_t;
 
+/**
+ * The APIs that are supposed to be implemented by the backend.
+ */
 typedef int (*ndn_sha256_init_impl)(abstract_sha256_state_t* state);
 typedef int (*ndn_sha256_update_impl)(abstract_sha256_state_t* state, const uint8_t* data, uint32_t datalen);
 typedef int (*ndn_sha256_finish_impl)(abstract_sha256_state_t* state, uint8_t* hash_result);
@@ -44,12 +50,32 @@ typedef struct ndn_sha256_state {
 ndn_sha_backend_t*
 ndn_sha_get_backend(void);
 
+
+/**
+ *  SHA256 initialization procedure.
+ *  @param state. Input. SHA256 state struct.
+ *  @return NDN_SUCCESS (0) if there if no error.
+ */
 int
 ndn_sha256_init(ndn_sha256_state_t* state);
 
+/*
+ *  SHA256 update procedure. Hashes datalen bytes addressed by data into state
+ *  @note Assumes state has been initialized
+ *  @param state. Input. SHA256 state struct.
+ *  @param data. Input. message to hash.
+ *  @param datalen. Input. length of message to hash.
+ *  @return NDN_SUCCESS (0) if there is no error.
+ */
 int
 ndn_sha256_update(ndn_sha256_state_t* state, const uint8_t* data, uint32_t datalen);
 
+/**
+ *  SHA256 final procedure. Inserts the completed hash computation into digest.
+ *  @param hash_result. Output. digest in unsigned eight bit integer.
+ *  @param state. Input. SHA256 state struct.
+ *  @return NDN_SUCCESS (0) if there is no error.
+ */
 int
 ndn_sha256_finish(ndn_sha256_state_t* state, uint8_t* hash_result);
 
