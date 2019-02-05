@@ -19,9 +19,33 @@ ndn_sha_get_backend(void)
 }
 
 int
+ndn_sha256_init(ndn_sha256_state_t* state)
+{
+  return ndn_sha_backend.sha256_init(&state->abs_state);
+}
+
+int
+ndn_sha256_update(ndn_sha256_state_t* state, const uint8_t* data, uint32_t datalen)
+{
+  return ndn_sha_backend.sha256_update(&state->abs_state, data, datalen);
+}
+
+int
+ndn_sha256_finish(ndn_sha256_state_t* state, uint8_t* hash_result)
+{
+  return ndn_sha_backend.sha256_finish(&state->abs_state, hash_result);
+}
+
+int
 ndn_sha256(const uint8_t* data, uint32_t datalen, uint8_t* hash_result)
 {
-  return ndn_sha_backend.sha256(data, datalen, hash_result);
+  ndn_sha256_state_t state;
+  if (ndn_sha256_init(&state) != NDN_SUCCESS)
+    return NDN_SEC_INIT_FAILURE;
+  if (ndn_sha256_update(&state, data, datalen) != NDN_SUCCESS)
+    return NDN_SEC_INIT_FAILURE;
+  if (ndn_sha256_finish(&state, hash_result) != NDN_SUCCESS)
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
 }
 
 int

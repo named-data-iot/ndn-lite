@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2019 Zhiyi Zhang
+ * Copyright (C) 2018 - 2019 Zhiyi Zhang, Tianyuan Yu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -16,17 +16,41 @@
 extern "C" {
 #endif
 
-typedef int (*ndn_sha256_impl)(const uint8_t* data, uint32_t datalen, uint8_t* hash_result);
+typedef struct abstract_sha256_state abstract_sha256_state_t;
+
+typedef int (*ndn_sha256_init)(abstract_sha256_state_t* state);
+typedef int (*ndn_sha256_update)(abstract_sha256_state_t* state, const uint8_t* data, uint32_t datalen);
+typedef int (*ndn_sha256_finish)(abstract_sha256_state_t* state, uint8_t* hash_result);
 
 /**
  * The structure to represent the backend implementation.
  */
 typedef struct ndn_sha_backend {
-  ndn_sha256_impl sha256;
+  ndn_sha256_init sha256_init;
+  ndn_sha256_update sha256_update;
+  ndn_sha256_finish sha256_finish;
 } ndn_sha_backend_t;
+
+
+/**
+ * The structure to represent the SHA256 hash state.
+ */
+typedef struct ndn_sha256_state {
+  abstract_sha256_state_t abs_state;
+
+} ndn_sha256_state_t;
 
 ndn_sha_backend_t*
 ndn_sha_get_backend(void);
+
+int
+ndn_sha256_init(ndn_sha256_state_t* state);
+
+int
+ndn_sha256_update(ndn_sha256_state_t* state, const uint8_t* data, uint32_t datalen);
+
+int
+ndn_sha256_finish(ndn_sha256_state_t* state, uint8_t* hash_result);
 
 int
 ndn_sha256(const uint8_t* data, uint32_t datalen, uint8_t* hash_result);
