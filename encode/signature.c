@@ -8,11 +8,12 @@
 
 #include "signature.h"
 
-#include "ndn-lite/ndn-constants.h"
-
 int
 ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* signature)
 {
+
+  int ret_val = -1;
+  
   uint32_t info_buffer_size = encoder_probe_block_size(TLV_SignatureType, 1);
   uint32_t key_name_block_size = 0;
   uint32_t validity_period_buffer_size = 0;
@@ -35,47 +36,69 @@ ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* sig
   }
 
   // signatureinfo header
-  encoder_append_type(encoder, TLV_SignatureInfo);
-  encoder_append_length(encoder, info_buffer_size);
+  ret_val = encoder_append_type(encoder, TLV_SignatureInfo);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_length(encoder, info_buffer_size);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   // signature type
-  encoder_append_type(encoder, TLV_SignatureType);
-  encoder_append_length(encoder, 1);
-  encoder_append_byte_value(encoder, signature->sig_type);
+  ret_val = encoder_append_type(encoder, TLV_SignatureType);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_length(encoder, 1);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_byte_value(encoder, signature->sig_type);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   // key locator
   if (signature->enable_KeyLocator) {
-    encoder_append_type(encoder, TLV_KeyLocator);
-    encoder_append_length(encoder, key_name_block_size);
-    ndn_name_tlv_encode(encoder, &signature->key_locator_name);
+    ret_val = encoder_append_type(encoder, TLV_KeyLocator);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(encoder, key_name_block_size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = ndn_name_tlv_encode(encoder, &signature->key_locator_name);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
 
   // signature info nonce
   if (signature->enable_SignatureInfoNonce > 0) {
-    encoder_append_type(encoder, TLV_Nonce);
-    encoder_append_length(encoder, 4);
-    encoder_append_uint32_value(encoder, signature->signature_info_nonce);
+    ret_val = encoder_append_type(encoder, TLV_Nonce);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(encoder, 4);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_uint32_value(encoder, signature->signature_info_nonce);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
 
   // timestamp
   if (signature->enable_Timestamp > 0) {
-    encoder_append_type(encoder, TLV_SignedInterestTimestamp);
-    encoder_append_length(encoder, encoder_probe_uint_length(signature->timestamp));
-    encoder_append_uint_value(encoder, signature->timestamp);
+    ret_val = encoder_append_type(encoder, TLV_SignedInterestTimestamp);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(encoder, encoder_probe_uint_length(signature->timestamp));
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_uint_value(encoder, signature->timestamp);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
 
   // validity period
   if (signature->enable_ValidityPeriod) {
-    encoder_append_type(encoder, TLV_ValidityPeriod);
-    encoder_append_length(encoder, validity_period_buffer_size);
+    ret_val = encoder_append_type(encoder, TLV_ValidityPeriod);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(encoder, validity_period_buffer_size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
 
-    encoder_append_type(encoder, TLV_NotBefore);
-    encoder_append_length(encoder, 15);
-    encoder_append_raw_buffer_value(encoder, signature->validity_period.not_before, 15);
+    ret_val = encoder_append_type(encoder, TLV_NotBefore);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(encoder, 15);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_raw_buffer_value(encoder, signature->validity_period.not_before, 15);
+    if (ret_val != NDN_SUCCESS) return ret_val;
 
-    encoder_append_type(encoder, TLV_NotAfter);
-    encoder_append_length(encoder, 15);
-    encoder_append_raw_buffer_value(encoder, signature->validity_period.not_after, 15);
+    ret_val = encoder_append_type(encoder, TLV_NotAfter);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(encoder, 15);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_raw_buffer_value(encoder, signature->validity_period.not_after, 15);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
   return 0;
 }
@@ -83,61 +106,89 @@ ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* sig
 int
 ndn_signature_value_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* signature)
 {
-  encoder_append_type(encoder, TLV_SignatureValue);
-  encoder_append_length(encoder, signature->sig_size);
-  encoder_append_raw_buffer_value(encoder, signature->sig_value, signature->sig_size);
+
+  int ret_val = -1;
+  
+  ret_val = encoder_append_type(encoder, TLV_SignatureValue);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_length(encoder, signature->sig_size);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_raw_buffer_value(encoder, signature->sig_value, signature->sig_size);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   return 0;
 }
 
 int
 ndn_signature_info_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signature)
 {
+
+  int ret_val = -1;
+  
   ndn_signature_init(signature);
 
   uint32_t probe = 0;
-  decoder_get_type(decoder, &probe);
+  ret_val = decoder_get_type(decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   if (probe != TLV_SignatureInfo)
     return NDN_WRONG_TLV_TYPE;
   uint32_t value_length = 0;
-  decoder_get_length(decoder, &value_length);
+  ret_val = decoder_get_length(decoder, &value_length);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   uint32_t value_starting = decoder->offset;
 
   // signature type
-  decoder_get_type(decoder, &probe);
-  decoder_get_length(decoder, &probe);
-  decoder_get_byte_value(decoder, &signature->sig_type);
+  ret_val = decoder_get_type(decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = decoder_get_length(decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = decoder_get_byte_value(decoder, &signature->sig_type);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   while (decoder->offset < value_starting + value_length) {
-    decoder_get_type(decoder, &probe);
+    ret_val = decoder_get_type(decoder, &probe);
+    if (ret_val != NDN_SUCCESS) return ret_val;
     if (probe == TLV_KeyLocator) {
       signature->enable_KeyLocator = 1;
-      decoder_get_length(decoder, &probe);
-      ndn_name_tlv_decode(decoder, &signature->key_locator_name);
+      ret_val = decoder_get_length(decoder, &probe);
+      if (ret_val != NDN_SUCCESS) return ret_val;
+      ret_val = ndn_name_tlv_decode(decoder, &signature->key_locator_name);
+      if (ret_val != NDN_SUCCESS) return ret_val;
     }
     else if (probe == TLV_ValidityPeriod) {
       signature->enable_ValidityPeriod = 1;
-      decoder_get_length(decoder, &probe);
+      ret_val = decoder_get_length(decoder, &probe);
+      if (ret_val != NDN_SUCCESS) return ret_val;
 
-      decoder_get_type(decoder, &probe);
-      decoder_get_length(decoder, &probe);
-      decoder_get_raw_buffer_value(decoder, signature->validity_period.not_before, 15);
+      ret_val = decoder_get_type(decoder, &probe);
+      if (ret_val != NDN_SUCCESS) return ret_val;
+      ret_val = decoder_get_length(decoder, &probe);
+      if (ret_val != NDN_SUCCESS) return ret_val;
+      ret_val = decoder_get_raw_buffer_value(decoder, signature->validity_period.not_before, 15);
+      if (ret_val != NDN_SUCCESS) return ret_val;
 
-      decoder_get_type(decoder, &probe);
-      decoder_get_length(decoder, &probe);
-      decoder_get_raw_buffer_value(decoder, signature->validity_period.not_after, 15);
+      ret_val = decoder_get_type(decoder, &probe);
+      if (ret_val != NDN_SUCCESS) return ret_val;
+      ret_val = decoder_get_length(decoder, &probe);
+      if (ret_val != NDN_SUCCESS) return ret_val;
+      ret_val = decoder_get_raw_buffer_value(decoder, signature->validity_period.not_after, 15);
+      if (ret_val != NDN_SUCCESS) return ret_val;
     }
     else if (probe == TLV_Nonce) {
       signature->enable_SignatureInfoNonce = 1;
-      decoder_get_length(decoder, &probe);
+      ret_val = decoder_get_length(decoder, &probe);
+      if (ret_val != NDN_SUCCESS) return ret_val;
       if (probe != 4) {
         return NDN_WRONG_TLV_LENGTH;
       }
-      decoder_get_uint32_value(decoder, &signature->signature_info_nonce);
+      ret_val = decoder_get_uint32_value(decoder, &signature->signature_info_nonce);
+      if (ret_val != NDN_SUCCESS) return ret_val;
     }
     else if (probe == TLV_SignedInterestTimestamp) {
       signature->enable_Timestamp = 1;
-      decoder_get_length(decoder, &probe);
-      decoder_get_uint_value(decoder, probe, &signature->timestamp);
+      ret_val = decoder_get_length(decoder, &probe);
+      if (ret_val != NDN_SUCCESS) return ret_val;
+      ret_val = decoder_get_uint_value(decoder, probe, &signature->timestamp);
+      if (ret_val != NDN_SUCCESS) return ret_val;
     }
     else
       return NDN_WRONG_TLV_TYPE;
@@ -148,16 +199,21 @@ ndn_signature_info_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signature
 int
 ndn_signature_value_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signature)
 {
+
+  int ret_val = -1;
+  
   uint32_t probe = 0;
-  decoder_get_type(decoder, &probe);
+  ret_val = decoder_get_type(decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   if (probe != TLV_SignatureValue)
     return NDN_WRONG_TLV_TYPE;
-  decoder_get_length(decoder, &probe);
+  ret_val = decoder_get_length(decoder, &probe);
   if (probe > NDN_SEC_MAX_SIG_SIZE)
     return NDN_WRONG_TLV_LENGTH;
   if (probe < NDN_SEC_MIN_SIG_SIZE)
     return NDN_WRONG_TLV_LENGTH;
   signature->sig_size = probe;
-  decoder_get_raw_buffer_value(decoder, signature->sig_value, signature->sig_size);
+  ret_val = decoder_get_raw_buffer_value(decoder, signature->sig_value, signature->sig_size);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   return 0;
 }

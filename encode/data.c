@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Zhiyi Zhang
+ * Copyright (C) Zhiyi Zhang, Edward Lu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -13,6 +13,8 @@
 #include "../security/ndn-lite-sha.h"
 #include "../security/ndn-lite-aes.h"
 #include "../security/ndn-lite-ecc.h"
+#include "encoder.h"
+#include "../ndn-error-code.h"
 
 /************************************************************/
 /*  Helper functions for signed interest APIs               */
@@ -24,23 +26,30 @@
 static int
 _ndn_data_prepare_unsigned_block(ndn_encoder_t* encoder, const ndn_data_t* data)
 {
+  int ret_val = -1;
   // name
-  ndn_name_tlv_encode(encoder, &data->name);
+  ret_val = ndn_name_tlv_encode(encoder, &data->name);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
   // meta info
-  ndn_metainfo_tlv_encode(encoder, &data->metainfo);
+  ret_val = ndn_metainfo_tlv_encode(encoder, &data->metainfo);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
   // content
-  encoder_append_type(encoder, TLV_Content);
-  encoder_append_length(encoder, data->content_size);
-  encoder_append_raw_buffer_value(encoder, data->content_value, data->content_size);
+  ret_val = encoder_append_type(encoder, TLV_Content);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
+  ret_val = encoder_append_length(encoder, data->content_size);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
+  ret_val = encoder_append_raw_buffer_value(encoder, data->content_value, data->content_size);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
   // signature info
-  ndn_signature_info_tlv_encode(encoder, &data->signature);
-  return 0;
+  ret_val = ndn_signature_info_tlv_encode(encoder, &data->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
+  return NDN_SUCCESS;
 }
 
 static void
 _prepare_signature_info(ndn_data_t* data, uint8_t signature_type,
                         const ndn_name_t* producer_identity, uint32_t key_id)
-{
+{ 
   uint8_t raw_key_id[4] = {0};
   raw_key_id[0] = (key_id >> 24) & 0xFF;
   raw_key_id[1] = (key_id >> 16) & 0xFF;
@@ -70,6 +79,9 @@ _prepare_signature_info(ndn_data_t* data, uint8_t signature_type,
 int
 ndn_data_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_data_t* data)
 {
+
+  int ret_val = -1;
+  
   // set signature info
   ndn_signature_init(&data->signature);
   ndn_signature_set_signature_type(&data->signature, NDN_SIG_TYPE_DIGEST_SHA256);
@@ -85,11 +97,14 @@ ndn_data_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_data_t* data)
   data_buffer_size += ndn_signature_value_probe_block_size(&data->signature);
 
   // data T and L
-  encoder_append_type(encoder, TLV_Data);
-  encoder_append_length(encoder, data_buffer_size);
+  ret_val = encoder_append_type(encoder, TLV_Data);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
+  ret_val = encoder_append_length(encoder, data_buffer_size);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
 
   uint32_t sign_input_starting = encoder->offset;
-  _ndn_data_prepare_unsigned_block(encoder, data);
+  ret_val = _ndn_data_prepare_unsigned_block(encoder, data);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
   uint32_t sign_input_ending = encoder->offset;
 
   // sign data
@@ -102,7 +117,9 @@ ndn_data_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_data_t* data)
     return result;
 
   // finish encoding
-  ndn_signature_value_tlv_encode(encoder, &data->signature);
+  ret_val = ndn_signature_value_tlv_encode(encoder, &data->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
+
   return 0;
 }
 
@@ -110,6 +127,9 @@ int
 ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
                                const ndn_name_t* producer_identity, const ndn_ecc_prv_t* prv_key)
 {
+
+  int ret_val = -1;
+  
   // ecdsa signing is a special case; the length of the packet cannot be known until after the signature
   // is generated, so the data's unsigned block must be prepared and signed, and then the data tlv type 
   // and length can be added
@@ -121,10 +141,12 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
   // data tlv type and length; the finished packet will be memmoved to the beginning of the 
   // encoder's buffer
   uint32_t initial_offset = NDN_TLV_TYPE_FIELD_MAX_SIZE + NDN_TLV_LENGTH_FIELD_MAX_SIZE;
-  encoder_move_forward(encoder, initial_offset);
+  ret_val = encoder_move_forward(encoder, initial_offset);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
 
   uint32_t sign_input_starting = encoder->offset;
-  _ndn_data_prepare_unsigned_block(encoder, data);
+  ret_val = _ndn_data_prepare_unsigned_block(encoder, data);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
   uint32_t sign_input_ending = encoder->offset;
 
   // sign data
@@ -142,15 +164,17 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
   // signature info
   data_buffer_size += ndn_signature_info_probe_block_size(&data->signature);
   // signature value
-  data_buffer_size += sig_len;
+  data_buffer_size += encoder_probe_block_size(TLV_SignatureValue, sig_len);
 
   // add the data's tlv type and length
   uint32_t data_tlv_length_field_size = encoder_get_var_size(data_buffer_size);
   encoder->offset = sign_input_starting - data_tlv_length_field_size;
-  encoder_append_length(encoder, data_buffer_size);
+  ret_val = encoder_append_length(encoder, data_buffer_size);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
   uint32_t data_tlv_type_field_size = encoder_get_var_size(TLV_Data);
   encoder->offset -= (data_tlv_length_field_size + data_tlv_type_field_size);
-  encoder_append_type(encoder, TLV_Data);
+  ret_val = encoder_append_type(encoder, TLV_Data);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
 
   // memmove the constructed packet (excluding signature tlv block) to the beginning of the encoder
   // buffer
@@ -164,14 +188,25 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
   if (result < 0)
     return result;
 
+  uint32_t sig_tlv_type_field_size = encoder_get_var_size(TLV_SignatureValue);
+  uint32_t sig_tlv_length_field_size = encoder_get_var_size(sig_len);
+  
   // reset the encoder's offset to be at the beginning of the signature tlv block
-  encoder->offset += data_tlv_type_field_size + data_tlv_length_field_size + data_buffer_size - sig_len - initial_offset + 1;
+  encoder->offset = 0;
+  encoder->offset += data_tlv_type_field_size +
+                     data_tlv_length_field_size +
+                     data_buffer_size -
+                     sig_len -
+                     sig_tlv_type_field_size -
+                     sig_tlv_length_field_size;
 
   // set the signature size of the signature to the size of the ASN.1 encoded ecdsa signature
   data->signature.sig_size = sig_len;
 
   // finish encoding
-  ndn_signature_value_tlv_encode(encoder, &data->signature);
+  ret_val = ndn_signature_value_tlv_encode(encoder, &data->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
+
   return 0;
 }
 
@@ -179,6 +214,9 @@ int
 ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
                               const ndn_name_t* producer_identity, const ndn_hmac_key_t* hmac_key)
 {
+
+  int ret_val = -1;
+  
   // set signature info
   _prepare_signature_info(data, NDN_SIG_TYPE_HMAC_SHA256, producer_identity, hmac_key->key_id);
   uint32_t data_buffer_size = ndn_name_probe_block_size(&data->name);
@@ -193,11 +231,14 @@ ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
   data_buffer_size += ndn_signature_value_probe_block_size(&data->signature);
 
   // data T and L
-  encoder_append_type(encoder, TLV_Data);
-  encoder_append_length(encoder, data_buffer_size);
+  ret_val = encoder_append_type(encoder, TLV_Data);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
+  ret_val = encoder_append_length(encoder, data_buffer_size);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
 
   uint32_t sign_input_starting = encoder->offset;
-  _ndn_data_prepare_unsigned_block(encoder, data);
+  ret_val = _ndn_data_prepare_unsigned_block(encoder, data);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
   uint32_t sign_input_ending = encoder->offset;
 
 
@@ -211,7 +252,8 @@ ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
     return result;
 
   // finish encoding
-  ndn_signature_value_tlv_encode(encoder, &data->signature);
+  ret_val = ndn_signature_value_tlv_encode(encoder, &data->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
 
   return 0;
 }
@@ -219,35 +261,46 @@ ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
 int
 ndn_data_tlv_decode_no_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size)
 {
+
+  int ret_val = -1;
+  
   ndn_decoder_t decoder;
   decoder_init(&decoder, block_value, block_size);
 
   uint32_t probe;
-  decoder_get_type(&decoder, &probe);
-  decoder_get_length(&decoder, &probe);
+  ret_val = decoder_get_type(&decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
+  ret_val = decoder_get_length(&decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
 
   // name
-  ndn_name_tlv_decode(&decoder, &data->name);
+  ret_val = ndn_name_tlv_decode(&decoder, &data->name);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
 
   // meta info
-  ndn_metainfo_tlv_decode(&decoder, &data->metainfo);
+  ret_val = ndn_metainfo_tlv_decode(&decoder, &data->metainfo);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
 
   // content
-  decoder_get_type(&decoder, &probe);
+  ret_val = decoder_get_type(&decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val; 
   switch(probe)
   {
     case TLV_Content:
-      decoder_get_length(&decoder, &probe);
+      ret_val = decoder_get_length(&decoder, &probe);
+      if (ret_val != NDN_SUCCESS) return ret_val; 
       if (probe > NDN_CONTENT_BUFFER_SIZE) {
         return NDN_OVERSIZE;
       }
       data->content_size = probe;
-      decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+      ret_val = decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+      if (ret_val != NDN_SUCCESS) return ret_val; 
       break;
 
     case TLV_SignatureInfo:
       data->content_size = 0;
-      decoder_move_backward(&decoder, 1);
+      ret_val = decoder_move_backward(&decoder, 1);
+      if (ret_val != NDN_SUCCESS) return ret_val; 	
       break;
 
     default:
@@ -255,7 +308,8 @@ ndn_data_tlv_decode_no_verify(ndn_data_t* data, const uint8_t* block_value, uint
   }
 
   // signature info
-  ndn_signature_info_tlv_decode(&decoder, &data->signature);
+  ret_val = ndn_signature_info_tlv_decode(&decoder, &data->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;   
 
   // signature value
   int result = ndn_signature_value_tlv_decode(&decoder, &data->signature);
@@ -269,36 +323,47 @@ ndn_data_tlv_decode_no_verify(ndn_data_t* data, const uint8_t* block_value, uint
 int
 ndn_data_tlv_decode_digest_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size)
 {
+
+  int ret_val = -1;
+  
   ndn_decoder_t decoder;
   decoder_init(&decoder, block_value, block_size);
 
   uint32_t probe;
-  decoder_get_type(&decoder, &probe);
-  decoder_get_length(&decoder, &probe);
+  ret_val = decoder_get_type(&decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = decoder_get_length(&decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   uint32_t input_starting = decoder.offset;
 
   // name
-  ndn_name_tlv_decode(&decoder, &data->name);
+  ret_val = ndn_name_tlv_decode(&decoder, &data->name);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   // meta info
-  ndn_metainfo_tlv_decode(&decoder, &data->metainfo);
+  ret_val = ndn_metainfo_tlv_decode(&decoder, &data->metainfo);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   // content
-  decoder_get_type(&decoder, &probe);
+  ret_val = decoder_get_type(&decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   switch(probe)
   {
     case TLV_Content:
-      decoder_get_length(&decoder, &probe);
+      ret_val = decoder_get_length(&decoder, &probe);
+      if (ret_val != NDN_SUCCESS) return ret_val;
       if (probe > NDN_CONTENT_BUFFER_SIZE) {
         return NDN_OVERSIZE;
       }
       data->content_size = probe;
-      decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+      ret_val = decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+      if (ret_val != NDN_SUCCESS) return ret_val;
       break;
 
     case TLV_SignatureInfo:
       data->content_size = 0;
-      decoder_move_backward(&decoder, 1);
+      ret_val = decoder_move_backward(&decoder, 1);
+      if (ret_val != NDN_SUCCESS) return ret_val;
       break;
 
     default:
@@ -306,11 +371,13 @@ ndn_data_tlv_decode_digest_verify(ndn_data_t* data, const uint8_t* block_value, 
   }
 
   // signature info
-  ndn_signature_info_tlv_decode(&decoder, &data->signature);
+  ret_val = ndn_signature_info_tlv_decode(&decoder, &data->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   uint32_t input_ending = decoder.offset;
 
   // signature value
-  ndn_signature_value_tlv_decode(&decoder, &data->signature);
+  ret_val = ndn_signature_value_tlv_decode(&decoder, &data->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   int result = ndn_sha256_verify(decoder.input_value + input_starting,
                                  input_ending - input_starting,
@@ -325,36 +392,47 @@ int
 ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size,
                                  const ndn_ecc_pub_t* pub_key)
 {
+
+  int ret_val = -1;
+  
   ndn_decoder_t decoder;
   decoder_init(&decoder, block_value, block_size);
 
   uint32_t probe;
-  decoder_get_type(&decoder, &probe);
-  decoder_get_length(&decoder, &probe);
+  ret_val = decoder_get_type(&decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = decoder_get_length(&decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   uint32_t input_starting = decoder.offset;
 
   // name
-  ndn_name_tlv_decode(&decoder, &data->name);
+  ret_val = ndn_name_tlv_decode(&decoder, &data->name);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   // meta info
-  ndn_metainfo_tlv_decode(&decoder, &data->metainfo);
+  ret_val = ndn_metainfo_tlv_decode(&decoder, &data->metainfo);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   // content
-  decoder_get_type(&decoder, &probe);
+  ret_val = decoder_get_type(&decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   switch(probe)
   {
     case TLV_Content:
-      decoder_get_length(&decoder, &probe);
+      ret_val = decoder_get_length(&decoder, &probe);
+      if (ret_val != NDN_SUCCESS) return ret_val;
       if (probe > NDN_CONTENT_BUFFER_SIZE) {
         return NDN_OVERSIZE;
       }
       data->content_size = probe;
-      decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+      ret_val = decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+      if (ret_val != NDN_SUCCESS) return ret_val;
       break;
 
     case TLV_SignatureInfo:
       data->content_size = 0;
-      decoder_move_backward(&decoder, 1);
+      ret_val = decoder_move_backward(&decoder, 1);
+      if (ret_val != NDN_SUCCESS) return ret_val;
       break;
 
     default:
@@ -362,11 +440,13 @@ ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, u
   }
 
   // signature info
-  ndn_signature_info_tlv_decode(&decoder, &data->signature);
+  ret_val = ndn_signature_info_tlv_decode(&decoder, &data->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   uint32_t input_ending = decoder.offset;
 
   // signature value
-  ndn_signature_value_tlv_decode(&decoder, &data->signature);
+  ret_val = ndn_signature_value_tlv_decode(&decoder, &data->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   int result = ndn_ecdsa_verify(decoder.input_value + input_starting,
                                 input_ending - input_starting,
@@ -382,36 +462,47 @@ int
 ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size,
                                 const ndn_hmac_key_t* hmac_key)
 {
+
+  int ret_val = -1;
+  
   ndn_decoder_t decoder;
   decoder_init(&decoder, block_value, block_size);
 
   uint32_t probe;
-  decoder_get_type(&decoder, &probe);
-  decoder_get_length(&decoder, &probe);
+  ret_val = decoder_get_type(&decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = decoder_get_length(&decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   uint32_t input_starting = decoder.offset;
 
   // name
-  ndn_name_tlv_decode(&decoder, &data->name);
+  ret_val = ndn_name_tlv_decode(&decoder, &data->name);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   // meta info
-  ndn_metainfo_tlv_decode(&decoder, &data->metainfo);
+  ret_val = ndn_metainfo_tlv_decode(&decoder, &data->metainfo);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   // content
-  decoder_get_type(&decoder, &probe);
+  ret_val = decoder_get_type(&decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   switch(probe)
   {
     case TLV_Content:
-      decoder_get_length(&decoder, &probe);
+      ret_val = decoder_get_length(&decoder, &probe);
+      if (ret_val != NDN_SUCCESS) return ret_val;
       if (probe > NDN_CONTENT_BUFFER_SIZE) {
         return NDN_OVERSIZE;
       }
       data->content_size = probe;
-      decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+      ret_val = decoder_get_raw_buffer_value(&decoder, data->content_value, data->content_size);
+      if (ret_val != NDN_SUCCESS) return ret_val;
       break;
 
     case TLV_SignatureInfo:
       data->content_size = 0;
-      decoder_move_backward(&decoder, 1);
+      ret_val = decoder_move_backward(&decoder, 1);
+      if (ret_val != NDN_SUCCESS) return ret_val;
       break;
 
     default:
@@ -419,11 +510,13 @@ ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, ui
   }
 
   // signature info
-  ndn_signature_info_tlv_decode(&decoder, &data->signature);
+  ret_val = ndn_signature_info_tlv_decode(&decoder, &data->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   uint32_t input_ending = decoder.offset;
 
   // signature value
-  ndn_signature_value_tlv_decode(&decoder, &data->signature);
+  ret_val = ndn_signature_value_tlv_decode(&decoder, &data->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   int result = ndn_hmac_verify(decoder.input_value + input_starting,
                                input_ending - input_starting,
@@ -441,6 +534,9 @@ ndn_data_set_encrypted_content(ndn_data_t* data,
                                const ndn_name_t* key_id, const uint8_t* aes_iv,
                                const ndn_aes_key_t* key)
 {
+
+  int ret_val = -1;
+  
   uint32_t v_size = 0;
   v_size += ndn_name_probe_block_size(key_id);
   v_size += encoder_probe_block_size(TLV_AC_AES_IV, NDN_AES_BLOCK_SIZE);
@@ -456,24 +552,33 @@ ndn_data_set_encrypted_content(ndn_data_t* data,
   encoder_init(&encoder, data->content_value, NDN_CONTENT_BUFFER_SIZE);
 
   // type: TLV_AC_ENCRYPTED_CONTENT
-  encoder_append_type(&encoder, TLV_AC_ENCRYPTED_CONTENT);
-  encoder_append_length(&encoder, v_size);
+  ret_val = encoder_append_type(&encoder, TLV_AC_ENCRYPTED_CONTENT);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_length(&encoder, v_size);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   // type: TLV_NAME
-  ndn_name_tlv_encode(&encoder, key_id);
+  ret_val = ndn_name_tlv_encode(&encoder, key_id);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   // type: TLV_AES_IV
-  encoder_append_type(&encoder, TLV_AC_AES_IV);
-  encoder_append_length(&encoder, NDN_AES_BLOCK_SIZE);
-  encoder_append_raw_buffer_value(&encoder, aes_iv, NDN_AES_BLOCK_SIZE);
+  ret_val = encoder_append_type(&encoder, TLV_AC_AES_IV);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_length(&encoder, NDN_AES_BLOCK_SIZE);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_raw_buffer_value(&encoder, aes_iv, NDN_AES_BLOCK_SIZE);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   // type: ENCRYPTED PAYLOAD
-  encoder_append_type(&encoder, TLV_AC_ENCRYPTED_PAYLOAD);
-  encoder_append_length(&encoder, content_size + NDN_AES_BLOCK_SIZE);
-  ndn_aes_cbc_encrypt(content_value, content_size,
+  ret_val = encoder_append_type(&encoder, TLV_AC_ENCRYPTED_PAYLOAD);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_length(&encoder, content_size + NDN_AES_BLOCK_SIZE);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = ndn_aes_cbc_encrypt(content_value, content_size,
                       encoder.output_value + encoder.offset,
                       encoder.output_max_size - encoder.offset,
                       aes_iv, key);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   encoder.offset += data->content_size + NDN_AES_BLOCK_SIZE;
   data->content_size = encoder.offset;
   return 0;
@@ -484,32 +589,44 @@ ndn_data_parse_encrypted_content(const ndn_data_t* data,
                                  uint8_t* content_value, uint32_t* content_used_size,
                                  ndn_name_t* key_id, uint8_t* aes_iv, const ndn_aes_key_t* key)
 {
+
+  int ret_val = -1;
+  
   ndn_decoder_t decoder;
   // uint8_t toTransform[NDN_CONTENT_BUFFER_SIZE] = {0};
   decoder_init(&decoder, data->content_value, data->content_size);
   uint32_t probe = 0;
 
   // type: TLV_AC_ENCRYPTED_CONTENT
-  decoder_get_type(&decoder, &probe);
+  ret_val = decoder_get_type(&decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   if (probe != TLV_AC_ENCRYPTED_CONTENT)
     return NDN_WRONG_TLV_TYPE;
-  decoder_get_length(&decoder, &probe);
+  ret_val = decoder_get_length(&decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   // type: TLV_NAME
-  ndn_name_tlv_decode(&decoder, key_id);
+  ret_val = ndn_name_tlv_decode(&decoder, key_id);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   // type: TLV_AES_IV
-  decoder_get_type(&decoder, &probe);
-  decoder_get_length(&decoder, &probe);
-  decoder_get_raw_buffer_value(&decoder, aes_iv, NDN_AES_BLOCK_SIZE);
+  ret_val = decoder_get_type(&decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = decoder_get_length(&decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = decoder_get_raw_buffer_value(&decoder, aes_iv, NDN_AES_BLOCK_SIZE);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   // type: ENCRYPTED PAYLOAD
-  decoder_get_type(&decoder, &probe);
-  decoder_get_length(&decoder, &probe);
+  ret_val = decoder_get_type(&decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = decoder_get_length(&decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   *content_used_size = probe - NDN_AES_BLOCK_SIZE;
-  ndn_aes_cbc_decrypt(decoder.input_value + decoder.offset, probe,
+  ret_val = ndn_aes_cbc_decrypt(decoder.input_value + decoder.offset, probe,
                       content_value, probe - NDN_AES_BLOCK_SIZE,
                       aes_iv, key);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   decoder.offset -= probe;
   return 0;
 }

@@ -157,4 +157,4 @@ ndn_metainfo_tlv_encode(ndn_encoder_t* encoder, const ndn_metainfo_t* meta);
 }
 #endif
 
-#endif // NDN_ENCODING_NAME_H
+#endif // NDN_ENCODING_METAINFO_H

@@ -57,6 +57,9 @@ int
 ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
                                const ndn_name_t* identity, const ndn_ecc_prv_t* prv_key)
 {
+
+  int ret_val = -1;
+  
   if (interest->name.components_size + 1 > NDN_NAME_COMPONENTS_SIZE)
     return NDN_OVERSIZE;
 
@@ -71,16 +74,21 @@ ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
   encoder_init(&temp_encoder, be_signed, NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE);
   // the signing input starts at Name's Value (V)
   for (size_t i = 0; i < interest->name.components_size; i++) {
-    name_component_tlv_encode(&temp_encoder, &interest->name.components[i]);
+    ret_val = name_component_tlv_encode(&temp_encoder, &interest->name.components[i]);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
   // the digest input starts at parameters
   uint32_t param_block_starting = temp_encoder.offset;
   if (interest->enable_Parameters) {
-    encoder_append_type(&temp_encoder, TLV_Parameters);
-    encoder_append_length(&temp_encoder, interest->parameters.size);
-    encoder_append_raw_buffer_value(&temp_encoder, interest->parameters.value, interest->parameters.size);
+    ret_val = encoder_append_type(&temp_encoder, TLV_Parameters);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(&temp_encoder, interest->parameters.size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_raw_buffer_value(&temp_encoder, interest->parameters.value, interest->parameters.size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
-  ndn_signature_info_tlv_encode(&temp_encoder, &interest->signature);
+  ret_val = ndn_signature_info_tlv_encode(&temp_encoder, &interest->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   // the signing input ends at signature info
   uint32_t siginfo_block_ending = temp_encoder.offset;
 
@@ -95,7 +103,8 @@ ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
 
   if (result < 0)
     return result;
-  ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
+  ret_val = ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   // calculate the SignedInterestSha256DigestComponent
   // signature is calculated over Name + Parameters + SignatureInfo
@@ -117,6 +126,9 @@ int
 ndn_signed_interest_hmac_sign(ndn_interest_t* interest,
                               const ndn_name_t* identity, const ndn_hmac_key_t* hmac_key)
 {
+
+  int ret_val = -1;
+  
   if (interest->name.components_size + 1 > NDN_NAME_COMPONENTS_SIZE)
     return NDN_OVERSIZE;
 
@@ -131,16 +143,21 @@ ndn_signed_interest_hmac_sign(ndn_interest_t* interest,
   encoder_init(&temp_encoder, be_signed, NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE);
   // the signing input starts at Name's Value (V)
   for (size_t i = 0; i < interest->name.components_size; i++) {
-    name_component_tlv_encode(&temp_encoder, &interest->name.components[i]);
+    ret_val = name_component_tlv_encode(&temp_encoder, &interest->name.components[i]);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
   // the digest input starts at parameters
   uint32_t param_block_starting = temp_encoder.offset;
   if (interest->enable_Parameters) {
-    encoder_append_type(&temp_encoder, TLV_Parameters);
-    encoder_append_length(&temp_encoder, interest->parameters.size);
-    encoder_append_raw_buffer_value(&temp_encoder, interest->parameters.value, interest->parameters.size);
+    ret_val = encoder_append_type(&temp_encoder, TLV_Parameters);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(&temp_encoder, interest->parameters.size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_raw_buffer_value(&temp_encoder, interest->parameters.value, interest->parameters.size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
-  ndn_signature_info_tlv_encode(&temp_encoder, &interest->signature);
+  ret_val = ndn_signature_info_tlv_encode(&temp_encoder, &interest->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   // the signing input ends at signature info
   uint32_t siginfo_block_ending = temp_encoder.offset;
 
@@ -154,7 +171,8 @@ ndn_signed_interest_hmac_sign(ndn_interest_t* interest,
   interest->signature.sig_size = used_bytes;
   if (result < 0)
     return result;
-  ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
+  ret_val = ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   // calculate the SignedInterestSha256DigestComponent
   // signature is calculated over Name + Parameters + SignatureInfo
@@ -175,6 +193,9 @@ ndn_signed_interest_hmac_sign(ndn_interest_t* interest,
 int
 ndn_signed_interest_digest_sign(ndn_interest_t* interest)
 {
+
+  int ret_val = -1;
+  
   if (interest->name.components_size + 1 > NDN_NAME_COMPONENTS_SIZE)
     return NDN_OVERSIZE;
 
@@ -191,16 +212,21 @@ ndn_signed_interest_digest_sign(ndn_interest_t* interest)
   encoder_init(&temp_encoder, be_signed, NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE);
   // the signing input starts at Name's Value (V)
   for (size_t i = 0; i < interest->name.components_size; i++) {
-    name_component_tlv_encode(&temp_encoder, &interest->name.components[i]);
+    ret_val = name_component_tlv_encode(&temp_encoder, &interest->name.components[i]);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
   // the digest input starts at parameters
   uint32_t param_block_starting = temp_encoder.offset;
   if (interest->enable_Parameters) {
-    encoder_append_type(&temp_encoder, TLV_Parameters);
-    encoder_append_length(&temp_encoder, interest->parameters.size);
-    encoder_append_raw_buffer_value(&temp_encoder, interest->parameters.value, interest->parameters.size);
+    ret_val = encoder_append_type(&temp_encoder, TLV_Parameters);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(&temp_encoder, interest->parameters.size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_raw_buffer_value(&temp_encoder, interest->parameters.value, interest->parameters.size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
-  ndn_signature_info_tlv_encode(&temp_encoder, &interest->signature);
+  ret_val = ndn_signature_info_tlv_encode(&temp_encoder, &interest->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   // the signing input ends at signature info
   uint32_t siginfo_block_ending = temp_encoder.offset;
 
@@ -214,7 +240,8 @@ ndn_signed_interest_digest_sign(ndn_interest_t* interest)
   interest->signature.sig_size = used_bytes;
   if (result < 0)
     return result;
-  ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
+  ret_val = ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   // calculate the SignedInterestSha256DigestComponent
   // signature is calculated over Name + Parameters + SignatureInfo
@@ -235,25 +262,34 @@ ndn_signed_interest_digest_sign(ndn_interest_t* interest)
 int
 ndn_signed_interest_ecdsa_verify(const ndn_interest_t* interest, const ndn_ecc_pub_t* pub_key)
 {
+
+  int ret_val = -1;
+  
   uint8_t be_signed[NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE] = {0};
   ndn_encoder_t temp_encoder;
   encoder_init(&temp_encoder, be_signed, NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE);
 
   // the signing input starts at Name's Value (V) excluding the ending component
   for (size_t i = 0; i < interest->name.components_size - 1; i++) {
-    name_component_tlv_encode(&temp_encoder, &interest->name.components[i]);
+    ret_val = name_component_tlv_encode(&temp_encoder, &interest->name.components[i]);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
   // the digest input starts at parameters
   uint32_t param_block_starting = temp_encoder.offset;
   if (interest->enable_Parameters) {
-    encoder_append_type(&temp_encoder, TLV_Parameters);
-    encoder_append_length(&temp_encoder, interest->parameters.size);
-    encoder_append_raw_buffer_value(&temp_encoder, interest->parameters.value, interest->parameters.size);
+    ret_val = encoder_append_type(&temp_encoder, TLV_Parameters);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(&temp_encoder, interest->parameters.size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_raw_buffer_value(&temp_encoder, interest->parameters.value, interest->parameters.size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
-  ndn_signature_info_tlv_encode(&temp_encoder, &interest->signature);
+  ret_val = ndn_signature_info_tlv_encode(&temp_encoder, &interest->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   // the signing input ends at signature info
   uint32_t siginfo_block_ending = temp_encoder.offset;
-  ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
+  ret_val = ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   
   int result = ndn_ecdsa_verify(temp_encoder.output_value, siginfo_block_ending,
                                 interest->signature.sig_value, interest->signature.sig_size,
@@ -273,25 +309,34 @@ ndn_signed_interest_ecdsa_verify(const ndn_interest_t* interest, const ndn_ecc_p
 int
 ndn_signed_interest_hmac_verify(const ndn_interest_t* interest, const ndn_hmac_key_t* hmac_key)
 {
+
+  int ret_val = -1;
+  
   uint8_t be_signed[NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE] = {0};
   ndn_encoder_t temp_encoder;
   encoder_init(&temp_encoder, be_signed, NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE);
 
   // the signing input starts at Name's Value (V)
   for (size_t i = 0; i < interest->name.components_size - 1; i++) {
-    name_component_tlv_encode(&temp_encoder, &interest->name.components[i]);
+    ret_val = name_component_tlv_encode(&temp_encoder, &interest->name.components[i]);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
   // the digest input starts at parameters
   uint32_t param_block_starting = temp_encoder.offset;
   if (interest->enable_Parameters) {
-    encoder_append_type(&temp_encoder, TLV_Parameters);
-    encoder_append_length(&temp_encoder, interest->parameters.size);
-    encoder_append_raw_buffer_value(&temp_encoder, interest->parameters.value, interest->parameters.size);
+    ret_val = encoder_append_type(&temp_encoder, TLV_Parameters);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(&temp_encoder, interest->parameters.size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_raw_buffer_value(&temp_encoder, interest->parameters.value, interest->parameters.size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
-  ndn_signature_info_tlv_encode(&temp_encoder, &interest->signature);
+  ret_val = ndn_signature_info_tlv_encode(&temp_encoder, &interest->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   // the signing input ends at signature info
   uint32_t siginfo_block_ending = temp_encoder.offset;
-  ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
+  ret_val = ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   int result = ndn_hmac_verify(temp_encoder.output_value, siginfo_block_ending,
                                interest->signature.sig_value, interest->signature.sig_size,
                                hmac_key);
@@ -310,25 +355,34 @@ ndn_signed_interest_hmac_verify(const ndn_interest_t* interest, const ndn_hmac_k
 int
 ndn_signed_interest_digest_verify(const ndn_interest_t* interest)
 {
+
+  int ret_val = -1;
+  
   uint8_t be_signed[NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE] = {0};
   ndn_encoder_t temp_encoder;
   encoder_init(&temp_encoder, be_signed, NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE);
 
   // the signing input starts at Name's Value (V)
   for (size_t i = 0; i < interest->name.components_size - 1; i++) {
-    name_component_tlv_encode(&temp_encoder, &interest->name.components[i]);
+    ret_val = name_component_tlv_encode(&temp_encoder, &interest->name.components[i]);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
   // the digest input starts at parameters
   uint32_t param_block_starting = temp_encoder.offset;
   if (interest->enable_Parameters) {
-    encoder_append_type(&temp_encoder, TLV_Parameters);
-    encoder_append_length(&temp_encoder, interest->parameters.size);
-    encoder_append_raw_buffer_value(&temp_encoder, interest->parameters.value, interest->parameters.size);
+    ret_val = encoder_append_type(&temp_encoder, TLV_Parameters);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(&temp_encoder, interest->parameters.size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_raw_buffer_value(&temp_encoder, interest->parameters.value, interest->parameters.size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
   }
-  ndn_signature_info_tlv_encode(&temp_encoder, &interest->signature);
+  ret_val = ndn_signature_info_tlv_encode(&temp_encoder, &interest->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
   // the signing input ends at signature info
   uint32_t siginfo_block_ending = temp_encoder.offset;
-  ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
+  ret_val = ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   int result = ndn_sha256_verify(temp_encoder.output_value, siginfo_block_ending,
                                  interest->signature.sig_value, interest->signature.sig_size);
