@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: pyterm
+Version: 1.0
+Summary: Python-based terminal emulator for serial communication
+Home-page: http://riot-os.org/
+Author: Oliver Hahm
+Author-email: ohahm@fu-berlin.de
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
