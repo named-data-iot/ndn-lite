@@ -6,8 +6,8 @@
  * directory for more details.
  */
 
-#include "../alarm.h"
-#include "../system.h"
+#include "alarm.h"
+#include "system.h"
 
 #include "nrf_delay.h"
 

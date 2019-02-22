@@ -9,7 +9,7 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-#include "../../adaptation/platform/alarm.h"
+#include "../../adaptation/ndn-nrf-alarm-adaptation/alarm.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus

@@ -6,7 +6,7 @@
  * directory for more details.
  */
 
-#include "../alarm.h"
+#include "alarm.h"
 
 #include "nrf.h"
 #include "nrf_gpio.h"
@@ -453,7 +453,7 @@ void nrf5_alarm_process(void* instance)
     {
         event_pending = false;
         if (timer_data[ms_timer].fire)
-        {   
+        {
             timer_data[ms_timer].fire = false;
             {
                 ndn_platform_alarm_millis_fire(instance);
@@ -465,7 +465,7 @@ void nrf5_alarm_process(void* instance)
             timer_data[us_timer].fire = false;
 //            ndn_platform_alarm_micros_fire(instance);
         }
-        
+
     } while (event_pending);
 }
 
@@ -624,7 +624,7 @@ int main(void)
     bsp_board_led_on(BSP_BOARD_LED_0);
 
     nrf5_alarm_init();
-   
+
 
     printf("Current Time = %d ms\n", alarm_milli_get_now());
     alarm_milli_start(alarm_milli_get_now() + 2000, 3000);
