@@ -7,14 +7,13 @@
  */
 
 #include "alarm.h"
+#include "nrf-alarm-config.h"
 
 #include "nrf.h"
 #include "nrf_gpio.h"
 #include "nrf_peripherals.h"
-#include "nrf_drv_rtc.h"
+#include "nrf_rtc.h"
 #include "nrf_drv_clock.h"
-#include "boards.h"
-#include "app_error.h"
 #include "nrf_802154_utils.h"
 #include "nrf_802154_lp_timer.h"
 
@@ -34,10 +33,6 @@
 #define EPOCH_32BIT_US               (1ULL << 32)
 #define EPOCH_FROM_TIME(time)        ((time) & ((uint64_t)UINT32_MAX << 32))
 
-#define RTC_INSTANCE NRF_RTC2
-#define RTC_IRQN RTC2_IRQn
-#define RTC_IRQ_PRIORITY 6
-#define RTC_IRQ_HANDLER RTC2_IRQHandler
 
 typedef enum
 {
@@ -480,9 +475,24 @@ static inline uint64_t alarm_get_current_time(void)
 
 
 /* APIs */
-uint32_t ndn_platform_alarm_millis_get_now(void)
+void ndn_platform_alarm_init(void)
 {
-    return (uint32_t)(get_current_time(us_timer)/ US_PER_MS);
+  nrf5_alarm_init();
+}
+
+void ndn_platform_alarm_deinit(void)
+{
+  nrf5_alarm_deinit();
+}
+
+uint64_t ndn_platform_alarm_millis_get_now(void)
+{
+    return (get_current_time(us_timer)/ US_PER_MS);
+}
+
+uint64_t ndn_platform_alarm_micros_get_now(void)
+{
+    return get_current_time(us_timer);
 }
 
 void ndn_platform_alarm_millis_stop(void)
@@ -610,44 +620,5 @@ void RTC_IRQ_HANDLER(void)
         }
     }
 }
-
-/**
- * @brief Function for application main entry.
- */
-
-/*
-int main(void)
-{
-    nrf_drv_clock_init();
-    bsp_board_init(BSP_BOARD_LED_0);
-    bsp_board_init(BSP_BOARD_LED_1);
-    bsp_board_led_on(BSP_BOARD_LED_0);
-
-    nrf5_alarm_init();
-
-
-    printf("Current Time = %d ms\n", alarm_milli_get_now());
-    alarm_milli_start(alarm_milli_get_now() + 2000, 3000);
-
-    while(true)
-    {
-      if (timer_data[us_timer].fire || timer_data[ms_timer].fire)
-      {
-        bsp_board_led_on(BSP_BOARD_LED_1);
-        break;
-      }
-      printf("Current Time = %d ms\n", alarm_milli_get_now());
-    }
-    bsp_board_led_off(BSP_BOARD_LED_0);
-    printf("Break Here, Current Time = %d ms\n", alarm_milli_get_now());
-
-    while (true)
-    {
-        __SEV();
-        __WFE();
-        __WFE();
-    }
-}
-*/
 
 /**  @} */
