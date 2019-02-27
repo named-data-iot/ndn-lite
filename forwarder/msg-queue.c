@@ -5,15 +5,15 @@
  * General Public License v2.1. See the file LICENSE in the top level
  * directory for more details.
  */
- 
+
 #include "msg-queue.h"
 #include <string.h>
 
 typedef struct ndn_msg{
-    void* obj;
-    ndn_msg_callback func;
-    size_t length;
-    uint8_t param[0];
+  void* obj;
+  ndn_msg_callback func;
+  size_t length;
+  uint8_t param[];
 } ndn_msg_t;
 
 static uint8_t msg_queue[NDN_MSGQUEUE_SIZE];
@@ -48,7 +48,7 @@ bool
 ndn_msgqueue_dispatch(void) {
   if(ndn_msgqueue_empty())
     return false;
-  
+
   pfront->func(pfront->obj, pfront->length - sizeof(ndn_msg_t), pfront->param);
   MSGQUEUE_NEXT(pfront);
   return true;
@@ -65,14 +65,14 @@ ndn_msgqueue_post(void *target,
 
   // defrag the memory
   ndn_msgqueue_empty();
-  
+
   if(pfront > ptail) {
     // -1 is to prevent (ptail == pfront) after call
     space = ((uint8_t*)pfront) - ((uint8_t*)ptail) - 1;
   } else {
     space = (&msg_queue[NDN_MSGQUEUE_SIZE] - ((uint8_t*)ptail));
   }
-  
+
   // After tail?
   if(pfront >= ptail || space >= len){
     // No-padding (= is to prevent ptail == pfront after call)
@@ -82,18 +82,18 @@ ndn_msgqueue_post(void *target,
     // Padding & rewind (= is to prevent ptail == pfront after call)
     if(((uint8_t*)pfront) - &msg_queue[0] <= len)
       return false;
-    
+
     ptail->func = NDN_MSG_PADDING;
     ptail->length = space;
-    
+
     ptail = (ndn_msg_t*)&msg_queue[0];
   }
-  
+
   ptail->obj = target;
   ptail->func = reason;
   ptail->length = len;
   memcpy(ptail->param, param, param_length);
   MSGQUEUE_NEXT(ptail);
-  
+
   return true;
 }
