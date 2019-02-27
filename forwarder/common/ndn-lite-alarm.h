@@ -15,6 +15,13 @@
 extern "C" {
 #endif
 
+/*
+ * Alarm is basic component to implement in-library timers, and low-end APIs must
+ * come from either Operating Systerms or SDKs, which are out of NDN Lite' scope.
+ * This header file defines the interfaces of Alarm, its implementation locates in
+ * platform specific adaptation module.
+ */
+
 /**
  * This method will init alarm.
  */
