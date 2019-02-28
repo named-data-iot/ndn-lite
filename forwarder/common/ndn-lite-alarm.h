@@ -79,5 +79,5 @@ extern void ndn_alarm_micros_fire(void* instance);
 #ifdef __cplusplus
 } // extern "C"
 #endif
-#endif /* NDN_LITE_ALARM_H */
-/** @} */
+
+#endif // NDN_LITE_ALARM_H

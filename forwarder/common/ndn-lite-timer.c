@@ -9,7 +9,7 @@
 #include <string.h>
 
 #include "ndn-lite-timer.h"
-#include "nnd-lite-alarm.h"
+#include "ndn-lite-alarm.h"
 
 static ndn_alarm_api_t api = {
   &ndn_alarm_millis_start,
