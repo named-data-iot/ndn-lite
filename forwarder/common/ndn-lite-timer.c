@@ -45,8 +45,7 @@ ndn_timer_fire_before(ndn_timer_t* lhs, ndn_timer_t* rhs, uint32_t now)
         return lhs_is_before_now;
     }
     else{
-        // Both timers are before `now` or both are after `now`. Either way the difference is guaranteed to be less
-        // than `kMaxDt` so we can safely compare the fire times directly.
+        // Both timers are before `now` or both are after `now`.
         return lhs->fire_time < rhs->fire_time ? true : false;
     }
 }
@@ -117,12 +116,6 @@ ndn_timer_scheduler_remove(ndn_timer_scheduler_t* scheduler, ndn_timer_t* timer)
   timer->next = timer;
 }
 
-/**
- * This method processes the running timers.
- *
- * @param[in]  aAlarmApi  A reference to the Alarm APIs.
- *
- */
 void
 ndn_timer_scheduler_process(ndn_timer_scheduler_t* scheduler)
 {
@@ -141,12 +134,6 @@ ndn_timer_scheduler_process(ndn_timer_scheduler_t* scheduler)
   }
 }
 
-/**
- * This method sets the platform alarm based on timer at front of the list.
- *
- * @param[in]  aAlarmApi  A reference to the Alarm APIs.
- *
- */
 void
 ndn_timer_scheduler_set_alarm(ndn_timer_scheduler_t* scheduler)
 {

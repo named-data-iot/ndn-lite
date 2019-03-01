@@ -64,6 +64,14 @@ void ndn_alarm_millis_stop(void);
 void ndn_alarm_process(void* instance);
 
 /**
+ * This method will block the program until delay completion. The delay time is
+ * connted by millisecond. Time counting is still running since it's driven by
+ * hardware.
+ * @param delay. Input. Time to delay in millisecond.
+ */
+void ndn_alarm_delay(uint32_t delay);
+
+/**
  * This method will fire millisecond alarm.
  * @param instance. Input. Timer scheduler instance.
  */
