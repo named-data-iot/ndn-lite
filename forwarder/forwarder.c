@@ -7,10 +7,9 @@
  */
 
 #include "forwarder.h"
-#include "memory-pool.h"
+#include "../util/memory-pool.h"
 #include "../encode/name.h"
 #include "../encode/data.h"
-
 #include <stdio.h>
 
 static ndn_forwarder_t instance;
