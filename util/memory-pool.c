@@ -1,60 +1,59 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang, Xinyu Ma
+ * Copyright (C) 2018-2019 Zhiyi Zhang, Xinyu Ma
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
  * directory for more details.
  */
 
-#include "../ndn-constants.h"
-#include "../encode/interest.h"
-#include "../encode/data.h"
 #include "memory-pool.h"
 
-#define MEMORY_BLOCK_USED 0xFF
+#define MEMORY_BLOCK_USED NULL
 
 typedef struct memory_block
 {
   // next make a linked-list of free blocks
-  uint8_t next;
-  uint8_t buf[NDN_POOL_BLOCK_SIZE];
-} memory_block_t;
+  struct memory_block * next;
+  uint8_t buf[0];
+} memory_block_t, *pmemory_block_t;
 
-static memory_block_t memory_pool[NDN_POOL_BLOCK_CNT];
-static uint8_t memory_pool_first;
-
-int
-ndn_memory_pool_init(void)
+void
+ndn_memory_pool_init(void* pool, size_t block_size, size_t block_count)
 {
-  if (NDN_POOL_BLOCK_SIZE < sizeof(ndn_name_t)) {
-    return -1;
+  int i;
+  pmemory_block_t *first = (pmemory_block_t*)pool;
+  size_t ptr_sz = sizeof(pmemory_block_t*);
+  size_t memblk_sz = sizeof(memory_block_t) + block_size;
+  pmemory_block_t cur = (pmemory_block_t)((uint8_t*)pool + ptr_sz);
+  pmemory_block_t pre;
+  
+  pre = MEMORY_BLOCK_USED;
+  for (i = 0; i < block_count; i ++) {
+    cur->next = pre;
+    pre = cur;
+    cur = (pmemory_block_t)((uint8_t*)cur + memblk_sz);
   }
-
-  memory_pool_first = NDN_POOL_BLOCK_CNT - 1;
-  for (int i = 0; i < NDN_POOL_BLOCK_CNT; i ++) {
-    memory_pool[i].next = i - 1;
-  }
-  memory_pool[0].next = MEMORY_BLOCK_USED;
-
-  return 0;
+  *first = pre;
 }
 
 uint8_t*
-ndn_memory_pool_alloc(void)
+ndn_memory_pool_alloc(void* pool)
 {
-  if (memory_pool_first == MEMORY_BLOCK_USED) {
+  pmemory_block_t *first = (pmemory_block_t*)pool;
+  if (*first == MEMORY_BLOCK_USED) {
     return NULL;
   }
-  uint8_t ret = memory_pool_first;
-  memory_pool_first = memory_pool[ret].next;
-  memory_pool[ret].next = MEMORY_BLOCK_USED;
-  return &memory_pool[ret].buf[0];
+  pmemory_block_t ret = *first;
+  *first = ret->next;
+  ret->next = MEMORY_BLOCK_USED;
+  return &ret->buf[0];
 }
 
 int
-ndn_memory_pool_free(void* ptr)
+ndn_memory_pool_free(void* pool, void* ptr)
 {
-  memory_block_t* base_addr;
+  pmemory_block_t *first = (pmemory_block_t*)pool;
+  pmemory_block_t base_addr;
 
   if (ptr == NULL) {
     return -1;
@@ -63,7 +62,7 @@ ndn_memory_pool_free(void* ptr)
   if (base_addr->next != MEMORY_BLOCK_USED) {
     return -1;
   }
-  base_addr->next = memory_pool_first;
-  memory_pool_first = base_addr - memory_pool;
+  base_addr->next = *first;
+  *first = base_addr;
   return 0;
 }

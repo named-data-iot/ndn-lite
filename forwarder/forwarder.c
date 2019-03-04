@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Xinyu Ma, Zhiyi Zhang
+ * Copyright (C) 2018-2019 Xinyu Ma, Zhiyi Zhang
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -11,6 +11,9 @@
 #include "../encode/name.h"
 #include "../encode/data.h"
 #include <stdio.h>
+
+#define NAME_POOL_LEN 4
+static uint8_t name_pool[NDN_MEMORY_POOL_RESERVE_SIZE(sizeof(ndn_name_t), NAME_POOL_LEN)];
 
 static ndn_forwarder_t instance;
 
@@ -116,6 +119,7 @@ ndn_forwarder_on_outgoing_interest(ndn_face_intf_t* face, const ndn_name_t* name
 ndn_forwarder_t*
 ndn_forwarder_init(void)
 {
+  ndn_memory_pool_init(name_pool, sizeof(ndn_name_t), NAME_POOL_LEN);
   pit_table_init();
   fib_table_init();
   return &instance;
@@ -161,7 +165,7 @@ ndn_forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn
   // If no bypass data, we need to decode it manually
   if (!bypass) {
     // Allocate memory
-    name = (ndn_name_t*)ndn_memory_pool_alloc();
+    name = (ndn_name_t*)ndn_memory_pool_alloc(name_pool);
     if (!name) {
       return NDN_FWD_NO_MEM;
     }
@@ -174,7 +178,7 @@ ndn_forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn
     ret = decoder_get_length(&decoder, &probe);
     ret = ndn_name_tlv_decode(&decoder, name);
     if (ret < 0) {
-      ndn_memory_pool_free(name);
+      ndn_memory_pool_free(name_pool, name);
       return ret;
     }
   }
@@ -194,7 +198,7 @@ ndn_forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn
 
   // Free memory
   if (!bypass) {
-    ndn_memory_pool_free(name);
+    ndn_memory_pool_free(name_pool, name);
   }
 
   return 0;
@@ -214,7 +218,7 @@ ndn_forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face,
   if (!bypass) {
     // Allocate memory
     // A name is expensive, don't want to do it on stack
-    name = (ndn_name_t*)ndn_memory_pool_alloc();
+    name = (ndn_name_t*)ndn_memory_pool_alloc(name_pool);
     if (!name) {
       return NDN_FWD_NO_MEM;
     }
@@ -227,7 +231,7 @@ ndn_forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face,
     ret = decoder_get_length(&decoder, &probe);
     ret = ndn_name_tlv_decode(&decoder, name);
     if (ret != 0) {
-      ndn_memory_pool_free(name);
+      ndn_memory_pool_free(name_pool, name);
       return ret;
     }
   }
@@ -236,7 +240,7 @@ ndn_forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face,
   ndn_pit_entry_t* pit_entry = pit_table_find_or_insert(name);
   if (pit_entry == NULL) {
     if (!bypass) {
-      ndn_memory_pool_free(name);
+      ndn_memory_pool_free(name_pool, name);
     }
     return NDN_FWD_PIT_FULL;
   }
@@ -252,7 +256,7 @@ ndn_forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face,
 
   // Free memory
   if (!bypass) {
-    ndn_memory_pool_free(name);
+    ndn_memory_pool_free(name_pool, name);
   }
 
   return ret;
