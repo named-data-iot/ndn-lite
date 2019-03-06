@@ -2,14 +2,13 @@
  * Copyright (C) 2019 Tianyuan Yu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
- * General Public License v2.1. See the file LICENSE in the top level
+ * General Public License v3.0. See the file LICENSE in the top level
  * directory for more details.
  */
 
-#ifndef TIMER_H
-#define TIMER_H
+#ifndef NDN_LITE_TIMER_H
+#define NDN_LITE_TIMER_H
 
-#include "../../adaptation/ndn-nrf-alarm-adaptation/alarm.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -53,9 +52,9 @@ typedef struct ndn_alarm_api {
   /**
    * Alarm start API.
    * @param start. Input. Timer start time.
-   * @param expire. Input. Delta between timer start time and expiry time.
+   * @param delta. Input. Delta between timer start time and expiry time.
    */
-  void (*alarm_start)(uint32_t start, uint32_t expire);
+  void (*alarm_start)(uint32_t start, uint32_t delta);
   /**
    * Alarm stop API.
    */
@@ -134,19 +133,19 @@ ndn_timer_stop(ndn_timer_t* timer);
  * This method will start a timer.
  * @param timer. Input. Timer to start.
  * @param start. Input. Timer start time.
- * @param expire. Input. Delta between timer start time and expiry time.
+ * @param delta. Input. Delta between timer start time and expiry time.
  */
 void
-ndn_timer_start(ndn_timer_t* timer, uint64_t start, uint32_t expire);
+ndn_timer_start(ndn_timer_t* timer, uint64_t start, uint32_t delta);
 
 /**
  * This method will start a timer from now.
  * @param timer. Input. Timer to start.
- * @param expire. Input. Delta between now and expiry time.
+ * @param delta. Input. Delta between now and expiry time.
  */
 static inline void
-ndn_timer_start_now(ndn_timer_t* timer, uint32_t expire) {
-  ndn_timer_start(timer, ndn_timer_get_now(), expire);
+ndn_timer_start_now(ndn_timer_t* timer, uint32_t delta) {
+  ndn_timer_start(timer, ndn_timer_get_now(), delta);
 }
 
 
@@ -199,5 +198,5 @@ ndn_timer_scheduler_get_instance(void);
 #ifdef __cplusplus
 }
 #endif
-#endif /* TIMER_H */
+#endif /* NDN_LITE_TIMER_H */
 /** @} */

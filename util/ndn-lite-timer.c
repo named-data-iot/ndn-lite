@@ -2,18 +2,19 @@
  * Copyright (C) 2019 Tianyuan Yu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
- * General Public License v2.1. See the file LICENSE in the top level
+ * General Public License v3.0. See the file LICENSE in the top level
  * directory for more details.
  */
 #include <inttypes.h>
 #include <string.h>
 
-#include "timer.h"
+#include "ndn-lite-timer.h"
+#include "ndn-lite-alarm.h"
 
 static ndn_alarm_api_t api = {
-  &ndn_platform_alarm_millis_start,
-  &ndn_platform_alarm_millis_stop,
-  &ndn_platform_alarm_millis_get_now
+  &ndn_alarm_millis_start,
+  &ndn_alarm_millis_stop,
+  &ndn_alarm_millis_get_now
 };
 
 static ndn_timer_scheduler_t scheduler;
@@ -44,8 +45,7 @@ ndn_timer_fire_before(ndn_timer_t* lhs, ndn_timer_t* rhs, uint32_t now)
         return lhs_is_before_now;
     }
     else{
-        // Both timers are before `now` or both are after `now`. Either way the difference is guaranteed to be less
-        // than `kMaxDt` so we can safely compare the fire times directly.
+        // Both timers are before `now` or both are after `now`.
         return lhs->fire_time < rhs->fire_time ? true : false;
     }
 }
@@ -116,12 +116,6 @@ ndn_timer_scheduler_remove(ndn_timer_scheduler_t* scheduler, ndn_timer_t* timer)
   timer->next = timer;
 }
 
-/**
- * This method processes the running timers.
- *
- * @param[in]  aAlarmApi  A reference to the Alarm APIs.
- *
- */
 void
 ndn_timer_scheduler_process(ndn_timer_scheduler_t* scheduler)
 {
@@ -140,12 +134,6 @@ ndn_timer_scheduler_process(ndn_timer_scheduler_t* scheduler)
   }
 }
 
-/**
- * This method sets the platform alarm based on timer at front of the list.
- *
- * @param[in]  aAlarmApi  A reference to the Alarm APIs.
- *
- */
 void
 ndn_timer_scheduler_set_alarm(ndn_timer_scheduler_t* scheduler)
 {
@@ -154,10 +142,10 @@ ndn_timer_scheduler_set_alarm(ndn_timer_scheduler_t* scheduler)
   }
   else{
     uint32_t now = api.alarm_get_now();
-    uint32_t remaining = now < scheduler->head->fire_time? 
-                         (scheduler->head->fire_time - now) : 0; 
+    uint32_t remaining = now < scheduler->head->fire_time?
+                         (scheduler->head->fire_time - now) : 0;
     api.alarm_start(now, remaining);
-  }  
+  }
 }
 
 ndn_timer_scheduler_t*
@@ -166,7 +154,7 @@ ndn_timer_scheduler_get_instance(void)
   return &scheduler;
 }
 
-extern void 
+extern void
 ndn_platform_alarm_millis_fire(void* scheduler) {
   ndn_timer_scheduler_process((ndn_timer_scheduler_t*)scheduler);
   return;
