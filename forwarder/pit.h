@@ -16,8 +16,14 @@
 extern "C" {
 #endif
 
+/** @defgroup NDNFwdPIT PIT
+ * @brief Pending Interest Table
+ * @ingroup NDNFwd
+ * @{
+ */
+
 /**
- * ndn_pit_entry is a class of PIT entries.
+ * PIT entry.
  */
 typedef struct ndn_pit_entry {
   /**
@@ -42,14 +48,14 @@ typedef struct ndn_pit_entry {
 } ndn_pit_entry_t;
 
 /**
- * The class of pending Interest table (PIT).
+ * PIT class.
  */
 typedef ndn_pit_entry_t ndn_pit_t[NDN_PIT_MAX_SIZE];
 
 /**
  * Add an incoming face to a PIT entry.
- * @param entry. Input. The PIT entry.
- * @param face. Input. The incoming face.
+ * @param entry Input. The PIT entry.
+ * @param face Input. The incoming face.
  * @return 0 if there is no error.
  */
 int
@@ -57,13 +63,15 @@ pit_entry_add_incoming_face(ndn_pit_entry_t* entry, ndn_face_intf_t* face);
 
 /**
  * Delete a PIT entry.
- * @param entry. Input. The PIT entry.
+ * @param entry Input. The PIT entry.
  */
 static inline void
 pit_entry_delete(ndn_pit_entry_t* entry)
 {
   entry->interest_name.components_size = NDN_FWD_INVALID_NAME_SIZE;
 }
+
+/*@}*/
 
 #ifdef __cplusplus
 }

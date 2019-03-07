@@ -9,6 +9,14 @@
 #include "msg-queue.h"
 #include <string.h>
 
+/** Padding message
+ * 
+ * This will only occur at the end of the queue.
+ * When the last message's @c func is NDN_MSG_PADDING, it means the next message is at
+ * the begining of the queue and has a size larger than this padding one.
+ */
+#define NDN_MSG_PADDING (void*)(-1)
+
 typedef struct ndn_msg{
   void* obj;
   ndn_msg_callback func;

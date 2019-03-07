@@ -16,13 +16,19 @@
 extern "C" {
 #endif
 
+/** @defgroup NDNFwdFIB FIB
+ * @brief Fowarding Infomation Base
+ * @ingroup NDNFwd
+ * @{
+ */
+
 /**
- * ndn_fib_entry is a class of FIB entries.
+ * FIB entry.
  */
 typedef struct ndn_fib_entry {
   /**
    * The name prefix.
-   * A name with components_size < 0 indicates an empty entry.
+   * A name with <tt> ndn_name_t#components_size < 0 </tt> indicates an empty entry.
    */
   ndn_name_t name_prefix;
 
@@ -39,19 +45,21 @@ typedef struct ndn_fib_entry {
 } ndn_fib_entry_t;
 
 /**
- * The class of forwarding information base (FIB).
+ * Forwarding Information Base (FIB) class.
  */
 typedef ndn_fib_entry_t ndn_fib_t[NDN_FIB_MAX_SIZE];
 
 /**
  * Delete a FIB entry.
- * @param entry. Input. The FIB entry.
+ * @param entry Input. The FIB entry.
  */
 static inline void
 fib_entry_delete(ndn_fib_entry_t* entry)
 {
   entry->name_prefix.components_size = NDN_FWD_INVALID_NAME_SIZE;
 }
+
+/*@}*/
 
 #ifdef __cplusplus
 }
