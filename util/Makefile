@@ -1,3 +1,2 @@
-MODULE = ndn-security
-
+MODULE = ndn-util
 include $(RIOTBASE)/Makefile.base

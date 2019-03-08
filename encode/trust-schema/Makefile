@@ -1,3 +1,3 @@
-MODULE = ndn-security
+MODULE = ndn-trust-schema
 
 include $(RIOTBASE)/Makefile.base

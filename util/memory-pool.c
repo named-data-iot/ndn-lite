@@ -14,7 +14,7 @@ typedef struct memory_block
 {
   // next make a linked-list of free blocks
   struct memory_block * next;
-  uint8_t buf[0];
+  uint8_t buf[];
 } memory_block_t, *pmemory_block_t;
 
 void
@@ -28,7 +28,7 @@ ndn_memory_pool_init(void* pool, size_t block_size, size_t block_count)
   pmemory_block_t pre;
   
   pre = MEMORY_BLOCK_USED;
-  for (i = 0; i < block_count; i ++) {
+  for (i = 0; i < (int) block_count; i ++) {
     cur->next = pre;
     pre = cur;
     cur = (pmemory_block_t)((uint8_t*)cur + memblk_sz);

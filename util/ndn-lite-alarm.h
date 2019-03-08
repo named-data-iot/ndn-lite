@@ -43,7 +43,7 @@ void ndn_alarm_millis_start(uint32_t start, uint32_t delta);
  * This method will get current system time (in millisecond) from alarm.
  * @return Current time
  */
-uint64_t ndn_alarm_millis_get_now(void);
+uint32_t ndn_alarm_millis_get_now(void);
 
 /**
  * This method will get current system time (in microsecond) from alarm.

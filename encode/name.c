@@ -148,6 +148,20 @@ ndn_name_compare(const ndn_name_t* lhs, const ndn_name_t* rhs)
 }
 
 int
+ndn_name_compare_sub_names(const ndn_name_t* lhs, int lhs_b, int lhs_e,
+			   const ndn_name_t* rhs, int rhs_b, int rhs_e) {
+  if (lhs_e-lhs_b != rhs_e-rhs_b) return -1;
+  else {
+    int result = 0;
+    for (uint8_t i = 0; i < lhs_e-lhs_b; i++) {
+      result = name_component_compare(&lhs->components[lhs_b+i], &rhs->components[rhs_b+i]);
+      if (result != 0) return -1;
+    }
+    return 0;
+  }
+}
+
+int
 ndn_name_is_prefix_of(const ndn_name_t* lhs, const ndn_name_t* rhs)
 {
   int result = 0;

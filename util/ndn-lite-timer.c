@@ -20,7 +20,7 @@ static ndn_alarm_api_t api = {
 static ndn_timer_scheduler_t scheduler;
 
 void
-ndn_timer_start(ndn_timer_t* timer, uint32_t start, uint32_t expire)
+ndn_timer_start(ndn_timer_t* timer, uint64_t start, uint64_t expire)
 {
   timer->fire_time = start + expire;
   ndn_timer_scheduler_add(&scheduler, timer);
@@ -33,9 +33,8 @@ ndn_timer_stop(ndn_timer_t* timer)
 }
 
 bool
-ndn_timer_fire_before(ndn_timer_t* lhs, ndn_timer_t* rhs, uint32_t now)
+ndn_timer_fire_before(ndn_timer_t* lhs, ndn_timer_t* rhs, uint64_t now)
 {
-  bool retval;
   bool lhs_is_before_now = lhs->fire_time < now ? true : false;
   bool rhs_is_before_now = rhs->fire_time < now ? true : false;
     // Check if one timer is before `now` and the other one is not.
