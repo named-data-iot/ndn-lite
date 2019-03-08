@@ -25,7 +25,7 @@ ndn_name_tlv_decode(ndn_decoder_t* decoder, ndn_name_t* name)
 {
 
   int ret_val = -1;
-  
+
   uint32_t type = 0;
   ret_val = decoder_get_type(decoder, &type);
   if (ret_val != NDN_SUCCESS) return ret_val;
@@ -74,7 +74,7 @@ ndn_name_from_string(ndn_name_t *name, const char* string, uint32_t size)
 {
 
   int ret_val = -1;
-  
+
   name->components_size = 0;
 
   uint32_t i = 0;
@@ -113,7 +113,7 @@ ndn_name_tlv_encode(ndn_encoder_t* encoder, const ndn_name_t *name)
 {
 
   int ret_val = -1;
-  
+
   int block_sizes[name->components_size];
   ret_val = encoder_append_type(encoder, TLV_Name);
   if (ret_val != NDN_SUCCESS) return ret_val;
@@ -163,5 +163,54 @@ ndn_name_is_prefix_of(const ndn_name_t* lhs, const ndn_name_t* rhs)
       if (result != 0) return 1;
     }
     return 0;
+  }
+}
+
+int
+ndn_name_compare_in_encoder(const ndn_encoder_t* lhs_encoder, const ndn_encoder_t* rhs_encoder)
+{
+  if (lhs_encoder == NULL || lhs_encoder->output_value == NULL ||
+      lhs_encoder->offset <= 0) return NDN_OVERSIZE_VAR;
+  if (rhs_encoder == NULL || rhs_encoder->output_value == NULL ||
+      rhs_encoder->offset <= 0) return NDN_OVERSIZE_VAR;
+
+  ndn_decoder_t lhs_decoder, rhs_decoder;
+  decoder_init(&lhs_decoder, lhs_encoder->output_value, lhs_encoder->offset);
+  decoder_init(&rhs_decoder, rhs_encoder->output_value, rhs_encoder->offset);
+  uint32_t probe, retval = 0;
+
+  /* check left name type */
+  decoder_get_type(&lhs_decoder, &probe);
+  if (probe != TLV_Name) return NDN_WRONG_TLV_TYPE;
+
+  /* check right name type */
+  decoder_get_type(&rhs_decoder, &probe);
+  if (probe != TLV_Name) return NDN_WRONG_TLV_TYPE;
+
+  /* read left name length */
+  decoder_get_length(&lhs_decoder, &probe);
+  if (retval != NDN_SUCCESS) return NDN_WRONG_TLV_LENGTH;
+
+  /* read right name length */
+  decoder_get_length(&rhs_decoder, &probe);
+  if (retval != NDN_SUCCESS) return NDN_WRONG_TLV_LENGTH;
+
+  int r = memcmp(lhs_decoder.input_value + lhs_decoder.offset,
+                 rhs_decoder.input_value + rhs_decoder.offset,
+                 lhs_decoder.input_size - lhs_decoder.offset <
+                 rhs_decoder.input_size - rhs_decoder.offset ?
+                 lhs_decoder.input_size - lhs_decoder.offset :
+                 rhs_decoder.input_size - rhs_decoder.offset);
+
+  if (r < 0) return -1;
+  else if (r > 0) return 1;
+  else {
+      if (lhs_decoder.input_size - lhs_decoder.offset <
+          rhs_decoder.input_size - rhs_decoder.offset)
+        return -2;
+      else if (lhs_decoder.input_size - lhs_decoder.offset >
+               rhs_decoder.input_size - rhs_decoder.offset)
+             return 2;
+      else return 0;
   }
 }

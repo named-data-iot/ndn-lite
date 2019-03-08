@@ -124,6 +124,19 @@ ndn_name_compare(const ndn_name_t* lhs, const ndn_name_t* rhs);
 int
 ndn_name_is_prefix_of(const ndn_name_t* lhs, const ndn_name_t* rhs);
 
+/**
+ * Compare two encoded Name in encoder.
+ * @param lhs. Input. Left-hand-side encoded Name in encoder.
+ * @param rhs. Input. Right-hand-side encoded Name in encoder.
+ * @return 0 if @p lhs == @p rhs.
+ * @return 1, if @p lhs > @p rhs and @p rhs is not a prefix of @p lhs.
+ * @return 2, if @p lhs > @p rhs and @p rhs is a proper prefix of @p lhs.
+ * @return -1, if @p lhs < @p rhs and @p lhs is not a prefix of @p rhs.
+ * @return -2, if @p lhs < @p rhs and @p lhs is a proper prefix of @p rhs.
+ */
+int
+ndn_name_compare_in_encoder(const ndn_encoder_t* lhs_encoder, const ndn_encoder_t* rhs_encoder);
+
 #ifdef __cplusplus
 }
 #endif
