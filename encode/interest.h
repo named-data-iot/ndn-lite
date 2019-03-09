@@ -194,7 +194,7 @@ ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest);
  */
 int
 ndn_interest_name_compare_block(const uint8_t* lhs_block_value, uint32_t lhs_block_size,
-                                const uint8_t* rhs_block_value, uint32_t rhs_block_size)
+                                const uint8_t* rhs_block_value, uint32_t rhs_block_size);
 
 #ifdef __cplusplus
 }
