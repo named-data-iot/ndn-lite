@@ -125,9 +125,9 @@ int
 ndn_name_is_prefix_of(const ndn_name_t* lhs, const ndn_name_t* rhs);
 
 /**
- * Compare two encoded Name in encoder.
- * @param lhs. Input. Left-hand-side encoded Name in encoder.
- * @param rhs. Input. Right-hand-side encoded Name in encoder.
+ * Compare two encoded Name in TLV blocks.
+ * @param lhs_encoder. Input. Left-hand-side encoded Name in TLV block.
+ * @param rhs_encoder. Input. Right-hand-side encoded Name in TLV block.
  * @return 0 if @p lhs == @p rhs.
  * @return 1, if @p lhs > @p rhs and @p rhs is not a prefix of @p lhs.
  * @return 2, if @p lhs > @p rhs and @p rhs is a proper prefix of @p lhs.
@@ -135,7 +135,8 @@ ndn_name_is_prefix_of(const ndn_name_t* lhs, const ndn_name_t* rhs);
  * @return -2, if @p lhs < @p rhs and @p lhs is a proper prefix of @p rhs.
  */
 int
-ndn_name_compare_in_encoder(const ndn_encoder_t* lhs_encoder, const ndn_encoder_t* rhs_encoder);
+ndn_name_compare_block(const uint8_t* lhs_block_value, uint32_t lhs_block_size,
+                       const uint8_t* rhs_block_value, uint32_t rhs_block_size);
 
 #ifdef __cplusplus
 }
