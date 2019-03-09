@@ -115,6 +115,20 @@ int
 ndn_name_compare(const ndn_name_t* lhs, const ndn_name_t* rhs);
 
 /**
+ * Compare sub-names of two names. 
+ * @param lhs. Input. Left-hand-side Name.
+ * @param lhs_b. Input. Beginning index of left-hand-side-name.
+ * @param lhs_e. Input. Ending index of left-hand-side-name (should be one more than last index to compare)
+ * @param rhs. Input. Right-hand-side Name.
+ * @param rhs_b. Input. Beginning index of right-hand-side-name.
+ * @param rhs_e. Input. Ending index of right-hand-side-name (should be one more than last index to compare)
+ * @return 0 if @p lhs from lhs_b to lhs_e-1 == @p rhs from rhs_b to rhs_e-1.
+ */
+int
+ndn_name_compare_sub_names(const ndn_name_t* lhs, int lhs_b, int lhs_e,
+			   const ndn_name_t* rhs, int rhs_b, int rhs_e);
+  
+/**
  * Compare two Name based on the canonical order, to see whether a name is the prefix
  * of another.
  * @param lhs. Input. Left-hand-side Name.
