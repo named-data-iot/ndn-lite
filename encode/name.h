@@ -115,7 +115,7 @@ int
 ndn_name_compare(const ndn_name_t* lhs, const ndn_name_t* rhs);
 
 /**
- * Compare sub-names of two names. 
+ * Compare sub-names of two names.
  * @param lhs. Input. Left-hand-side Name.
  * @param lhs_b. Input. Beginning index of left-hand-side-name.
  * @param lhs_e. Input. Ending index of left-hand-side-name (should be one more than last index to compare)
@@ -127,7 +127,7 @@ ndn_name_compare(const ndn_name_t* lhs, const ndn_name_t* rhs);
 int
 ndn_name_compare_sub_names(const ndn_name_t* lhs, int lhs_b, int lhs_e,
 			   const ndn_name_t* rhs, int rhs_b, int rhs_e);
-  
+
 /**
  * Compare two Name based on the canonical order, to see whether a name is the prefix
  * of another.
@@ -139,9 +139,11 @@ int
 ndn_name_is_prefix_of(const ndn_name_t* lhs, const ndn_name_t* rhs);
 
 /**
- * Compare two encoded Name in TLV blocks.
- * @param lhs_encoder. Input. Left-hand-side encoded Name in TLV block.
- * @param rhs_encoder. Input. Right-hand-side encoded Name in TLV block.
+ * Compare two encoded Names.
+ * @param lhs_block_value. Input. Left-hand-side encoded Name block value.
+ * @param lhs_block_size. Input. Left-hand-side encoded Name block size.
+ * @param rhs_block_value. Input. Right-hand-side encoded Name block value.
+ * @param rhs_block_size. Input. Right-hand-side encoded Name block size.
  * @return 0 if @p lhs == @p rhs.
  * @return 1, if @p lhs > @p rhs and @p rhs is not a prefix of @p lhs.
  * @return 2, if @p lhs > @p rhs and @p rhs is a proper prefix of @p lhs.
