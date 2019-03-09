@@ -180,6 +180,22 @@ ndn_interest_set_Parameters(ndn_interest_t* interest,
 int
 ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest);
 
+/**
+ * Compare two encoded Interests' names.
+ * @param lhs_block_value. Input. Left-hand-side encoded Interest block value.
+ * @param lhs_block_size. Input. Left-hand-side encoded Interest block size.
+ * @param rhs_block_value. Input. Right-hand-side encoded Interest block value.
+ * @param rhs_block_size. Input. Right-hand-side encoded Interest block size.
+ * @return 0 if @p lhs == @p rhs.
+ * @return 1, if @p lhs > @p rhs and @p rhs is not a prefix of @p lhs.
+ * @return 2, if @p lhs > @p rhs and @p rhs is a proper prefix of @p lhs.
+ * @return -1, if @p lhs < @p rhs and @p lhs is not a prefix of @p rhs.
+ * @return -2, if @p lhs < @p rhs and @p lhs is a proper prefix of @p rhs.
+ */
+int
+ndn_interest_name_compare_block(const uint8_t* lhs_block_value, uint32_t lhs_block_size,
+                                const uint8_t* rhs_block_value, uint32_t rhs_block_size)
+
 #ifdef __cplusplus
 }
 #endif

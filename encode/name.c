@@ -185,7 +185,8 @@ ndn_name_is_prefix_of(const ndn_name_t* lhs, const ndn_name_t* rhs)
 }
 
 int
-ndn_name_compare_in_encoder(const ndn_encoder_t* lhs_encoder, const ndn_encoder_t* rhs_encoder)
+ndn_name_compare_block(const uint8_t* lhs_block_value, uint32_t lhs_block_size,
+                       const uint8_t* rhs_block_value, uint32_t rhs_block_size);
 {
   if (lhs_encoder == NULL || lhs_encoder->output_value == NULL ||
       lhs_encoder->offset <= 0) return NDN_OVERSIZE_VAR;
