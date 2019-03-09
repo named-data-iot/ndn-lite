@@ -1,3 +1,10 @@
+
+/* // Edward Lu - I just commented this code out because the compilation of RIOT used the pedantic option, */
+/* // and it was complaining about the assignment / comparison of function pointers with void pointers. */
+
+/* // just a dummy typedef to pass the RIOT compilation */
+/* typedef int make_iso_compilation_pass; */
+
 /*
  * Copyright (C) 2019 Xinyu Ma
  *
@@ -33,9 +40,12 @@ ndn_msgqueue_init(void) {
 
 bool
 ndn_msgqueue_empty(void) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
   if(pfront->func == NDN_MSG_PADDING && pfront != ptail){
     pfront = (ndn_msg_t*)&msg_queue;
   }
+#pragma GCC diagnostic pop
   if(pfront == ptail){
     // defrag when empty
     pfront = ptail = (ndn_msg_t*)&msg_queue[0];
@@ -80,10 +90,13 @@ ndn_msgqueue_post(void *target,
       return false;
   } else {
     // Padding & rewind (= is to prevent ptail == pfront after call)
-    if(((uint8_t*)pfront) - &msg_queue[0] <= len)
+    if(((uint8_t*)pfront) - &msg_queue[0] <= (int) len)
       return false;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
     ptail->func = NDN_MSG_PADDING;
+#pragma GCC diagnostic pop
     ptail->length = space;
 
     ptail = (ndn_msg_t*)&msg_queue[0];

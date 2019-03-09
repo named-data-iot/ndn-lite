@@ -104,7 +104,10 @@
 #define NDN_ASN1_ECDSA_SIG_FAILED_TO_READ_ASN1_SEQUENCE -137
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 734032f552c5da24b3e6de9d0e969dc6b9459708
 /** @defgroup NDNErrorCodeSchematizedTrust Schematized trust related error codes
  * @ingroup NDNErrorCode
  * @{ */
@@ -122,7 +125,13 @@
 #define NDN_TRUST_SCHEMA_RULE_REF_NOT_FOUND -161
 #define NDN_TRUST_SCHEMA_RULE_REF_UNEQUAL_NUM_OF_SUBPATTERN_CAPTURES -162
 #define NDN_TRUST_SCHEMA_PATTERN_COMPONENT_INVALID_SIZE -163
+<<<<<<< HEAD
 /* @} */
 >>>>>>> fa66365... Added constants / error codes for schematized trust, as well as sub-name comparison function needed for schematized trust implementation
+=======
+#define NDN_TRUST_SCHEMA_RULE_REFERENCING_NOT_IMPLEMENTED_YET -164
+#define NDN_TRUST_SCHEMA_SUBPATTERN_INDEX_GREATER_THAN_NUMBER_OF_SUBPATTERN_CAPTURES -165
+/* @} */
+>>>>>>> 734032f552c5da24b3e6de9d0e969dc6b9459708
 
 #endif // NDN_ERROR_CODE_H

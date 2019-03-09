@@ -136,17 +136,17 @@ ndn_timer_stop(ndn_timer_t* timer);
  * @param delta. Input. Delta between timer start time and expiry time.
  */
 void
-ndn_timer_start(ndn_timer_t* timer, uint64_t start, uint32_t delta);
+ndn_timer_start(ndn_timer_t* timer, uint64_t start, uint64_t delta);
 
-/**
- * This method will start a timer from now.
- * @param timer. Input. Timer to start.
- * @param delta. Input. Delta between now and expiry time.
- */
-static inline void
-ndn_timer_start_now(ndn_timer_t* timer, uint32_t delta) {
-  ndn_timer_start(timer, ndn_timer_get_now(), delta);
-}
+/* /\** */
+/*  * This method will start a timer from now. */
+/*  * @param timer. Input. Timer to start. */
+/*  * @param delta. Input. Delta between now and expiry time. */
+/*  *\/ */
+/* static inline void */
+/* ndn_timer_start_now(ndn_timer_t* timer, uint32_t delta) { */
+/*   ndn_timer_start(timer, ndn_timer_get_now(), delta); */
+/* } */
 
 
 /**
@@ -193,7 +193,6 @@ ndn_timer_scheduler_set_alarm(ndn_timer_scheduler_t* scheduler);
  */
 ndn_timer_scheduler_t*
 ndn_timer_scheduler_get_instance(void);
-
 
 #ifdef __cplusplus
 }
