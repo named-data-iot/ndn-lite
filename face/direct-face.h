@@ -73,9 +73,9 @@ typedef int (*ndn_on_interest_callback)(const uint8_t* interest, uint32_t intere
  */
 typedef struct ndn_face_cb_entry {
   /**
-   * The interest name of callback entry.
+   * The interest/Name of callback entry.
    */
-  ndn_name_t interest_name;
+  ndn_buffer_t interest_buffer;
   /**
    * Flag to represent current callback entry is a registered prefix.
    */

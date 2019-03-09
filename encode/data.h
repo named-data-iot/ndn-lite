@@ -186,6 +186,21 @@ ndn_data_parse_encrypted_content(const ndn_data_t* data,
                                  uint8_t* content_value, uint32_t* content_used_size,
                                  ndn_name_t* key_id, uint8_t* aes_iv, const ndn_aes_key_t* key);
 
+/**
+ * Compare two encoded Data's name with an encode Interest name.
+ * @param lhs_block_value. Input. Left-hand-side encoded Interest block value.
+ * @param lhs_block_size. Input. Left-hand-side encoded Interest block size.
+ * @param rhs_block_value. Input. Right-hand-side encoded Interest block value.
+ * @param rhs_block_size. Input. Right-hand-side encoded Interest block size.
+ * @return 0 if @p lhs == @p rhs.
+ * @return 1, if @p lhs > @p rhs and @p rhs is not a prefix of @p lhs.
+ * @return 2, if @p lhs > @p rhs and @p rhs is a proper prefix of @p lhs.
+ * @return -1, if @p lhs < @p rhs and @p lhs is not a prefix of @p rhs.
+ * @return -2, if @p lhs < @p rhs and @p lhs is a proper prefix of @p rhs.
+ */
+int
+ndn_data_interest_compare_block(ndn_decoder_t* data_decoder, ndn_decoder_t* interest_decoder);
+
 #ifdef __cplusplus
 }
 #endif

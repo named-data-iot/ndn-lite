@@ -161,10 +161,6 @@ ndn_name_compare_sub_names(const ndn_name_t* lhs, int lhs_b, int lhs_e,
   }
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 734032f552c5da24b3e6de9d0e969dc6b9459708
 int
 ndn_name_is_prefix_of(const ndn_name_t* lhs, const ndn_name_t* rhs)
 {
@@ -185,50 +181,44 @@ ndn_name_is_prefix_of(const ndn_name_t* lhs, const ndn_name_t* rhs)
 }
 
 int
-ndn_name_compare_block(const uint8_t* lhs_block_value, uint32_t lhs_block_size,
-                       const uint8_t* rhs_block_value, uint32_t rhs_block_size)
+ndn_name_compare_block(ndn_decoder_t* lhs_decoder, ndn_decoder_t* rhs_decoder)
 {
-  if (lhs_encoder == NULL || lhs_encoder->output_value == NULL ||
-      lhs_encoder->offset <= 0) return NDN_OVERSIZE_VAR;
-  if (rhs_encoder == NULL || rhs_encoder->output_value == NULL ||
-      rhs_encoder->offset <= 0) return NDN_OVERSIZE_VAR;
+  if (lhs_decoder->input_value == NULL || lhs_decoder->input_size <= 0)
+    return NDN_OVERSIZE;
+  if (rhs_decoder->input_value == NULL || rhs_decoder->input_size <= 0)
+    return NDN_OVERSIZE;
 
-  ndn_decoder_t lhs_decoder, rhs_decoder;
-  decoder_init(&lhs_decoder, lhs_encoder->output_value, lhs_encoder->offset);
-  decoder_init(&rhs_decoder, rhs_encoder->output_value, rhs_encoder->offset);
-  uint32_t probe, retval = 0;
+  uint32_t probe = 0;
+  uint32_t lhs_name_buffer_length, rhs_name_buffer_length = 0;
+  int retval = -1;
 
   /* check left name type */
-  decoder_get_type(&lhs_decoder, &probe);
+  decoder_get_type(lhs_decoder, &probe);
   if (probe != TLV_Name) return NDN_WRONG_TLV_TYPE;
 
   /* check right name type */
-  decoder_get_type(&rhs_decoder, &probe);
+  decoder_get_type(rhs_decoder, &probe);
   if (probe != TLV_Name) return NDN_WRONG_TLV_TYPE;
 
   /* read left name length */
-  decoder_get_length(&lhs_decoder, &probe);
+  retval = decoder_get_length(lhs_decoder, &lhs_name_buffer_length);
   if (retval != NDN_SUCCESS) return NDN_WRONG_TLV_LENGTH;
 
   /* read right name length */
-  decoder_get_length(&rhs_decoder, &probe);
+  retval = decoder_get_length(rhs_decoder, &rhs_name_buffer_length);
   if (retval != NDN_SUCCESS) return NDN_WRONG_TLV_LENGTH;
 
-  int r = memcmp(lhs_decoder.input_value + lhs_decoder.offset,
-                 rhs_decoder.input_value + rhs_decoder.offset,
-                 lhs_decoder.input_size - lhs_decoder.offset <
-                 rhs_decoder.input_size - rhs_decoder.offset ?
-                 lhs_decoder.input_size - lhs_decoder.offset :
-                 rhs_decoder.input_size - rhs_decoder.offset);
+  int r = memcmp(lhs_decoder->input_value + lhs_decoder->offset,
+                 rhs_decoder->input_value + rhs_decoder->offset,
+                 lhs_name_buffer_length < rhs_name_buffer_length ?
+                 lhs_name_buffer_length : rhs_name_buffer_length);
 
   if (r < 0) return -1;
   else if (r > 0) return 1;
   else {
-      if (lhs_decoder.input_size - lhs_decoder.offset <
-          rhs_decoder.input_size - rhs_decoder.offset)
+      if (lhs_name_buffer_length < rhs_name_buffer_length)
         return -2;
-      else if (lhs_decoder.input_size - lhs_decoder.offset >
-               rhs_decoder.input_size - rhs_decoder.offset)
+      else if (lhs_name_buffer_length > rhs_name_buffer_length)
              return 2;
       else return 0;
   }

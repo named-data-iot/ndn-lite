@@ -16,7 +16,7 @@ ndn_face_receive(ndn_face_intf_t* self, const uint8_t* packet, uint32_t size)
 {
 
   int ret_val = -1;
-  
+
   ndn_decoder_t decoder;
   uint32_t probe = 0;
 
@@ -27,11 +27,11 @@ ndn_face_receive(ndn_face_intf_t* self, const uint8_t* packet, uint32_t size)
   if (ret_val != NDN_SUCCESS) return ret_val;
   if (probe == TLV_Data) {
     printf("data packet\n");
-    return ndn_forwarder_on_incoming_data(ndn_forwarder_get_instance(), self, NULL, packet, size);
+    return ndn_forwarder_on_incoming_data(ndn_forwarder_get_instance(), self, packet, size);
   }
   else if (probe == TLV_Interest) {
     printf("interest packet\n");
-    return ndn_forwarder_on_incoming_interest(ndn_forwarder_get_instance(), self, NULL, packet, size);
+    return ndn_forwarder_on_incoming_interest(ndn_forwarder_get_instance(), self, packet, size);
   }
   else {
     // TODO: fragmentation support

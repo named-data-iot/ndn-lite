@@ -40,8 +40,7 @@ typedef int (*ndn_face_intf_up)(struct ndn_face_intf* self);
  * @param size. Input. The size of the wire format packet buffer.
  * @return 0 if there is no error.
  */
-typedef int (*ndn_face_intf_send)(struct ndn_face_intf* self,
-                                  const ndn_name_t* name, const uint8_t* packet, uint32_t size);
+typedef int (*ndn_face_intf_send)(struct ndn_face_intf* self, const uint8_t* packet, uint32_t size);
 
 /**
  * ndn_face_intf_down is a function pointer to the interface down function.
@@ -110,11 +109,11 @@ ndn_face_up(ndn_face_intf_t* self)
  * @return 0 if there is no error.
  */
 static inline int
-ndn_face_send(ndn_face_intf_t* self, const ndn_name_t* name, const uint8_t* packet, uint32_t size)
+ndn_face_send(ndn_face_intf_t* self, const uint8_t* packet, uint32_t size)
 {
   if (self->state != NDN_FACE_STATE_UP)
     self->up(self);
-  return self->send(self, name, packet, size);
+  return self->send(self, packet, size);
 }
 
 /**

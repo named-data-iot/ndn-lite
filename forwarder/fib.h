@@ -24,7 +24,7 @@ typedef struct ndn_fib_entry {
    * The name prefix.
    * A name with components_size < 0 indicates an empty entry.
    */
-  ndn_name_t name_prefix;
+  ndn_buffer_t name_buffer;
 
   /**
    * The next-hop record.
@@ -42,16 +42,6 @@ typedef struct ndn_fib_entry {
  * The class of forwarding information base (FIB).
  */
 typedef ndn_fib_entry_t ndn_fib_t[NDN_FIB_MAX_SIZE];
-
-/**
- * Delete a FIB entry.
- * @param entry. Input. The FIB entry.
- */
-static inline void
-fib_entry_delete(ndn_fib_entry_t* entry)
-{
-  entry->name_prefix.components_size = NDN_FWD_INVALID_NAME_SIZE;
-}
 
 #ifdef __cplusplus
 }

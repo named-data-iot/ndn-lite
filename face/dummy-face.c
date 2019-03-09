@@ -25,11 +25,9 @@ ndn_dummy_face_up(struct ndn_face_intf* self)
 }
 
 int
-ndn_dummy_face_send(struct ndn_face_intf* self, const ndn_name_t* name,
-                    const uint8_t* packet, uint32_t size)
+ndn_dummy_face_send(struct ndn_face_intf* self, const uint8_t* packet, uint32_t size)
 {
   (void)self;
-  (void)name;
   (void)packet;
   (void)size;
   printf("Dummy Face UP send packet\n");

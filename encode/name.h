@@ -151,8 +151,7 @@ ndn_name_is_prefix_of(const ndn_name_t* lhs, const ndn_name_t* rhs);
  * @return -2, if @p lhs < @p rhs and @p lhs is a proper prefix of @p rhs.
  */
 int
-ndn_name_compare_block(const uint8_t* lhs_block_value, uint32_t lhs_block_size,
-                       const uint8_t* rhs_block_value, uint32_t rhs_block_size);
+ndn_name_compare_block(ndn_decoder_t* lhs_decoder, ndn_decoder_t* rhs_decoder);
 
 #ifdef __cplusplus
 }

@@ -24,7 +24,7 @@ typedef struct ndn_pit_entry {
    * The name of representative Interest.
    * A name with components_size < 0 indicates an empty entry.
    */
-  ndn_name_t interest_name;
+  ndn_buffer_t interest_buffer;
 
   /**
    * Collection of incoming faces.
@@ -54,16 +54,6 @@ typedef ndn_pit_entry_t ndn_pit_t[NDN_PIT_MAX_SIZE];
  */
 int
 pit_entry_add_incoming_face(ndn_pit_entry_t* entry, ndn_face_intf_t* face);
-
-/**
- * Delete a PIT entry.
- * @param entry. Input. The PIT entry.
- */
-static inline void
-pit_entry_delete(ndn_pit_entry_t* entry)
-{
-  entry->interest_name.components_size = NDN_FWD_INVALID_NAME_SIZE;
-}
 
 #ifdef __cplusplus
 }

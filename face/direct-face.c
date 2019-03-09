@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2019 Zhiyi Zhang
+ * Copyright (C) 2018-2019 Zhiyi Zhang, Tianyuan Yu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
@@ -8,8 +8,16 @@
 
 #include "direct-face.h"
 #include "../forwarder/forwarder.h"
+#include "../util/memory-pool.h"
+#include "../encode/interest.h"
+#include "../encode/data.h"
+#include "../ndn-error-code.h"
+#include "stdio.h"
 
 static ndn_direct_face_t direct_face;
+#define FACE_ENTRY_INTEREST_MAX_SIZE 100
+static uint8_t face_entry_interest_pool[NDN_MEMORY_POOL_RESERVE_SIZE(FACE_ENTRY_INTEREST_MAX_SIZE, \
+                                                          NDN_DIRECT_FACE_CB_ENTRY_SIZE)];
 
 /************************************************************/
 /*  Inherit Face Interfaces                                 */
@@ -26,7 +34,12 @@ void
 ndn_direct_face_destroy(struct ndn_face_intf* self)
 {
   for (int i = 0; i < NDN_DIRECT_FACE_CB_ENTRY_SIZE; i++) {
-    direct_face.cb_entries[i].interest_name.components_size = NDN_FWD_INVALID_NAME_SIZE;
+    if (direct_face.cb_entries[i].interest_buffer.value) {
+      ndn_memory_pool_free(face_entry_interest_pool,
+                           direct_face.cb_entries[i].interest_buffer.value);
+      direct_face.cb_entries[i].interest_buffer.value = NULL;
+    }
+    direct_face.cb_entries[i].interest_buffer.size = NDN_FWD_INVALID_NAME_SIZE;
   }
   self->state = NDN_FACE_STATE_DESTROYED;
   return;
@@ -40,14 +53,12 @@ ndn_direct_face_down(struct ndn_face_intf* self)
 }
 
 int
-ndn_direct_face_send(struct ndn_face_intf* self, const ndn_name_t* name,
-                     const uint8_t* packet, uint32_t size)
+ndn_direct_face_send(struct ndn_face_intf* self, const uint8_t* packet, uint32_t size)
 {
   (void)self;
   ndn_decoder_t decoder;
   uint32_t probe = 0;
   uint8_t isInterest = 0;
-  uint8_t bypass = (name == NULL)?0:1;
 
   decoder_init(&decoder, packet, size);
   decoder_get_type(&decoder, &probe);
@@ -61,24 +72,32 @@ ndn_direct_face_send(struct ndn_face_intf* self, const ndn_name_t* name,
     // There should not be fragmentation in direct face
     return 1;
   }
-  if (bypass == 0) {
-    // this function is supposed to be called by the forwarder,
-    // which has already finished name decoding
-    // bypass should be 1
-    return 1;
-  }
 
+  // Re-initialize and compare aganist entries
+  decoder_init(&decoder, packet, size);
   for (int i = 0; i < NDN_DIRECT_FACE_CB_ENTRY_SIZE; i++) {
-    if (direct_face.cb_entries[i].is_prefix == isInterest && isInterest == 0
-        && ndn_name_compare(&direct_face.cb_entries[i].interest_name, name) == 0) {
-      direct_face.cb_entries[i].on_data(packet, size);
+    ndn_decoder_t to_compare;
+    decoder_init(&to_compare, direct_face.cb_entries[i].interest_buffer.value,
+                 direct_face.cb_entries[i].interest_buffer.size);
+
+    // If Data
+    if (direct_face.cb_entries[i].is_prefix == isInterest && isInterest == 0) {
+      int compare_result = ndn_data_interest_compare_block(&decoder, &to_compare);
+      if (compare_result == 0)
+        direct_face.cb_entries[i].on_data(packet, size);
       return 0;
     }
-    if (direct_face.cb_entries[i].is_prefix == isInterest && isInterest == 1
-        && ndn_name_is_prefix_of(&direct_face.cb_entries[i].interest_name, name) == 0) {
-      direct_face.cb_entries[i].on_interest(packet, size);
+
+    // If Interest
+    if (direct_face.cb_entries[i].is_prefix == isInterest && isInterest == 1) {
+      int compare_result = ndn_interest_name_compare_block(&decoder, &to_compare);
+      if (compare_result == 0 || compare_result == 2)
+        direct_face.cb_entries[i].on_interest(packet, size);
       return 0;
     }
+
+    // Re-initialize and compare aganist entries
+    decoder_init(&decoder, packet, size);
   }
   return NDN_FWD_NO_MATCHED_CALLBACK;
 }
@@ -94,9 +113,13 @@ ndn_direct_face_construct(uint16_t face_id)
   direct_face.intf.state = NDN_FACE_STATE_DESTROYED;
   direct_face.intf.type = NDN_FACE_TYPE_APP;
 
-  // init call back entries
+  // init memory pool and call back entries
+  ndn_memory_pool_init(face_entry_interest_pool, FACE_ENTRY_INTEREST_MAX_SIZE,
+                       NDN_DIRECT_FACE_CB_ENTRY_SIZE);
   for (int i = 0; i < NDN_DIRECT_FACE_CB_ENTRY_SIZE; i++) {
-    direct_face.cb_entries[i].interest_name.components_size = NDN_FWD_INVALID_NAME_SIZE;
+    direct_face.cb_entries[i].interest_buffer.value = NULL;
+    direct_face.cb_entries[i].interest_buffer.size = NDN_FWD_INVALID_NAME_SIZE;
+    direct_face.cb_entries[i].interest_buffer.max_size = FACE_ENTRY_INTEREST_MAX_SIZE;
   }
 
   return &direct_face;
@@ -107,9 +130,18 @@ ndn_direct_face_express_interest(const ndn_name_t* interest_name,
                                  uint8_t* interest, uint32_t interest_size,
                                  ndn_on_data_callback on_data, ndn_interest_timeout_callback on_interest_timeout)
 {
+  (void)interest_name;
+
   for (int i = 0; i < NDN_DIRECT_FACE_CB_ENTRY_SIZE; i++) {
-    if (direct_face.cb_entries[i].interest_name.components_size == NDN_FWD_INVALID_NAME_SIZE) {
-      direct_face.cb_entries[i].interest_name = *interest_name;
+    if (direct_face.cb_entries[i].interest_buffer.size == NDN_FWD_INVALID_NAME_SIZE) {
+      direct_face.cb_entries[i].interest_buffer.value = ndn_memory_pool_alloc(face_entry_interest_pool);
+
+      if (direct_face.cb_entries[i].interest_buffer.value == NULL ||
+          interest_size > FACE_ENTRY_INTEREST_MAX_SIZE)
+        return NDN_OVERSIZE;
+
+      memcpy(direct_face.cb_entries[i].interest_buffer.value, interest, interest_size);
+      direct_face.cb_entries[i].interest_buffer.size = interest_size;
       direct_face.cb_entries[i].is_prefix = 0;
       direct_face.cb_entries[i].on_data = on_data;
       direct_face.cb_entries[i].on_timeout = on_interest_timeout;
@@ -126,9 +158,23 @@ int
 ndn_direct_face_register_prefix(const ndn_name_t* prefix_name,
                                 ndn_on_interest_callback on_interest)
 {
+  uint32_t prefix_name_size = ndn_name_probe_block_size(prefix_name);
+  uint8_t prefix_name_value[prefix_name_size];
+
+  ndn_encoder_t prefix_encoder;
+  encoder_init(&prefix_encoder, prefix_name_value, prefix_name_size);
+  ndn_name_tlv_encode(&prefix_encoder, prefix_name);
+
   for (int i = 0; i < NDN_DIRECT_FACE_CB_ENTRY_SIZE; i++) {
-    if (direct_face.cb_entries[i].interest_name.components_size == NDN_FWD_INVALID_NAME_SIZE) {
-      direct_face.cb_entries[i].interest_name = *prefix_name;
+    if (direct_face.cb_entries[i].interest_buffer.size == NDN_FWD_INVALID_NAME_SIZE) {
+      direct_face.cb_entries[i].interest_buffer.value = ndn_memory_pool_alloc(face_entry_interest_pool);
+
+      if (direct_face.cb_entries[i].interest_buffer.value == NULL ||
+          prefix_name_size > FACE_ENTRY_INTEREST_MAX_SIZE)
+        return NDN_OVERSIZE;
+
+      memcpy(direct_face.cb_entries[i].interest_buffer.value, prefix_name_value, prefix_name_size);
+      direct_face.cb_entries[i].interest_buffer.size = prefix_name_size;
       direct_face.cb_entries[i].is_prefix = 1;
       direct_face.cb_entries[i].on_data = NULL;
       direct_face.cb_entries[i].on_timeout = NULL;

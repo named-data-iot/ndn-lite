@@ -212,43 +212,60 @@ ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest)
 }
 
 int
-ndn_interest_name_compare_block(const uint8_t* lhs_block_value, uint32_t lhs_block_size,
-                                const uint8_t* rhs_block_value, uint32_t rhs_block_size)
+ndn_interest_compare_block(ndn_decoder_t* lhs_decoder, ndn_decoder_t* rhs_decoder)
 {
+  if (lhs_decoder->input_value == NULL || lhs_decoder->input_size <= 0)
+    return NDN_OVERSIZE;
+  if (rhs_decoder->input_value == NULL || rhs_decoder->input_size <= 0)
+    return NDN_OVERSIZE;
+
+  uint32_t probe = 0;
+  uint32_t lhs_interest_buffer_length, rhs_interest_buffer_length = 0;
   int ret_val = -1;
 
-  ndn_decoder_t lhs_decoder, rhs_decoder;
-  uint32_t lhs_interest_buffer_length, rhs_interest_buffer_length = 0;
-  decoder_init(&lhs_decoder, lhs_block_value, lhs_block_size);
-  decoder_init(&rhs_decoder, rhs_block_value, rhs_block_size);
-  uint32_t probe = 0;
-
   /* check left interest type */
-  ret_val = decoder_get_type(&lhs_decoder, &probe);
-  if (ret_val != NDN_SUCCESS)
-    return ret_val;
-  if (probe != TLV_Interest)
-    return NDN_WRONG_TLV_TYPE;
+  ret_val = decoder_get_type(lhs_decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  if (probe != TLV_Interest) return NDN_WRONG_TLV_TYPE;
 
   /* check right interest type */
-  ret_val = decoder_get_type(&rhs_decoder, &probe);
-  if (ret_val != NDN_SUCCESS)
-    return ret_val;
-  if (probe != TLV_Interest)
-    return NDN_WRONG_TLV_TYPE;
+  ret_val = decoder_get_type(rhs_decoder, &probe);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  if (probe != TLV_Interest) return NDN_WRONG_TLV_TYPE;
 
   /* check left interest buffer length */
-  ret_val = decoder_get_length(&lhs_decoder, &lhs_interest_buffer_length);
+  ret_val = decoder_get_length(lhs_decoder, &lhs_interest_buffer_length);
   if (ret_val != NDN_SUCCESS) return ret_val;
 
   /* check right interest buffer length */
-  ret_val = decoder_get_length(&rhs_decoder, &rhs_interest_buffer_length);
+  ret_val = decoder_get_length(rhs_decoder, &rhs_interest_buffer_length);
   if (ret_val != NDN_SUCCESS) return ret_val;
 
   /* compare Names */
-  ret_val = ndn_name_compare_block(lhs_decoder.input_value + lhs_decoder.offset,
-                                   lhs_decoder.input_size - lhs_decoder.offset ,
-                                   rhs_decoder.input_value + rhs_decoder.offset,
-                                   rhs_decoder.input_size - rhs_decoder.offset);
+  ret_val = ndn_name_compare_block(lhs_decoder, rhs_decoder);
+  return ret_val;
+}
+
+int
+ndn_interest_name_compare_block(ndn_decoder_t* interest_decoder, ndn_decoder_t* name_decoder)
+{
+  if (interest_decoder->input_value == NULL || interest_decoder->input_size <= 0)
+    return NDN_OVERSIZE;
+  if (name_decoder->input_value == NULL || name_decoder->input_size <= 0)
+    return NDN_OVERSIZE;
+
+  uint32_t probe, interest_buffer_length = 0;
+  int ret_val = -1;
+
+  /* check interest type */
+  ret_val = decoder_get_type(interest_decoder, &probe);
+  if (probe != TLV_Interest) return NDN_WRONG_TLV_TYPE;
+
+  /* check interest buffer length */
+  ret_val = decoder_get_length(interest_decoder, &interest_buffer_length);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+
+  /* compare Names */
+  ret_val = ndn_name_compare_block(interest_decoder, name_decoder);
   return ret_val;
 }
