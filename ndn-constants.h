@@ -49,6 +49,9 @@
 #define NDN_FRAG_MAX_SEQ_NUM 30
 #define NDN_FRAG_BUFFER_MAX 512
 
+// util
+#define NDN_TIMER_INVALID_FIRETIME ((uint64_t)(-1))
+
 // access control
 #define NDN_APPSUPPORT_AC_EDK_SIZE 16
 #define NDN_APPSUPPORT_AC_SALT_SIZE 16

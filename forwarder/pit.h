@@ -10,6 +10,7 @@
 #define FORWARDER_PIT_H_
 
 #include "../encode/interest.h"
+#include "../util/timer.h"
 #include "face.h"
 
 #ifdef __cplusplus
@@ -39,6 +40,7 @@ typedef struct ndn_pit_entry {
   /**
    * @todo How to timeout?
    */
+   ndn_timer_t timer;
 } ndn_pit_entry_t;
 
 /**

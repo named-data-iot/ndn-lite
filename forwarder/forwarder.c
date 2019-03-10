@@ -8,6 +8,7 @@
 
 #include "forwarder.h"
 #include "../util/memory-pool.h"
+#include "../util/alarm.h"
 #include "../encode/name.h"
 #include "../encode/data.h"
 #include <stdio.h>
@@ -99,6 +100,7 @@ pit_table_init(void)
     instance.pit[i].interest_buffer.value = NULL;
     instance.pit[i].interest_buffer.size = NDN_FWD_INVALID_NAME_SIZE;
     instance.pit[i].interest_buffer.max_size = PIT_INTEREST_MAX_SIZE;
+    ndn_timer_reset(&instance.pit[i].timer);
   }
 }
 
@@ -111,8 +113,7 @@ pit_entry_delete(ndn_pit_entry_t* entry)
 }
 
 static ndn_pit_entry_t*
-pit_table_find_or_insert(const uint8_t* interest_block_value,
-                         uint32_t interest_block_size)
+pit_table_find(const uint8_t* interest_block_value, uint32_t interest_block_size)
 {
   // Patially decode incoming interest
   ndn_decoder_t incoming_interest;
@@ -129,6 +130,18 @@ pit_table_find_or_insert(const uint8_t* interest_block_value,
     // Re-initialize incoming interest decoder
     decoder_init(&incoming_interest, interest_block_value, interest_block_size);
   }
+  return NULL;
+}
+
+static ndn_pit_entry_t*
+pit_table_find_or_insert(const uint8_t* interest_block_value,
+                         uint32_t interest_block_size)
+{
+  // Find
+  ndn_pit_entry_t* entry = pit_table_find(interest_block_value,
+                                          interest_block_size);
+  if (entry)
+    return entry;
 
   // Insert
   for (uint8_t i = 0; i < NDN_PIT_MAX_SIZE; i++) {
@@ -148,6 +161,22 @@ pit_table_find_or_insert(const uint8_t* interest_block_value,
   }
   return NULL;
 }
+
+/*
+static void
+pit_table_check_and_fire(void)
+{
+  for (uint8_t i = 0; i < NDN_PIT_MAX_SIZE; i++) {
+    if (instance.pit[i].timer.fire_time == NDN_TIMER_INVALID_FIRETIME)
+      continue;
+
+    else if (instance.pit[i].timer.fire_time >= ndn_alarm_millis_get_now())
+    {
+      ndn_timer_fire(&instance.pit[i].timer);
+      pit_entry_delete(&instance.pit[i]);
+    }
+  }
+}*/
 
 /************************************************************/
 /*  Definition of FIB table APIs                            */
@@ -238,6 +267,20 @@ ndn_forwarder_fib_insert(const ndn_name_t* name_prefix,
 
   return _fib_insert_name_block(name_block_value, name_block_size,
                                 face, cost);
+}
+
+int
+ndn_forwarder_pit_load_timeout(const uint8_t* interest_block, uint32_t interest_size,
+                               uint32_t lifetime, handler timeout_handler)
+{
+  ndn_pit_entry_t* entry = pit_table_find(interest_block, interest_size);
+  if (!entry)
+    return NDN_FWD_PIT_NO_MATCH;
+
+  uint64_t fire_time = ndn_alarm_millis_get_now() + lifetime;
+  ndn_timer_init(&entry->timer, timeout_handler, fire_time,
+                 entry->interest_buffer.value, entry->interest_buffer.size);
+  return NDN_SUCCESS;
 }
 
 int

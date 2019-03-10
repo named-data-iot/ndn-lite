@@ -33,17 +33,10 @@ void ndn_alarm_init(void);
 void ndn_alarm_deinit(void);
 
 /**
- * This method will start alarm.
- * @param start. Input. Timer start time.
- * @param delta. Input. Delta between timer start time and expiry time.
- */
-void ndn_alarm_millis_start(uint32_t start, uint32_t delta);
-
-/**
  * This method will get current system time (in millisecond) from alarm.
  * @return Current time
  */
-uint32_t ndn_alarm_millis_get_now(void);
+uint64_t ndn_alarm_millis_get_now(void);
 
 /**
  * This method will get current system time (in microsecond) from alarm.
@@ -53,15 +46,9 @@ uint64_t ndn_alarm_micros_get_now(void);
 
 /**
  * This method will stop alarm.
- * @note reserved, should only be called internally.
+ * @note RESERVED, should only be called internally.
  */
 void ndn_alarm_millis_stop(void);
-
-/**
- * This method will process alarm.
- * @param instance. Input. Timer scheduler instance.
- */
-void ndn_alarm_process(void* instance);
 
 /**
  * This method will block the program until delay completion. The delay time is
@@ -70,19 +57,6 @@ void ndn_alarm_process(void* instance);
  * @param delay. Input. Time to delay in millisecond.
  */
 void ndn_alarm_delay(uint32_t delay);
-
-/**
- * This method will fire millisecond alarm.
- * @param instance. Input. Timer scheduler instance.
- */
-extern void ndn_alarm_millis_fire(void* instance);
-
-/**
- * This method will fire microsecond alarm.
- * @note NOT SUPPORTED YET.
- * @param instance. Input. Timer scheduler instance.
- */
-extern void ndn_alarm_micros_fire(void* instance);
 
 #ifdef __cplusplus
 } // extern "C"

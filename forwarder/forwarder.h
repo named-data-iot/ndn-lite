@@ -62,6 +62,18 @@ ndn_forwarder_init(void);
                           ndn_face_intf_t* face, uint8_t cost);
 
 /**
+ * Add FIB entry into the FIB.
+ * This function should be invoked before sending a packet through the specific face.
+ * @param name_prefix. Input. The FIB's name prefix.
+ * @param face. Input/Output. The face instance to send the packet out.
+ * @param cost. The cost of sending a packet through the @param face. When more than one faces
+ *        can be used to send a packet, the face with lower cost will be used.
+ * @return 0 if there is no error.
+ */
+ int
+ ndn_forwarder_pit_load_timeout(const uint8_t* interest_block, uint32_t interest_size,
+                                uint32_t lifetime, handler timeout_handler);
+/**
  * Let the forwarder receive a Data packet.
  * This function is supposed to be invoked by face implementation ONLY.
  * @param self. Input/Output. The forwarder to receive the Data packet.
