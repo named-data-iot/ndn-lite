@@ -162,7 +162,7 @@ pit_table_find_or_insert(const uint8_t* interest_block_value,
   return NULL;
 }
 
-/*
+
 static void
 pit_table_check_and_fire(void)
 {
@@ -176,7 +176,7 @@ pit_table_check_and_fire(void)
       pit_entry_delete(&instance.pit[i]);
     }
   }
-}*/
+}
 
 /************************************************************/
 /*  Definition of FIB table APIs                            */
@@ -343,6 +343,16 @@ ndn_forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face,
   }
 
   return ret;
+}
+
+int
+ndn_forwarder_process(ndn_forwarder_t* self)
+{
+  (void)self;
+  pit_table_check_and_fire();
+
+  // no errors happen during process
+  return NDN_SUCCESS;
 }
 
 static int

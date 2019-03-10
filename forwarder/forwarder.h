@@ -99,6 +99,9 @@ int
 ndn_forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face,
                                    const uint8_t *raw_interest, uint32_t size);
 
+int
+ndn_forwarder_process(ndn_forwarder_t* self);
+
 #ifdef __cplusplus
 }
 #endif
