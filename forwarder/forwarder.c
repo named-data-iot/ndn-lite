@@ -167,10 +167,11 @@ static void
 pit_table_check_and_fire(void)
 {
   for (uint8_t i = 0; i < NDN_PIT_MAX_SIZE; i++) {
-    if (instance.pit[i].timer.fire_time == NDN_TIMER_INVALID_FIRETIME)
+    if (instance.pit[i].timer.fire_time == NDN_TIMER_INVALID_FIRETIME ||
+        instance.pit[i].interest_buffer.size == NDN_FWD_INVALID_NAME_SIZE)
       continue;
 
-    else if (instance.pit[i].timer.fire_time >= ndn_alarm_millis_get_now())
+    if (instance.pit[i].timer.fire_time <= ndn_alarm_millis_get_now())
     {
       ndn_timer_fire(&instance.pit[i].timer);
       pit_entry_delete(&instance.pit[i]);
@@ -271,11 +272,48 @@ ndn_forwarder_fib_insert(const ndn_name_t* name_prefix,
 
 int
 ndn_forwarder_pit_load_timeout(const uint8_t* interest_block, uint32_t interest_size,
-                               uint32_t lifetime, handler timeout_handler)
+                               handler timeout_handler)
 {
   ndn_pit_entry_t* entry = pit_table_find(interest_block, interest_size);
   if (!entry)
     return NDN_FWD_PIT_NO_MATCH;
+
+  // Skip name to get lifetime
+  ndn_decoder_t decoder;
+  uint32_t probe;
+  uint64_t lifetime = 0;
+  decoder_init(&decoder, interest_block, interest_size);
+
+  // Interest Header
+  decoder_get_type(&decoder, &probe);
+  decoder_get_length(&decoder, &probe);
+
+  // Name Header
+  decoder_get_type(&decoder, &probe);
+  decoder_get_length(&decoder, &probe);
+  decoder_move_forward(&decoder, probe);
+
+  // Servarl Optional Elements
+  while (decoder.offset < interest_size && !lifetime)
+  {
+    decoder_get_type(&decoder, &probe);
+    switch (probe) {
+      case TLV_CanBePrefix:
+        decoder_get_length(&decoder, &probe);
+        break;
+      case TLV_MustBeFresh:
+        decoder_get_length(&decoder, &probe);
+        break;
+      case TLV_Nonce:
+        decoder_get_length(&decoder, &probe);
+        decoder_move_forward(&decoder, probe);
+        break;
+      case TLV_InterestLifetime:
+        decoder_get_length(&decoder, &probe);
+        decoder_get_uint_value(&decoder, probe, &lifetime);
+        break;
+    }
+  }
 
   uint64_t fire_time = ndn_alarm_millis_get_now() + lifetime;
   ndn_timer_init(&entry->timer, timeout_handler, fire_time,

@@ -72,7 +72,7 @@ ndn_forwarder_init(void);
  */
  int
  ndn_forwarder_pit_load_timeout(const uint8_t* interest_block, uint32_t interest_size,
-                                uint32_t lifetime, handler timeout_handler);
+                                handler timeout_handler);
 /**
  * Let the forwarder receive a Data packet.
  * This function is supposed to be invoked by face implementation ONLY.
