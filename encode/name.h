@@ -11,6 +11,8 @@
 
 #include "name-component.h"
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -152,6 +154,18 @@ ndn_name_is_prefix_of(const ndn_name_t* lhs, const ndn_name_t* rhs);
  */
 int
 ndn_name_compare_block(ndn_decoder_t* lhs_decoder, ndn_decoder_t* rhs_decoder);
+
+
+/************************************************************/
+/*  Ultra Lightweight Encoding Functions                    */
+/************************************************************/
+int
+ndn_name_uri_tlv_probe_size(const char* uri, uint32_t len);
+
+int
+ndn_name_uri_tlv_encode(ndn_encoder_t* encoder, const char* uri, uint32_t len);
+
+void ndn_name_print(ndn_decoder_t* decoder);
 
 #ifdef __cplusplus
 }

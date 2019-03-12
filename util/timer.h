@@ -22,7 +22,7 @@ extern "C" {
  * After invoking the function, the caller will process the timeout.
  * @param arg. Input. The incoming argument.
  */
-typedef void (*handler)(const void* block_value, uint32_t block_size);
+typedef int (*handler)(const uint8_t* block_value, uint32_t block_size);
 
 /**
  * The structure to represent a timer.

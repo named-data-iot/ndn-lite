@@ -147,7 +147,12 @@ ndn_direct_face_express_interest(const ndn_name_t* interest_name,
       direct_face.cb_entries[i].on_timeout = on_interest_timeout;
       direct_face.cb_entries[i].on_interest = NULL;
 
+      // TODO: fetch lifetime from TLV encoded Interest block
       ndn_face_receive(&direct_face.intf, interest, interest_size);
+
+      uint32_t default_lifetime = 3000;
+      ndn_forwarder_pit_load_timeout(interest, interest_size, default_lifetime,
+                                     direct_face.cb_entries[i].on_timeout);
       return 0;
     }
   }

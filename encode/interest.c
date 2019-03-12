@@ -269,3 +269,57 @@ ndn_interest_name_compare_block(ndn_decoder_t* interest_decoder, ndn_decoder_t* 
   ret_val = ndn_name_compare_block(interest_decoder, name_decoder);
   return ret_val;
 }
+
+/************************************************************/
+/*  Ultra Lightweight Encoding Functions                    */
+/************************************************************/
+int
+_interest_uri_tlv_probe_size(const char* uri, uint32_t len, uint32_t lifetime)
+{
+  int ret_val = ndn_name_uri_tlv_probe_size(uri, len);
+  if (ret_val < 0) return ret_val;
+
+  uint32_t interest_buffer_size = ret_val;
+
+  // nonce
+  interest_buffer_size += 6;
+  // life time
+  interest_buffer_size += 2 + encoder_probe_uint_length(lifetime); // lifetime
+
+  return interest_buffer_size;
+}
+
+int
+ndn_interest_uri_tlv_encode(ndn_encoder_t* encoder, const char* uri, uint32_t len,
+                            uint32_t lifetime, uint32_t nonce)
+{
+  int ret_val = 0;
+  if (encoder == NULL || uri == NULL || len <= 0)
+    return NDN_OVERSIZE;
+
+  // encode interest header
+  encoder_append_type(encoder, TLV_Interest);
+  ret_val = _interest_uri_tlv_probe_size(uri, len, lifetime);
+  if (ret_val < 0) return ret_val;
+  encoder_append_length(encoder, ret_val + encoder_get_var_size(ret_val));
+
+  // encode name
+  ret_val = ndn_name_uri_tlv_encode(encoder, uri, len);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  // nonce
+  ret_val = encoder_append_type(encoder, TLV_Nonce);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_length(encoder, 4);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_uint32_value(encoder, nonce);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  // lifetime
+  ret_val = encoder_append_type(encoder, TLV_InterestLifetime);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_length(encoder, encoder_probe_uint_length(lifetime));
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_uint_value(encoder, lifetime);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+
+  return NDN_SUCCESS;
+}
