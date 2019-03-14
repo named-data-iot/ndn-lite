@@ -280,12 +280,10 @@ _interest_uri_tlv_probe_size(const char* uri, uint32_t len, uint32_t lifetime)
   if (ret_val < 0) return ret_val;
 
   uint32_t interest_buffer_size = ret_val;
-
   // nonce
   interest_buffer_size += 6;
   // life time
   interest_buffer_size += 2 + encoder_probe_uint_length(lifetime); // lifetime
-
   return interest_buffer_size;
 }
 

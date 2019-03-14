@@ -214,9 +214,6 @@ ndn_interest_name_compare_block(ndn_decoder_t* interest_decoder, ndn_decoder_t* 
 /*  Ultra Lightweight Encoding Functions                    */
 /************************************************************/
 int
-_interest_uri_tlv_probe_size(const char* uri, uint32_t len, uint32_t lifetime);
-
-int
 ndn_interest_uri_tlv_encode(ndn_encoder_t* encoder, const char* uri, uint32_t len,
                             uint32_t lifetime, uint32_t nonce);
 
