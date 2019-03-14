@@ -9,8 +9,8 @@
 #include "direct-face.h"
 #include "../forwarder/forwarder.h"
 #include "../util/memory-pool.h"
-#include "../encode/interest.h"
-#include "../encode/data.h"
+#include "../encode/light/interest-light.h"
+#include "../encode/light/data-light.h"
 #include "../ndn-error-code.h"
 #include "stdio.h"
 

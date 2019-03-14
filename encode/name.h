@@ -140,33 +140,6 @@ ndn_name_compare_sub_names(const ndn_name_t* lhs, int lhs_b, int lhs_e,
 int
 ndn_name_is_prefix_of(const ndn_name_t* lhs, const ndn_name_t* rhs);
 
-/**
- * Compare two encoded Names.
- * @param lhs_block_value. Input. Left-hand-side encoded Name block value.
- * @param lhs_block_size. Input. Left-hand-side encoded Name block size.
- * @param rhs_block_value. Input. Right-hand-side encoded Name block value.
- * @param rhs_block_size. Input. Right-hand-side encoded Name block size.
- * @return 0 if @p lhs == @p rhs.
- * @return 1, if @p lhs > @p rhs and @p rhs is not a prefix of @p lhs.
- * @return 2, if @p lhs > @p rhs and @p rhs is a proper prefix of @p lhs.
- * @return -1, if @p lhs < @p rhs and @p lhs is not a prefix of @p rhs.
- * @return -2, if @p lhs < @p rhs and @p lhs is a proper prefix of @p rhs.
- */
-int
-ndn_name_compare_block(ndn_decoder_t* lhs_decoder, ndn_decoder_t* rhs_decoder);
-
-
-/************************************************************/
-/*  Ultra Lightweight Encoding Functions                    */
-/************************************************************/
-int
-ndn_name_uri_tlv_probe_size(const char* uri, uint32_t len);
-
-int
-ndn_name_uri_tlv_encode(ndn_encoder_t* encoder, const char* uri, uint32_t len);
-
-void ndn_name_print(ndn_decoder_t* decoder);
-
 #ifdef __cplusplus
 }
 #endif

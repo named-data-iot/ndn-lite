@@ -9,8 +9,8 @@
 #include "forwarder.h"
 #include "../util/memory-pool.h"
 #include "../util/alarm.h"
-#include "../encode/name.h"
-#include "../encode/data.h"
+#include "../encode/light/data-light.h"
+#include "../encode/light/interest-light.h"
 #include <stdio.h>
 
 #define NAME_POOL_LEN 4
