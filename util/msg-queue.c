@@ -25,7 +25,7 @@ typedef struct ndn_msg{
 } ndn_msg_t;
 
 static uint8_t msg_queue[NDN_MSGQUEUE_SIZE];
-static ndn_msg_t *pfront, *ptail;
+static ndn_msg_t *pfront, *ptail, *psplit;
 
 #define MSGQUEUE_NEXT(ptr) \
   ptr = (ndn_msg_t*)(((uint8_t*)ptr) + ptr->length); \
@@ -36,7 +36,7 @@ static ndn_msg_t *pfront, *ptail;
 
 void
 ndn_msgqueue_init(void) {
-  pfront = ptail = (ndn_msg_t*)&msg_queue;
+  pfront = ptail = psplit = (ndn_msg_t*)&msg_queue;
 }
 
 bool
@@ -46,7 +46,7 @@ ndn_msgqueue_empty(void) {
   }
   if(pfront == ptail){
     // defrag when empty
-    pfront = ptail = (ndn_msg_t*)&msg_queue[0];
+    pfront = ptail = psplit = (ndn_msg_t*)&msg_queue[0];
     return true;
   } else
     return false;
@@ -104,4 +104,12 @@ ndn_msgqueue_post(void *target,
   MSGQUEUE_NEXT(ptail);
 
   return true;
+}
+
+void
+ndn_msgqueue_process(void) {
+  psplit = ptail;
+  while(pfront != psplit){
+    ndn_msgqueue_dispatch();
+  }
 }

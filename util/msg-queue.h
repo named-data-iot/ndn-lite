@@ -78,6 +78,14 @@ ndn_msgqueue_dispatch(void);
 bool
 ndn_msgqueue_empty(void);
 
+/** Dispatch current messages.
+ *
+ * Process all messages currently in the queue.
+ * New messages posted during this function will not be dispatched.
+ */
+void
+ndn_msgqueue_process(void);
+
 /*@}*/
 
 #ifdef __cplusplus
