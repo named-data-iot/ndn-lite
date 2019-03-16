@@ -13,9 +13,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define NDN_NAMETREE_INVALID_ID 0xFFFF
-#define NDN_FIB_TYPE 0
-#define NDN_PIT_TYPE 1
+#define NDN_NAMETREE_FIB_TYPE 0
+#define NDN_NAMETREE_PIT_TYPE 1
 
 typedef struct nametree_entry{
   uint8_t val[NDN_NAME_COMPONENT_BLOCK_SIZE];
@@ -25,13 +24,17 @@ typedef struct nametree_entry{
   uint16_t fib_id;
 } nametree_entry_t;
 
+typedef nametree_entry_t ndn_nametree_t[];
+
+#define NDN_NAMETREE_RESERVE_SIZE(entry_count) (sizeof(nametree_entry_t) * (entry_count))
+
 void
-ndn_nametree_init();
+ndn_nametree_init(void* memory, uint16_t capacity);
 
 nametree_entry_t*
-ndn_nametree_find_or_insert(uint8_t name[], size_t len);
+ndn_nametree_find_or_insert(ndn_nametree_t* nametree, uint8_t name[], size_t len);
 
 nametree_entry_t*
-ndn_nametree_prefix_match(uint8_t name[], size_t len, int type);
+ndn_nametree_prefix_match(ndn_nametree_t* nametree, uint8_t name[], size_t len, int type);
 
 #endif

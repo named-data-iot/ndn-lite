@@ -1,16 +1,16 @@
 /*
- * Copyright (C) 2018 Xinyu Ma, Zhiyi Zhang
+ * Copyright (C) 2018-2019 Xinyu Ma, Zhiyi Zhang
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
  * directory for more details.
  */
 
-#ifndef FORWARDER_FOWARDER_H
-#define FORWARDER_FOWARDER_H
+// NOTES: Any other modules except face should ONLY include this file.
 
-#include "pit.h"
-#include "fib.h"
+#ifndef FORWARDER_FORWARDER_H
+#define FORWARDER_FORWARDER_H
+
 #include "face.h"
 
 #ifdef __cplusplus
@@ -26,79 +26,45 @@ extern "C" {
  * @{
  */
 
-/**
- * NDN-Lite forwarder.
- * We will support content support in future versions.
- * The NDN forwarder is a singleton in an application.
- */
-typedef struct ndn_forwarder {
-  /**
-   * The forwarding information base (FIB).
-   */
-  ndn_fib_t fib;
-  /**
-   * The pending Interest table (PIT).
-   */
-  ndn_pit_t pit;
-} ndn_forwarder_t;
-
-/**
- * Get a running instance of forwarder.
- * @return the pointer to the forwarder instance.
- */
-ndn_forwarder_t*
-ndn_forwarder_get_instance(void);
-
-/**
- * Init the NDN-Lite forwarder.
- * This function should be invoked before any face registration and packet sending.
- * @return the pointer to the forwarder instance.
- */
-ndn_forwarder_t*
+void
 ndn_forwarder_init(void);
 
-/**
- * Add FIB entry into the FIB.
- * This function should be invoked before sending a packet through the specific face.
- * @param name_prefix Input. The FIB's name prefix.
- * @param face Input/Output. The face instance to send the packet out.
- * @param cost The cost of sending a packet through the @param face. When more than one faces
- *        can be used to send a packet, the face with lower cost will be used.
- * @return 0 if there is no error.
- */
 int
-ndn_forwarder_fib_insert(const ndn_name_t* name_prefix,
-                         ndn_face_intf_t* face, uint8_t cost);
+ndn_forwarder_register_face(ndn_face_intf_t* face);
 
-/**
- * Let the forwarder receive a Data packet.
- * This function is supposed to be invoked by face implementation ONLY.
- * @param self Input/Output. The forwarder to receive the Data packet.
- * @param face Input. The face instance who transmits the packet to the forwarder.
- * @param name [optional] Input. The name of the packet. If name == NULL, the forwarder
- *        will decode the packet name by itself.
- * @param raw_data Input. The wire format Data received by the @param face.
- * @param size Input. The size of the wire format Data.
- * @return 0 if there is no error.
- */
 int
-ndn_forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn_name_t *name,
-                               const uint8_t *raw_data, uint32_t size);
+ndn_forwarder_unregister_face(ndn_face_intf_t* face);
 
-/**
- * Let the forwarder receive a Interest packet.
- * This function is supposed to be invoked by face implementation ONLY.
- * @param self Input/Output. The forwarder to receive the Interest packet.
- * @param face Input. The face instance who transmits the packet to the forwarder.
- * @param name [optional] Input. The name of the packet. If name == NULL, the forwarder
- *        will decode the packet name by itself.
- * @param raw_data Input. The wire format Interest received by the @param face.
- * @param size Input. The size of the wire format Interest.
- * @return 0 if there is no error.
- */
 int
-ndn_forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face, ndn_name_t *name,
-                                   const uint8_t *raw_interest, uint32_t size);
+ndn_forwarder_add_route(ndn_face_intf_t* face, uint8_t* prefix, size_t length);
+
+int
+ndn_forwarder_remove_route(ndn_face_intf_t* face, uint8_t* prefix, size_t length);
+
+int
+ndn_forwarder_remove_all_routes(uint8_t* prefix, size_t length);
+
+int
+ndn_forwarder_receive(ndn_face_intf_t* face, const uint8_t* packet, size_t length);
+
+int
+ndn_forwarder_register_prefix(uint8_t* prefix,
+                              size_t length,
+                              ndn_on_data_func on_data,
+                              ndn_on_timeout_func on_timeout,
+                              void* userdata);
+
+int
+ndn_forwarder_unregister_prefix(uint8_t* prefix, size_t length);
+
+int
+ndn_forwarder_express_interest(const uint8_t* interest,
+                               size_t length,
+                               ndn_on_interest_func on_interest,
+                               void* userdata);
+
+int
+ndn_forwarder_put_data(const uint8_t* data, size_t length);
 
 /*@}*/
 
@@ -106,4 +72,4 @@ ndn_forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face,
 }
 #endif
 
-#endif // FORWARDER_FOWARDER_H
+#endif // FORWARDER_FORWARDER_H

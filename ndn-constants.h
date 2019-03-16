@@ -33,6 +33,8 @@
 #define NDN_SIGNATURE_BUFFER_SIZE 128
 
 // forwarder
+#define NDN_INVALID_ID 0xFFFF
+#define NDN_NAMETREE_MAX_SIZE 64
 #define NDN_FIB_MAX_SIZE 20
 #define NDN_PIT_MAX_SIZE 32
 #define NDN_CS_MAX_SIZE 10
