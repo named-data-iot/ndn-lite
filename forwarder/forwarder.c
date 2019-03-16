@@ -45,7 +45,6 @@ typedef struct ndn_forwarder {
 } ndn_forwarder_t;
 
 static ndn_forwarder_t forwarder;
-static bool forwarder_inited = false;
 
 void
 ndn_forwarder_init(void)
@@ -66,7 +65,7 @@ ndn_forwarder_register_face(ndn_face_intf_t* face)
 int
 ndn_forwarder_unregister_face(ndn_face_intf_t* face)
 {
-  ndn_face_unregister_from_fib()
+  ndn_face_unregister_from_fib(&forwarder.fib, face->face_id);
   ndn_facetab_unregister(&forwarder.facetab, face->face_id)
 }
 

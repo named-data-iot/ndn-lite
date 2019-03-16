@@ -11,6 +11,7 @@
 #include "../encode/new-interest.h"
 #include "face.h"
 #include "name-tree.h"
+#include "callback-funcs.h"
 #include "../util/uniform-time.h"
 
 #ifdef __cplusplus
@@ -22,9 +23,6 @@ extern "C" {
  * @ingroup NDNFwd
  * @{
  */
-
-typedef void (*ndn_on_data_func)(const uint8_t* data, uint32_t data_size, void* userdata);
-typedef void (*ndn_on_timeout_func)(void* userdata);
 
 /**
  * PIT entry.
