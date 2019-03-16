@@ -45,4 +45,3 @@ typedef struct ndn_forwarder {
 } ndn_forwarder_t;
 
 static ndn_forwarder_t forwarder;
-static bool forwarder_inited = false;

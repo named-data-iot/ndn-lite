@@ -11,6 +11,7 @@
 #include "../encode/new-interest.h"
 #include "face.h"
 #include "name-tree.h"
+#include "callback-funcs.h"
 #include "../util/uniform-time.h"
 
 #ifdef __cplusplus
@@ -23,9 +24,6 @@ extern "C" {
  * @{
  */
 
-typedef void (*ndn_on_data_func)(const uint8_t* data, uint32_t data_size, void* userdata);
-typedef void (*ndn_on_timeout_func)(void* userdata);
-
 /**
  * PIT entry.
  */
@@ -33,6 +31,7 @@ typedef struct ndn_pit_entry {
   interest_options_t options;
   uint64_t incoming_faces;
   ndn_time_ms_t last_time;
+  ndn_time_ms_t express_time;
   ndn_on_data_func on_data;
   ndn_on_timeout_func on_timeout;
   void* userdata;

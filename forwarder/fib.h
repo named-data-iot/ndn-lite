@@ -10,6 +10,7 @@
 #define FORWARDER_FIB_H_
 
 #include "../util/bit-operations.h"
+#include "callback-funcs.h"
 #include "name-tree.h"
 
 #ifdef __cplusplus
@@ -21,10 +22,6 @@ extern "C" {
  * @ingroup NDNFwd
  * @{
  */
-
-typedef int (*ndn_on_interest_func)(const uint8_t* interest,
-                                    uint32_t interest_size,
-                                    void* userdata);
 
 /**
  * FIB entry.
