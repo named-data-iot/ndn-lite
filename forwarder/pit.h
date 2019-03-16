@@ -33,6 +33,7 @@ typedef struct ndn_pit_entry {
   interest_options_t options;
   uint64_t incoming_faces;
   ndn_time_ms_t last_time;
+  ndn_time_ms_t express_time;
   ndn_on_data_func on_data;
   ndn_on_timeout_func on_timeout;
   void* userdata;

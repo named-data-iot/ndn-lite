@@ -29,24 +29,31 @@ extern "C" {
 void
 ndn_forwarder_init(void);
 
+//add a face into face table
 int
 ndn_forwarder_register_face(ndn_face_intf_t* face);
 
+//remove a face from face table, pit and fib
 int
 ndn_forwarder_unregister_face(ndn_face_intf_t* face);
 
+//add a route into fib
 int
 ndn_forwarder_add_route(ndn_face_intf_t* face, uint8_t* prefix, size_t length);
 
+//remove a route from fib
 int
 ndn_forwarder_remove_route(ndn_face_intf_t* face, uint8_t* prefix, size_t length);
 
+//remove all routes of a fib entry.
 int
 ndn_forwarder_remove_all_routes(uint8_t* prefix, size_t length);
 
+//receive a packet from face
 int
 ndn_forwarder_receive(ndn_face_intf_t* face, const uint8_t* packet, size_t length);
 
+//register a prefix
 int
 ndn_forwarder_register_prefix(uint8_t* prefix,
                               size_t length,
@@ -54,15 +61,18 @@ ndn_forwarder_register_prefix(uint8_t* prefix,
                               ndn_on_timeout_func on_timeout,
                               void* userdata);
 
+//unregister a prefix
 int
 ndn_forwarder_unregister_prefix(uint8_t* prefix, size_t length);
 
+//express an interest
 int
 ndn_forwarder_express_interest(const uint8_t* interest,
                                size_t length,
                                ndn_on_interest_func on_interest,
                                void* userdata);
 
+//produce a data
 int
 ndn_forwarder_put_data(const uint8_t* data, size_t length);
 

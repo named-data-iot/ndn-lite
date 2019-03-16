@@ -50,6 +50,8 @@ typedef struct ndn_fib{
 
 void ndn_fib_init(void* memory, uint16_t capacity, ndn_nametree_t* nametree);
 
+void ndn_face_unregister_from_fib()
+
 /*@}*/
 
 #ifdef __cplusplus

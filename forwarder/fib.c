@@ -17,3 +17,5 @@ void ndn_fib_init(void* memory, uint16_t capacity, ndn_nametree_t* nametree){
     self->slots[i].nametree_id = NDN_INVALID_ID;
   }
 }
+
+ndn_face_unregister_from_fib()
