@@ -9,19 +9,21 @@
 #include "name-tree.h"
 #include <stdio.h>
 
-void nametree_refresh(ndn_nametree_t *nametree, int num)
+static void
+nametree_refresh(ndn_nametree_t *nametree, int num)
 {
     (*nametree)[num].left_child = (*nametree)[num].pit_id = (*nametree)[num].fib_id = NDN_INVALID_ID;
     (*nametree)[num].right_bro = (*nametree)[0].right_bro;
     (*nametree)[0].right_bro = num;
 }
 
-int clean(ndn_nametree_t *nametree, int num)
+static int
+nametree_clean(ndn_nametree_t *nametree, int num)
 {
     int ret = 0;
     if (num == NDN_INVALID_ID) return NDN_INVALID_ID;
-    (*nametree)[num].left_child = clean(nametree, (*nametree)[num].left_child);
-    (*nametree)[num].right_bro = clean(nametree, (*nametree)[num].right_bro);
+    (*nametree)[num].left_child = nametree_clean(nametree, (*nametree)[num].left_child);
+    (*nametree)[num].right_bro = nametree_clean(nametree, (*nametree)[num].right_bro);
     if ((*nametree)[num].fib_id == NDN_INVALID_ID &&
         (*nametree)[num].pit_id == NDN_INVALID_ID &&
         (*nametree)[num].left_child == NDN_INVALID_ID) {
@@ -32,10 +34,10 @@ int clean(ndn_nametree_t *nametree, int num)
     return num;
 }
 
-void
-ndn_nametree_cleanup(ndn_nametree_t *nametree)
+static void
+nametree_cleanup(ndn_nametree_t *nametree)
 {
-    (*nametree)[0].left_child = clean(nametree, (*nametree)[0].left_child);
+    (*nametree)[0].left_child = nametree_clean(nametree, (*nametree)[0].left_child);
 }
 
 void
@@ -55,6 +57,7 @@ ndn_nametree_init(void* memory, uint16_t capacity)
 //1: name1 > name2
 int component_match(uint8_t *name1 , uint8_t *name2 , size_t len)
 {
+    //TODO: Put it into encode
     for (int i = 0; i < len; ++i) {
         if (name1[i] < name2[i]) return -1;
         if (name1[i] > name2[i]) return 1;
@@ -62,8 +65,8 @@ int component_match(uint8_t *name1 , uint8_t *name2 , size_t len)
     return 0;
 }
 
-// return NDN_NAMETREE_INVALID_ID if node creation failure(because no free entries), else return the index of newly created node.
-int create_node(ndn_nametree_t *nametree, uint8_t name[], size_t len)
+static int
+nametree_create_node(ndn_nametree_t *nametree, uint8_t name[], size_t len)
 {
     int output = (*nametree)[0].right_bro;
     if (output == NDN_INVALID_ID) return NDN_INVALID_ID;
@@ -74,11 +77,12 @@ int create_node(ndn_nametree_t *nametree, uint8_t name[], size_t len)
     return output;
 }
 
-nametree_entry_t*
-ndn_nametree_find_or_insert_try(ndn_nametree_t *nametree, uint8_t name[], size_t len)
+static nametree_entry_t*
+nametree_find_or_insert_try(ndn_nametree_t *nametree, uint8_t name[], size_t len)
 {
     int now_node, last_node, father = 0 , offset = 0 , tmp , new_node_number;
     size_t component_len;
+    // TODO: Put it into decoder
     if (len < 2) return NULL;
     if (name[1] < 253) offset = 2; else offset = 4;
     while (offset < len) {
@@ -92,23 +96,16 @@ ndn_nametree_find_or_insert_try(ndn_nametree_t *nametree, uint8_t name[], size_t
             last_node = now_node;
             now_node = (*nametree)[now_node].right_bro;
         }
-        if (tmp != 0 && last_node == NDN_INVALID_ID) {
-            new_node_number = create_node(nametree, name + offset , component_len);
-            if (new_node_number == NDN_INVALID_ID) return NULL;
-            (*nametree)[father].left_child = new_node_number;
-            (*nametree)[new_node_number].right_bro = now_node;
-            offset += component_len;
-            father = new_node_number;
-            continue;
-        }
         if (tmp != 0) {
-            new_node_number = create_node(nametree, name + offset , component_len);
+            new_node_number = nametree_create_node(nametree, name + offset , component_len);
             if (new_node_number == NDN_INVALID_ID) return NULL;
-            (*nametree)[last_node].right_bro = new_node_number;
+            if(last_node == NDN_INVALID_ID){
+                (*nametree)[father].left_child = new_node_number;
+            }else{
+                (*nametree)[last_node].right_bro = new_node_number;
+            }
             (*nametree)[new_node_number].right_bro = now_node;
-            offset += component_len;
-            father = new_node_number;
-            continue;
+            now_node = new_node_number;
         }
         offset += component_len;
         father = now_node;
@@ -119,10 +116,10 @@ ndn_nametree_find_or_insert_try(ndn_nametree_t *nametree, uint8_t name[], size_t
 nametree_entry_t*
 ndn_nametree_find_or_insert(ndn_nametree_t *nametree, uint8_t name[], size_t len)
 {
-    nametree_entry_t* p = ndn_nametree_find_or_insert_try(nametree, name , len);
+    nametree_entry_t* p = nametree_find_or_insert_try(nametree, name , len);
     if (p == NULL) {
-        ndn_nametree_cleanup(nametree);
-        p = ndn_nametree_find_or_insert_try(nametree, name , len);
+        nametree_cleanup(nametree);
+        p = nametree_find_or_insert_try(nametree, name , len);
     }
     return p;
 }

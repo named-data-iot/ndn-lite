@@ -76,19 +76,11 @@ ndn_fib_find_or_insert(ndn_fib_t* self, uint8_t* prefix, size_t length){
   return &self->slots[entry->fib_id];
 }
 
-void set_fib_entry(ndn_fib_entry_t *entry,
-                  ndn_bitset_t nexthop,
-                  ndn_on_interest_func on_interest,
-                  void* userdata,
-                  uint16_t nametree_id)
-{
-  entry -> nexthop = nexthop;
-  entry -> userdata = userdata;
-  entry -> on_interest = on_interest;
-  entry -> nametree_id = nametree_id;
-}
-
-void refresh_fib_entry(ndn_fib_entry_t *entry)
-{
-  set_fib_entry(entry, 0, NULL, NULL, NDN_INVALID_ID);
+ndn_fib_entry_t*
+ndn_fib_find(ndn_fib_t* self, uint8_t* prefix, size_t length){
+  nametree_entry_t* entry = ndn_nametree_find_or_insert(self->nametree, prefix, length);
+  if(entry == NULL || entry->fib_id == NDN_INVALID_ID){
+    return NULL;
+  }
+  return &self->slots[entry->fib_id];
 }

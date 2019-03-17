@@ -102,7 +102,8 @@ ndn_forwarder_unregister_face(ndn_face_intf_t* face)
 }
 
 static inline int
-ndn_forwarder_check_name(uint8_t* prefix, size_t length){
+ndn_forwarder_tlv_check(uint8_t* prefix, size_t length, uint32_t tlv_type){
+  // TODO: Delete this function; refactor decoder/encoder
   ndn_decoder_t decoder;
   uint32_t val;
   int ret;
@@ -114,7 +115,7 @@ ndn_forwarder_check_name(uint8_t* prefix, size_t length){
   ret = decoder_get_type(&decoder, &val);
   if(ret != NDN_SUCCESS)
     return ret;
-  if(val != TLV_Name)
+  if(val != tlv_type)
     return NDN_WRONG_TLV_TYPE;
 
   ret = decoder_get_length(&decoder, &val);
@@ -135,9 +136,9 @@ ndn_forwarder_add_route(ndn_face_intf_t* face, uint8_t* prefix, size_t length)
 
   if(face == NULL)
     return NDN_FWD_INVALID_FACE;
-  if(face->face_id == NDN_INVALID_ID)
+  if(face->face_id >= forwarder.facetab->capacity)
     return NDN_FWD_INVALID_FACE;
-  ret = ndn_forwarder_check_name(prefix, length);
+  ret = ndn_forwarder_tlv_check(prefix, length, TLV_Name);
   if(ret != NDN_SUCCESS)
     return ret;
 
@@ -148,31 +149,39 @@ ndn_forwarder_add_route(ndn_face_intf_t* face, uint8_t* prefix, size_t length)
   return NDN_SUCCESS;
 }
 
-// MY WORK STOPS HERE
-
-//remove a route from fib
 int
 ndn_forwarder_remove_route(ndn_face_intf_t* face, uint8_t* prefix, size_t length)
 {
-  //TODO: Check face_id, check prefix, report an error if face is not registered, delete the entry if necessary
-  //      Usage of bitset_unset (all bitset functions are pure functions), return NDN_FWD_FIB_FULL for error.
+  int ret;
 
-  if (face == NULL) return NDN_FWD_INVALID_FACE; // A new function
-  ndn_fib_entry_t* fib_entry = ndn_get_fib_entry(forwarder.fib, forwarder.nametree, prefix, length);
-  if (fib_entry == NULL) return NDN_FWD_NO_MEM;
-  bitset_unset(fib_entry -> nexthop , face -> face_id);
+  if(face == NULL)
+    return NDN_FWD_INVALID_FACE;
+  if(face->face_id >= forwarder.facetab->capacity)
+    return NDN_FWD_INVALID_FACE;
+  ret = ndn_forwarder_tlv_check(prefix, length, TLV_Name);
+  if(ret != NDN_SUCCESS)
+    return ret;
+
+  ndn_fib_entry_t* fib_entry = ndn_fib_find(forwarder.fib, prefix, length);
+  if (fib_entry == NULL)
+    return NDN_FWD_NO_EFFECT;
+  fib_entry->nexthop = bitset_unset(fib_entry->nexthop, face->face_id);
+  ndn_fib_remove_entry_if_empty(forwarder.fib, fib_entry - forwarder.fib);
   return NDN_SUCCESS;
 }
 
-//remove all routes of a fib entry.
 int
 ndn_forwarder_remove_all_routes(uint8_t* prefix, size_t length)
 {
-  // TODO: Check prefix, report an error if that entry doesn't exist, delete the entry if necessary
+  int ret = ndn_forwarder_tlv_check(prefix, length, TLV_Name);
+  if(ret != NDN_SUCCESS)
+    return ret;
 
-  ndn_fib_entry_t* fib_entry = ndn_get_fib_entry(forwarder.fib, forwarder.nametree, prefix, length);
-  if (fib_entry == NULL) return NDN_FWD_NO_MEM;
-  fib_entry -> nexthop = 0;
+  ndn_fib_entry_t* fib_entry = ndn_fib_find(forwarder.fib, prefix, length);
+  if (fib_entry == NULL)
+    return NDN_FWD_NO_EFFECT;
+  fib_entry->nexthop = 0;
+  ndn_fib_remove_entry_if_empty(forwarder.fib, fib_entry - forwarder.fib);
   return NDN_SUCCESS;
 }
 
@@ -181,41 +190,45 @@ int
 ndn_forwarder_receive(ndn_face_intf_t* face, const uint8_t* packet, size_t length)
 {
   //interest?data
-  //
+  //TODO
 }
 
-//register a prefix
-//shanxigy: nexthop bitset is set to 0.
 int
 ndn_forwarder_register_prefix(uint8_t* prefix,
                               size_t length,
                               ndn_on_interest_func on_interest,
                               void* userdata)
 {
-  // TODO: Check prefix, check on_interest != NULL, change function names & args
+  int ret = ndn_forwarder_tlv_check(prefix, length, TLV_Name);
+  if(ret != NDN_SUCCESS)
+    return ret;
+  if (on_interest == NULL)
+    return NDN_INVALID_POINTER;
 
-  nametree_entry_t* entry = ndn_nametree_find_or_insert(forwarder.nametree, prefix, length);
-  ndn_fib_entry_t* fib_entry = ndn_get_fib_entry(forwarder.fib, forwarder.nametree, prefix, length);
-  if (fib_entry == NULL) return NDN_FWD_NO_MEM;
-  set_fib_entry(fib_entry, 0, on_interest, userdata, entry - forwarder.nametree);
+  ndn_fib_entry_t* fib_entry = ndn_fib_find_or_insert(forwarder.fib, prefix, length);
+  if (fib_entry == NULL)
+    return NDN_FWD_FIB_FULL;
+  fib_entry->on_interest = on_interest;
+  fib_entry->userdata = userdata;
   return NDN_SUCCESS;
 }
 
-//unregister a prefix
 int
 ndn_forwarder_unregister_prefix(uint8_t* prefix, size_t length)
 {
-  // TODO: Check prefix, change function names & args
+  int ret = ndn_forwarder_tlv_check(prefix, length, TLV_Name);
+  if(ret != NDN_SUCCESS)
+    return ret;
 
-  nametree_entry_t* entry = ndn_nametree_find_or_insert(forwarder.nametree, prefix, length);
-  if (entry == NULL) return NDN_FWD_NO_MEM;
-  if (entry -> fib_id == NDN_INVALID_ID) return NDN_SUCCESS;
-  refresh_fib_entry(forwarder.fib -> slots[entry -> fib_id]);
-  entry -> fib_id = NDN_INVALID_ID;
+  nametree_entry_t* entry = ndn_fib_find(forwarder.nametree, prefix, length);
+  if (entry == NULL)
+    return NDN_FWD_NO_EFFECT;
+  fib_entry->on_interest = NULL;
+  fib_entry->userdata = NULL;
+  ndn_fib_remove_entry_if_empty(forwarder.fib, fib_entry - forwarder.fib);
   return NDN_SUCCESS;
 }
 
-//express an interest
 int
 ndn_forwarder_express_interest(const uint8_t* interest,
                                size_t length,
@@ -223,19 +236,26 @@ ndn_forwarder_express_interest(const uint8_t* interest,
                                ndn_on_timeout_func on_timeout,
                                void* userdata)
 {
-  // TODO: Check interest, check on_data, change function names & args
+  int ret = ndn_forwarder_tlv_check(interest, length, TLV_Interest);
+  if(ret != NDN_SUCCESS)
+    return ret;
+  if (on_data == NULL)
+    return NDN_INVALID_POINTER;
 
-  ndn_pit_entry_t* pit_entry = ndn_get_pit_entry(forwarder.pit, forwarder.nametree, interest, length);
-  if (pit_entry == NULL) return NDN_FWD_NO_MEM;
-  pit_entry -> on_data = on_data;
-  pit_entry -> on_timeout = on_timeout;
-  pit_entry -> userdata = userdata;
+  ndn_pit_entry_t* pit_entry = ndn_pit_find_or_insert(forwarder.pit, interest, length);
+  if (pit_entry == NULL)
+    return NDN_FWD_PIT_FULL;
+  pit_entry->on_data = on_data;
+  pit_entry->on_timeout = on_timeout;
+  pit_entry->userdata = userdata;
   return ndn_forwarder_receive(NULL, interest, length);
 }
 
-//produce a data
 int
 ndn_forwarder_put_data(const uint8_t* data, size_t length)
 {
+  int ret = ndn_forwarder_tlv_check(interest, length, TLV_Data);
+  if(ret != NDN_SUCCESS)
+    return ret;
   return ndn_forwarder_receive(NULL, data, length);
 }

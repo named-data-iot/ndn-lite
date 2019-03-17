@@ -51,7 +51,7 @@ void
 ndn_fib_unregister_face(ndn_fib_t* self, uint16_t face_id);
 
 //clean a fib entry, set nametree_id to NDN_INVALID_ID and others to 0.
-void refresh_fib_entry(ndn_fib_entry_t *entry);
+void ndn_fib_refresh_entry(ndn_fib_entry_t *entry);
 
 //create a new fib entry in fib table.
 //fib (input): header of pit table
@@ -66,7 +66,7 @@ ndn_fib_entry_t*
 ndn_fib_find_or_insert(ndn_fib_t* self, uint8_t* prefix, size_t length);
 
 //set each components in a fib entry
-void set_fib_entry(ndn_fib_entry_t *entry,
+void ndn_fib_set_entry(ndn_fib_entry_t *entry,
                   ndn_bitset_t nexthop,
                   ndn_on_interest_func on_interest,
                   void* userdata,
@@ -80,7 +80,7 @@ void set_fib_entry(ndn_fib_entry_t *entry,
 //length (input): length of name prefix.
 //output: pointer of fib entry corresponding to given prefix.
 ndn_fib_entry_t*
-ndn_get_fib_entry(ndn_fib_t* fib, ndn_nametree_t* nametree, uint8_t* prefix, size_t length);
+ndn_fib_find_or_insert(ndn_fib_t* fib, uint8_t* prefix, size_t length);
 
 /*@}*/
 

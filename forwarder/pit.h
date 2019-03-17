@@ -58,10 +58,10 @@ void
 ndn_pit_unregister_face(ndn_pit_t* self, uint16_t face_id);
 
 int
-pit_entry_add_incoming_face(ndn_pit_entry_t* entry, ndn_face_intf_t* face);
+ndn_pit_entry_add_incoming_face(ndn_pit_entry_t* entry, ndn_face_intf_t* face);
 
 //set each components in a pit entry
-void set_pit_entry(ndn_pit_entry_t *entry,
+void ndn_pit_set_entry(ndn_pit_entry_t *entry,
                   interest_options_t options,
                   uint64_t incoming_faces,
                   ndn_time_ms_t last_time,
@@ -72,7 +72,7 @@ void set_pit_entry(ndn_pit_entry_t *entry,
                   uint16_t nametree_id);
 
 //clean a pit entry, set nametree_id to NDN_INVALID_ID and others to 0.
-void refresh_pit_entry(ndn_pit_entry_t *entry);
+void ndn_pit_refresh_entry(ndn_pit_entry_t *entry);
 
 //create a new pit entry in pit table.
 //pit (input): header of pit table
@@ -84,13 +84,12 @@ int ndn_pit_add_new_entry(ndn_pit_t* pit , int offset);
 
 //get the pointer of pit entry corresponding to given prefix. if no such an entry, create a new one.
 //return the pit entry corresponding to prefix.
-//pit (input): header of pit table.
-//nametree (input): header of nametree.
+//self (input): pointer of pit table.
 //prefix (input): name prefix.
 //length (input): length of name prefix.
 //output: pointer of pit entry corresponding to given prefix.
 ndn_pit_entry_t*
-ndn_get_fib_entry(ndn_pit_t* pit, ndn_nametree_t* nametree, uint8_t* prefix, size_t length);
+ndn_pit_find_or_insert(ndn_pit_t* self, uint8_t* prefix, size_t length);
 
 /*@}*/
 
