@@ -61,6 +61,9 @@
  * Reserved. See the function called.
  */
 #define NDN_TLV_OP_FAILED -15
+
+#define NDN_INVALID_POINTER -16
+
 /* @} */
 
 /** @defgroup NDNErrorCodeSecurity Security Errors
@@ -97,7 +100,8 @@
 #define NDN_FWD_INTEREST_REJECTED -54
 #define NDN_FWD_NO_MATCHED_CALLBACK -55
 #define NDN_FWD_INVALID_FACE -56
-#define NDN_FWD_FACE_FULL -57
+#define NDN_FWD_FACE_TABLE_FULL -57
+#define NDN_FWD_NO_EFFECT -58
 /* @} */
 
 /** @defgroup NDNErrorCodeFace Face Errors

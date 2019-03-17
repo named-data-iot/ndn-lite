@@ -93,7 +93,7 @@ ndn_forwarder_remove_all_routes(uint8_t* prefix, size_t length);
 /** Receive a packet from a face.
  *
  * Removing the last route of a FIB entry will delete the entry.
- * @param face [in] The face of the route.
+ * @param face [in, opt] The face of the route.
  * @param prefix [in] The prefix of the route.
  * @param length [in] The length of @c prefix .
  * @note Application doesn't need to call this manually.
@@ -107,7 +107,7 @@ ndn_forwarder_receive(ndn_face_intf_t* face, const uint8_t* packet, size_t lengt
  * @param prefix [in] The prefix to register.
  * @param length [in] The length of @c prefix .
  * @param on_interest [in] The callback function when an interest comes.
- * @param userdata [in] User-defined data, copied to @c on_interest .
+ * @param userdata [in, opt] User-defined data, copied to @c on_interest .
  */
 int
 ndn_forwarder_register_prefix(uint8_t* prefix,
@@ -130,8 +130,8 @@ ndn_forwarder_unregister_prefix(uint8_t* prefix, size_t length);
  * @param interest [in] The interest to express.
  * @param length [in] The length of @c interest .
  * @param on_data [in] The callback function when a data comes.
- * @param on_timeout [in] The callback function when times out.
- * @param userdata [in] User-defined data, copied to @c on_data and @c on_timeout .
+ * @param on_timeout [in, opt] The callback function when times out.
+ * @param userdata [in, opt] User-defined data, copied to @c on_data and @c on_timeout .
  */
 int
 ndn_forwarder_express_interest(const uint8_t* interest,

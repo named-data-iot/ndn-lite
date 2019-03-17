@@ -47,8 +47,8 @@ typedef struct ndn_fib{
 
 void ndn_fib_init(void* memory, uint16_t capacity, ndn_nametree_t* nametree);
 
-//unregister a face from pit table.
-void ndn_face_unregister_from_fib(ndn_fib_t* fib, ndn_face_intf_t* face);
+void
+ndn_fib_unregister_face(ndn_fib_t* self, uint16_t face_id);
 
 //clean a fib entry, set nametree_id to NDN_INVALID_ID and others to 0.
 void refresh_fib_entry(ndn_fib_entry_t *entry);
@@ -59,7 +59,11 @@ void refresh_fib_entry(ndn_fib_entry_t *entry);
 //                This value will be filled in the field "nametree_id".
 //output: the position of this newly created fib entry in the fib table.
 //        This value is used for fill in the field "fib_id" in the corresponding nametree entry.
-int ndn_fib_add_new_entry(ndn_fib_t* fib , int offset);
+uint16_t
+ndn_fib_add_new_entry(ndn_fib_t* fib , int nametree_id);
+
+ndn_fib_entry_t*
+ndn_fib_find_or_insert(ndn_fib_t* self, uint8_t* prefix, size_t length);
 
 //set each components in a fib entry
 void set_fib_entry(ndn_fib_entry_t *entry,

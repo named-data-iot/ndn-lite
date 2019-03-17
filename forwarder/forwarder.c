@@ -10,6 +10,7 @@
 #include "pit.h"
 #include "fib.h"
 #include "face-table.h"
+#include "../encode/decoder.h"
 
 #define NDN_FORWARDER_RESERVE_SIZE(nametree_size, facetab_size, fib_size, pit_size) \
   (NDN_NAMETREE_RESERVE_SIZE(nametree_size) + \
@@ -49,46 +50,114 @@ static ndn_forwarder_t forwarder;
 void
 ndn_forwarder_init(void)
 {
-  
+  uint8_t* ptr = (uint8_t*)forwarder.memory;
+  ndn_nametree_init(ptr, NDN_NAMETREE_MAX_SIZE);
+  forwarder.nametree = (ndn_nametree_t*)ptr;
+
+  ptr += NDN_NAMETREE_RESERVE_SIZE(NDN_NAMETREE_MAX_SIZE);
+  ndn_facetab_init(ptr, NDN_FACE_TABLE_MAX_SIZE);
+  forwarder.facetab = (ndn_face_table_t*)ptr;
+
+  ptr += NDN_FACE_TABLE_RESERVE_SIZE(NDN_NAMETREE_MAX_SIZE);
+  ndn_fib_init(ptr, NDN_FIB_MAX_SIZE, forwarder.nametree);
+  forwarder.fib = (ndn_fib_t*)ptr;
+
+  ptr += NDN_FIB_RESERVE_SIZE(NDN_FIB_MAX_SIZE);
+  ndn_pit_init(ptr, NDN_PIT_MAX_SIZE, forwarder.nametree);
+  forwarder.pit = (ndn_pit_t*)ptr;
 }
 
-//add a face into face table
+int
+ndn_forwarder_process(void){
+  ndn_msgqueue_process();
+}
+
 int
 ndn_forwarder_register_face(ndn_face_intf_t* face)
 {
-  if (face == NULL) return NDN_FWD_INVALID_FACE;
-  int ret = ndn_facetab_register(forwarder.facetab, face);
-  if (ret == NDN_INVALID_ID) return NDN_FWD_FACE_FULL;
+  if(face == NULL)
+    return NDN_FWD_INVALID_FACE;
+  if(face->face_id != NDN_INVALID_ID)
+    return NDN_FWD_NO_EFFECT;
+  face->face_id = ndn_facetab_register(forwarder.facetab, face);
+  if(face->face_id == NDN_INVALID_ID)
+    return NDN_FWD_FACE_TABLE_FULL;
   return NDN_SUCCESS;
 }
 
-//remove a face from face table, pit and fib
 int
 ndn_forwarder_unregister_face(ndn_face_intf_t* face)
 {
-  if (face == NULL) return NDN_FWD_INVALID_FACE;
-  ndn_face_unregister_from_fib(forwarder.fib, face->face_id);
-  ndn_face_unregister_from_pit(forwarder.pit, face->face_id);
+  if(face == NULL)
+    return NDN_FWD_INVALID_FACE;
+  if(face->face_id == NDN_INVALID_ID)
+    return NDN_FWD_NO_EFFECT;
+  if(face->face_id >= forwarder.facetab->capacity)
+    return NDN_FWD_INVALID_FACE;
+  ndn_fib_unregister_face(forwarder.fib, face->face_id);
+  ndn_pit_unregister_face(forwarder.pit, face->face_id);
   ndn_facetab_unregister(forwarder.facetab, face->face_id);
+  face->face_id = NDN_INVALID_ID;
   return NDN_SUCCESS;
 }
 
-//add a route into fib
+static inline int
+ndn_forwarder_check_name(uint8_t* prefix, size_t length){
+  ndn_decoder_t decoder;
+  uint32_t val;
+  int ret;
+
+  if(prefix == NULL)
+    return NDN_INVALID_POINTER;
+
+  decoder_init(&decoder, prefix, length);
+  ret = decoder_get_type(&decoder, &val);
+  if(ret != NDN_SUCCESS)
+    return ret;
+  if(val != TLV_Name)
+    return NDN_WRONG_TLV_TYPE;
+
+  ret = decoder_get_length(&decoder, &val);
+  if(ret != NDN_SUCCESS)
+    return ret;
+  if(val != length - decoder.offset)
+    return NDN_WRONG_TLV_LENGTH;
+
+  return NDN_SUCCESS;
+}
+
 int
 ndn_forwarder_add_route(ndn_face_intf_t* face, uint8_t* prefix, size_t length)
 {
-  if (face == NULL) return NDN_FWD_INVALID_FACE;
-  ndn_fib_entry_t* fib_entry = ndn_get_fib_entry(forwarder.fib, forwarder.nametree, prefix, length);
-  if (fib_entry == NULL) return NDN_FWD_NO_MEM;
-  bitset_set(fib_entry -> nexthop , face -> face_id);
+  uint32_t val;
+  int ret;
+  ndn_fib_entry_t* fib_entry;
+
+  if(face == NULL)
+    return NDN_FWD_INVALID_FACE;
+  if(face->face_id == NDN_INVALID_ID)
+    return NDN_FWD_INVALID_FACE;
+  ret = ndn_forwarder_check_name(prefix, length);
+  if(ret != NDN_SUCCESS)
+    return ret;
+
+  fib_entry = ndn_fib_find_or_insert(forwarder.fib, prefix, length);
+  if (fib_entry == NULL)
+    return NDN_FWD_FIB_FULL;
+  fib_entry->nexthop = bitset_set(fib_entry->nexthop, face->face_id);
   return NDN_SUCCESS;
 }
+
+// MY WORK STOPS HERE
 
 //remove a route from fib
 int
 ndn_forwarder_remove_route(ndn_face_intf_t* face, uint8_t* prefix, size_t length)
 {
-  if (face == NULL) return NDN_FWD_INVALID_FACE;
+  //TODO: Check face_id, check prefix, report an error if face is not registered, delete the entry if necessary
+  //      Usage of bitset_unset (all bitset functions are pure functions), return NDN_FWD_FIB_FULL for error.
+
+  if (face == NULL) return NDN_FWD_INVALID_FACE; // A new function
   ndn_fib_entry_t* fib_entry = ndn_get_fib_entry(forwarder.fib, forwarder.nametree, prefix, length);
   if (fib_entry == NULL) return NDN_FWD_NO_MEM;
   bitset_unset(fib_entry -> nexthop , face -> face_id);
@@ -99,6 +168,8 @@ ndn_forwarder_remove_route(ndn_face_intf_t* face, uint8_t* prefix, size_t length
 int
 ndn_forwarder_remove_all_routes(uint8_t* prefix, size_t length)
 {
+  // TODO: Check prefix, report an error if that entry doesn't exist, delete the entry if necessary
+
   ndn_fib_entry_t* fib_entry = ndn_get_fib_entry(forwarder.fib, forwarder.nametree, prefix, length);
   if (fib_entry == NULL) return NDN_FWD_NO_MEM;
   fib_entry -> nexthop = 0;
@@ -121,6 +192,8 @@ ndn_forwarder_register_prefix(uint8_t* prefix,
                               ndn_on_interest_func on_interest,
                               void* userdata)
 {
+  // TODO: Check prefix, check on_interest != NULL, change function names & args
+
   nametree_entry_t* entry = ndn_nametree_find_or_insert(forwarder.nametree, prefix, length);
   ndn_fib_entry_t* fib_entry = ndn_get_fib_entry(forwarder.fib, forwarder.nametree, prefix, length);
   if (fib_entry == NULL) return NDN_FWD_NO_MEM;
@@ -132,6 +205,8 @@ ndn_forwarder_register_prefix(uint8_t* prefix,
 int
 ndn_forwarder_unregister_prefix(uint8_t* prefix, size_t length)
 {
+  // TODO: Check prefix, change function names & args
+
   nametree_entry_t* entry = ndn_nametree_find_or_insert(forwarder.nametree, prefix, length);
   if (entry == NULL) return NDN_FWD_NO_MEM;
   if (entry -> fib_id == NDN_INVALID_ID) return NDN_SUCCESS;
@@ -148,6 +223,8 @@ ndn_forwarder_express_interest(const uint8_t* interest,
                                ndn_on_timeout_func on_timeout,
                                void* userdata)
 {
+  // TODO: Check interest, check on_data, change function names & args
+
   ndn_pit_entry_t* pit_entry = ndn_get_pit_entry(forwarder.pit, forwarder.nametree, interest, length);
   if (pit_entry == NULL) return NDN_FWD_NO_MEM;
   pit_entry -> on_data = on_data;

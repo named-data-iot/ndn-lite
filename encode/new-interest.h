@@ -5,6 +5,8 @@
  * General Public License v3.0. See the file LICENSE in the top level
  * directory for more details.
  */
+
+// This file supplies temporary functions since new encoder is not there.
 #ifndef NDN_ENCODING_INTEREST_H
 #define NDN_ENCODING_INTEREST_H
 

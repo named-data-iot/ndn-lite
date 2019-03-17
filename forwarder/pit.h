@@ -9,6 +9,7 @@
 #ifndef FORWARDER_PIT_H_
 #define FORWARDER_PIT_H_
 #include "../encode/new-interest.h"
+#include "../util/bit-operations.h"
 #include "face.h"
 #include "name-tree.h"
 #include "callback-funcs.h"
@@ -50,10 +51,11 @@ typedef struct ndn_pit{
 #define NDN_PIT_RESERVE_SIZE(entry_count) \
   (sizeof(ndn_pit_t) + sizeof(ndn_pit_entry_t) * (entry_count))
 
-void ndn_pit_init(void* memory, uint16_t capacity, ndn_nametree_t* nametree);
+void
+ndn_pit_init(void* memory, uint16_t capacity, ndn_nametree_t* nametree);
 
-//unregister a face from pit table.
-void ndn_face_unregister_from_pit(ndn_pit_t* pit, ndn_face_intf_t* face);
+void
+ndn_pit_unregister_face(ndn_pit_t* self, uint16_t face_id);
 
 int
 pit_entry_add_incoming_face(ndn_pit_entry_t* entry, ndn_face_intf_t* face);
