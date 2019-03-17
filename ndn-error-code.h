@@ -96,6 +96,8 @@
 #define NDN_FWD_FIB_FULL -53
 #define NDN_FWD_INTEREST_REJECTED -54
 #define NDN_FWD_NO_MATCHED_CALLBACK -55
+#define NDN_FWD_INVALID_FACE -56
+#define NDN_FWD_FACE_FULL -57
 /* @} */
 
 /** @defgroup NDNErrorCodeFace Face Errors
