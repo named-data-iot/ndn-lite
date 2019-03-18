@@ -37,4 +37,7 @@ ndn_nametree_find_or_insert(ndn_nametree_t* nametree, uint8_t name[], size_t len
 nametree_entry_t*
 ndn_nametree_prefix_match(ndn_nametree_t* nametree, uint8_t name[], size_t len, int type);
 
+nametree_entry_t*
+ndn_nametree_find(ndn_nametree_t *nametree, uint8_t name[], size_t len);
+
 #endif

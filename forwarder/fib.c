@@ -28,15 +28,15 @@ ndn_fib_init(void* memory, uint16_t capacity, ndn_nametree_t* nametree){
 }
 
 static inline void
-ndn_fib_remove_entry(ndn_fib_t* self, uint16_t index){
-  (*self->nametree)[self->slots[index].nametree_id].fib_id = NDN_INVALID_ID;
-  ndn_fib_entry_reset(&self->slots[index]);
+ndn_fib_remove_entry(ndn_fib_t* self, ndn_fib_entry_t* entry){
+  (*self->nametree)[entry->nametree_id].fib_id = NDN_INVALID_ID;
+  ndn_fib_entry_reset(entry);
 }
 
-static inline void
-ndn_fib_remove_entry_if_empty(ndn_fib_t* self, uint16_t index){
-  if(self->slots[index].nexthop == 0 && self->slots[index].on_interest == NULL){
-    ndn_fib_remove_entry(self, index);
+void
+ndn_fib_remove_entry_if_empty(ndn_fib_t* self, ndn_fib_entry_t* entry){
+  if(entry->nexthop == 0 && entry->on_interest == NULL){
+    ndn_fib_remove_entry(self, entry);
   }
 }
 
@@ -44,11 +44,11 @@ void
 ndn_fib_unregister_face(ndn_fib_t* self, uint16_t face_id){
   for (uint16_t i = 0; i < self -> capacity; ++i){
     self->slots[i].nexthop = bitset_unset(self->slots[i].nexthop , face_id);
-    ndn_fib_remove_entry_if_empty(self, face_id);
+    ndn_fib_remove_entry_if_empty(self, &self->slots[i]);
   }
 }
 
-uint16_t
+static uint16_t
 ndn_fib_add_new_entry(ndn_fib_t* fib , int nametree_id){
   uint16_t i;
   for (i = 0; i < fib -> capacity; ++i) {
@@ -78,7 +78,16 @@ ndn_fib_find_or_insert(ndn_fib_t* self, uint8_t* prefix, size_t length){
 
 ndn_fib_entry_t*
 ndn_fib_find(ndn_fib_t* self, uint8_t* prefix, size_t length){
-  nametree_entry_t* entry = ndn_nametree_find_or_insert(self->nametree, prefix, length);
+  nametree_entry_t* entry = ndn_nametree_find(self->nametree, prefix, length);
+  if(entry == NULL || entry->fib_id == NDN_INVALID_ID){
+    return NULL;
+  }
+  return &self->slots[entry->fib_id];
+}
+
+ndn_fib_entry_t*
+ndn_fib_prefix_match(ndn_fib_t* self, uint8_t* prefix, size_t length){
+  nametree_entry_t* entry = ndn_nametree_prefix_match(self->nametree, prefix, length, NDN_NAMETREE_FIB_TYPE);
   if(entry == NULL || entry->fib_id == NDN_INVALID_ID){
     return NULL;
   }

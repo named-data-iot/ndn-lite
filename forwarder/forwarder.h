@@ -21,6 +21,8 @@
 extern "C" {
 #endif
 
+// TODO: Document return values
+
 /**@defgroup NDNFwd Forwarder
  * @brief A lite forwarder.
  */
@@ -39,7 +41,7 @@ ndn_forwarder_init(void);
  *
  * This should be called at a fixed interval.
  */
-int
+void
 ndn_forwarder_process(void);
 
 /** Register a new face.
@@ -99,7 +101,7 @@ ndn_forwarder_remove_all_routes(uint8_t* prefix, size_t length);
  * @note Application doesn't need to call this manually.
  */
 int
-ndn_forwarder_receive(ndn_face_intf_t* face, const uint8_t* packet, size_t length);
+ndn_forwarder_receive(ndn_face_intf_t* face, uint8_t* packet, size_t length);
 
 /** Register a prefix.
  *
@@ -134,7 +136,7 @@ ndn_forwarder_unregister_prefix(uint8_t* prefix, size_t length);
  * @param userdata [in, opt] User-defined data, copied to @c on_data and @c on_timeout .
  */
 int
-ndn_forwarder_express_interest(const uint8_t* interest,
+ndn_forwarder_express_interest(uint8_t* interest,
                                size_t length,
                                ndn_on_data_func on_data,
                                ndn_on_timeout_func on_timeout,
@@ -146,7 +148,7 @@ ndn_forwarder_express_interest(const uint8_t* interest,
  * @param length [in] The length of @c data .
  */
 int
-ndn_forwarder_put_data(const uint8_t* data, size_t length);
+ndn_forwarder_put_data(uint8_t* data, size_t length);
 
 /*@}*/
 

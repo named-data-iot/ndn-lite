@@ -77,6 +77,34 @@ nametree_create_node(ndn_nametree_t *nametree, uint8_t name[], size_t len)
     return output;
 }
 
+nametree_entry_t*
+ndn_nametree_find(ndn_nametree_t *nametree, uint8_t name[], size_t len)
+{
+    int now_node, last_node, father = 0 , offset = 0 , tmp;
+    size_t component_len;
+    // TODO: Put it into decoder
+    if (len < 2) return NULL;
+    if (name[1] < 253) offset = 2; else offset = 4;
+    while (offset < len) {
+        component_len = name[offset + 1] + 2;
+        now_node = (*nametree)[father].left_child;
+        last_node = NDN_INVALID_ID;
+        tmp = -2;
+        while (now_node != NDN_INVALID_ID) {
+            tmp = component_match(name+offset, (*nametree)[now_node].val , component_len);
+            if (tmp <= 0) break;
+            last_node = now_node;
+            now_node = (*nametree)[now_node].right_bro;
+        }
+        if (tmp != 0) {
+            return NULL;
+        }
+        offset += component_len;
+        father = now_node;
+    }
+    return &(*nametree)[father];
+}
+
 static nametree_entry_t*
 nametree_find_or_insert_try(ndn_nametree_t *nametree, uint8_t name[], size_t len)
 {

@@ -62,7 +62,19 @@
  */
 #define NDN_TLV_OP_FAILED -15
 
+/** Pass NULL to a non-optional parameter.
+ */
 #define NDN_INVALID_POINTER -16
+
+/** The format of a specified TLV block is different from expectation.
+ * 
+ * Different between @c NDN_WRONG_TLV_TYPE , @c NDN_UNSUPPORTED_FORMAT is due to unexpected
+ * type inside a TLV block. For example, when a function requires a Interest parameter @c interest
+ * - If a Name is passed, it will return @c NDN_WRONG_TLV_TYPE .
+ * - If an Interest with one component having a unknown TLV type is passed, return @c NDN_WRONG_TLV_TYPE .
+ * - If an Interest whose first component is not Name is passed, return @c NDN_UNSUPPORTED_FORMAT .
+ */
+#define NDN_UNSUPPORTED_FORMAT -17
 
 /* @} */
 
@@ -93,19 +105,19 @@
 /** @defgroup NDNErrorCodeForwarder Forwarder Errors
  * @ingroup NDNErrorCode
  * @{ */
-#define NDN_FWD_NO_MEM -50
-#define NDN_FWD_PIT_FULL -51
+#define NDN_FWD_NO_EFFECT -50
+#define NDN_FWD_FACE_TABLE_FULL -51
+#define NDN_FWD_PIT_FULL -52
 #define NDN_FWD_FIB_FULL -53
-#define NDN_FWD_INTEREST_REJECTED -54
-#define NDN_FWD_INVALID_FACE -56
-#define NDN_FWD_FACE_TABLE_FULL -57
-#define NDN_FWD_NO_EFFECT -58
+#define NDN_FWD_INVALID_FACE -54
+#define NDN_FWD_INTEREST_REJECTED -55
+#define NDN_FWD_NO_ROUTE -56
 /* @} */
 
 /** @defgroup NDNErrorCodeFace Face Errors
  * @ingroup NDNErrorCode
  * @{ */
-#define NDN_FWD_APP_FACE_CB_TABLE_FULL -60
+#define NDN_FWD_FACE_DOWN -60
 /* @} */
 
 /** @defgroup NDNErrorCodeSD Service Discovery Errors

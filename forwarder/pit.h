@@ -74,22 +74,17 @@ void ndn_pit_set_entry(ndn_pit_entry_t *entry,
 //clean a pit entry, set nametree_id to NDN_INVALID_ID and others to 0.
 void ndn_pit_refresh_entry(ndn_pit_entry_t *entry);
 
-//create a new pit entry in pit table.
-//pit (input): header of pit table
-//offset (input): the position of nametree entry corresponding to this newly created pit entry. 
-//                This value will be filled in the field "nametree_id".
-//output: the position of this newly created pit entry in the pit table.
-//        This value is used for fill in the field "pit_id" in the corresponding nametree entry.
-int ndn_pit_add_new_entry(ndn_pit_t* pit , int offset);
-
-//get the pointer of pit entry corresponding to given prefix. if no such an entry, create a new one.
-//return the pit entry corresponding to prefix.
-//self (input): pointer of pit table.
-//prefix (input): name prefix.
-//length (input): length of name prefix.
-//output: pointer of pit entry corresponding to given prefix.
 ndn_pit_entry_t*
-ndn_pit_find_or_insert(ndn_pit_t* self, uint8_t* prefix, size_t length);
+ndn_pit_find_or_insert(ndn_pit_t* self, uint8_t* name, size_t length);
+
+ndn_pit_entry_t*
+ndn_pit_find(ndn_pit_t* self, uint8_t* prefix, size_t length);
+
+ndn_pit_entry_t*
+ndn_pit_prefix_match(ndn_pit_t* self, uint8_t* prefix, size_t length);
+
+void
+ndn_pit_remove_entry(ndn_pit_t* self, ndn_pit_entry_t* entry);
 
 /*@}*/
 

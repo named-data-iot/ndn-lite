@@ -9,11 +9,13 @@
 #ifndef FORWARDER_FACE_H_
 #define FORWARDER_FACE_H_
 
-#include "../encode/name.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <stddef.h>
+#include "../ndn-enums.h"
 
-#define container_of(ptr, type, member) ({                \
-  const typeof(((type *)0)->member) *__mptr = (ptr);      \
-  (type *)((char *)__mptr - offsetof(type, member)); })
+#define container_of(ptr, type, member) \
+  ((type *)((char *)(1 ? (ptr) : &((type *)0)->member) - offsetof(type, member)))
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,7 +46,7 @@ typedef int (*ndn_face_intf_up)(struct ndn_face_intf* self);
  * @return 0 if there is no error.
  */
 typedef int (*ndn_face_intf_send)(struct ndn_face_intf* self,
-                                  const ndn_name_t* name, const uint8_t* packet, uint32_t size);
+                                  const uint8_t* packet, uint32_t size);
 
 /**
  * The interface down function.
@@ -113,11 +115,11 @@ ndn_face_up(ndn_face_intf_t* self)
  * @return 0 if there is no error.
  */
 static inline int
-ndn_face_send(ndn_face_intf_t* self, const ndn_name_t* name, const uint8_t* packet, uint32_t size)
+ndn_face_send(ndn_face_intf_t* self, const uint8_t* packet, uint32_t size)
 {
   if (self->state != NDN_FACE_STATE_UP)
     self->up(self);
-  return self->send(self, name, packet, size);
+  return self->send(self, packet, size);
 }
 
 /**
@@ -142,16 +144,6 @@ ndn_face_destroy(ndn_face_intf_t* self)
   self->state = NDN_FACE_STATE_DESTROYED;
   self->destroy(self);
 }
-
-/**
- * Send Interest to the Forwarder (Forwarder receives)
- * @param self Input. The interface to transmit the packet to the forwarder.
- * @param packet Input. The wire format packet buffer.
- * @param size Input. The size of the wire format packet buffer.
- * @return 0 if there is no error.
- */
-int
-ndn_face_receive(ndn_face_intf_t* self, const uint8_t* packet, uint32_t size);
 
 /*@}*/
 
