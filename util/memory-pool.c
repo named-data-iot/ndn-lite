@@ -26,7 +26,7 @@ ndn_memory_pool_init(void* pool, size_t block_size, size_t block_count)
   size_t memblk_sz = sizeof(memory_block_t) + block_size;
   pmemory_block_t cur = (pmemory_block_t)((uint8_t*)pool + ptr_sz);
   pmemory_block_t pre;
-  
+
   pre = MEMORY_BLOCK_USED;
   for (i = 0; i < (int) block_count; i ++) {
     cur->next = pre;

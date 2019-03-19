@@ -22,7 +22,7 @@ extern "C" {
 
 /** @defgroup NDNUtilMsqQueue Message Queue
  * @ingroup NDNUtil
- * 
+ *
  * Message queue of the forwarder.
  * @{
  */
@@ -34,7 +34,7 @@ extern "C" {
 struct ndn_msg;
 
 /** The callback function of message.
- * 
+ *
  * @param self Input. The object to receive this message.
  * @param param_length Input. The length of the @c param.
  * @param param Input. Point to a raw memory in size @c param_length.

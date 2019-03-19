@@ -8,14 +8,8 @@
 
 #ifndef FORWARDER_PIT_H_
 #define FORWARDER_PIT_H_
-<<<<<<< HEAD
 #include "../encode/forwarder-helper.h"
 #include "../util/bit-operations.h"
-=======
-
-#include "../encode/interest.h"
-#include "../util/timer.h"
->>>>>>> ea49b8a70f1e420ca01a12f4e2d4fdb3d28cecee
 #include "face.h"
 #include "name-tree.h"
 #include "callback-funcs.h"
@@ -35,7 +29,6 @@ extern "C" {
  * PIT entry.
  */
 typedef struct ndn_pit_entry {
-<<<<<<< HEAD
   interest_options_t options;
   uint64_t incoming_faces;
   ndn_time_ms_t last_time;
@@ -44,28 +37,6 @@ typedef struct ndn_pit_entry {
   ndn_on_timeout_func on_timeout;
   void* userdata;
   uint16_t nametree_id;
-=======
-  /**
-   * The name of representative Interest.
-   * A name with components_size < 0 indicates an empty entry.
-   */
-  ndn_buffer_t interest_buffer;
-
-  /**
-   * Collection of incoming faces.
-   */
-  ndn_face_intf_t* incoming_face[NDN_MAX_FACE_PER_PIT_ENTRY];
-
-  /**
-   * The count of incoming faces.
-   */
-  uint8_t incoming_face_size;
-
-  /**
-   * @todo How to timeout?
-   */
-   ndn_timer_t timer;
->>>>>>> ea49b8a70f1e420ca01a12f4e2d4fdb3d28cecee
 } ndn_pit_entry_t;
 
 /**
@@ -89,7 +60,6 @@ ndn_pit_unregister_face(ndn_pit_t* self, uint16_t face_id);
 int
 ndn_pit_entry_add_incoming_face(ndn_pit_entry_t* entry, ndn_face_intf_t* face);
 
-<<<<<<< HEAD
 //set each components in a pit entry
 void ndn_pit_set_entry(ndn_pit_entry_t *entry,
                   interest_options_t options,
@@ -118,8 +88,6 @@ ndn_pit_remove_entry(ndn_pit_t* self, ndn_pit_entry_t* entry);
 
 /*@}*/
 
-=======
->>>>>>> ea49b8a70f1e420ca01a12f4e2d4fdb3d28cecee
 #ifdef __cplusplus
 }
 #endif

@@ -17,7 +17,7 @@
 #include <string.h>
 
 /** Padding message
- * 
+ *
  * This will only occur at the end of the queue.
  * When the last message's @c func is NDN_MSG_PADDING, it means the next message is at
  * the begining of the queue and has a size larger than this padding one.
@@ -50,13 +50,8 @@ bool
 ndn_msgqueue_empty(void) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-<<<<<<< HEAD
   while(pfront->func == NDN_MSG_PADDING && pfront != ptail){
     MSGQUEUE_NEXT(pfront);
-=======
-  if(pfront->func == NDN_MSG_PADDING && pfront != ptail){
-    pfront = (ndn_msg_t*)&msg_queue;
->>>>>>> ea49b8a70f1e420ca01a12f4e2d4fdb3d28cecee
   }
 #pragma GCC diagnostic pop
   if(pfront == ptail){
@@ -105,11 +100,7 @@ ndn_msgqueue_post(void *target,
   } else {
     // Padding & rewind (= is to prevent ptail == pfront after call)
     if(((uint8_t*)pfront) - &msg_queue[0] <= (int) len)
-<<<<<<< HEAD
       return NULL;
-=======
-      return false;
->>>>>>> ea49b8a70f1e420ca01a12f4e2d4fdb3d28cecee
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"

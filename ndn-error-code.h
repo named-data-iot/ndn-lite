@@ -26,14 +26,14 @@
  * @{ */
 
 /** The object given is larger than expected.
- * 
+ *
  * This error can be caused by multiple reasons. Generally caused by an input parameter
  * whose size is larger than the corresponding value defined in ndn-constants.h.
  */
 #define NDN_OVERSIZE -10
 
 /** The format of the name string specified is invalid.
- * 
+ *
  * A uri string of a name should start with "/".
  */
 #define NDN_NAME_INVALID_FORMAT -11
@@ -43,7 +43,7 @@
 #define NDN_WRONG_TLV_TYPE -12
 
 /** The Length specified differs from expected.
- * 
+ *
  * This can be due to one of the following reasons:
  *  - The input Length for a TLV block is not 1, 2, 4 or 8, as the Spec requires.
  *  - The Type of the TLV block given requires a fixed Length different from the Length it has.
@@ -53,7 +53,7 @@
 #define NDN_WRONG_TLV_LENGTH -13
 
 /** Truncation due to insufficient buffer.
- * 
+ *
  * The operation specified requires more memory than the buffer variable given.
  * For example, passing <tt>{FD 01}</tt> to a TLV block parameter will cause this error,
  * because <tt>FD</tt> indicates the Type is encoded in the following 2 bytes, but there's
@@ -62,7 +62,7 @@
 #define NDN_OVERSIZE_VAR -14
 
 /** The operation faild due to specific reason.
- * 
+ *
  * Reserved. See the function called.
  */
 #define NDN_TLV_OP_FAILED -15
@@ -72,7 +72,7 @@
 #define NDN_INVALID_POINTER -16
 
 /** The format of a specified TLV block is different from expectation.
- * 
+ *
  * Different between #NDN_WRONG_TLV_TYPE, #NDN_UNSUPPORTED_FORMAT is due to unexpected
  * type inside a TLV block. For example, when a function requires a Interest parameter @c interest
  * - If a Name is passed, it will return #NDN_WRONG_TLV_TYPE.
@@ -111,7 +111,6 @@
  * @ingroup NDNErrorCode
  * @{ */
 
-<<<<<<< HEAD
 /** The operation has no effect.
  */
 #define NDN_FWD_NO_EFFECT -50
@@ -127,23 +126,13 @@
 /** The FIB is full.
  */
 #define NDN_FWD_FIB_FULL -53
-=======
-// Forwarder Error
-#define NDN_FWD_NO_MEM -50
-#define NDN_FWD_PIT_FULL -51
-#define NDN_FWD_PIT_NO_MATCH -52
-#define NDN_FWD_PIT_ENTRY_FACE_LIST_FULL -53
-#define NDN_FWD_FIB_FULL -54
-#define NDN_FWD_INTEREST_REJECTED -55
-#define NDN_FWD_NO_MATCHED_CALLBACK -56
->>>>>>> ea49b8a70f1e420ca01a12f4e2d4fdb3d28cecee
 
 /** The face has a wrong ID.
  */
 #define NDN_FWD_INVALID_FACE -54
 
 /** The Interest is rejected.
- * 
+ *
  * - The Interest has a same nonce as previous one, indicating a routing loop.
  * - The Interest's hop limit comes to 0.
  * @note Different from NFD, NDN-Lite only records one nonce.
@@ -152,7 +141,7 @@
 #define NDN_FWD_INTEREST_REJECTED -55
 
 /** No route to forward a specified packet.
- * 
+ *
  * The incoming face doesn't count.
  */
 #define NDN_FWD_NO_ROUTE -56
@@ -180,16 +169,9 @@
 #define NDN_AC_UNRECOGNIZED_KEY_REQUEST -62
 /* @} */
 
-<<<<<<< HEAD
 /** @defgroup NDNErrorCodeSign Sign-on Protocol Errors
  * @ingroup NDNErrorCode
  * @{ */
-=======
-// Util error
-#define NDN_TIMER_WRONG_FIRETIME -71
-
-// Sign-on Protocol
->>>>>>> ea49b8a70f1e420ca01a12f4e2d4fdb3d28cecee
 #define NDN_SIGN_ON_BASIC_CLIENT_INIT_FAILED_UNRECOGNIZED_VARIANT -101
 #define NDN_SIGN_ON_BASIC_CLIENT_INIT_FAILED_TO_SET_SEC_INTF -102
 #define NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_BUFFER_TOO_SHORT -103

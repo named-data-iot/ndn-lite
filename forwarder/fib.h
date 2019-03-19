@@ -27,29 +27,10 @@ extern "C" {
  * FIB entry.
  */
 typedef struct ndn_fib_entry {
-<<<<<<< HEAD
   ndn_bitset_t nexthop;
   ndn_on_interest_func on_interest;
   void* userdata;
   uint16_t nametree_id;
-=======
-  /**
-   * The name prefix.
-   * A name with components_size < 0 indicates an empty entry.
-   */
-  ndn_buffer_t name_buffer;
-
-  /**
-   * The next-hop record.
-   * @note Only one next-hop record per entry is allowed in NDN-Lite.
-   */
-  ndn_face_intf_t* next_hop;
-
-  /**
-   * The cost to the next-hop.
-   */
-  uint8_t cost;
->>>>>>> ea49b8a70f1e420ca01a12f4e2d4fdb3d28cecee
 } ndn_fib_entry_t;
 
 /**
@@ -61,7 +42,6 @@ typedef struct ndn_fib{
   ndn_fib_entry_t slots[];
 }ndn_fib_t;
 
-<<<<<<< HEAD
 #define NDN_FIB_RESERVE_SIZE(entry_count) \
   (sizeof(ndn_fib_t) + sizeof(ndn_fib_entry_t) * (entry_count))
 
@@ -85,8 +65,6 @@ ndn_fib_prefix_match(ndn_fib_t* self, uint8_t* prefix, size_t length);
 
 /*@}*/
 
-=======
->>>>>>> ea49b8a70f1e420ca01a12f4e2d4fdb3d28cecee
 #ifdef __cplusplus
 }
 #endif
