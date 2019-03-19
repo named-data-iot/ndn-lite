@@ -8,7 +8,7 @@
 
 #ifndef FORWARDER_PIT_H_
 #define FORWARDER_PIT_H_
-#include "../encode/new-interest.h"
+#include "../encode/forwarder-helper.h"
 #include "../util/bit-operations.h"
 #include "face.h"
 #include "name-tree.h"

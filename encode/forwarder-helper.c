@@ -5,7 +5,7 @@
  * General Public License v3.0. See the file LICENSE in the top level
  * directory for more details.
  */
-#include "new-interest.h"
+#include "forwarder-helper.h"
 #include "tlv.h"
 #include "../ndn-error-code.h"
 #include "../ndn-constants.h"

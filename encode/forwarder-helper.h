@@ -7,8 +7,8 @@
  */
 
 // This file supplies temporary functions since new encoder is not there.
-#ifndef NDN_ENCODING_INTEREST_H
-#define NDN_ENCODING_INTEREST_H
+#ifndef NDN_ENCODING_FORWARD_HELPER_H
+#define NDN_ENCODING_FORWARD_HELPER_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -90,4 +90,4 @@ tlv_data_get_header(uint8_t* data,
 uint8_t*
 tlv_interest_get_hoplimit_ptr(uint8_t* interest, size_t buflen);
 
-#endif
+#endif // NDN_ENCODING_FORWARD_HELPER_H
