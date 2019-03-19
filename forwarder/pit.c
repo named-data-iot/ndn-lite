@@ -72,6 +72,9 @@ ndn_pit_remove_entry(ndn_pit_t* self, ndn_pit_entry_t* entry){
 
 static inline void
 ndn_pit_remove_entry_if_empty(ndn_pit_t* self, ndn_pit_entry_t* entry){
+  if(entry->nametree_id == NDN_INVALID_ID){
+    return;
+  }
   if(entry->incoming_faces == 0 &&
      entry->on_data == NULL &&
      entry->on_timeout == NULL)

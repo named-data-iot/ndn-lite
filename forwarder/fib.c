@@ -35,6 +35,9 @@ ndn_fib_remove_entry(ndn_fib_t* self, ndn_fib_entry_t* entry){
 
 void
 ndn_fib_remove_entry_if_empty(ndn_fib_t* self, ndn_fib_entry_t* entry){
+  if(entry->nametree_id == NDN_INVALID_ID){
+    return;
+  }
   if(entry->nexthop == 0 && entry->on_interest == NULL){
     ndn_fib_remove_entry(self, entry);
   }
