@@ -85,20 +85,23 @@ void
 ndn_forwarder_init(void)
 {
   uint8_t* ptr = (uint8_t*)forwarder.memory;
+  ndn_msgqueue_init();
+
   ndn_nametree_init(ptr, NDN_NAMETREE_MAX_SIZE);
   forwarder.nametree = (ndn_nametree_t*)ptr;
-
   ptr += NDN_NAMETREE_RESERVE_SIZE(NDN_NAMETREE_MAX_SIZE);
+
   ndn_facetab_init(ptr, NDN_FACE_TABLE_MAX_SIZE);
   forwarder.facetab = (ndn_face_table_t*)ptr;
+  ptr += NDN_FACE_TABLE_RESERVE_SIZE(NDN_FACE_TABLE_MAX_SIZE);
 
-  ptr += NDN_FACE_TABLE_RESERVE_SIZE(NDN_NAMETREE_MAX_SIZE);
   ndn_fib_init(ptr, NDN_FIB_MAX_SIZE, forwarder.nametree);
   forwarder.fib = (ndn_fib_t*)ptr;
-
   ptr += NDN_FIB_RESERVE_SIZE(NDN_FIB_MAX_SIZE);
+
   ndn_pit_init(ptr, NDN_PIT_MAX_SIZE, forwarder.nametree);
   forwarder.pit = (ndn_pit_t*)ptr;
+  ptr += NDN_PIT_RESERVE_SIZE(NDN_PIT_MAX_SIZE);
 }
 
 void
@@ -290,7 +293,7 @@ ndn_forwarder_receive(ndn_face_intf_t* face, uint8_t* packet, size_t length){
     return NDN_INVALID_POINTER;
 
   buf = tlv_get_type_length(packet, length, &type, &val_len);
-  if(val_len != length - (packet - buf))
+  if(val_len != length - (buf - packet))
     return NDN_WRONG_TLV_LENGTH;
 
   if(type == TLV_Interest){

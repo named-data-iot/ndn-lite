@@ -26,6 +26,10 @@ static void ndn_pit_timeout(void *selfptr, size_t param_len, void *param){
   ndn_time_ms_t now = ndn_time_now_ms();
 
   for(i = 0; i < self->capacity; i ++){
+    if(self->slots[i].nametree_id == NDN_INVALID_ID){
+      continue;
+    }
+
     // User timeout
     if(self->slots[i].on_data != NULL){
       if(now - self->slots[i].express_time > self->slots[i].options.lifetime){
@@ -62,7 +66,7 @@ ndn_pit_init(void* memory, uint16_t capacity, ndn_nametree_t* nametree){
 
 void
 ndn_pit_remove_entry(ndn_pit_t* self, ndn_pit_entry_t* entry){
-  (*self->nametree)[entry->nametree_id].fib_id = NDN_INVALID_ID;
+  (*self->nametree)[entry->nametree_id].pit_id = NDN_INVALID_ID;
   ndn_pit_entry_reset(entry);
 }
 

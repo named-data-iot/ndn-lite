@@ -177,6 +177,7 @@ tlv_data_get_header(uint8_t* data,
   if(real_type != TLV_Name){
     return NDN_UNSUPPORTED_FORMAT;
   }
+  *name_len = real_len;
 
   return NDN_SUCCESS;
 }
