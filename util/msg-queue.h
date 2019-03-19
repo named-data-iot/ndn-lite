@@ -31,6 +31,8 @@ extern "C" {
  */
 #define NDN_MSGQUEUE_SIZE 4096
 
+struct ndn_msg;
+
 /** The callback function of message.
  * 
  * @param self Input. The object to receive this message.
@@ -52,10 +54,9 @@ ndn_msgqueue_init(void);
  * @param length Input. The length of parameters @c param.
  * @param param Input. The parameters of this message.
  *              Its context will be copied into the queue.
- * @retval true The operation succeeded.
- * @retval false The queue has insufficient memory.
+ * @return An pointer to cancel the message. NULL if failed.
  */
-bool
+struct ndn_msg*
 ndn_msgqueue_post(void *target,
                   ndn_msg_callback reason,
                   size_t param_length,
@@ -85,6 +86,14 @@ ndn_msgqueue_empty(void);
  */
 void
 ndn_msgqueue_process(void);
+
+/** Cancel a posted message.
+ *
+ * Please make sure the pointer is correct and it's used before dispatch.
+ * @param msg Pointer to message
+ */
+void
+ndn_msgqueue_cancel(struct ndn_msg* msg);
 
 /*@}*/
 

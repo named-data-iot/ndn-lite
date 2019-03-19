@@ -112,6 +112,7 @@
 #define NDN_FWD_INVALID_FACE -54
 #define NDN_FWD_INTEREST_REJECTED -55
 #define NDN_FWD_NO_ROUTE -56
+#define NDN_FWD_MSGQUEUE_FULL -57
 /* @} */
 
 /** @defgroup NDNErrorCodeFace Face Errors

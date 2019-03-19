@@ -41,8 +41,8 @@ ndn_msgqueue_init(void) {
 
 bool
 ndn_msgqueue_empty(void) {
-  if(pfront->func == NDN_MSG_PADDING && pfront != ptail){
-    pfront = (ndn_msg_t*)&msg_queue;
+  while(pfront->func == NDN_MSG_PADDING && pfront != ptail){
+    MSGQUEUE_NEXT(pfront);
   }
   if(pfront == ptail){
     // defrag when empty
@@ -62,7 +62,7 @@ ndn_msgqueue_dispatch(void) {
   return true;
 }
 
-bool
+struct ndn_msg*
 ndn_msgqueue_post(void *target,
                   ndn_msg_callback reason,
                   size_t param_length,
@@ -70,6 +70,7 @@ ndn_msgqueue_post(void *target,
 {
   size_t len = param_length + sizeof(ndn_msg_t);
   size_t space;
+  ndn_msg_t* ret;
 
   // defrag the memory
   ndn_msgqueue_empty();
@@ -85,11 +86,11 @@ ndn_msgqueue_post(void *target,
   if(pfront >= ptail || space >= len){
     // No-padding (= is to prevent ptail == pfront after call)
     if(space < len || (space == len && pfront == (ndn_msg_t*)&msg_queue))
-      return false;
+      return NULL;
   } else {
     // Padding & rewind (= is to prevent ptail == pfront after call)
     if(((uint8_t*)pfront) - &msg_queue[0] <= len)
-      return false;
+      return NULL;
 
     ptail->func = NDN_MSG_PADDING;
     ptail->length = space;
@@ -101,9 +102,11 @@ ndn_msgqueue_post(void *target,
   ptail->func = reason;
   ptail->length = len;
   memcpy(ptail->param, param, param_length);
+
+  ret = ptail;
   MSGQUEUE_NEXT(ptail);
 
-  return true;
+  return ret;
 }
 
 void
@@ -112,4 +115,9 @@ ndn_msgqueue_process(void) {
   while(pfront != psplit){
     ndn_msgqueue_dispatch();
   }
+}
+
+void
+ndn_msgqueue_cancel(struct ndn_msg* msg){
+  msg->func = NDN_MSG_PADDING;
 }
