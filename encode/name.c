@@ -161,7 +161,6 @@ ndn_name_compare_sub_names(const ndn_name_t* lhs, int lhs_b, int lhs_e,
   }
 }
 
-
 int
 ndn_name_is_prefix_of(const ndn_name_t* lhs, const ndn_name_t* rhs)
 {

@@ -9,8 +9,9 @@
 #ifndef FORWARDER_FIB_H_
 #define FORWARDER_FIB_H_
 
-#include "../encode/interest.h"
-#include "face.h"
+#include "../util/bit-operations.h"
+#include "callback-funcs.h"
+#include "name-tree.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,38 +27,41 @@ extern "C" {
  * FIB entry.
  */
 typedef struct ndn_fib_entry {
-  /**
-   * The name prefix.
-   * A name with <tt> ndn_name_t#components_size < 0 </tt> indicates an empty entry.
-   */
-  ndn_name_t name_prefix;
-
-  /**
-   * The next-hop record.
-   * @note Only one next-hop record per entry is allowed in NDN-Lite.
-   */
-  ndn_face_intf_t* next_hop;
-
-  /**
-   * The cost to the next-hop.
-   */
-  uint8_t cost;
+  ndn_bitset_t nexthop;
+  ndn_on_interest_func on_interest;
+  void* userdata;
+  uint16_t nametree_id;
 } ndn_fib_entry_t;
 
 /**
  * Forwarding Information Base (FIB) class.
  */
-typedef ndn_fib_entry_t ndn_fib_t[NDN_FIB_MAX_SIZE];
+typedef struct ndn_fib{
+  ndn_nametree_t* nametree;
+  uint16_t capacity;
+  ndn_fib_entry_t slots[];
+}ndn_fib_t;
 
-/**
- * Delete a FIB entry.
- * @param entry Input. The FIB entry.
- */
-static inline void
-fib_entry_delete(ndn_fib_entry_t* entry)
-{
-  entry->name_prefix.components_size = NDN_FWD_INVALID_NAME_SIZE;
-}
+#define NDN_FIB_RESERVE_SIZE(entry_count) \
+  (sizeof(ndn_fib_t) + sizeof(ndn_fib_entry_t) * (entry_count))
+
+void
+ndn_fib_init(void* memory, uint16_t capacity, ndn_nametree_t* nametree);
+
+void
+ndn_fib_unregister_face(ndn_fib_t* self, uint16_t face_id);
+
+ndn_fib_entry_t*
+ndn_fib_find_or_insert(ndn_fib_t* self, uint8_t* prefix, size_t length);
+
+ndn_fib_entry_t*
+ndn_fib_find(ndn_fib_t* self, uint8_t* prefix, size_t length);
+
+void
+ndn_fib_remove_entry_if_empty(ndn_fib_t* self, ndn_fib_entry_t* entry);
+
+ndn_fib_entry_t*
+ndn_fib_prefix_match(ndn_fib_t* self, uint8_t* prefix, size_t length);
 
 /*@}*/
 

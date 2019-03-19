@@ -47,12 +47,17 @@
  * This can be due to one of the following reasons:
  *  - The input Length for a TLV block is not 1, 2, 4 or 8, as the Spec requires.
  *  - The Type of the TLV block given requires a fixed Length different from the Length it has.
+ *  - The function expects an input block to be a single TLV block, while the Length is less than
+ *      the buffer size plus TL's sizes.
  */
 #define NDN_WRONG_TLV_LENGTH -13
 
-/** The buffer given is insufficient.
+/** Truncation due to insufficient buffer.
  * 
  * The operation specified requires more memory than the buffer variable given.
+ * For example, passing <tt>{FD 01}</tt> to a TLV block parameter will cause this error,
+ * because <tt>FD</tt> indicates the Type is encoded in the following 2 bytes, but there's
+ * not enough space.
  */
 #define NDN_OVERSIZE_VAR -14
 
@@ -61,6 +66,21 @@
  * Reserved. See the function called.
  */
 #define NDN_TLV_OP_FAILED -15
+
+/** Pass NULL to a non-optional parameter.
+ */
+#define NDN_INVALID_POINTER -16
+
+/** The format of a specified TLV block is different from expectation.
+ * 
+ * Different between #NDN_WRONG_TLV_TYPE, #NDN_UNSUPPORTED_FORMAT is due to unexpected
+ * type inside a TLV block. For example, when a function requires a Interest parameter @c interest
+ * - If a Name is passed, it will return #NDN_WRONG_TLV_TYPE.
+ * - If an Interest with one component having a unknown TLV type is passed, return #NDN_WRONG_TLV_TYPE.
+ * - If an Interest whose first component is not Name is passed, return #NDN_UNSUPPORTED_FORMAT.
+ */
+#define NDN_UNSUPPORTED_FORMAT -17
+
 /* @} */
 
 /** @defgroup NDNErrorCodeSecurity Security Errors
@@ -90,18 +110,51 @@
 /** @defgroup NDNErrorCodeForwarder Forwarder Errors
  * @ingroup NDNErrorCode
  * @{ */
-#define NDN_FWD_NO_MEM -50
-#define NDN_FWD_PIT_FULL -51
-#define NDN_FWD_PIT_ENTRY_FACE_LIST_FULL -52
+
+/** The operation has no effect.
+ */
+#define NDN_FWD_NO_EFFECT -50
+
+/** The FaceTable is full.
+ */
+#define NDN_FWD_FACE_TABLE_FULL -51
+
+/** The PIT is full.
+ */
+#define NDN_FWD_PIT_FULL -52
+
+/** The FIB is full.
+ */
 #define NDN_FWD_FIB_FULL -53
-#define NDN_FWD_INTEREST_REJECTED -54
-#define NDN_FWD_NO_MATCHED_CALLBACK -55
+
+/** The face has a wrong ID.
+ */
+#define NDN_FWD_INVALID_FACE -54
+
+/** The Interest is rejected.
+ * 
+ * - The Interest has a same nonce as previous one, indicating a routing loop.
+ * - The Interest's hop limit comes to 0.
+ * @note Different from NFD, NDN-Lite only records one nonce.
+ *       Thus, not all routing loop can be avoided.
+ */
+#define NDN_FWD_INTEREST_REJECTED -55
+
+/** No route to forward a specified packet.
+ * 
+ * The incoming face doesn't count.
+ */
+#define NDN_FWD_NO_ROUTE -56
+
+/** The message queue is full.
+ */
+#define NDN_FWD_MSGQUEUE_FULL -57
 /* @} */
 
 /** @defgroup NDNErrorCodeFace Face Errors
  * @ingroup NDNErrorCode
  * @{ */
-#define NDN_FWD_APP_FACE_CB_TABLE_FULL -60
+#define NDN_FWD_FACE_DOWN -60
 /* @} */
 
 /** @defgroup NDNErrorCodeSD Service Discovery Errors
@@ -189,6 +242,8 @@
 #define NDN_TRUST_SCHEMA_RULE_REF_NOT_FOUND -161
 #define NDN_TRUST_SCHEMA_RULE_REF_UNEQUAL_NUM_OF_SUBPATTERN_CAPTURES -162
 #define NDN_TRUST_SCHEMA_PATTERN_COMPONENT_INVALID_SIZE -163
+#define NDN_TRUST_SCHEMA_RULE_REFERENCING_NOT_IMPLEMENTED_YET -164
+#define NDN_TRUST_SCHEMA_SUBPATTERN_INDEX_GREATER_THAN_NUMBER_OF_SUBPATTERN_CAPTURES -165
 /* @} */
 
 #endif // NDN_ERROR_CODE_H

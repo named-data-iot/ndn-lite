@@ -11,6 +11,7 @@
 #include "dummy-face.h"
 #include "../encode/data.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 /************************************************************/
 /*  Inherit Face Interfaces                                 */
@@ -20,48 +21,70 @@ int
 ndn_dummy_face_up(struct ndn_face_intf* self)
 {
   self->state = NDN_FACE_STATE_UP;
-  printf("Dummy Face UP\n");
-  return 0;
+  printf("Dummy Face [%u] Up\n", self->face_id);
+  return NDN_SUCCESS;
 }
 
 int
-ndn_dummy_face_send(struct ndn_face_intf* self, const ndn_name_t* name,
+ndn_dummy_face_send(struct ndn_face_intf* self,
                     const uint8_t* packet, uint32_t size)
 {
-  (void)self;
-  (void)name;
-  (void)packet;
-  (void)size;
-  printf("Dummy Face UP send packet\n");
-  return 0;
-}
+  uint32_t i = 0;
 
+  if(self->state != NDN_FACE_STATE_UP){
+    printf("Dummy face [%u] unable to send the packet.\n", self->face_id);
+    return NDN_FWD_FACE_DOWN;
+  }
+  printf("Dummy Face [%u] send packet:", self->face_id);
+  for(i = 0; i < size; i++){
+    printf(" %02X", packet[i]);
+  }
+  printf("\n");
+
+  return NDN_SUCCESS;
+}
 
 int
 ndn_dummy_face_down(struct ndn_face_intf* self)
 {
   self->state = NDN_FACE_STATE_DOWN;
-  printf("Dummy Face Down\n");
-  return 0;
+  printf("Dummy Face [%u] Down\n", self->face_id);
+  return NDN_SUCCESS;
 }
 
 void
 ndn_dummy_face_destroy(struct ndn_face_intf* self)
 {
   self->state = NDN_FACE_STATE_DESTROYED;
-  printf("Dummy Face Destroy\n");
-  return;
+  printf("Dummy Face [%u] Destroyed\n", self->face_id);
+
+  ndn_forwarder_unregister_face(self);
+  free(container_of(self, ndn_dummy_face_t, intf));
 }
 
 ndn_dummy_face_t*
-ndn_dummy_face_construct(ndn_dummy_face_t* face, uint16_t face_id)
+ndn_dummy_face_construct()
 {
+  ndn_dummy_face_t* face;
+
+  face = malloc(sizeof(ndn_dummy_face_t));
+  if(face == NULL)
+    return NULL;
+
   face->intf.up = ndn_dummy_face_up;
   face->intf.send = ndn_dummy_face_send;
   face->intf.down = ndn_dummy_face_down;
   face->intf.destroy = ndn_dummy_face_destroy;
-  face->intf.face_id = face_id;
-  face->intf.state = NDN_FACE_STATE_DESTROYED;
+  face->intf.face_id = NDN_INVALID_ID;
+  face->intf.state = NDN_FACE_STATE_UP;
   face->intf.type = NDN_FACE_TYPE_NET;
+
+  if(ndn_forwarder_register_face(&face->intf) != NDN_SUCCESS){
+    free(face);
+    return NULL;
+  }
+
+  printf("Dummy Face [%u] Constructed\n", face->intf.face_id);
+
   return face;
 }
