@@ -111,6 +111,7 @@ ndn_forwarder_remove_all_routes(uint8_t* prefix, size_t length);
  *                          #NDN_NAMETREE_MAX_SIZE.
  * @note The application doesn't need to call this manually.
  */
+<<<<<<< HEAD
 int
 ndn_forwarder_receive(ndn_face_intf_t* face, uint8_t* packet, size_t length);
 
@@ -171,6 +172,52 @@ int
 ndn_forwarder_put_data(uint8_t* data, size_t length);
 
 /*@}*/
+=======
+ int
+ ndn_forwarder_fib_insert(const ndn_name_t* name_prefix,
+                          ndn_face_intf_t* face, uint8_t cost);
+
+/**
+ * Add FIB entry into the FIB.
+ * This function should be invoked before sending a packet through the specific face.
+ * @param name_prefix. Input. The FIB's name prefix.
+ * @param face. Input/Output. The face instance to send the packet out.
+ * @param cost. The cost of sending a packet through the @param face. When more than one faces
+ *        can be used to send a packet, the face with lower cost will be used.
+ * @return 0 if there is no error.
+ */
+ int
+ ndn_forwarder_pit_load_timeout(const uint8_t* interest_block, uint32_t interest_size,
+                                handler timeout_handler);
+/**
+ * Let the forwarder receive a Data packet.
+ * This function is supposed to be invoked by face implementation ONLY.
+ * @param self. Input/Output. The forwarder to receive the Data packet.
+ * @param face. Input. The face instance who transmits the packet to the forwarder.
+ * @param raw_data. Input. The wire format Data received by the @param face.
+ * @param size. Input. The size of the wire format Data.
+ * @return 0 if there is no error.
+ */
+int
+ndn_forwarder_on_incoming_data(ndn_forwarder_t* self, ndn_face_intf_t* face,
+                               const uint8_t *raw_data, uint32_t size);
+
+/**
+ * Let the forwarder receive a Interest packet.
+ * This function is supposed to be invoked by face implementation ONLY.
+ * @param self. Input/Output. The forwarder to receive the Interest packet.
+ * @param face. Input. The face instance who transmits the packet to the forwarder.
+ * @param raw_data. Input. The wire format Interest received by the @param face.
+ * @param size. Input. The size of the wire format Interest.
+ * @return 0 if there is no error.
+ */
+int
+ndn_forwarder_on_incoming_interest(ndn_forwarder_t* self, ndn_face_intf_t* face,
+                                   const uint8_t *raw_interest, uint32_t size);
+>>>>>>> ea49b8a70f1e420ca01a12f4e2d4fdb3d28cecee
+
+int
+ndn_forwarder_process(ndn_forwarder_t* self);
 
 #ifdef __cplusplus
 }

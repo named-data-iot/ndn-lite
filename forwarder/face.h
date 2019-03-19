@@ -14,8 +14,11 @@
 #include <stddef.h>
 #include "../ndn-enums.h"
 
-#define container_of(ptr, type, member) \
-  ((type *)((char *)(1 ? (ptr) : &((type *)0)->member) - offsetof(type, member)))
+/*
+#define container_of(ptr, type, member) ({                \
+  const typeof(((type *)0)->member) *__mptr = (ptr);      \
+  (type *)((char *)__mptr - offsetof(type, member)); })
+*/
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,8 +48,12 @@ typedef int (*ndn_face_intf_up)(struct ndn_face_intf* self);
  * @param size Input. The size of the wire format packet buffer.
  * @return 0 if there is no error.
  */
+<<<<<<< HEAD
 typedef int (*ndn_face_intf_send)(struct ndn_face_intf* self,
                                   const uint8_t* packet, uint32_t size);
+=======
+typedef int (*ndn_face_intf_send)(struct ndn_face_intf* self, const uint8_t* packet, uint32_t size);
+>>>>>>> ea49b8a70f1e420ca01a12f4e2d4fdb3d28cecee
 
 /**
  * The interface down function.

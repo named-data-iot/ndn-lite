@@ -111,6 +111,7 @@
  * @ingroup NDNErrorCode
  * @{ */
 
+<<<<<<< HEAD
 /** The operation has no effect.
  */
 #define NDN_FWD_NO_EFFECT -50
@@ -126,6 +127,16 @@
 /** The FIB is full.
  */
 #define NDN_FWD_FIB_FULL -53
+=======
+// Forwarder Error
+#define NDN_FWD_NO_MEM -50
+#define NDN_FWD_PIT_FULL -51
+#define NDN_FWD_PIT_NO_MATCH -52
+#define NDN_FWD_PIT_ENTRY_FACE_LIST_FULL -53
+#define NDN_FWD_FIB_FULL -54
+#define NDN_FWD_INTEREST_REJECTED -55
+#define NDN_FWD_NO_MATCHED_CALLBACK -56
+>>>>>>> ea49b8a70f1e420ca01a12f4e2d4fdb3d28cecee
 
 /** The face has a wrong ID.
  */
@@ -169,9 +180,16 @@
 #define NDN_AC_UNRECOGNIZED_KEY_REQUEST -62
 /* @} */
 
+<<<<<<< HEAD
 /** @defgroup NDNErrorCodeSign Sign-on Protocol Errors
  * @ingroup NDNErrorCode
  * @{ */
+=======
+// Util error
+#define NDN_TIMER_WRONG_FIRETIME -71
+
+// Sign-on Protocol
+>>>>>>> ea49b8a70f1e420ca01a12f4e2d4fdb3d28cecee
 #define NDN_SIGN_ON_BASIC_CLIENT_INIT_FAILED_UNRECOGNIZED_VARIANT -101
 #define NDN_SIGN_ON_BASIC_CLIENT_INIT_FAILED_TO_SET_SEC_INTF -102
 #define NDN_SIGN_ON_CNSTRCT_BTSTRP_RQST_BUFFER_TOO_SHORT -103

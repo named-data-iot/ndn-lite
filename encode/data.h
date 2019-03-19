@@ -186,6 +186,7 @@ ndn_data_parse_encrypted_content(const ndn_data_t* data,
                                  uint8_t* content_value, uint32_t* content_used_size,
                                  ndn_name_t* key_id, uint8_t* aes_iv, const ndn_aes_key_t* key);
 
+
 #ifdef __cplusplus
 }
 #endif

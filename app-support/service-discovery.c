@@ -289,7 +289,7 @@ ndn_sd_on_query_response_process(const ndn_data_t* response)
   ndn_decoder_t decoder;
   decoder_init(&decoder, response->content_value, response->content_size);
   uint32_t probe;
-  uint8_t status;
+  uint8_t status = 0;
   decoder_get_type(&decoder, &probe);
   decoder_get_length(&decoder, &probe);
   decoder_get_byte_value(&decoder, &status);

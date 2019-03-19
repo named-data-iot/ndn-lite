@@ -26,6 +26,7 @@ ndn_dummy_face_up(struct ndn_face_intf* self)
 }
 
 int
+<<<<<<< HEAD
 ndn_dummy_face_send(struct ndn_face_intf* self,
                     const uint8_t* packet, uint32_t size)
 {
@@ -40,6 +41,16 @@ ndn_dummy_face_send(struct ndn_face_intf* self,
     printf(" %02X", packet[i]);
   }
   printf("\n");
+=======
+ndn_dummy_face_send(struct ndn_face_intf* self, const uint8_t* packet, uint32_t size)
+{
+  (void)self;
+  (void)packet;
+  (void)size;
+  printf("Dummy Face UP send packet\n");
+  return 0;
+}
+>>>>>>> ea49b8a70f1e420ca01a12f4e2d4fdb3d28cecee
 
   return NDN_SUCCESS;
 }
