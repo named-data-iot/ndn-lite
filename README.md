@@ -28,3 +28,9 @@ Maintainer: Edward Lu, Bo Chen
 
 * [NDN IoT Package for Nordic SDK using GCC](https://github.com/named-data-iot/ndn-iot-package-over-nordic-sdk-gcc) \
 Maintainer: Tianyuan Yu
+
+* [NDN IoT Package for POSIX using CMake](https://github.com/named-data-iot/ndn-iot-package-over-posix) \
+Maintainer: Xinyu Ma
+
+* [NDN-Lite Doxygen Documentation](https://zjkmxy.github.io/ndn-lite-docs/index.html) \
+Maintainer: Xinyu Ma
