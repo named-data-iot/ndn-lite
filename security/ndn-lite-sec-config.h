@@ -9,6 +9,10 @@
 #ifndef NDN_LITE_SEC_CONFIG_H
 #define NDN_LITE_SEC_CONFIG_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Here you can define the security backend to use for various security
  * functionality of ndn-lite. this is useful if you experience issues
@@ -143,5 +147,9 @@
 
 void
 ndn_security_init(void);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif // NDN_LITE_SEC_CONFIG_H
