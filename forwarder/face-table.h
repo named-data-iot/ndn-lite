@@ -12,19 +12,55 @@
 #include "face.h"
 #include "../ndn-constants.h"
 
+/** @defgroup NDNFwdFaceTab Face Table
+ * @brief Face Table.
+ * @ingroup NDNFwd
+ * @{
+ */
+
+/** Face Table.
+ *
+ * It assigns an unique ID to all faces.
+ */
 typedef struct ndn_face_table{
   uint16_t capacity;
+
+  /** All registered faces.
+   * NULL for empty entries.
+   */
   ndn_face_intf_t* slots[];
 }ndn_face_table_t;
 
+/** The memory reserved for FaceTable.
+ * @param[in] entry_count Maximum number of entries.
+ */
 #define NDN_FACE_TABLE_RESERVE_SIZE(entry_count) \
   (sizeof(ndn_face_table_t) + sizeof(ndn_face_intf_t*) * (entry_count))
 
-void ndn_facetab_init(void* memory, uint16_t capacity);
+/** Initialize FaceTable at specified memory space.
+ * @param[in, out] memory Memory reserved for FaceTable.
+ * @param[in] capacity Maximum number of entries.
+ */
+void
+ndn_facetab_init(void* memory, uint16_t capacity);
 
-uint16_t ndn_facetab_register(ndn_face_table_t* self, ndn_face_intf_t* face);
+/** Register a face and assign an ID to it.
+ * @param[in, out] self FaceTable.
+ * @param[in] face The face to register.
+ * @return The ID for @c face if succeeded. #NDN_INVALID_ID if FaceTable is full.
+ * @pre @c face should be just created. The constructor should call this function.
+ */
+uint16_t
+ndn_facetab_register(ndn_face_table_t* self, ndn_face_intf_t* face);
 
-// ATTENTION: This should be called with ndn_fib_unregister && ndn_pit_unregister
-void ndn_facetab_unregister(ndn_face_table_t* self, uint16_t id);
+/** Unregister a face from FaceTable only.
+ * @param[in, out] self FaceTable.
+ * @param[in] face The face to unregister.
+ * @pre <tt>id < self->ndn_face_table_t#capacity</tt>
+ */
+void
+ndn_facetab_unregister(ndn_face_table_t* self, uint16_t id);
+
+/*@}*/
 
 #endif // FORWARDER_FACE_TABLE_H_

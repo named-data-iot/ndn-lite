@@ -27,14 +27,26 @@ extern "C" {
  * FIB entry.
  */
 typedef struct ndn_fib_entry {
+  /** A bitset recording all next hops.
+   */
   ndn_bitset_t nexthop;
+  
+  /** OnOnterest callback function if registered.
+   */
   ndn_on_interest_func on_interest;
+
+  /** User defined data.
+   */
   void* userdata;
+
+  /** NameTree entry's ID.
+   * #NDN_INVALID_ID if the entry is empty.
+   */
   uint16_t nametree_id;
 } ndn_fib_entry_t;
 
 /**
- * Forwarding Information Base (FIB) class.
+ * Forwarding Information Base (FIB).
  */
 typedef struct ndn_fib{
   ndn_nametree_t* nametree;

@@ -29,19 +29,49 @@ extern "C" {
  * PIT entry.
  */
 typedef struct ndn_pit_entry {
+  /** Interest Options.
+   */
   interest_options_t options;
+
+  /** Faces received this Interest.
+   * Used to forward corresponding Data.
+   */
   uint64_t incoming_faces;
+
+  /** Faces sent out this Interest.
+   * Used to suppress Interest forwarding.
+   */
   uint64_t outgoing_faces;
+
+  /** Timestamp for last time the forwarder received this Interest.
+   */
   ndn_time_ms_t last_time;
+
+  /** Timestamp when the application expressed this Interest.
+   * 0 If it's received from a face.
+   */
   ndn_time_ms_t express_time;
+
+  /** OnData callback if the application expressed this Interest.
+   */
   ndn_on_data_func on_data;
+
+  /** OnTimeout callback if the application expressed this Interest.
+   */
   ndn_on_timeout_func on_timeout;
+
+  /** User defined data.
+   */
   void* userdata;
+
+  /** NameTree entry's ID.
+   * #NDN_INVALID_ID if the entry is empty.
+   */
   uint16_t nametree_id;
 } ndn_pit_entry_t;
 
 /**
-* PIT class.
+* Forwarding Information Base (FIB).
 */
 typedef struct ndn_pit{
   ndn_nametree_t* nametree;
@@ -57,23 +87,6 @@ ndn_pit_init(void* memory, uint16_t capacity, ndn_nametree_t* nametree);
 
 void
 ndn_pit_unregister_face(ndn_pit_t* self, uint16_t face_id);
-
-int
-ndn_pit_entry_add_incoming_face(ndn_pit_entry_t* entry, ndn_face_intf_t* face);
-
-//set each components in a pit entry
-void ndn_pit_set_entry(ndn_pit_entry_t *entry,
-                  interest_options_t options,
-                  uint64_t incoming_faces,
-                  ndn_time_ms_t last_time,
-                  ndn_time_ms_t express_time,
-                  ndn_on_data_func on_data,
-                  ndn_on_timeout_func on_timeout,
-                  void* userdata,
-                  uint16_t nametree_id);
-
-//clean a pit entry, set nametree_id to NDN_INVALID_ID and others to 0.
-void ndn_pit_refresh_entry(ndn_pit_entry_t *entry);
 
 ndn_pit_entry_t*
 ndn_pit_find_or_insert(ndn_pit_t* self, uint8_t* name, size_t length);

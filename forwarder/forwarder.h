@@ -22,6 +22,7 @@ extern "C" {
  */
 
 /** @defgroup NDNFwdForwarder Forwarder Core
+ * @brief The forwarder core.
  * @ingroup NDNFwd
  * @{
  */
@@ -43,8 +44,8 @@ ndn_forwarder_process(void);
  * The face should call this to get a face id during creation.
  * @param[in, out] face The face to register.
  * @return #NDN_SUCCESS if the call succeeded. The error code otherwise.
- * @retval NDN_FWD_NO_EFFECT @c face already has an ID.
- * @retval NDN_FWD_FACE_TABLE_FULL FaceTable is full. See also #NDN_FACE_TABLE_MAX_SIZE.
+ * @retval #NDN_FWD_NO_EFFECT @c face already has an ID.
+ * @retval #NDN_FWD_FACE_TABLE_FULL FaceTable is full. See also #NDN_FACE_TABLE_MAX_SIZE.
  * @note The application doesn't need to register faces manually.
  * @pre <tt>face->face_id == #NDN_INVALID_ID</tt>
  */
@@ -58,7 +59,7 @@ ndn_forwarder_register_face(ndn_face_intf_t* face);
  * Delete FIB or PIT entries if necessary.
  * @param[in, out] face The face to unregister.
  * @return #NDN_SUCCESS if the call succeeded. The error code otherwise.
- * @retval NDN_FWD_NO_EFFECT @c face is not in FaceTable now.
+ * @retval #NDN_FWD_NO_EFFECT @c face is not in FaceTable now.
  * @note The application doesn't need to unregister faces manually.
  * @post <tt>face->face_id == #NDN_INVALID_ID</tt>
  */
@@ -71,7 +72,7 @@ ndn_forwarder_unregister_face(ndn_face_intf_t* face);
  * @param[in] prefix The prefix of the route.
  * @param[in] length The length of @c prefix.
  * @return #NDN_SUCCESS if the call succeeded. The error code otherwise.
- * @retval NDN_FWD_FIB_FULL FIB or NameTree is full. See also #NDN_FIB_MAX_SIZE,
+ * @retval #NDN_FWD_FIB_FULL FIB or NameTree is full. See also #NDN_FIB_MAX_SIZE,
  *                          #NDN_NAMETREE_MAX_SIZE.
  */
 int
@@ -84,7 +85,7 @@ ndn_forwarder_add_route(ndn_face_intf_t* face, uint8_t* prefix, size_t length);
  * @param[in] prefix The prefix of the route.
  * @param[in] length The length of @c prefix .
  * @return #NDN_SUCCESS if the call succeeded. The error code otherwise.
- * @retval NDN_FWD_NO_EFFECT Currently @c prefix has no route.
+ * @retval #NDN_FWD_NO_EFFECT Currently @c prefix has no route.
  */
 int
 ndn_forwarder_remove_route(ndn_face_intf_t* face, uint8_t* prefix, size_t length);
@@ -95,7 +96,7 @@ ndn_forwarder_remove_route(ndn_face_intf_t* face, uint8_t* prefix, size_t length
  * @param[in] prefix The prefix.
  * @param[in] length The length of @c prefix.
  * @return #NDN_SUCCESS if the call succeeded. The error code otherwise.
- * @retval NDN_FWD_NO_EFFECT Currently @c prefix has no route.
+ * @retval #NDN_FWD_NO_EFFECT Currently @c prefix has no route.
  */
 int
 ndn_forwarder_remove_all_routes(uint8_t* prefix, size_t length);
@@ -107,7 +108,7 @@ ndn_forwarder_remove_all_routes(uint8_t* prefix, size_t length);
  * @param[in] prefix The prefix of the route.
  * @param[in] length The length of @c prefix.
  * @return #NDN_SUCCESS if the call succeeded. The error code otherwise.
- * @retval NDN_FWD_PIT_FULL PIT or NameTree is full. See also #NDN_PIT_MAX_SIZE,
+ * @retval #NDN_FWD_PIT_FULL PIT or NameTree is full. See also #NDN_PIT_MAX_SIZE,
  *                          #NDN_NAMETREE_MAX_SIZE.
  * @note The application doesn't need to call this manually.
  */
@@ -122,7 +123,7 @@ ndn_forwarder_receive(ndn_face_intf_t* face, uint8_t* packet, size_t length);
  * @param[in] on_interest The callback function when an interest comes.
  * @param[in] userdata [Optional] User-defined data, copied to @c on_interest.
  * @return #NDN_SUCCESS if the call succeeded. The error code otherwise.
- * @retval NDN_FWD_FIB_FULL FIB or NameTree is full. See also #NDN_FIB_MAX_SIZE,
+ * @retval #NDN_FWD_FIB_FULL FIB or NameTree is full. See also #NDN_FIB_MAX_SIZE,
  *                          #NDN_NAMETREE_MAX_SIZE.
  */
 int
@@ -136,7 +137,7 @@ ndn_forwarder_register_prefix(uint8_t* prefix,
  * @param[in] prefix The prefix to register.
  * @param[in] length The length of @c prefix.
  * @return #NDN_SUCCESS if the call succeeded. The error code otherwise.
- * @retval NDN_FWD_NO_EFFECT Currently @c prefix is not registered.
+ * @retval #NDN_FWD_NO_EFFECT Currently @c prefix is not registered.
  */
 int
 ndn_forwarder_unregister_prefix(uint8_t* prefix, size_t length);
@@ -151,7 +152,7 @@ ndn_forwarder_unregister_prefix(uint8_t* prefix, size_t length);
  * @param[in] on_timeout [Optional] The callback function when times out.
  * @param[in] userdata [Optional] User-defined data, copied to @c on_data and @c on_timeout.
  * @return #NDN_SUCCESS if the call succeeded. The error code otherwise.
- * @retval NDN_FWD_PIT_FULL PIT or NameTree is full. See also #NDN_PIT_MAX_SIZE,
+ * @retval #NDN_FWD_PIT_FULL PIT or NameTree is full. See also #NDN_PIT_MAX_SIZE,
  *                          #NDN_NAMETREE_MAX_SIZE.
  */
 int

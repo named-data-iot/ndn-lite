@@ -13,14 +13,48 @@
 #include <stdint.h>
 #include <stddef.h>
 
+/** @defgroup NDNFwdNameTree Name Tree
+ * @brief Name Tree
+ * @ingroup NDNFwd
+ * @{
+ */
+
 #define NDN_NAMETREE_FIB_TYPE 0
 #define NDN_NAMETREE_PIT_TYPE 1
 
+/**
+ * NameTree node.
+ */
 typedef struct nametree_entry{
+  /**
+   * Name component of this node.
+   */
   uint8_t val[NDN_NAME_COMPONENT_BLOCK_SIZE];
+
+  /**
+   * First child of this node.
+   * #NDN_INVALID_ID if none.
+   */
   uint16_t left_child;
+
+  /**
+   * Right brother of this node.
+   * For root node, it points to a free list.
+   * And a free node's right brother is the next free node.
+   * #NDN_INVALID_ID if none.
+   */
   uint16_t right_bro;
+
+  /**
+   * Corresponding PIT entry's id.
+   * #NDN_INVALID_ID if none.
+   */
   uint16_t pit_id;
+
+  /**
+   * Corresponding FIB entry's id.
+   * #NDN_INVALID_ID if none.
+   */
   uint16_t fib_id;
 } nametree_entry_t;
 
@@ -39,5 +73,7 @@ ndn_nametree_prefix_match(ndn_nametree_t* nametree, uint8_t name[], size_t len, 
 
 nametree_entry_t*
 ndn_nametree_find(ndn_nametree_t *nametree, uint8_t name[], size_t len);
+
+/*@}*/
 
 #endif

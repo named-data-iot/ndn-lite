@@ -19,6 +19,7 @@ ndn_pit_entry_reset(ndn_pit_entry_t* self){
   self->on_data = NULL;
   self->on_timeout = NULL;
   self->userdata = NULL;
+  // Don't reset options.nonce here
 }
 
 static void ndn_pit_timeout(void *selfptr, size_t param_len, void *param){
@@ -60,6 +61,7 @@ ndn_pit_init(void* memory, uint16_t capacity, ndn_nametree_t* nametree){
   self->nametree = nametree;
   for(i = 0; i < capacity; i ++){
     ndn_pit_entry_reset(&self->slots[i]);
+    self->slots[i].options.nonce = 0;
   }
 
   ndn_msgqueue_post(self, ndn_pit_timeout, 0, NULL);

@@ -35,9 +35,9 @@ struct ndn_msg;
 
 /** The callback function of message.
  * 
- * @param self Input. The object to receive this message.
- * @param param_length Input. The length of the @c param.
- * @param param Input. Point to a raw memory in size @c param_length.
+ * @param[in, out] self The object to receive this message.
+ * @param[in] param_length [Optional] The length of the @c param.
+ * @param[in] param [Optional] Point to a raw memory in size @c param_length.
  */
 typedef void(*ndn_msg_callback)(void *self,
                                 size_t param_length,
@@ -49,11 +49,11 @@ void
 ndn_msgqueue_init(void);
 
 /** Post a message to the queue.
- * @param target Input. The object to receive this message.
- * @param reason Input. The message callback function.
- * @param length Input. The length of parameters @c param.
- * @param param Input. The parameters of this message.
- *              Its context will be copied into the queue.
+ * @param[in] target The object to receive this message.
+ * @param[in] reason The message callback function.
+ * @param[in] length [Optional] The length of parameters @c param.
+ * @param[in] param  [Optional] The parameters of this message.
+ *                   Its context will be copied into the queue.
  * @return An pointer to cancel the message. NULL if failed.
  */
 struct ndn_msg*
@@ -90,7 +90,7 @@ ndn_msgqueue_process(void);
 /** Cancel a posted message.
  *
  * Please make sure the pointer is correct and it's used before dispatch.
- * @param msg Pointer to message
+ * @param[in] msg Pointer to message
  */
 void
 ndn_msgqueue_cancel(struct ndn_msg* msg);

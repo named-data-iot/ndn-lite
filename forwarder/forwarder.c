@@ -325,6 +325,10 @@ fwd_on_incoming_interest(uint8_t* interest,
   if (pit_entry == NULL)
     return NDN_FWD_PIT_FULL;
   
+  // Randomized dead nonce list
+  if(pit_entry->options.nonce == options->nonce && options->nonce != 0){
+    return NDN_FWD_INTEREST_REJECTED;
+  }
   if(pit_entry->on_data == NULL && pit_entry->on_timeout == NULL){
     pit_entry->options = *options;
   }
@@ -395,7 +399,7 @@ fwd_on_outgoing_interest(uint8_t* interest,
                          uint16_t face_id)
 {
   ndn_fib_entry_t* fib_entry;
-  int action = 0;
+  int strategy = NDN_FWD_STRATEGY_MULTICAST;
   uint8_t *hop_limit;
   ndn_bitset_t outfaces;
 
@@ -405,7 +409,7 @@ fwd_on_outgoing_interest(uint8_t* interest,
   }
 
   if(fib_entry->on_interest){
-    action = fib_entry->on_interest(interest, length, fib_entry->userdata);
+    strategy = fib_entry->on_interest(interest, length, fib_entry->userdata);
   }
 
   // The interest may be satisfied immediately so check again
@@ -413,7 +417,6 @@ fwd_on_outgoing_interest(uint8_t* interest,
     return NDN_SUCCESS;
   }
 
-  (void)action;
   hop_limit = tlv_interest_get_hoplimit_ptr(interest, length);
   if(hop_limit != NULL){
     if(*hop_limit <= 0){
@@ -429,7 +432,9 @@ fwd_on_outgoing_interest(uint8_t* interest,
   }
 
   outfaces = (fib_entry->nexthop & (~entry->outgoing_faces));
-  entry->outgoing_faces |= fwd_multicast(interest, length, outfaces, face_id);
+  if(strategy == NDN_FWD_STRATEGY_MULTICAST){
+    entry->outgoing_faces |= fwd_multicast(interest, length, outfaces, face_id);
+  }
 
   return NDN_SUCCESS;
 }

@@ -28,7 +28,6 @@ uint16_t ndn_facetab_register(ndn_face_table_t* self, ndn_face_intf_t* face){
   return NDN_INVALID_ID;
 }
 
-// ATTENTION: This should be called with ndn_fib_unregister && ndn_pit_unregister
 void ndn_facetab_unregister(ndn_face_table_t* self, uint16_t id){
   self->slots[id] = NULL;
 }

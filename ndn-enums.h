@@ -23,6 +23,12 @@ enum {
   NDN_FACE_TYPE_NET = 2,
 };
 
+// forward strategy
+enum {
+  NDN_FWD_STRATEGY_SUPPRESS = 0,
+  NDN_FWD_STRATEGY_MULTICAST = 1,
+};
+
 // content type values
 enum {
   NDN_CONTENT_TYPE_BLOB = 0,
