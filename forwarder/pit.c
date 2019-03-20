@@ -15,6 +15,7 @@ ndn_pit_entry_reset(ndn_pit_entry_t* self){
   self->last_time = 0;
   self->express_time = 0;
   self->incoming_faces = 0;
+  self->outgoing_faces = 0;
   self->on_data = NULL;
   self->on_timeout = NULL;
   self->userdata = NULL;

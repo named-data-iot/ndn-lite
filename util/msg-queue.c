@@ -22,7 +22,7 @@
  * When the last message's @c func is NDN_MSG_PADDING, it means the next message is at
  * the begining of the queue and has a size larger than this padding one.
  */
-#define NDN_MSG_PADDING (void*)(-1)
+#define NDN_MSG_PADDING (ndn_msg_callback)(-1)
 
 typedef struct ndn_msg{
   void* obj;
@@ -48,12 +48,9 @@ ndn_msgqueue_init(void) {
 
 bool
 ndn_msgqueue_empty(void) {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
   while(pfront->func == NDN_MSG_PADDING && pfront != ptail){
     MSGQUEUE_NEXT(pfront);
   }
-#pragma GCC diagnostic pop
   if(pfront == ptail){
     // defrag when empty
     pfront = ptail = psplit = (ndn_msg_t*)&msg_queue[0];
@@ -93,7 +90,7 @@ ndn_msgqueue_post(void *target,
   }
 
   // After tail?
-  if(pfront >= ptail || space >= len){
+  if(pfront >= ptail || space >= len + sizeof(ndn_msg_t)){
     // No-padding (= is to prevent ptail == pfront after call)
     if(space < len || (space == len && pfront == (ndn_msg_t*)&msg_queue))
       return NULL;
@@ -102,13 +99,14 @@ ndn_msgqueue_post(void *target,
     if(((uint8_t*)pfront) - &msg_queue[0] <= (int) len)
       return NULL;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-    ptail->func = NDN_MSG_PADDING;
-#pragma GCC diagnostic pop
-    ptail->length = space;
-
-    ptail = (ndn_msg_t*)&msg_queue[0];
+    if(space >= sizeof(ndn_msg_t)){
+      ptail->func = NDN_MSG_PADDING;
+      ptail->length = space;
+      ptail = (ndn_msg_t*)&msg_queue[0];
+    }else{
+      // This should never happen
+      return NULL;
+    }
   }
 
   ptail->obj = target;

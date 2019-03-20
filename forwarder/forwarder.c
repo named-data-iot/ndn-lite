@@ -73,7 +73,7 @@ fwd_data_pipeline(uint8_t* data,
                   size_t name_len,
                   uint16_t face_id);
 
-static void
+static ndn_bitset_t
 fwd_multicast(uint8_t* packet,
               size_t length,
               ndn_bitset_t out_faces,
@@ -325,9 +325,6 @@ fwd_on_incoming_interest(uint8_t* interest,
   if (pit_entry == NULL)
     return NDN_FWD_PIT_FULL;
   
-  if(pit_entry->options.nonce == options->nonce && options->nonce != 0){
-    return NDN_FWD_INTEREST_REJECTED;
-  }
   if(pit_entry->on_data == NULL && pit_entry->on_timeout == NULL){
     pit_entry->options = *options;
   }
@@ -369,7 +366,7 @@ fwd_data_pipeline(uint8_t* data,
   return NDN_SUCCESS;
 }
 
-static void
+static ndn_bitset_t
 fwd_multicast(uint8_t* packet,
               size_t length,
               ndn_bitset_t out_faces,
@@ -377,13 +374,16 @@ fwd_multicast(uint8_t* packet,
 {
   uint16_t id;
   ndn_face_intf_t* face;
+  ndn_bitset_t ret = 0;
 
   for(id = 0; id < forwarder.facetab->capacity; id ++){
     face = forwarder.facetab->slots[id];
     if(id == in_face || face == NULL)
       continue;
     ndn_face_send(face, packet, length);
+    ret = bitset_set(ret, id);
   }
+  return ret;
 }
 
 static int
@@ -397,6 +397,7 @@ fwd_on_outgoing_interest(uint8_t* interest,
   ndn_fib_entry_t* fib_entry;
   int action = 0;
   uint8_t *hop_limit;
+  ndn_bitset_t outfaces;
 
   fib_entry = ndn_fib_prefix_match(forwarder.fib, name, name_len);
   if(fib_entry == NULL){
@@ -426,7 +427,9 @@ fwd_on_outgoing_interest(uint8_t* interest,
       *hop_limit -= 1;
     }
   }
-  fwd_multicast(interest, length, fib_entry->nexthop, face_id);
+
+  outfaces = (fib_entry->nexthop & (~entry->outgoing_faces));
+  entry->outgoing_faces |= fwd_multicast(interest, length, outfaces, face_id);
 
   return NDN_SUCCESS;
 }
