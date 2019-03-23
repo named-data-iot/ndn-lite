@@ -129,7 +129,8 @@ ndn_metainfo_probe_block_size(const ndn_metainfo_t* meta)
     meta_value_size += encoder_probe_block_size(TLV_ContentType, 1);
   }
   if (meta->enable_FreshnessPeriod) {
-    meta_value_size += encoder_probe_block_size(TLV_FreshnessPeriod, 4);
+    meta_value_size += encoder_probe_block_size(TLV_FreshnessPeriod,
+                                                encoder_probe_uint_length(meta->freshness_period));
   }
   if (meta->enable_FinalBlockId) {
     uint32_t comp_tlv_size = name_component_probe_block_size(&meta->final_block_id);
