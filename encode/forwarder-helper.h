@@ -82,10 +82,10 @@ tlv_interest_get_header(uint8_t* interest,
  * @param name_len [out] The length of @c name .
  */
 int
-tlv_data_get_header(uint8_t* data,
-                    size_t buflen,
-                    uint8_t** name,
-                    size_t* name_len);
+tlv_data_get_name(uint8_t* data,
+                  size_t buflen,
+                  uint8_t** name,
+                  size_t* name_len);
 
 uint8_t*
 tlv_interest_get_hoplimit_ptr(uint8_t* interest, size_t buflen);

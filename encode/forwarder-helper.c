@@ -149,10 +149,10 @@ tlv_interest_get_header(uint8_t* interest,
 }
 
 int
-tlv_data_get_header(uint8_t* data,
-                    size_t buflen,
-                    uint8_t** name,
-                    size_t* name_len)
+tlv_data_get_name(uint8_t* data,
+                  size_t buflen,
+                  uint8_t** name,
+                  size_t* name_len)
 {
   uint32_t real_type, real_len;
   uint8_t* ptr;

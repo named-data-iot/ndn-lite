@@ -272,7 +272,7 @@ ndn_forwarder_put_data(uint8_t* data, size_t length)
 
   if(data == NULL)
     return NDN_INVALID_POINTER;
-  ret = tlv_data_get_header(data, length, &name, &name_len);
+  ret = tlv_data_get_name(data, length, &name, &name_len);
   if(ret != NDN_SUCCESS)
     return ret;
 
@@ -302,7 +302,7 @@ ndn_forwarder_receive(ndn_face_intf_t* face, uint8_t* packet, size_t length){
       return ret;
     return fwd_on_incoming_interest(packet, length, &options, name, name_len, face_id);
   }else if(type == TLV_Data){
-    ret = tlv_data_get_header(packet, length, &name, &name_len);
+    ret = tlv_data_get_name(packet, length, &name, &name_len);
     if(ret != NDN_SUCCESS)
       return ret;
     return fwd_data_pipeline(packet, length, name, name_len, face_id);
@@ -322,14 +322,18 @@ fwd_on_incoming_interest(uint8_t* interest,
   ndn_pit_entry_t *pit_entry;
 
   pit_entry = ndn_pit_find_or_insert(forwarder.pit, name, name_len);
-  if (pit_entry == NULL)
+  if (pit_entry == NULL){
     return NDN_FWD_PIT_FULL;
+  }
   
   // Randomized dead nonce list
   if(pit_entry->options.nonce == options->nonce && options->nonce != 0){
     return NDN_FWD_INTEREST_REJECTED;
   }
   if(pit_entry->on_data == NULL && pit_entry->on_timeout == NULL){
+    // Update the options (lifetime) only when it's not expressed by an application.
+    // I'm sorry I don't have a clear idea on this. Maybe we should separate user's lifetime
+    // and forwarded Interest's lifetime.
     pit_entry->options = *options;
   }
   pit_entry->last_time = ndn_time_now_ms();
@@ -382,10 +386,10 @@ fwd_multicast(uint8_t* packet,
 
   for(id = 0; id < forwarder.facetab->capacity; id ++){
     face = forwarder.facetab->slots[id];
-    if(id == in_face || face == NULL)
-      continue;
-    ndn_face_send(face, packet, length);
-    ret = bitset_set(ret, id);
+    if(id != in_face && face != NULL){
+      ndn_face_send(face, packet, length);
+      ret = bitset_set(ret, id);
+    }
   }
   return ret;
 }
@@ -399,7 +403,7 @@ fwd_on_outgoing_interest(uint8_t* interest,
                          uint16_t face_id)
 {
   ndn_fib_entry_t* fib_entry;
-  int strategy = NDN_FWD_STRATEGY_MULTICAST;
+  int strategy;
   uint8_t *hop_limit;
   ndn_bitset_t outfaces;
 
@@ -410,6 +414,8 @@ fwd_on_outgoing_interest(uint8_t* interest,
 
   if(fib_entry->on_interest){
     strategy = fib_entry->on_interest(interest, length, fib_entry->userdata);
+  }else{
+    strategy = NDN_FWD_STRATEGY_MULTICAST;
   }
 
   // The interest may be satisfied immediately so check again
@@ -424,9 +430,6 @@ fwd_on_outgoing_interest(uint8_t* interest,
     }
     // If the Interest is received from another hop
     if(face_id != NDN_INVALID_ID){
-      if(*hop_limit <= 0){
-        return NDN_FWD_INTEREST_REJECTED;
-      }
       *hop_limit -= 1;
     }
   }
