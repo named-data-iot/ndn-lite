@@ -24,7 +24,7 @@ ndn_pit_entry_reset(ndn_pit_entry_t* self){
 
 static void ndn_pit_timeout(void *selfptr, size_t param_len, void *param){
   ndn_pit_t* self = (ndn_pit_t*)selfptr;
-  uint16_t i;
+  ndn_table_id_t i;
   ndn_time_ms_t now = ndn_time_now_ms();
 
   for(i = 0; i < self->capacity; i ++){
@@ -54,8 +54,8 @@ static void ndn_pit_timeout(void *selfptr, size_t param_len, void *param){
 }
 
 void
-ndn_pit_init(void* memory, uint16_t capacity, ndn_nametree_t* nametree){
-  uint16_t i;
+ndn_pit_init(void* memory, ndn_table_id_t capacity, ndn_nametree_t* nametree){
+  ndn_table_id_t i;
   ndn_pit_t* self = (ndn_pit_t*)memory;
   self->capacity = capacity;
   self->nametree = nametree;
@@ -87,16 +87,16 @@ ndn_pit_remove_entry_if_empty(ndn_pit_t* self, ndn_pit_entry_t* entry){
 }
 
 void
-ndn_pit_unregister_face(ndn_pit_t* self, uint16_t face_id){
-  for (uint16_t i = 0; i < self->capacity; ++i){
+ndn_pit_unregister_face(ndn_pit_t* self, ndn_table_id_t face_id){
+  for (ndn_table_id_t i = 0; i < self->capacity; ++i){
     self->slots[i].incoming_faces = bitset_unset(self->slots[i].incoming_faces, face_id);
     ndn_pit_remove_entry_if_empty(self, &self->slots[i]);
   }
 }
 
-static uint16_t
+static ndn_table_id_t
 ndn_pit_add_new_entry(ndn_pit_t* pit , int nametree_id){
-  uint16_t i;
+  ndn_table_id_t i;
   for (i = 0; i < pit->capacity; ++i) {
     if (pit->slots[i].nametree_id == NDN_INVALID_ID) {
       ndn_pit_entry_reset(&pit->slots[i]);

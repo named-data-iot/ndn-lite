@@ -9,6 +9,8 @@
 #ifndef NDN_CONSTANTS_H
 #define NDN_CONSTANTS_H
 
+#include <stdint.h>
+
 // name and name component
 #define NDN_NAME_COMPONENT_BUFFER_SIZE 36
 #define NDN_NAME_COMPONENT_BLOCK_SIZE 38
@@ -33,6 +35,8 @@
 #define NDN_SIGNATURE_BUFFER_SIZE 128
 
 // forwarder
+typedef uint16_t ndn_table_id_t;
+
 #define NDN_INVALID_ID 0xFFFF
 #define NDN_NAMETREE_MAX_SIZE 64
 #define NDN_FIB_MAX_SIZE 20

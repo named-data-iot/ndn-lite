@@ -23,7 +23,7 @@
  * It assigns an unique ID to all faces.
  */
 typedef struct ndn_face_table{
-  uint16_t capacity;
+  ndn_table_id_t capacity;
 
   /** All registered faces.
    * NULL for empty entries.
@@ -42,7 +42,7 @@ typedef struct ndn_face_table{
  * @param[in] capacity Maximum number of entries.
  */
 void
-ndn_facetab_init(void* memory, uint16_t capacity);
+ndn_facetab_init(void* memory, ndn_table_id_t capacity);
 
 /** Register a face and assign an ID to it.
  * @param[in, out] self FaceTable.
@@ -50,7 +50,7 @@ ndn_facetab_init(void* memory, uint16_t capacity);
  * @return The ID for @c face if succeeded. #NDN_INVALID_ID if FaceTable is full.
  * @pre @c face should be just created. The constructor should call this function.
  */
-uint16_t
+ndn_table_id_t
 ndn_facetab_register(ndn_face_table_t* self, ndn_face_intf_t* face);
 
 /** Unregister a face from FaceTable only.
@@ -59,7 +59,7 @@ ndn_facetab_register(ndn_face_table_t* self, ndn_face_intf_t* face);
  * @pre <tt>id < self->ndn_face_table_t#capacity</tt>
  */
 void
-ndn_facetab_unregister(ndn_face_table_t* self, uint16_t id);
+ndn_facetab_unregister(ndn_face_table_t* self, ndn_table_id_t id);
 
 /*@}*/
 

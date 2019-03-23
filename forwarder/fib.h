@@ -42,7 +42,7 @@ typedef struct ndn_fib_entry {
   /** NameTree entry's ID.
    * #NDN_INVALID_ID if the entry is empty.
    */
-  uint16_t nametree_id;
+  ndn_table_id_t nametree_id;
 } ndn_fib_entry_t;
 
 /**
@@ -50,7 +50,7 @@ typedef struct ndn_fib_entry {
  */
 typedef struct ndn_fib{
   ndn_nametree_t* nametree;
-  uint16_t capacity;
+  ndn_table_id_t capacity;
   ndn_fib_entry_t slots[];
 }ndn_fib_t;
 
@@ -58,10 +58,10 @@ typedef struct ndn_fib{
   (sizeof(ndn_fib_t) + sizeof(ndn_fib_entry_t) * (entry_count))
 
 void
-ndn_fib_init(void* memory, uint16_t capacity, ndn_nametree_t* nametree);
+ndn_fib_init(void* memory, ndn_table_id_t capacity, ndn_nametree_t* nametree);
 
 void
-ndn_fib_unregister_face(ndn_fib_t* self, uint16_t face_id);
+ndn_fib_unregister_face(ndn_fib_t* self, ndn_table_id_t face_id);
 
 ndn_fib_entry_t*
 ndn_fib_find_or_insert(ndn_fib_t* self, uint8_t* prefix, size_t length);

@@ -8,8 +8,8 @@
 
 #include "face-table.h"
 
-void ndn_facetab_init(void* memory, uint16_t capacity){
-  uint16_t i;
+void ndn_facetab_init(void* memory, ndn_table_id_t capacity){
+  ndn_table_id_t i;
   ndn_face_table_t* self = (ndn_face_table_t*)memory;
   self->capacity = capacity;
   for(i = 0; i < capacity; i ++){
@@ -17,8 +17,8 @@ void ndn_facetab_init(void* memory, uint16_t capacity){
   }
 }
 
-uint16_t ndn_facetab_register(ndn_face_table_t* self, ndn_face_intf_t* face){
-  uint16_t i;
+ndn_table_id_t ndn_facetab_register(ndn_face_table_t* self, ndn_face_intf_t* face){
+  ndn_table_id_t i;
   for(i = 0; i < self->capacity; i ++){
     if(self->slots[i] == NULL){
       self->slots[i] = face;
@@ -28,6 +28,6 @@ uint16_t ndn_facetab_register(ndn_face_table_t* self, ndn_face_intf_t* face){
   return NDN_INVALID_ID;
 }
 
-void ndn_facetab_unregister(ndn_face_table_t* self, uint16_t id){
+void ndn_facetab_unregister(ndn_face_table_t* self, ndn_table_id_t id){
   self->slots[id] = NULL;
 }

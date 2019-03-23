@@ -39,7 +39,7 @@ typedef struct nametree_entry{
    * First child of this node.
    * #NDN_INVALID_ID if none.
    */
-  uint16_t left_child;
+  ndn_table_id_t left_child;
 
   /**
    * Right brother of this node.
@@ -47,19 +47,19 @@ typedef struct nametree_entry{
    * And a free node's right brother is the next free node.
    * #NDN_INVALID_ID if none.
    */
-  uint16_t right_bro;
+  ndn_table_id_t right_bro;
 
   /**
    * Corresponding PIT entry's id.
    * #NDN_INVALID_ID if none.
    */
-  uint16_t pit_id;
+  ndn_table_id_t pit_id;
 
   /**
    * Corresponding FIB entry's id.
    * #NDN_INVALID_ID if none.
    */
-  uint16_t fib_id;
+  ndn_table_id_t fib_id;
 } nametree_entry_t;
 
 typedef nametree_entry_t ndn_nametree_t[];
@@ -67,7 +67,7 @@ typedef nametree_entry_t ndn_nametree_t[];
 #define NDN_NAMETREE_RESERVE_SIZE(entry_count) (sizeof(nametree_entry_t) * (entry_count))
 
 void
-ndn_nametree_init(void* memory, uint16_t capacity);
+ndn_nametree_init(void* memory, ndn_table_id_t capacity);
 
 nametree_entry_t*
 ndn_nametree_find_or_insert(ndn_nametree_t* nametree, uint8_t name[], size_t len);

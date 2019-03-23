@@ -67,7 +67,7 @@ typedef struct ndn_pit_entry {
   /** NameTree entry's ID.
    * #NDN_INVALID_ID if the entry is empty.
    */
-  uint16_t nametree_id;
+  ndn_table_id_t nametree_id;
 } ndn_pit_entry_t;
 
 /**
@@ -75,7 +75,7 @@ typedef struct ndn_pit_entry {
 */
 typedef struct ndn_pit{
   ndn_nametree_t* nametree;
-  uint16_t capacity;
+  ndn_table_id_t capacity;
   ndn_pit_entry_t slots[];
 }ndn_pit_t;
 
@@ -83,10 +83,10 @@ typedef struct ndn_pit{
   (sizeof(ndn_pit_t) + sizeof(ndn_pit_entry_t) * (entry_count))
 
 void
-ndn_pit_init(void* memory, uint16_t capacity, ndn_nametree_t* nametree);
+ndn_pit_init(void* memory, ndn_table_id_t capacity, ndn_nametree_t* nametree);
 
 void
-ndn_pit_unregister_face(ndn_pit_t* self, uint16_t face_id);
+ndn_pit_unregister_face(ndn_pit_t* self, ndn_table_id_t face_id);
 
 ndn_pit_entry_t*
 ndn_pit_find_or_insert(ndn_pit_t* self, uint8_t* name, size_t length);

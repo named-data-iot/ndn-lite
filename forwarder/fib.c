@@ -17,8 +17,8 @@ ndn_fib_entry_reset(ndn_fib_entry_t* self){
 }
 
 void
-ndn_fib_init(void* memory, uint16_t capacity, ndn_nametree_t* nametree){
-  uint16_t i;
+ndn_fib_init(void* memory, ndn_table_id_t capacity, ndn_nametree_t* nametree){
+  ndn_table_id_t i;
   ndn_fib_t* self = (ndn_fib_t*)memory;
   self->capacity = capacity;
   self->nametree = nametree;
@@ -44,16 +44,16 @@ ndn_fib_remove_entry_if_empty(ndn_fib_t* self, ndn_fib_entry_t* entry){
 }
 
 void
-ndn_fib_unregister_face(ndn_fib_t* self, uint16_t face_id){
-  for (uint16_t i = 0; i < self -> capacity; ++i){
+ndn_fib_unregister_face(ndn_fib_t* self, ndn_table_id_t face_id){
+  for (ndn_table_id_t i = 0; i < self -> capacity; ++i){
     self->slots[i].nexthop = bitset_unset(self->slots[i].nexthop , face_id);
     ndn_fib_remove_entry_if_empty(self, &self->slots[i]);
   }
 }
 
-static uint16_t
+static ndn_table_id_t
 ndn_fib_add_new_entry(ndn_fib_t* fib , int nametree_id){
-  uint16_t i;
+  ndn_table_id_t i;
   for (i = 0; i < fib -> capacity; ++i) {
     if (fib->slots[i].nametree_id == NDN_INVALID_ID) {
       ndn_fib_entry_reset(&fib->slots[i]);

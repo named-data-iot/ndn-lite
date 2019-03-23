@@ -50,7 +50,7 @@ nametree_cleanup(ndn_nametree_t *nametree)
 }
 
 void
-ndn_nametree_init(void* memory, uint16_t capacity)
+ndn_nametree_init(void* memory, ndn_table_id_t capacity)
 {
     ndn_nametree_t *nametree = (ndn_nametree_t*)memory;
     //all free entries are linked as right_bro of (*nametree)[0], the root of the tree.

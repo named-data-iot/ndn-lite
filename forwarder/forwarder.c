@@ -56,7 +56,7 @@ fwd_on_incoming_interest(uint8_t* interest,
                          interest_options_t* options,
                          uint8_t* name,
                          size_t name_len,
-                         uint16_t face_id);
+                         ndn_table_id_t face_id);
 
 static int
 fwd_on_outgoing_interest(uint8_t* interest,
@@ -64,20 +64,20 @@ fwd_on_outgoing_interest(uint8_t* interest,
                          uint8_t* name,
                          size_t name_len,
                          ndn_pit_entry_t* entry,
-                         uint16_t face_id);
+                         ndn_table_id_t face_id);
 
 static int
 fwd_data_pipeline(uint8_t* data,
                   size_t length,
                   uint8_t* name,
                   size_t name_len,
-                  uint16_t face_id);
+                  ndn_table_id_t face_id);
 
 static ndn_bitset_t
 fwd_multicast(uint8_t* packet,
               size_t length,
               ndn_bitset_t out_faces,
-              uint16_t in_face);
+              ndn_table_id_t in_face);
 
 /////////////////////////// /////////////////////////// ///////////////////////////
 
@@ -287,7 +287,7 @@ ndn_forwarder_receive(ndn_face_intf_t* face, uint8_t* packet, size_t length){
   size_t name_len;
   interest_options_t options;
   int ret;
-  uint16_t face_id = (face ? face->face_id : NDN_INVALID_ID);
+  ndn_table_id_t face_id = (face ? face->face_id : NDN_INVALID_ID);
 
   if(packet == NULL)
     return NDN_INVALID_POINTER;
@@ -317,7 +317,7 @@ fwd_on_incoming_interest(uint8_t* interest,
                          interest_options_t* options,
                          uint8_t* name,
                          size_t name_len,
-                         uint16_t face_id)
+                         ndn_table_id_t face_id)
 {
   ndn_pit_entry_t *pit_entry;
 
@@ -349,7 +349,7 @@ fwd_data_pipeline(uint8_t* data,
                   size_t length,
                   uint8_t* name,
                   size_t name_len,
-                  uint16_t face_id)
+                  ndn_table_id_t face_id)
 {
   ndn_pit_entry_t* pit_entry;
 
@@ -378,9 +378,9 @@ static ndn_bitset_t
 fwd_multicast(uint8_t* packet,
               size_t length,
               ndn_bitset_t out_faces,
-              uint16_t in_face)
+              ndn_table_id_t in_face)
 {
-  uint16_t id;
+  ndn_table_id_t id;
   ndn_face_intf_t* face;
   ndn_bitset_t ret = 0;
 
@@ -400,7 +400,7 @@ fwd_on_outgoing_interest(uint8_t* interest,
                          uint8_t* name,
                          size_t name_len,
                          ndn_pit_entry_t* entry,
-                         uint16_t face_id)
+                         ndn_table_id_t face_id)
 {
   ndn_fib_entry_t* fib_entry;
   int strategy;

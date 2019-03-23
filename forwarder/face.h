@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "../ndn-enums.h"
+#include "../ndn-constants.h"
 
 #define container_of(ptr, type, member) \
   ((type *)((char *)(1 ? (ptr) : &((type *)0)->member) - offsetof(type, member)))
@@ -82,7 +83,7 @@ typedef struct ndn_face_intf {
   /**
    * Unique Face ID.
    */
-  uint16_t face_id;
+  ndn_table_id_t face_id;
 
   /** The state of the face.
    *
