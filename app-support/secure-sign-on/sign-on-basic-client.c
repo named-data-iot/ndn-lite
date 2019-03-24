@@ -12,11 +12,11 @@
 
 #include <string.h>
 
-#include "../../../ndn-error-code.h"
-#include "../../../ndn-constants.h"
+#include "../../ndn-error-code.h"
+#include "../../ndn-constants.h"
 
-#include "../../../encode/tlv.h"
-#include "../../../encode/decoder.h"
+#include "../../encode/tlv.h"
+#include "../../encode/decoder.h"
 
 #include "sign-on-basic-consts.h"
 #include "security/sign-on-basic-sec-consts.h"

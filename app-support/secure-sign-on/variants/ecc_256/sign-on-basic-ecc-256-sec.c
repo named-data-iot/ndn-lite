@@ -10,7 +10,7 @@
 
 #include "sign-on-basic-ecc-256-sec.h"
 
-#include "../../../../../ndn-constants.h"
+#include "../../../../ndn-constants.h"
 
 #include "../../security/sign-on-basic-sec-consts.h"
 #include "../../security/sign-on-basic-sec-impl.h"

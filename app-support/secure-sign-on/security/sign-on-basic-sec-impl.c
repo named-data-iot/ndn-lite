@@ -12,15 +12,15 @@
 
 #include "sign-on-basic-sec-consts.h"
 
-#include "../../../../ndn-enums.h"
-#include "../../../../ndn-error-code.h"
+#include "../../../ndn-enums.h"
+#include "../../../ndn-error-code.h"
 
-#include "../../../../security/ndn-lite-aes.h"
-#include "../../../../security/ndn-lite-ecc.h"
-#include "../../../../security/ndn-lite-hmac.h"
-#include "../../../../security/ndn-lite-sha.h"
-#include "../../../../security/ndn-lite-rng.h"
-#include "../../../../security/ndn-lite-crypto-key.h"
+#include "../../../security/ndn-lite-aes.h"
+#include "../../../security/ndn-lite-ecc.h"
+#include "../../../security/ndn-lite-hmac.h"
+#include "../../../security/ndn-lite-sha.h"
+#include "../../../security/ndn-lite-rng.h"
+#include "../../../security/ndn-lite-crypto-key.h"
 
 static const uint32_t sign_on_basic_arbitrary_key_id = 1337;
 
