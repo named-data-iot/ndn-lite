@@ -8,22 +8,25 @@
 
 #include "ndn-lite-sec-config.h"
 
+void (*platform_security_init)(void) = NULL;
+
+void
+register_platform_security_init(void (*init)(void)) {
+  platform_security_init = init;
+}
+
 void
 ndn_security_init(void)
 {
   // SHA256 backend
 #if defined NDN_LITE_SEC_BACKEND_SHA256_DEFAULT
   ndn_lite_default_sha_load_backend();
-#elif defined NDN_LITE_SEC_BACKEND_SHA256_NRF_CRYPTO
-  ndn_lite_nrf_crypto_sha_load_backend();
-#endif // NDN_LITE_SEC_BACKEND_SHA256_DEFAULT || NDN_LITE_SEC_BACKEND_SHA256_NRF_CRYPTO
+#endif // NDN_LITE_SEC_BACKEND_SHA256_DEFAULT
 
   // RNG backend
 #if defined NDN_LITE_SEC_BACKEND_RANDOM_DEFAULT
 // do nothing
-#elif defined NDN_LITE_SEC_BACKEND_RANDOM_NRF_CRYPTO
-  ndn_lite_nrf_crypto_rng_load_backend();
-#endif // NDN_LITE_SEC_BACKEND_RANDOM_DEFAULT || NDN_LITE_SEC_BACKEND_RANDOM_NRF_CRYPTO
+#endif // NDN_LITE_SEC_BACKEND_RANDOM_DEFAULT
 
   // AES backend
 #if defined NDN_LITE_SEC_BACKEND_AES_DEFAULT
@@ -39,4 +42,9 @@ ndn_security_init(void)
 #if defined NDN_LITE_SEC_BACKEND_HMAC_DEFAULT
   ndn_lite_default_hmac_load_backend();
 #endif
+
+  if (platform_security_init != NULL) {
+    platform_security_init();
+  }
+
 }

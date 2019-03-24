@@ -119,16 +119,12 @@ extern "C" {
 // SHA256 backend
 #if defined NDN_LITE_SEC_BACKEND_SHA256_DEFAULT
   #include "detail/default-backend/ndn-lite-default-sha-impl.h"
-#elif defined NDN_LITE_SEC_BACKEND_SHA256_NRF_CRYPTO
-  #include "detail/nordic-sdk-nrf-backend/ndn-lite-nrf-crypto-sha-impl.h"
-#endif // NDN_LITE_SEC_BACKEND_SHA256_DEFAULT || NDN_LITE_SEC_BACKEND_SHA256_NRF_CRYPTO
+#endif // NDN_LITE_SEC_BACKEND_SHA256_DEFAULT
 
 // RNG backend
 #if defined NDN_LITE_SEC_BACKEND_RANDOM_DEFAULT
 // do nothing
-#elif defined NDN_LITE_SEC_BACKEND_RANDOM_NRF_CRYPTO
-  #include "detail/nordic-sdk-nrf-backend/ndn-lite-nrf-crypto-rng-impl.h"
-#endif // NDN_LITE_SEC_BACKEND_RANDOM_DEFAULT || NDN_LITE_SEC_BACKEND_RANDOM_NRF_CRYPTO
+#endif // NDN_LITE_SEC_BACKEND_RANDOM_DEFAULT
 
 // AES backend
 #if defined NDN_LITE_SEC_BACKEND_AES_DEFAULT
@@ -144,6 +140,9 @@ extern "C" {
 #if defined NDN_LITE_SEC_BACKEND_HMAC_DEFAULT
   #include "detail/default-backend/ndn-lite-default-hmac-impl.h"
 #endif
+
+void
+register_platform_security_init(void (*init)(void));
 
 void
 ndn_security_init(void);
