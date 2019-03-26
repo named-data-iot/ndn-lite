@@ -27,4 +27,11 @@ static inline size_t bitset_log2(ndn_bitset_t val){
   return __builtin_ctz(val);
 }
 
+static inline size_t bitset_pop_least(ndn_bitset_t* val){
+  ndn_bitset_t lsbit = LEAST_SIG_BIT(*val);
+  size_t ret = bitset_log2(lsbit);
+  *val &= ~lsbit;
+  return ret;
+}
+
 #endif // UTIL_BIT_OPERATIONS_H_

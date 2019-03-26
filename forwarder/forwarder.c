@@ -384,7 +384,8 @@ fwd_multicast(uint8_t* packet,
   ndn_face_intf_t* face;
   ndn_bitset_t ret = 0;
 
-  for(id = 0; id < forwarder.facetab->capacity; id ++){
+  while(out_faces != 0){
+    id = bitset_pop_least(&out_faces);
     face = forwarder.facetab->slots[id];
     if(id != in_face && face != NULL){
       ndn_face_send(face, packet, length);
