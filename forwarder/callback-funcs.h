@@ -15,7 +15,7 @@ extern "C" {
 #endif
 
 /** The onInterest callback function.
- * 
+ *
  * @param[in] interest The encoded interest.
  * @param[in] interest_size The length of the @c interest .
  * @param[in] userdata [Optional] User defined data.
@@ -26,7 +26,7 @@ typedef int (*ndn_on_interest_func)(const uint8_t* interest,
                                     void* userdata);
 
 /** The onData callback function.
- * 
+ *
  * @param[in] data The encoded data.
  * @param[in] data_size The length of the @c data .
  * @param[in] userdata [Optional] User defined data.
@@ -34,7 +34,7 @@ typedef int (*ndn_on_interest_func)(const uint8_t* interest,
 typedef void (*ndn_on_data_func)(const uint8_t* data, uint32_t data_size, void* userdata);
 
 /** The onTimeout callback function.
- * 
+ *
  * @param[in] userdata [Optional] User defined data.
  */
 typedef void (*ndn_on_timeout_func)(void* userdata);
