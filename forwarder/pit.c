@@ -69,7 +69,7 @@ ndn_pit_init(void* memory, ndn_table_id_t capacity, ndn_nametree_t* nametree){
 
 void
 ndn_pit_remove_entry(ndn_pit_t* self, ndn_pit_entry_t* entry){
-  (*self->nametree)[entry->nametree_id].pit_id = NDN_INVALID_ID;
+  ndn_nametree_at(self->nametree, entry->nametree_id)->pit_id = NDN_INVALID_ID;
   ndn_pit_entry_reset(entry);
 }
 
@@ -114,7 +114,7 @@ ndn_pit_find_or_insert(ndn_pit_t* self, uint8_t* name, size_t length){
     return NULL;
   }
   if(entry->pit_id == NDN_INVALID_ID){
-    entry->pit_id = ndn_pit_add_new_entry(self, entry - &(*self->nametree)[0]);
+    entry->pit_id = ndn_pit_add_new_entry(self, ndn_nametree_getid(self->nametree, entry));
     if(entry->pit_id == NDN_INVALID_ID){
       return NULL;
     }

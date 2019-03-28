@@ -29,7 +29,7 @@ ndn_fib_init(void* memory, ndn_table_id_t capacity, ndn_nametree_t* nametree){
 
 static inline void
 ndn_fib_remove_entry(ndn_fib_t* self, ndn_fib_entry_t* entry){
-  (*self->nametree)[entry->nametree_id].fib_id = NDN_INVALID_ID;
+  ndn_nametree_at(self->nametree, entry->nametree_id)->fib_id = NDN_INVALID_ID;
   ndn_fib_entry_reset(entry);
 }
 
@@ -71,7 +71,7 @@ ndn_fib_find_or_insert(ndn_fib_t* self, uint8_t* prefix, size_t length){
     return NULL;
   }
   if(entry->fib_id == NDN_INVALID_ID){
-    entry->fib_id = ndn_fib_add_new_entry(self, entry - &(*self->nametree)[0]);
+    entry->fib_id = ndn_fib_add_new_entry(self, ndn_nametree_getid(self->nametree, entry));
     if(entry->fib_id == NDN_INVALID_ID){
       return NULL;
     }

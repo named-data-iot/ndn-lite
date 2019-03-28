@@ -82,6 +82,12 @@ ndn_nametree_prefix_match(
 nametree_entry_t*
 ndn_nametree_find(ndn_nametree_t *nametree, uint8_t name[], size_t len);
 
+nametree_entry_t*
+ndn_nametree_at(ndn_nametree_t *self, ndn_table_id_t id);
+
+ndn_table_id_t
+ndn_nametree_getid(ndn_nametree_t *self, nametree_entry_t* entry);
+
 /*@}*/
 
 #endif

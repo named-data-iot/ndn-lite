@@ -176,3 +176,13 @@ ndn_nametree_prefix_match(
     }
     if (last_node == NDN_INVALID_ID) return NULL; else return &(*nametree)[last_node];
 }
+
+nametree_entry_t*
+ndn_nametree_at(ndn_nametree_t *self, ndn_table_id_t id){
+  return &(*self)[id];
+}
+
+ndn_table_id_t
+ndn_nametree_getid(ndn_nametree_t *self, nametree_entry_t* entry){
+  return entry - &(*self)[0];
+}
