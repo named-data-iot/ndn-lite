@@ -90,4 +90,4 @@ ndn_nametree_getid(ndn_nametree_t *self, nametree_entry_t* entry);
 
 /*@}*/
 
-#endif
+#endif // FORWARDER_NAME_TREE_H

@@ -28,7 +28,7 @@
 
 /**
  * NDN-Lite forwarder.
- * We will support content support in future versions.
+ * We will support content store in future versions.
  * The NDN forwarder is a singleton in an application.
  */
 typedef struct ndn_forwarder {
@@ -79,7 +79,7 @@ fwd_multicast(uint8_t* packet,
               ndn_bitset_t out_faces,
               ndn_table_id_t in_face);
 
-/////////////////////////// /////////////////////////// ///////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
 
 void
 ndn_forwarder_init(void)
@@ -325,7 +325,7 @@ fwd_on_incoming_interest(uint8_t* interest,
   if (pit_entry == NULL){
     return NDN_FWD_PIT_FULL;
   }
-  
+
   // Randomized dead nonce list
   if(pit_entry->options.nonce == options->nonce && options->nonce != 0){
     return NDN_FWD_INTEREST_REJECTED;

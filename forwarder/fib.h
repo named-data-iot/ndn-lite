@@ -30,7 +30,7 @@ typedef struct ndn_fib_entry {
   /** A bitset recording all next hops.
    */
   ndn_bitset_t nexthop;
-  
+
   /** OnOnterest callback function if registered.
    */
   ndn_on_interest_func on_interest;
@@ -48,11 +48,11 @@ typedef struct ndn_fib_entry {
 /**
  * Forwarding Information Base (FIB).
  */
-typedef struct ndn_fib{
+typedef struct ndn_fib {
   ndn_nametree_t* nametree;
   ndn_table_id_t capacity;
   ndn_fib_entry_t slots[];
-}ndn_fib_t;
+} ndn_fib_t;
 
 #define NDN_FIB_RESERVE_SIZE(entry_count) \
   (sizeof(ndn_fib_t) + sizeof(ndn_fib_entry_t) * (entry_count))
