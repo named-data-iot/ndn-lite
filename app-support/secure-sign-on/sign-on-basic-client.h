@@ -313,7 +313,7 @@ struct sign_on_basic_sec_intf {
  * @var         status                     This is the status of the sign on client. See sign-on-basic-client-consts.h for
  *                                           the possible states here.
  */
-struct sign_on_basic_client_t {
+typedef struct sign_on_basic_client {
 
   uint8_t KS_pub_p[SIGN_ON_BASIC_CLIENT_KS_PUB_MAX_LENGTH];
   uint32_t KS_pub_len;
@@ -355,7 +355,7 @@ struct sign_on_basic_client_t {
 
   struct sign_on_basic_sec_intf sec_intf;
 
-};
+} sign_on_basic_client_t;
 
 /**@brief Initialize state for a sign_on_basic_client_t. All buffers passed 
  *        in will be copied into the sign_on_basic_client basic client.
@@ -381,7 +381,7 @@ struct sign_on_basic_client_t {
  */
 int sign_on_basic_client_init(
                               uint8_t variant,
-                              struct sign_on_basic_client_t *sign_on_basic_client,
+                              sign_on_basic_client_t *sign_on_basic_client,
                               const uint8_t *device_identifier_p, uint32_t device_identifier_len,
                               const uint8_t *device_capabilities_p, uint32_t device_capabilities_len,
                               const uint8_t *secure_sign_on_code_p,
@@ -403,7 +403,7 @@ int sign_on_basic_client_init(
  */
 int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
                               uint32_t *output_len_p,
-                              struct sign_on_basic_client_t *sign_on_basic_client);
+                              sign_on_basic_client_t *sign_on_basic_client);
 
 /**@brief Process a bootstrapping request response. 
  *        For a given sign on exchange:
@@ -421,7 +421,7 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
  */
 int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
                                     uint32_t btstrp_rqst_rspns_buf_len,
-                                    struct sign_on_basic_client_t *sign_on_basic_client);
+                                    sign_on_basic_client_t *sign_on_basic_client);
 
 /**@brief Construct a certificate request.
  *        For a given sign on exchange:
@@ -437,7 +437,7 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
  * @return      Returns NDN_SUCCESS upon success.
  */
 int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
-                            struct sign_on_basic_client_t *sign_on_basic_client);
+                            sign_on_basic_client_t *sign_on_basic_client);
 
 /**@brief Process a certificate request response. 
  *        For a given sign on exchange:
@@ -455,7 +455,7 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
  */
 int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
                                   uint32_t cert_rqst_rspns_buf_len,
-                                  struct sign_on_basic_client_t *sign_on_basic_client);
+                                  sign_on_basic_client_t *sign_on_basic_client);
 
 /**@brief Construct a sign-on basic finish message (this lets the controller know sign-on was completed
  *          successfully.
@@ -473,6 +473,6 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
  * @return      Returns NDN_SUCCESS upon success.
  */
 int cnstrct_fin_msg(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
-                            struct sign_on_basic_client_t *sign_on_basic_client);
+                            sign_on_basic_client_t *sign_on_basic_client);
 
 #endif // SIGN_ON_BASIC_CLIENT_H

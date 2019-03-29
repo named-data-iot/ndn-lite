@@ -18,7 +18,7 @@
 
 #include <stdio.h>
 
-int sign_on_basic_set_sec_intf(uint8_t variant, struct sign_on_basic_client_t *sign_on_basic_client) {
+int sign_on_basic_set_sec_intf(uint8_t variant, sign_on_basic_client_t *sign_on_basic_client) {
   switch (variant) {
     case SIGN_ON_BASIC_VARIANT_ECC_256: {
 

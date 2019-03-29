@@ -16,6 +16,8 @@
 
 #include "sign-on-basic-client.h"
 
+typedef struct sign_on_basic_client sign_on_basic_client_t;
+
 /**@brief Function to set the security interface of a Sign-on Basic client. Security implementations of 
  *          generic security operations in the Sign-on Basic client will depend on the variant.
  *
@@ -25,6 +27,6 @@
  *
  * @return      Returns NDN_SUCCESS upon success.
  */
-int sign_on_basic_set_sec_intf(uint8_t variant, struct sign_on_basic_client_t *sign_on_basic_client);
+int sign_on_basic_set_sec_intf(uint8_t variant, sign_on_basic_client_t *sign_on_basic_client);
 
 #endif // SIGN_ON_BASIC_SEC_INTF_SETTER_H

@@ -9,6 +9,7 @@
  */
 
 #include "sign-on-basic-client.h"
+#include "sign-on-basic-sec-intf-setter.h"
 
 #include <string.h>
 
@@ -25,12 +26,13 @@
 
 int sign_on_basic_client_init(
     uint8_t variant,
-    struct sign_on_basic_client_t *sign_on_basic_client,
+    sign_on_basic_client_t *sign_on_basic_client,
     const uint8_t *device_identifier_p, uint32_t device_identifier_len,
     const uint8_t *device_capabilities_p, uint32_t device_capabilities_len,
     const uint8_t *secure_sign_on_code_p,
     const uint8_t *KS_pub_p, uint32_t KS_pub_len,
     const uint8_t *KS_pri_p, uint32_t KS_pri_len) {
+
   switch (variant) {
     case SIGN_ON_BASIC_VARIANT_ECC_256:
       sign_on_basic_client->secure_sign_on_code_len = SIGN_ON_BASIC_ECC_256_SECURE_SIGN_ON_CODE_LENGTH;
@@ -66,7 +68,7 @@ int sign_on_basic_client_init(
 
 int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
     uint32_t *output_len_p,
-    struct sign_on_basic_client_t *sign_on_basic_client) {
+    sign_on_basic_client_t *sign_on_basic_client) {
 
   // generate N1 key pair here
   if (!sign_on_basic_client->sec_intf.gen_n1_keypair(
@@ -197,14 +199,14 @@ int cnstrct_btstrp_rqst(uint8_t *buf_p, uint32_t buf_len,
 
 int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
     uint32_t btstrp_rqst_rspns_buf_len,
-    struct sign_on_basic_client_t *sign_on_basic_client) {
+    sign_on_basic_client_t *sign_on_basic_client) {
 
   // define pointers to data / lengths of data to be copied at the end, after processing is finished,
   // so that no internal state of the sign on basic client object is modified until after the whole
   // message has been processed successfully
-  uint8_t *N2_pub_p;
+  const uint8_t *N2_pub_p;
   uint32_t N2_pub_len;
-  uint8_t *trust_anchor_p;
+  const uint8_t *trust_anchor_p;
   uint32_t trust_anchor_len;
 
   int ndn_decoder_success = 0;
@@ -213,9 +215,9 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
 
   uint32_t current_tlv_type;
   uint32_t current_tlv_length;
-  uint8_t *btstrp_rqst_rspns_tlv_val_buf_p;
+  const uint8_t *btstrp_rqst_rspns_tlv_val_buf_p;
   uint32_t btstrp_rqst_rspns_tlv_val_len;
-  uint8_t *btstrp_rqst_rspns_tlv_sig_p;
+  const uint8_t *btstrp_rqst_rspns_tlv_sig_p;
 
   if (decoder_get_type(&decoder, &current_tlv_type) != ndn_decoder_success) {
     return NDN_SIGN_ON_PRCS_BTSTRP_RQST_RSPNS_FAILED_TO_PARSE_TLV_BTSTRP_RQST_RSPNS;
@@ -313,7 +315,7 @@ int prcs_btstrp_rqst_rspns(const uint8_t *btstrp_rqst_rspns_buf_p,
 }
 
 int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
-    struct sign_on_basic_client_t *sign_on_basic_client) {
+    sign_on_basic_client_t *sign_on_basic_client) {
 
   uint8_t digest_buffer[SIGN_ON_BASIC_SHA256_HASH_SIZE];
 
@@ -458,16 +460,16 @@ int cnstrct_cert_rqst(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
 
 int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
     uint32_t cert_rqst_rspns_buf_len,
-    struct sign_on_basic_client_t *sign_on_basic_client) {
+    sign_on_basic_client_t *sign_on_basic_client) {
 
   // declare pointers to KD pri decrypted and KD pub certificate ahead of time,
   // so that modification of internal state of sign on basic client isn't done until after
   // entire certificate request response message is successfully processed
-  uint8_t *KD_pri_encrypted_p;
+  const uint8_t *KD_pri_encrypted_p;
   uint32_t KD_pri_encrypted_len;
-  uint8_t *KD_pri_decrypted_p;
+  const uint8_t *KD_pri_decrypted_p;
   uint32_t KD_pri_decrypted_len;
-  uint8_t *KD_pub_cert_p;
+  const uint8_t *KD_pub_cert_p;
   uint32_t KD_pub_cert_len;
 
   int ndn_decoder_success = 0;
@@ -476,9 +478,9 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
 
   uint32_t current_tlv_type;
   uint32_t current_tlv_length;
-  uint8_t *cert_rqst_rspns_tlv_val_buf_p;
+  const uint8_t *cert_rqst_rspns_tlv_val_buf_p;
   uint32_t cert_rqst_rspns_tlv_val_len;
-  uint8_t *cert_rqst_rspns_tlv_sig_p;
+  const uint8_t *cert_rqst_rspns_tlv_sig_p;
 
   if (decoder_get_type(&decoder, &current_tlv_type) != ndn_decoder_success) {
     return NDN_SIGN_ON_PRCS_CERT_RQST_RSPNS_FAILED_TO_PARSE_TLV_CERT_RQST_RSPNS;
@@ -581,7 +583,7 @@ int prcs_cert_rqst_rspns(const uint8_t *cert_rqst_rspns_buf_p,
 }
 
 int cnstrct_fin_msg(uint8_t *buf_p, uint32_t buf_len, uint32_t *output_len_p,
-                            struct sign_on_basic_client_t *sign_on_basic_client) {
+                            sign_on_basic_client_t *sign_on_basic_client) {
 
   int ndn_encoder_success = 0;
 
