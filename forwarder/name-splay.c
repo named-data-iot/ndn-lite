@@ -84,20 +84,20 @@ nametree_finish(ndn_nametree_t* self, nametree_entry_t* par, int dir){
   par->sub->cop[!dir] = child;
 }
 
-static void
+static int
 nametree_splay(ndn_nametree_t* self, nametree_entry_t* par, uint8_t name[], size_t len) {
-  int dir1, dir2;
+  int dir1, dir2, ret;
   while(true) {
-    dir1 = memcmp(name, par->sub->val, len);
-    if (dir1 == 0 || par->sub->cop[dir1 > 0] == self->nil)
+    ret = memcmp(name, par->sub->val, len);
+    dir1 = ret > 0;
+    if (ret == 0 || par->sub->cop[dir1] == self->nil)
       break;
-    dir1 = dir1 > 0;
-    dir2 = memcmp(name, par->sub->cop[dir1]->val, len);
-    if (dir2 == 0 || par->sub->cop[dir1]->cop[dir2 > 0] == self->nil) {
+    ret = memcmp(name, par->sub->cop[dir1]->val, len);
+    dir2 = ret > 0;
+    if (ret == 0 || par->sub->cop[dir1]->cop[dir2] == self->nil) {
       nametree_zig(self, par, dir1);
       break;
     }
-    dir2 = dir2 > 0;
     if (dir1 != dir2) {
       nametree_zig(self, par, dir1);
       nametree_zig(self, par, dir2);
@@ -107,6 +107,7 @@ nametree_splay(ndn_nametree_t* self, nametree_entry_t* par, uint8_t name[], size
   }
   nametree_finish(self, par, LEFT);
   nametree_finish(self, par, RIGHT);
+  return ret;
 }
 
 static nametree_entry_t*
@@ -135,19 +136,18 @@ nametree_find_or_insert_sub(ndn_nametree_t* self,
                              size_t len)
 {
   nametree_entry_t *oldroot, *newroot;
-  int dir;
+  int dir, compare_ret;
 
-  nametree_splay(self, par, name, len);
+  compare_ret = nametree_splay(self, par, name, len);
   oldroot = par->sub;
-  dir = memcmp(name, oldroot->val, len);
-  if(dir == 0){
+  if(compare_ret == 0){
     return oldroot;
   }else{
     newroot = nametree_newnode(self, name, len);
     if(newroot == NULL){
       return NULL;
     }
-    dir = dir < 0 ? LEFT : RIGHT;
+    dir = compare_ret < 0 ? LEFT : RIGHT;
     newroot->cop[dir] = oldroot->cop[dir];
     newroot->cop[1 ^ dir] = oldroot;
     oldroot->cop[dir] = self->nil;
@@ -184,15 +184,16 @@ ndn_nametree_find(ndn_nametree_t *self, uint8_t name[], size_t len){
   uint8_t* ptr;
   nametree_entry_t* par;
   nametree_entry_t* cur;
+  int compare_ret;
 
   ptr = tlv_get_type_length(name, len, &type, &varlen);
   par = self->root;
   while(ptr < name + len){
     complen = tlv_get_type_length(ptr, name + len - ptr, &type, &varlen) - ptr;
     complen += varlen;
-    nametree_splay(self, par, ptr, complen);
+    compare_ret = nametree_splay(self, par, ptr, complen);
     cur = par->sub;
-    if(cur == self->nil || memcmp(cur->val, ptr, complen) != 0){
+    if(cur == self->nil || compare_ret != 0){
       return NULL;
     }
     par = cur;
@@ -213,6 +214,7 @@ ndn_nametree_prefix_match(
   nametree_entry_t* par;
   nametree_entry_t* cur;
   nametree_entry_t* last = NULL;
+  int compare_ret;
 
   ptr = tlv_get_type_length(name, len, &type, &varlen);
   par = self->root;
@@ -227,9 +229,9 @@ ndn_nametree_prefix_match(
   while(ptr < name + len){
     complen = tlv_get_type_length(ptr, name + len - ptr, &type, &varlen) - ptr;
     complen += varlen;
-    nametree_splay(self, par, ptr, complen);
+    compare_ret = nametree_splay(self, par, ptr, complen);
     cur = par->sub;
-    if(cur == self->nil || memcmp(cur->val, ptr, complen) != 0){
+    if(cur == self->nil || compare_ret != 0){
       return last;
     }
     par = cur;
@@ -254,3 +256,5 @@ ndn_table_id_t
 ndn_nametree_getid(ndn_nametree_t *self, nametree_entry_t* entry){
   return entry - self->pool;
 }
+
+// TODO: Delete, clean

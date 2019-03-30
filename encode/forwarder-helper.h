@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include "name.h"
 
 typedef struct interest_options{
   uint64_t lifetime;
@@ -89,5 +90,30 @@ tlv_data_get_name(uint8_t* data,
 
 uint8_t*
 tlv_interest_get_hoplimit_ptr(uint8_t* interest, size_t buflen);
+
+// Xinyu Ma: It's very hard to write a elegant encoding/decoding part
+// I don't think I can make it within one year
+// So I decide to create a all-in-one API so you can change the
+// backend in any way without spoiling the interface.
+
+enum TLV_MAKEDATA_ARG_TYPE{
+  TLV_MAKEDATA_NAME_PTR,
+  TLV_MAKEDATA_NAME_BUF,
+  TLV_MAKEDATA_NAME_SEGNO_U64,
+  TLV_MAKEDATA_CONTENTTYPE_U8,
+  TLV_MAKEDATA_FRESHNESSPERIOD_U64,
+  TLV_MAKEDATA_FINALBLOCKID_PTR,
+  TLV_MAKEDATA_FINALBLOCKID_BUF,
+  TLV_MAKEDATA_FINALBLOCKID_U64,
+  TLV_MAKEDATA_CONTENT_BUF,
+  TLV_MAKEDATA_CONTENT_SIZE,
+  TLV_MAKEDATA_SIGTYPE_U8,
+  TLV_MAKEDATA_IDENTITYNAME_PTR,
+  TLV_MAKEDATA_KEY_PTR,
+  TLV_MAKEDATA_SIGTIME_U64,
+};
+
+int
+tlv_make_data(uint8_t* buf, size_t buflen, size_t* result_size, int argc, ...);
 
 #endif // NDN_ENCODING_FORWARD_HELPER_H

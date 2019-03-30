@@ -81,6 +81,8 @@
  */
 #define NDN_UNSUPPORTED_FORMAT -17
 
+#define NDN_INVALID_ARG -18
+
 /* @} */
 
 /** @defgroup NDNErrorCodeSecurity Security Errors
