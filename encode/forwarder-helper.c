@@ -13,6 +13,8 @@
 #include <stdarg.h>
 #include <limits.h>
 #include "data.h"
+#include "interest.h"
+#include "signed-interest.h"
 
 /////////////////////////////////////////////////////////////////////////////////
 
@@ -667,6 +669,154 @@ tlv_parse_data(uint8_t* buf, size_t buflen, int argc, ...)
         ret = NDN_SEC_UNSUPPORT_SIGN_TYPE;
         break;
     }
+  }
+
+  return ret;
+}
+
+int
+tlv_make_interest(uint8_t* buf, size_t buflen, size_t* result_size, int argc, ...)
+{
+  static ndn_interest_t interest;
+  ndn_decoder_t decoder;
+  ndn_encoder_t encoder;
+  va_list vl;
+  int i, argtype;
+  int ret = NDN_SUCCESS;
+  void* arg_ptr = NULL;
+  uint8_t* params_buf_ptr = NULL;
+  ndn_name_t* identity = NULL;
+  void* key_ptr = NULL;
+  uint64_t segno = (uint64_t)-1;
+
+  ndn_interest_init(&interest);
+  va_start(vl, argc);
+  for(i = 0; i < argc && ret == NDN_SUCCESS; i ++){
+    argtype = va_arg(vl, enum TLV_DATAARG_TYPE);
+    switch(argtype){
+      case TLV_INTARG_NAME_PTR:
+        arg_ptr = va_arg(vl, void*);
+        if(arg_ptr == NULL){
+          ret = NDN_INVALID_POINTER;
+          break;
+        }
+        interest.name = *(ndn_name_t*)arg_ptr;
+        break;
+
+      case TLV_INTARG_NAME_BUF:
+        arg_ptr = va_arg(vl, void*);
+        if(arg_ptr == NULL){
+          ret = NDN_INVALID_POINTER;
+          break;
+        }
+        decoder_init(&decoder, (uint8_t*)arg_ptr, INT_MAX);
+        ret = ndn_name_tlv_decode(&decoder, &interest.name);
+        break;
+
+      case TLV_INTARG_NAME_SEGNO_U64:
+        segno = va_arg(vl, uint64_t);
+        break;
+
+      case TLV_INTARG_CANBEPREFIX_BOOL:
+        ndn_interest_set_CanBePrefix(&interest, va_arg(vl, uint32_t));
+        break;
+
+      case TLV_INTARG_MUSTBEFRESH_BOOL:
+        ndn_interest_set_MustBeFresh(&interest, va_arg(vl, uint32_t));
+        break;
+
+      case TLV_INTARG_LIFETIME_U64:
+        interest.lifetime = va_arg(vl, uint64_t);
+        break;
+
+      case TLV_INTARG_HOTLIMIT_U8:
+        ndn_interest_set_HopLimit(&interest, (uint8_t)va_arg(vl, uint32_t));
+        break;
+
+      case TLV_INTARG_PARAMS_BUF:
+        params_buf_ptr = va_arg(vl, uint8_t*);
+        break;
+
+      case TLV_INTARG_PARAMS_SIZE:
+        interest.parameters.size = va_arg(vl, size_t);
+        break;
+
+      case TLV_INTARG_SIGTYPE_U8:
+        ret = ndn_signature_set_signature_type(&interest.signature, (uint8_t)va_arg(vl, uint32_t));
+        interest.is_SignedInterest = true;
+        break;
+
+      case TLV_INTARG_IDENTITYNAME_PTR:
+        identity = va_arg(vl, ndn_name_t*);
+        break;
+
+      case TLV_INTARG_SIGKEY_PTR:
+        key_ptr = va_arg(vl, void*);
+        break;
+
+      default:
+        ret = NDN_INVALID_ARG;
+        break;
+    }
+  }
+  va_end(vl);
+  if(ret != NDN_SUCCESS){
+    return ret;
+  }
+
+  // Copy params
+  if(interest.parameters.size > 0 && params_buf_ptr != NULL){
+    ret = ndn_interest_set_Parameters(&interest, params_buf_ptr, interest.parameters.size);
+  }
+  if(ret != NDN_SUCCESS){
+    return ret;
+  }
+
+  // Check name
+  if(interest.name.components_size == 0){
+    return NDN_INVALID_ARG;
+  }
+  if(segno != (uint64_t)-1){
+    tlv_make_segno(&interest.name.components[interest.name.components_size], segno);
+    interest.name.components_size += 1;
+  }
+
+  // Encode
+  encoder_init(&encoder, buf, buflen);
+  if(interest.is_SignedInterest){
+    switch(interest.signature.sig_type){
+      case NDN_SIG_TYPE_DIGEST_SHA256:
+        ret = ndn_signed_interest_digest_sign(&interest);
+        break;
+
+      case NDN_SIG_TYPE_ECDSA_SHA256:
+        if(identity == NULL || key_ptr == NULL){
+          ret = NDN_INVALID_POINTER;
+        }else{
+          ret = ndn_signed_interest_ecdsa_sign(&interest, identity, (ndn_ecc_prv_t*)key_ptr);
+        }
+        break;
+
+      case NDN_SIG_TYPE_HMAC_SHA256:
+        if(identity == NULL || key_ptr == NULL){
+          ret = NDN_INVALID_POINTER;
+        }else{
+          ret = ndn_signed_interest_hmac_sign(&interest, identity, (ndn_hmac_key_t*)key_ptr);
+        }
+        break;
+
+      default:
+        ret = NDN_SEC_UNSUPPORT_SIGN_TYPE;
+        break;
+    }
+  }
+  if(ret != NDN_SUCCESS){
+    return ret;
+  }
+
+  ret = ndn_interest_tlv_encode(&encoder, &interest);
+  if(result_size != NULL){
+    *result_size = encoder.offset;
   }
 
   return ret;

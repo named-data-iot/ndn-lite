@@ -222,7 +222,7 @@ enum TLV_DATAARG_TYPE{
   /**
    * Payload.
    *
-   * make_data: [in] @c uint8_t*
+   * make_data: [in, opt] @c uint8_t*
    * 
    * parse_data: [out] @c uint8_t** @n
    * Output a pointer to where the Content starts in @c buf.
@@ -242,7 +242,7 @@ enum TLV_DATAARG_TYPE{
   /**
    * Signature type.
    *
-   * make_data: [in] @c uint8_t (promoted)
+   * make_data: [in] @c uint8_t (promoted) @n
    * By default, #NDN_SIG_TYPE_DIGEST_SHA256 is used.
    * 
    * parse_data: [out] @c uint8_t*
@@ -252,7 +252,7 @@ enum TLV_DATAARG_TYPE{
   /**
    * A pointer to the name of identity.
    *
-   * make_data: [in] #ndn_name_t*
+   * make_data: [in, opt] #ndn_name_t*
    * 
    * parse_data: N/A
    */
@@ -261,10 +261,10 @@ enum TLV_DATAARG_TYPE{
   /**
    * A pointer to the key.
    *
-   * make_data: [in] #ndn_ecc_prv_t* or #ndn_hmac_key_t* @n
+   * make_data: [in, opt] #ndn_ecc_prv_t* or #ndn_hmac_key_t* @n
    * Not necessary for #NDN_SIG_TYPE_DIGEST_SHA256.
    * 
-   * parse_data: [in] #ndn_ecc_pub_t* or #ndn_hmac_key_t* @n
+   * parse_data: [in, opt] #ndn_ecc_pub_t* or #ndn_hmac_key_t* @n
    * Pass public key used by verification.
    */
   TLV_DATAARG_SIGKEY_PTR,
@@ -280,9 +280,9 @@ enum TLV_DATAARG_TYPE{
   TLV_DATAARG_SIGTIME_U64,
 
   /**
-   * Verify the data after decoding.
+   * Verify the Data after decoding.
    *
-   * make_data: NA
+   * make_data: N/A
    * 
    * parse_data: [in] @c bool (promoted)@n
    */
@@ -317,7 +317,9 @@ enum TLV_DATAARG_TYPE{
  * @retval #NDN_INVALID_POINTER A non-optional pointer argument is @c NULL.
  *                              Notice that some arguments are allowed to be @c NULL.
  * @post <tt>result_size <= buflen</tt>
- * @remark Not fully tested yet.
+ * @remark Not fully tested yet. Besides, the ideal solution is to allow users pass
+ *         NULL to @c buf to get @c result_size only, but this is not possible under
+ *         current back end.
  */
 int
 tlv_make_data(uint8_t* buf, size_t buflen, size_t* result_size, int argc, ...);
@@ -354,6 +356,141 @@ tlv_make_data(uint8_t* buf, size_t buflen, size_t* result_size, int argc, ...);
  */
 int
 tlv_parse_data(uint8_t* buf, size_t buflen, int argc, ...);
+
+enum TLV_INTARG_TYPE{
+  /**
+   * A pointer to a name.
+   *
+   * make_interest: [in] #ndn_name_t* @n
+   * At least one Name is necessary, otherwise #NDN_INVALID_ARG is returned.
+   * If multiple names are specified by mistake, the last one is used.
+   */
+  TLV_INTARG_NAME_PTR,
+
+  /**
+   * A pointer to an encoded TLV name.
+   *
+   * make_interest: [in] @c uint8_t* @n
+   * It will automaticaly detect the length.
+   */
+  TLV_INTARG_NAME_BUF,
+
+  /**
+   * Segment number.
+   *
+   * make_interest: [in] @c uint64_t @n
+   * It will be added after name.
+   */
+  TLV_INTARG_NAME_SEGNO_U64,
+
+  /**
+   * CanBePrefix.
+   *
+   * make_interest: [in] @c bool (promoted) @n
+   * False by default.
+   */
+  TLV_INTARG_CANBEPREFIX_BOOL,
+
+  /**
+   * MustBeFresh.
+   *
+   * make_interest: [in] @c bool (promoted) @n
+   * False by default.
+   */
+  TLV_INTARG_MUSTBEFRESH_BOOL,
+
+  /**
+   * Interest lifetime in milliseconds.
+   *
+   * make_interest: [in] @c uint64_t @n
+   * #NDN_DEFAULT_INTEREST_LIFETIME by default.
+   */
+  TLV_INTARG_LIFETIME_U64,
+
+  /**
+   * Interest HopLimit.
+   *
+   * make_interest: [in] @c uint8_t (promoted)
+   */
+  TLV_INTARG_HOTLIMIT_U8,
+
+  /**
+   * Interest parameters.
+   *
+   * make_interest: [in, opt] @c uint8_t*
+   */
+  TLV_INTARG_PARAMS_BUF,
+
+  /**
+   * The size of Interest parameters.
+   *
+   * make_interest: [in] @c size_t
+   */
+  TLV_INTARG_PARAMS_SIZE,
+
+  /**
+   * Signature type.
+   *
+   * make_interest: [in] @c uint8_t (promoted) @n
+   * By default, the Interest won't be signed.
+   */
+  TLV_INTARG_SIGTYPE_U8,
+
+  /**
+   * A pointer to the name of identity.
+   *
+   * make_interest: [in, opt] #ndn_name_t*
+   */
+  TLV_INTARG_IDENTITYNAME_PTR,
+
+  /**
+   * A pointer to the key.
+   *
+   * make_interest: [in, opt] #ndn_ecc_prv_t* or #ndn_hmac_key_t* @n
+   * Not necessary for #NDN_SIG_TYPE_DIGEST_SHA256.
+   */
+  TLV_INTARG_SIGKEY_PTR,
+
+  /**
+   * Verify the Interest after decoding.
+   *
+   * make_interest: N/A
+   */
+  TLV_INTARG_VERIFY,
+};
+
+/** All-in-one function to generate a Interest packet.
+ *
+ * This function uses variant args to input optional parameters.
+ * The value of each variant arg should be given after its type.
+ * See #TLV_INTARG_TYPE for all supported variant arg types.
+ * An example:
+ * @code{.c}
+ * tlv_make_interest(buf, sizeof(buf), &output_size, 5, // 5 args following
+ *                   TLV_INTARG_NAME_PTR, &name,
+ *                   TLV_INTARG_NAME_SEGNO_U64, (uint64_t)13,
+ *                   TLV_INTARG_CANBEPREFIX_BOOL, true,
+ *                   TLV_INTARG_MUSTBEFRESH_BOOL, true,
+ *                   TLV_INTARG_LIFETIME_U64, (uint64_t)60000);
+ * // Create a Interest packet with its name = name/%00%13
+ * // lifetime = 60s, CanBePrefix and MustBeFresh.
+ * @endcode
+ * @param[out] buf The buffer where Interest is stored. @c buflen bytes are written.
+ * @param[in] buflen The available size of @c buf.
+ * @param[out] result_size [Optional] The encoded size of the Interest packet.
+ * @param[in] argc The number of variant args, without counting the type.
+ * @return #NDN_SUCCESS if the call succeeded. The error code otherwise.
+ * @retval #NDN_INVALID_ARG An unknown argument is given; or no name is given.
+ * @retval #NDN_SEC_UNSUPPORT_SIGN_TYPE Unsupported signature type.
+ * @retval #NDN_INVALID_POINTER A non-optional pointer argument is @c NULL.
+ *                              Notice that some arguments are allowed to be @c NULL.
+ * @post <tt>result_size <= buflen</tt>
+ * @remark Not fully tested yet. Besides, the ideal solution is to allow users pass
+ *         NULL to @c buf to get @c result_size only, but this is not possible under
+ *         current back end.
+ */
+int
+tlv_make_interest(uint8_t* buf, size_t buflen, size_t* result_size, int argc, ...);
 
 /*@}*/
 
