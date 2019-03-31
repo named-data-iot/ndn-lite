@@ -131,129 +131,178 @@ tlv_interest_get_hoplimit_ptr(uint8_t* interest, size_t buflen);
 // backend in any way without spoiling the interface.
 
 /**
- * The type of variant args of #tlv_make_data.
+ * The type of variant args of #tlv_make_data and #tlv_parse_data.
  */
-enum TLV_MAKEDATA_ARG_TYPE{
+enum TLV_DATAARG_TYPE{
   /**
    * A pointer to a name.
    *
-   * Type: #ndn_name_t* @n
+   * make_data: [in] #ndn_name_t* @n
    * At least one Name is necessary, otherwise #NDN_INVALID_ARG is returned.
    * If multiple names are specified by mistake, the last one is used.
+   * 
+   * parse_data: [out] #ndn_name_t*
    */
-  TLV_MAKEDATA_NAME_PTR,
+  TLV_DATAARG_NAME_PTR,
 
   /**
    * A pointer to an encoded TLV name.
    *
-   * Type: @c uint8_t* @n
+   * make_data: [in] @c uint8_t* @n
    * It will automaticaly detect the length.
+   * 
+   * parse_data: [out] @c uint8_t** @n
+   * Output a pointer to where the name starts in @c buf.
    */
-  TLV_MAKEDATA_NAME_BUF,
+  TLV_DATAARG_NAME_BUF,
 
   /**
    * Segment number.
    *
-   * Type: @c uint64_t @n
+   * make_data: [in] @c uint64_t @n
    * It will be added after name.
+   * 
+   * parse_data: [out] @c uint64_t*
+   * Output (uint64_t)-1 if the last component is not segment number.
    */
-  TLV_MAKEDATA_NAME_SEGNO_U64,
+  TLV_DATAARG_NAME_SEGNO_U64,
 
   /**
    * Content type.
    *
-   * Type: @c uint8_t promoted to @c uint32_t
+   * make_data: [in] @c uint8_t (promoted)
+   * 
+   * parse_data: [out] @c uint8_t* @n
+   * Output 0xFF if not included in the packet.
    */
-  TLV_MAKEDATA_CONTENTTYPE_U8,
+  TLV_DATAARG_CONTENTTYPE_U8,
 
   /**
    * Freshness period.
    *
-   * Type: @c uint64_t
+   * make_data: [in] @c uint64_t
+   * 
+   * parse_data: [out] @c uint64_t* @n
+   * Output 0 if not included in the packet.
    */
-  TLV_MAKEDATA_FRESHNESSPERIOD_U64,
+  TLV_DATAARG_FRESHNESSPERIOD_U64,
 
   /**
    * A pointer to a final block id.
    *
-   * Type: #name_component_t*
+   * make_data: [in] #name_component_t*
+   * 
+   * parse_data: [out] #name_component_t* @n
+   * Output <tt>size=0</tt> if not included.
    */
-  TLV_MAKEDATA_FINALBLOCKID_PTR,
+  TLV_DATAARG_FINALBLOCKID_PTR,
 
   /**
    * A pointer to an encoded final block id.
    *
-   * Type: @c uint8_t* @n
+   * make_data: [in] @c uint8_t* @n
    * It will automaticaly detect the length.
+   * 
+   * parse_data: [out] @c uint8_t** @n
+   * Output a pointer to where the FinalBlockId starts in @c buf.
+   * @c NULL if not included.
    */
-  TLV_MAKEDATA_FINALBLOCKID_BUF,
+  TLV_DATAARG_FINALBLOCKID_BUF,
 
   /**
    * A pointer to a final block id, in form of segment number.
    *
-   * Type: @c uint64_t
+   * make_data: [in] @c uint64_t
+   * 
+   * parse_data: [out] @c uint64_t* @n
+   * If it fails, (uint64_t)-1 will be set.
    */
-  TLV_MAKEDATA_FINALBLOCKID_U64,
+  TLV_DATAARG_FINALBLOCKID_U64,
 
   /**
    * Payload.
    *
-   * Type: @c uint8_t*
+   * make_data: [in] @c uint8_t*
+   * 
+   * parse_data: [out] @c uint8_t** @n
+   * Output a pointer to where the Content starts in @c buf.
+   * @c NULL if not included.
    */
-  TLV_MAKEDATA_CONTENT_BUF,
+  TLV_DATAARG_CONTENT_BUF,
 
   /**
    * The size of @c content.
    *
-   * Type: @c size_t
+   * make_data: [in] @c size_t
+   * 
+   * parse_data: [out] @c size_t*
    */
-  TLV_MAKEDATA_CONTENT_SIZE,
+  TLV_DATAARG_CONTENT_SIZE,
 
   /**
    * Signature type.
    *
-   * Type: @c uint8_t promoted to @c uint32_t @n
+   * make_data: [in] @c uint8_t (promoted)
    * By default, #NDN_SIG_TYPE_DIGEST_SHA256 is used.
+   * 
+   * parse_data: [out] @c uint8_t*
    */
-  TLV_MAKEDATA_SIGTYPE_U8,
+  TLV_DATAARG_SIGTYPE_U8,
 
   /**
    * A pointer to the name of identity.
    *
-   * Type: #ndn_name_t*
+   * make_data: [in] #ndn_name_t*
+   * 
+   * parse_data: N/A
    */
-  TLV_MAKEDATA_IDENTITYNAME_PTR,
+  TLV_DATAARG_IDENTITYNAME_PTR,
 
   /**
    * A pointer to the key.
    *
-   * Type: #ndn_ecc_prv_t* or #ndn_hmac_key_t* @n
+   * make_data: [in] #ndn_ecc_prv_t* or #ndn_hmac_key_t* @n
    * Not necessary for #NDN_SIG_TYPE_DIGEST_SHA256.
+   * 
+   * parse_data: [in] #ndn_ecc_pub_t* or #ndn_hmac_key_t* @n
+   * Pass public key used by verification.
    */
-  TLV_MAKEDATA_KEY_PTR,
+  TLV_DATAARG_SIGKEY_PTR,
 
   /**
    * The signature timestamp.
    *
-   * Type: @c uint64_t
+   * make_data: [in] @c uint64_t
+   * 
+   * parse_data: [out] @c uint64_t* @n
+   * Output 0 if not included.
    */
-  TLV_MAKEDATA_SIGTIME_U64,
+  TLV_DATAARG_SIGTIME_U64,
+
+  /**
+   * Verify the data after decoding.
+   *
+   * make_data: NA
+   * 
+   * parse_data: [in] @c bool (promoted)@n
+   */
+  TLV_DATAARG_VERIFY,
 };
 
 /** All-in-one function to generate a Data packet.
  *
  * This function uses variant args to input optional parameters.
  * The value of each variant arg should be given after its type.
- * See #TLV_MAKEDATA_ARG_TYPE for all supported variant arg types.
+ * See #TLV_DATAARG_TYPE for all supported variant arg types.
  * An example:
  * @code{.c}
  * tlv_make_data(buf, sizeof(buf), &output_size, 6, // 6 args following
- *               TLV_MAKEDATA_NAME_PTR,            &name,
- *               TLV_MAKEDATA_NAME_SEGNO_U64,      (uint64_t)i
- *               TLV_MAKEDATA_FRESHNESSPERIOD_U64, (uint64_t)15000,
- *               TLV_MAKEDATA_FINALBLOCKID_U64,    (uint64_t)(seg_count - 1),
- *               TLV_MAKEDATA_CONTENT_BUF,         content,
- *               TLV_MAKEDATA_CONTENT_SIZE,        sizeof(content));
+ *               TLV_DATAARG_NAME_PTR,            &name,
+ *               TLV_DATAARG_NAME_SEGNO_U64,      (uint64_t)i
+ *               TLV_DATAARG_FRESHNESSPERIOD_U64, (uint64_t)15000,
+ *               TLV_DATAARG_FINALBLOCKID_U64,    (uint64_t)(seg_count - 1),
+ *               TLV_DATAARG_CONTENT_BUF,         content,
+ *               TLV_DATAARG_CONTENT_SIZE,        sizeof(content));
  * // Create a Data packet with its payload = content,
  * // name = name + i (segment number), freshness period = 15s.
  * // And the data have seg_count segments in total.
@@ -268,9 +317,43 @@ enum TLV_MAKEDATA_ARG_TYPE{
  * @retval #NDN_INVALID_POINTER A non-optional pointer argument is @c NULL.
  *                              Notice that some arguments are allowed to be @c NULL.
  * @post <tt>result_size <= buflen</tt>
+ * @remark Not fully tested yet.
  */
 int
 tlv_make_data(uint8_t* buf, size_t buflen, size_t* result_size, int argc, ...);
+
+/** All-in-one function to parse a Data packet.
+ *
+ * This function uses variant args as input and output optional parameters.
+ * The value of each variant arg should be given after its type.
+ * See #TLV_DATAARG_TYPE for all supported variant arg types.
+ * An example:
+ * @code{.c}
+ * ndn_name_t name;
+ * uint64_t segno, last_segno;
+ * uint8_t *content;
+ * size_t content_size;
+ * tlv_parse_data(data_buf, data_size, 6,  // 6 args following
+ *                TLV_DATAARG_NAME_PTR,         &name,
+ *                TLV_DATAARG_NAME_SEGNO_U64,   &segno,
+ *                TLV_DATAARG_FINALBLOCKID_U64, &last_segno,
+ *                TLV_DATAARG_CONTENT_BUF,      &content,
+ *                TLV_DATAARG_CONTENT_SIZE,     &content_size,
+ *                TLV_DATAARG_VERIFY,           true);
+ * @endcode
+ * @param[in] buf The encoded TLV Data block.
+ * @param[in] buflen The size of @c buf.
+ * @param[in] argc The number of variant args, without counting the type.
+ * @return #NDN_SUCCESS if the call succeeded. The error code otherwise.
+ * @retval #NDN_INVALID_ARG An unknown argument is given; or no name is given.
+ * @retval #NDN_UNSUPPORTED_FORMAT Unsupported Data format.
+ * @retval #NDN_SEC_UNSUPPORT_SIGN_TYPE Unsupported signature type.
+ * @retval #NDN_INVALID_POINTER A non-optional pointer argument is @c NULL.
+ *                              Notice that some arguments are allowed to be @c NULL.
+ * @remark Not fully tested yet.
+ */
+int
+tlv_parse_data(uint8_t* buf, size_t buflen, int argc, ...);
 
 /*@}*/
 

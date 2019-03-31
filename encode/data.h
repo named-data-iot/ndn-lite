@@ -145,11 +145,13 @@ ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, ui
 static inline int
 ndn_data_set_content(ndn_data_t* data, uint8_t* content_value, uint32_t content_size)
 {
-  if (content_size < NDN_CONTENT_BUFFER_SIZE) {
+  if (content_size <= NDN_CONTENT_BUFFER_SIZE) {
     memcpy(data->content_value, content_value, content_size);
     data->content_size = content_size;
+    return 0;
+  }else{
+    return NDN_OVERSIZE;
   }
-  return 0;
 }
 
 /**
