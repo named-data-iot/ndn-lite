@@ -15,6 +15,10 @@
 #include <stddef.h>
 #include "name.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**@defgroup NDNEncode Encoding
  * @brief Encoding and decoding functions.
  */
@@ -162,7 +166,7 @@ enum TLV_DATAARG_TYPE{
    * make_data: [in] @c uint64_t @n
    * It will be added after name.
    * 
-   * parse_data: [out] @c uint64_t*
+   * parse_data: [out] @c uint64_t* @n
    * Output (uint64_t)-1 if the last component is not segment number.
    */
   TLV_DATAARG_NAME_SEGNO_U64,
@@ -357,6 +361,9 @@ tlv_make_data(uint8_t* buf, size_t buflen, size_t* result_size, int argc, ...);
 int
 tlv_parse_data(uint8_t* buf, size_t buflen, int argc, ...);
 
+/**
+ * The type of variant args of #tlv_make_interest.
+ */
 enum TLV_INTARG_TYPE{
   /**
    * A pointer to a name.
@@ -493,5 +500,9 @@ int
 tlv_make_interest(uint8_t* buf, size_t buflen, size_t* result_size, int argc, ...);
 
 /*@}*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // NDN_ENCODING_FORWARD_HELPER_H
