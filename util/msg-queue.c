@@ -24,12 +24,14 @@
  */
 #define NDN_MSG_PADDING (ndn_msg_callback)(-1)
 
+#pragma pack(1)
 typedef struct ndn_msg{
   void* obj;
   ndn_msg_callback func;
   size_t length;
   uint8_t param[];
 } ndn_msg_t;
+#pragma pack()
 
 static uint8_t msg_queue[NDN_MSGQUEUE_SIZE];
 static ndn_msg_t *pfront, *ptail, *psplit;

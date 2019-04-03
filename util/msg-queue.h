@@ -31,7 +31,9 @@ extern "C" {
  */
 #define NDN_MSGQUEUE_SIZE 4096
 
+#pragma pack(1)
 struct ndn_msg;
+#pragma pack()
 
 /** The callback function of message.
  * 

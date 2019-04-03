@@ -10,12 +10,14 @@
 
 #define MEMORY_BLOCK_USED NULL
 
+#pragma pack(1)
 typedef struct memory_block
 {
   // next make a linked-list of free blocks
   struct memory_block * next;
   uint8_t buf[];
 } memory_block_t, *pmemory_block_t;
+#pragma pack()
 
 void
 ndn_memory_pool_init(void* pool, size_t block_size, size_t block_count)
