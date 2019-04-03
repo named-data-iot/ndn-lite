@@ -15,7 +15,7 @@ Compatible Hardware/Software Platforms
 The network stack can be applied to any platforms that support C.
 To work with the network interfaces (e.g., Bluetooth, Bluetooth Low Energy, IEEE 802.15.4, etc.) and hardware crypto interfaces (e.g., hardware ECC support, hardware pseudo random generator, etc.), proper adaptation work is required.
 
-So far, we have developed ndn-lite based IoT packages (with platform adaptation ready) for [RIOT OS](https://www.riot-os.org/) and [Nordic NRF52840 Development Kit](https://www.nordicsemi.com/eng/Products/nRF52840-DK).
+So far, we have developed ndn-lite based IoT packages (with platform adaptation ready) for POSIX platforms (Linux, MacOS, Raspberry Pi), [RIOT OS](https://www.riot-os.org/) and [Nordic NRF52840 Development Kit](https://www.nordicsemi.com/eng/Products/nRF52840-DK).
 Developers can directly develop IoT applications based on these packages without worrying about the adaptation.
 
 Check the ndn-lite based packages in the following list (more to be added in the future):
