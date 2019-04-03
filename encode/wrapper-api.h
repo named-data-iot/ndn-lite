@@ -177,7 +177,7 @@ enum TLV_DATAARG_TYPE{
    *
    * make_data: N/A
    * 
-   * parse_data: [in] @c bool (promoted)@n
+   * parse_data: [in] @c bool (promoted)
    */
   TLV_DATAARG_VERIFY,
 };
@@ -240,7 +240,7 @@ tlv_make_data(uint8_t* buf, size_t buflen, size_t* result_size, int argc, ...);
  * @param[in] buflen The size of @c buf.
  * @param[in] argc The number of variant args, without counting the type.
  * @return #NDN_SUCCESS if the call succeeded. The error code otherwise.
- * @retval #NDN_INVALID_ARG An unknown argument is given; or no name is given.
+ * @retval #NDN_INVALID_ARG An unknown argument is given.
  * @retval #NDN_UNSUPPORTED_FORMAT Unsupported Data format.
  * @retval #NDN_SEC_UNSUPPORT_SIGN_TYPE Unsupported signature type.
  * @retval #NDN_INVALID_POINTER A non-optional pointer argument is @c NULL.
@@ -260,6 +260,8 @@ enum TLV_INTARG_TYPE{
    * make_interest: [in] #ndn_name_t* @n
    * At least one Name is necessary, otherwise #NDN_INVALID_ARG is returned.
    * If multiple names are specified by mistake, the last one is used.
+   * 
+   * parse_interest: [out] #ndn_name_t*
    */
   TLV_INTARG_NAME_PTR,
 
@@ -268,6 +270,9 @@ enum TLV_INTARG_TYPE{
    *
    * make_interest: [in] @c uint8_t* @n
    * It will automaticaly detect the length.
+   *
+   * parse_interest: [out] @c uint8_t** @n
+   * Output a pointer to where the name starts in @c buf.
    */
   TLV_INTARG_NAME_BUF,
 
@@ -276,6 +281,9 @@ enum TLV_INTARG_TYPE{
    *
    * make_interest: [in] @c uint64_t @n
    * It will be added after name.
+   * 
+   * parse_interest: [out] @c uint64_t* @n
+   * Output (uint64_t)-1 if the last component is not segment number.
    */
   TLV_INTARG_NAME_SEGNO_U64,
 
@@ -284,6 +292,8 @@ enum TLV_INTARG_TYPE{
    *
    * make_interest: [in] @c bool (promoted) @n
    * False by default.
+   *
+   * parse_interest: [out] @c bool*
    */
   TLV_INTARG_CANBEPREFIX_BOOL,
 
@@ -292,6 +302,8 @@ enum TLV_INTARG_TYPE{
    *
    * make_interest: [in] @c bool (promoted) @n
    * False by default.
+   *
+   * parse_interest: [out] @c bool*
    */
   TLV_INTARG_MUSTBEFRESH_BOOL,
 
@@ -300,6 +312,8 @@ enum TLV_INTARG_TYPE{
    *
    * make_interest: [in] @c uint64_t @n
    * #NDN_DEFAULT_INTEREST_LIFETIME by default.
+   *
+   * parse_interest: [out] @c uint64_t*
    */
   TLV_INTARG_LIFETIME_U64,
 
@@ -307,6 +321,9 @@ enum TLV_INTARG_TYPE{
    * Interest HopLimit.
    *
    * make_interest: [in] @c uint8_t (promoted)
+   *
+   * parse_interest: [out] @c uint8_t*
+   * <tt>(uint8_t)-1</tt> by default.
    */
   TLV_INTARG_HOTLIMIT_U8,
 
@@ -314,6 +331,10 @@ enum TLV_INTARG_TYPE{
    * Interest parameters.
    *
    * make_interest: [in, opt] @c uint8_t*
+   * 
+   * parse_interest: [out] @c uint8_t** @n
+   * Output a pointer to where the Interest parameters start in @c buf.
+   * @c NULL if not included.
    */
   TLV_INTARG_PARAMS_BUF,
 
@@ -321,6 +342,8 @@ enum TLV_INTARG_TYPE{
    * The size of Interest parameters.
    *
    * make_interest: [in] @c size_t
+   *
+   * parse_interest: [out] @c size_t*
    */
   TLV_INTARG_PARAMS_SIZE,
 
@@ -329,6 +352,8 @@ enum TLV_INTARG_TYPE{
    *
    * make_interest: [in] @c uint8_t (promoted) @n
    * By default, the Interest won't be signed.
+   *
+   * parse_interest: [out] @c uint8_t*
    */
   TLV_INTARG_SIGTYPE_U8,
 
@@ -336,6 +361,8 @@ enum TLV_INTARG_TYPE{
    * A pointer to the name of identity.
    *
    * make_interest: [in, opt] #ndn_name_t*
+   *
+   * parse_interest: N/A
    */
   TLV_INTARG_IDENTITYNAME_PTR,
 
@@ -344,6 +371,9 @@ enum TLV_INTARG_TYPE{
    *
    * make_interest: [in, opt] #ndn_ecc_prv_t* or #ndn_hmac_key_t* @n
    * Not necessary for #NDN_SIG_TYPE_DIGEST_SHA256.
+   * 
+   * parse_interest: [in, opt] #ndn_ecc_prv_t* or #ndn_hmac_key_t* @n
+   * Pass public key used by verification.
    */
   TLV_INTARG_SIGKEY_PTR,
 
@@ -351,11 +381,13 @@ enum TLV_INTARG_TYPE{
    * Verify the Interest after decoding.
    *
    * make_interest: N/A
+   *
+   * parse_interest: [in] bool (promoted)
    */
   TLV_INTARG_VERIFY,
 };
 
-/** All-in-one function to generate a Interest packet.
+/** All-in-one function to generate an Interest packet.
  *
  * This function uses variant args to input optional parameters.
  * The value of each variant arg should be given after its type.
@@ -363,11 +395,11 @@ enum TLV_INTARG_TYPE{
  * An example:
  * @code{.c}
  * tlv_make_interest(buf, sizeof(buf), &output_size, 5, // 5 args following
- *                   TLV_INTARG_NAME_PTR, &name,
- *                   TLV_INTARG_NAME_SEGNO_U64, (uint64_t)13,
+ *                   TLV_INTARG_NAME_PTR,         &name,
+ *                   TLV_INTARG_NAME_SEGNO_U64,   (uint64_t)13,
  *                   TLV_INTARG_CANBEPREFIX_BOOL, true,
  *                   TLV_INTARG_MUSTBEFRESH_BOOL, true,
- *                   TLV_INTARG_LIFETIME_U64, (uint64_t)60000);
+ *                   TLV_INTARG_LIFETIME_U64,     (uint64_t)60000);
  * // Create a Interest packet with its name = name/%00%13
  * // lifetime = 60s, CanBePrefix and MustBeFresh.
  * @endcode
@@ -387,6 +419,33 @@ enum TLV_INTARG_TYPE{
  */
 int
 tlv_make_interest(uint8_t* buf, size_t buflen, size_t* result_size, int argc, ...);
+
+/** All-in-one function to parse an Interest packet.
+ *
+ * This function uses variant args as input and output optional parameters.
+ * The value of each variant arg should be given after its type.
+ * See #TLV_INTARG_TYPE for all supported variant arg types.
+ * An example:
+ * @code{.c}
+ * ndn_name_t name;
+ * uint64_t segno;
+ * tlv_parse_data(interest_buf, interest_size, 2,     // 2 args following
+ *                TLV_INTARG_NAME_PTR,       &name,
+ *                TLV_INTARG_NAME_SEGNO_U64, &segno);
+ * @endcode
+ * @param[in] buf The encoded TLV Interest block.
+ * @param[in] buflen The size of @c buf.
+ * @param[in] argc The number of variant args, without counting the type.
+ * @return #NDN_SUCCESS if the call succeeded. The error code otherwise.
+ * @retval #NDN_INVALID_ARG An unknown argument is given.
+ * @retval #NDN_UNSUPPORTED_FORMAT Unsupported Interest format.
+ * @retval #NDN_SEC_UNSUPPORT_SIGN_TYPE Unsupported signature type.
+ * @retval #NDN_INVALID_POINTER A non-optional pointer argument is @c NULL.
+ *                              Notice that some arguments are allowed to be @c NULL.
+ * @remark Not fully tested yet.
+ */
+int
+tlv_parse_interest(uint8_t* buf, size_t buflen, int argc, ...);
 
 /** Encode a name component from a segment number.
  *
