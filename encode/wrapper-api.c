@@ -111,7 +111,7 @@ tlv_make_data(uint8_t* buf, size_t buflen, size_t* result_size, int argc, ...)
         break;
 
       case TLV_DATAARG_FRESHNESSPERIOD_U64:
-        ndn_metainfo_set_freshness_period(&data.metainfo, va_arg(vl, uint32_t));
+        ndn_metainfo_set_freshness_period(&data.metainfo, va_arg(vl, uint64_t));
         break;
 
       case TLV_DATAARG_FINALBLOCKID_PTR:
