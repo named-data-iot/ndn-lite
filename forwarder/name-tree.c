@@ -9,6 +9,8 @@
 #include "name-tree.h"
 #include <string.h>
 
+#define minof2(a, b) ((a) < (b) ? (a) : (b))
+
 static void
 nametree_refresh(ndn_nametree_t *nametree, int num)
 {
@@ -77,17 +79,18 @@ nametree_entry_t*
 ndn_nametree_find(ndn_nametree_t *nametree, uint8_t name[], size_t len)
 {
   int now_node, last_node, father = 0 , offset = 0 , tmp;
-  size_t component_len;
+  size_t component_len, eqiv_component_len;
   // TODO: Put it into decoder
   if (len < 2) return NULL;
   if (name[1] < 253) offset = 2; else offset = 4;
   while (offset < len) {
     component_len = name[offset + 1] + 2;
+    eqiv_component_len = minof2(component_len, NDN_NAME_COMPONENT_BUFFER_SIZE);
     now_node = (*nametree)[father].left_child;
     last_node = NDN_INVALID_ID;
     tmp = -2;
     while (now_node != NDN_INVALID_ID) {
-      tmp = memcmp(name+offset, (*nametree)[now_node].val , component_len);
+      tmp = memcmp(name+offset, (*nametree)[now_node].val , eqiv_component_len);
       if (tmp <= 0) break;
       last_node = now_node;
       now_node = (*nametree)[now_node].right_bro;
@@ -105,23 +108,24 @@ static nametree_entry_t*
 nametree_find_or_insert_try(ndn_nametree_t *nametree, uint8_t name[], size_t len)
 {
   int now_node, last_node, father = 0 , offset = 0 , tmp , new_node_number;
-  size_t component_len;
+  size_t component_len, eqiv_component_len;
   // TODO: Put it into decoder
   if (len < 2) return NULL;
   if (name[1] < 253) offset = 2; else offset = 4;
   while (offset < len) {
     component_len = name[offset + 1] + 2;
+    eqiv_component_len = minof2(component_len, NDN_NAME_COMPONENT_BUFFER_SIZE);
     now_node = (*nametree)[father].left_child;
     last_node = NDN_INVALID_ID;
     tmp = -2;
     while (now_node != NDN_INVALID_ID) {
-      tmp = memcmp(name+offset, (*nametree)[now_node].val , component_len);
+      tmp = memcmp(name+offset, (*nametree)[now_node].val , eqiv_component_len);
       if (tmp <= 0) break;
       last_node = now_node;
       now_node = (*nametree)[now_node].right_bro;
     }
     if (tmp != 0) {
-      new_node_number = nametree_create_node(nametree, name + offset , component_len);
+      new_node_number = nametree_create_node(nametree, name + offset , eqiv_component_len);
       if (new_node_number == NDN_INVALID_ID) return NULL;
       if(last_node == NDN_INVALID_ID){
         (*nametree)[father].left_child = new_node_number;
@@ -155,15 +159,17 @@ ndn_nametree_prefix_match(
                           size_t len,
                           enum NDN_NAMETREE_ENTRY_TYPE type)
 {
-  int now_node, last_node = NDN_INVALID_ID , father = 0 , offset = 0 , component_len , tmp;
+  int now_node, last_node = NDN_INVALID_ID , father = 0 , offset = 0 , tmp;
+  size_t component_len, eqiv_component_len;
   if (len < 2) return NULL;
   if (name[1] < 253) offset = 2; else offset = 4;
   while (offset < len) {
     component_len = name[offset + 1] + 2;
+    eqiv_component_len = minof2(component_len, NDN_NAME_COMPONENT_BUFFER_SIZE);
     now_node = (*nametree)[father].left_child;
     tmp = -2;
     while (now_node != NDN_INVALID_ID) {
-      tmp = memcmp(name+offset,(*nametree)[now_node].val , component_len);
+      tmp = memcmp(name+offset,(*nametree)[now_node].val , eqiv_component_len);
       if (tmp <= 0) break;
       now_node = (*nametree)[now_node].right_bro;
     }
