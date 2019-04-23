@@ -114,7 +114,9 @@ ndn_msgqueue_post(void *target,
   ptail->obj = target;
   ptail->func = reason;
   ptail->length = len;
-  memcpy(ptail->param, param, param_length);
+  if(param_length > 0){
+    memcpy(ptail->param, param, param_length);
+  }
 
   ret = ptail;
   MSGQUEUE_NEXT(ptail);
