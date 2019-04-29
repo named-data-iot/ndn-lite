@@ -52,6 +52,19 @@ typedef struct ndn_data {
   ndn_signature_t signature;
 } ndn_data_t;
 
+
+/**
+ * Init an Data packet.
+ * This function should be invoked
+ * whenever a new ndn_data_t is created.
+ * @param data. Output. The Data to be inited.
+ */
+static inline void
+ndn_data_init(ndn_data_t* data)
+{
+  ndn_metainfo_init(&data->metainfo);
+}
+
 /**
  * Use Digest (SHA256) to sign the Data and encode the Data into wire format.
  * This function will automatically set signature info and signature value.
