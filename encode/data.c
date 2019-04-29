@@ -29,20 +29,20 @@ _ndn_data_prepare_unsigned_block(ndn_encoder_t* encoder, const ndn_data_t* data)
   int ret_val = -1;
   // name
   ret_val = ndn_name_tlv_encode(encoder, &data->name);
-  if (ret_val != NDN_SUCCESS) {printf("dd0\n");return ret_val;}
+  if (ret_val != NDN_SUCCESS) return ret_val;
   // meta info
   ret_val = ndn_metainfo_tlv_encode(encoder, &data->metainfo);
-  if (ret_val != NDN_SUCCESS) {printf("dd1\n");return ret_val;}
+  if (ret_val != NDN_SUCCESS) return ret_val;
   // content
   ret_val = encoder_append_type(encoder, TLV_Content);
-  if (ret_val != NDN_SUCCESS) {printf("dd2\n");return ret_val;}
+  if (ret_val != NDN_SUCCESS) return ret_val;
   ret_val = encoder_append_length(encoder, data->content_size);
-  if (ret_val != NDN_SUCCESS) {printf("dd3\n");return ret_val;}
+  if (ret_val != NDN_SUCCESS) return ret_val;
   ret_val = encoder_append_raw_buffer_value(encoder, data->content_value, data->content_size);
-  if (ret_val != NDN_SUCCESS) {printf("dd4\n");return ret_val;}
+  if (ret_val != NDN_SUCCESS) return ret_val;
   // signature info
   ret_val = ndn_signature_info_tlv_encode(encoder, &data->signature);
-  if (ret_val != NDN_SUCCESS) {printf("dd5\n");return ret_val;}
+  if (ret_val != NDN_SUCCESS) return ret_val;
   return NDN_SUCCESS;
 }
 
@@ -100,13 +100,13 @@ ndn_data_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_data_t* data)
 
   // data T and L
   ret_val = encoder_append_type(encoder, TLV_Data);
-  if (ret_val != NDN_SUCCESS) {printf("d0\n");return ret_val;}
+  if (ret_val != NDN_SUCCESS) return ret_val;
   ret_val = encoder_append_length(encoder, data_buffer_size);
-  if (ret_val != NDN_SUCCESS) {printf("d1\n");return ret_val;}
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   uint32_t sign_input_starting = encoder->offset;
   ret_val = _ndn_data_prepare_unsigned_block(encoder, data);
-  if (ret_val != NDN_SUCCESS) {printf("d2\n");return ret_val;}
+  if (ret_val != NDN_SUCCESS) return ret_val;
   uint32_t sign_input_ending = encoder->offset;
 
   // sign data
@@ -115,11 +115,11 @@ ndn_data_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_data_t* data)
                                sign_input_ending - sign_input_starting,
                                data->signature.sig_value, data->signature.sig_size,
                                &used_bytes);
-  if (result < 0) {printf("d3\n");return result;}
+  if (result < 0) return result;
 
   // finish encoding
   ret_val = ndn_signature_value_tlv_encode(encoder, &data->signature);
-  if (ret_val != NDN_SUCCESS) {printf("d4\n");return ret_val;}
+  if (ret_val != NDN_SUCCESS) return ret_val;
 
   return 0;
 }
