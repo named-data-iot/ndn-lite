@@ -11,6 +11,7 @@
 
 #include "name-component.h"
 #include <stdbool.h>
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,6 +31,19 @@ typedef struct ndn_name {
    */
   uint32_t components_size;
 } ndn_name_t;
+
+/**
+ * Print a name.
+ * @param name. Input. The name to be printed.
+ */
+static inline void
+ndn_name_print(ndn_name_t* name)
+{
+  for (int i = 0; i < name->components_size; i++) {
+    printf("/%.*s", name->components[i].size, name->components[i].value);
+  }
+  printf("\n");
+}
 
 /**
  * Init a Name structure. This function will do memory copy.
