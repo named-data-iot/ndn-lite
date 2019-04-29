@@ -71,6 +71,7 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
   }
   while (decoder.offset < block_size) {
     ret_val = decoder_get_type(&decoder, &type);
+    if (ret_val != NDN_SUCCESS) return ret_val;
     uint32_t length = 0;
     if (type == TLV_CanBePrefix) {
       interest->enable_CanBePrefix = 1;
@@ -124,7 +125,14 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
       if (ret_val != NDN_SUCCESS) return ret_val;
     }
     else {
-      return NDN_WRONG_TLV_TYPE;
+      // return NDN_WRONG_TLV_TYPE;
+      // in order to ensure backwards compatibility with NDN packet format v2, if there is an
+      // unrecognizable tlv block (i.e. selector tlv block with tlv type 0x09), just skip over the
+      // entire tlv block
+      ret_val = decoder_get_length(&decoder, &length);
+      if (ret_val != NDN_SUCCESS) return ret_val;
+      ret_val = decoder_move_forward(&decoder, length);
+      if (ret_val != NDN_SUCCESS) return ret_val;
     }
   }
   return 0;
