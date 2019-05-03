@@ -54,3 +54,15 @@ ndn_aes_cbc_decrypt(const uint8_t* input_value, uint8_t input_size,
                                      output_value, output_size,
                                      aes_iv, &aes_key->abs_key);
 }
+
+uint32_t
+ndn_aes_probe_padding_size(uint32_t plaintext_size)
+{
+  return ndn_aes_backend.probe_padding_size(plaintext_size);
+}
+
+uint32_t
+ndn_aes_parse_unpadding_size(uint8_t* plaintext_value, uint32_t plaintext_size)
+{
+  return ndn_aes_backend.parse_unpadding_size(plaintext_value, plaintext_size);
+}

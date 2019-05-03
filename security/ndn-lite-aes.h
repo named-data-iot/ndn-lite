@@ -34,6 +34,8 @@ typedef int (*ndn_aes_cbc_encrypt_impl)(const uint8_t* input_value, uint8_t inpu
 typedef int (*ndn_aes_cbc_decrypt_impl)(const uint8_t* input_value, uint8_t input_size,
                                         uint8_t* output_value, uint8_t output_size,
                                         const uint8_t* aes_iv, const abstract_aes_key_t* aes_key);
+typedef uint32_t (*ndn_aes_probe_padding_size_impl)(uint32_t plaintext_size);
+typedef uint32_t (*ndn_aes_parse_unpadding_size_impl)(uint8_t* plaintext_value, uint32_t plaintext_size);
 
 /**
  * The structure to represent the backend implementation.
@@ -44,6 +46,8 @@ typedef struct ndn_aes_backend {
   ndn_aes_load_key_impl load_key;
   ndn_aes_cbc_encrypt_impl cbc_encrypt;
   ndn_aes_cbc_decrypt_impl cbc_decrypt;
+  ndn_aes_probe_padding_size_impl probe_padding_size;
+  ndn_aes_parse_unpadding_size_impl parse_unpadding_size;
 } ndn_aes_backend_t;
 
 /**
@@ -102,7 +106,7 @@ ndn_aes_key_init(ndn_aes_key_t* key, const uint8_t* key_value,
 }
 
 /**
- * Use AES-128-CBC algorithm to encrypt a buffer. This function does not perform any padding.
+ * Use AES-128-CBC algorithm to encrypt a buffer. This function performs PKCS#7 padding.
  * The input_size must be a multiple of NDN_AES_BLOCK_SIZE to obtain a successful encryption.
  * @param input_value. Input. Buffer to encrypt.
  * @param input_size. Input. Size of input buffer.
@@ -119,8 +123,8 @@ ndn_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
                     const uint8_t* aes_iv, const ndn_aes_key_t* aes_key);
 
 /**
- * Use AES-128-CBC algorithm to decrypt an encrypted buffer. This function is implemented without padding.
- * The input_size must be a multiple of NDN_AES_BLOCK_SIZE to obtain a successful decryption.
+ * Use AES-128-CBC algorithm to decrypt an encrypted buffer. This function is implemented with padding PKCS#7,
+ * but should call additional function to parse the unpadding size.
  * @param input_value. Input. Buffer to decrypt.
  * @param input_size. Input. Size of input buffer.
  * @param output_value. Output. Decrypted buffer.
@@ -134,6 +138,24 @@ int
 ndn_aes_cbc_decrypt(const uint8_t* input_value, uint8_t input_size,
                     uint8_t* output_value, uint8_t output_size,
                     const uint8_t* aes_iv, const ndn_aes_key_t* aes_key);
+
+/**
+ * Probe after padding size of plaintext. Ouput should be multiple of NDN_AES_BLOCK_SIZE.
+ * @param plaintext_size. Input. Size of original plaintext.
+ * @return after padding size.
+ */
+uint32_t
+ndn_aes_probe_padding_size(uint32_t plaintext_size);
+
+/**
+ * Parse the orginal plaintext size after stripping padding byte. Input size should be
+ * multiple of NDN_AES_BLOCK_SIZE.
+ * @param plaintext_value. Input. Input buffer before unpadding.
+ * @param plaintext_size. Input. Size of input buffer.
+ * @return original plaintext size.
+ */
+uint32_t
+ndn_aes_parse_unpadding_size(uint8_t* plaintext_value, uint32_t plaintext_size);
 
 #ifdef __cplusplus
 }

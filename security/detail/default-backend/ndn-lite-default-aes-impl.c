@@ -13,6 +13,30 @@
 #include "../../../ndn-constants.h"
 #include <string.h>
 
+/************************************************************/
+/*                PKCS#7 Padding for AES-128                */
+/*         Not supposed to be used by library users         */
+/************************************************************/
+static uint8_t byte[TC_AES_BLOCK_SIZE] = {0x01, 0x02, 0x03, 0x04,
+                                          0x05, 0x06, 0x07, 0x08,
+                                          0x09, 0x0A, 0x0B, 0x0C,
+                                          0x0D, 0x0E, 0x0F, 0x10};
+static int
+_pkcs7_padding(const uint8_t* input_value, uint8_t input_size,
+               uint8_t* output_value, uint8_t output_size)
+{
+  uint8_t num = TC_AES_BLOCK_SIZE - input_size % TC_AES_BLOCK_SIZE;
+  if (output_size < input_size + num)
+    return NDN_OVERSIZE;
+  memcpy(output_value, input_value, input_size);
+  for (uint8_t i = 0; i < num; i++)
+    output_value[input_size + i] = byte[num - 1];
+  return input_size + num;
+}
+
+/************************************************************/
+/*               AES-128 Backend Implementation             */
+/************************************************************/
 uint32_t
 ndn_lite_default_aes_get_key_size(const struct abstract_aes_key* aes_key)
 {
@@ -35,20 +59,40 @@ ndn_lite_default_aes_load_key(struct abstract_aes_key* aes_key,
   return 0;
 }
 
+uint32_t
+ndn_lite_default_aes_probe_padding_size(uint32_t plaintext_size)
+{
+  return (plaintext_size / TC_AES_BLOCK_SIZE + 1) * TC_AES_BLOCK_SIZE;
+}
+
+uint32_t
+ndn_lite_default_aes_parse_unpadding_size(uint8_t* plaintext_value, uint32_t plaintext_size)
+{
+  for (uint8_t i = 0; i < TC_AES_BLOCK_SIZE; i++)
+    if (*(plaintext_value + plaintext_size - 1) == byte[i])
+      return plaintext_size - i - 1;
+}
+
 int
 ndn_lite_default_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
                                  uint8_t* output_value, uint8_t output_size,
                                  const uint8_t* aes_iv, const struct abstract_aes_key* aes_key)
 {
-  if (input_size + TC_AES_BLOCK_SIZE > output_size || aes_key->key_size < NDN_SEC_AES_MIN_KEY_SIZE) {
+  if ((ndn_lite_default_aes_probe_padding_size(input_size) + TC_AES_BLOCK_SIZE > output_size) ||
+      aes_key->key_size < NDN_SEC_AES_MIN_KEY_SIZE){
     return NDN_SEC_WRONG_AES_SIZE;
   }
+  // TODO: too much memory usage when encrypt large chunks
+  uint8_t buffer[input_size + TC_AES_BLOCK_SIZE];
+  int err_or_size = _pkcs7_padding(input_value, input_size, buffer, sizeof(buffer));
+  if (err_or_size < 0)
+    return err_or_size;
   struct tc_aes_key_sched_struct schedule;
   if (tc_aes128_set_encrypt_key(&schedule, aes_key->key_value) != TC_CRYPTO_SUCCESS) {
     return NDN_SEC_INIT_FAILURE;
   }
-  if (tc_cbc_mode_encrypt(output_value, input_size + TC_AES_BLOCK_SIZE,
-                          input_value, input_size, aes_iv, &schedule) != TC_CRYPTO_SUCCESS) {
+  if (tc_cbc_mode_encrypt(output_value, err_or_size + TC_AES_BLOCK_SIZE,
+                          buffer, err_or_size, aes_iv, &schedule) != TC_CRYPTO_SUCCESS) {
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
   return NDN_SUCCESS;
@@ -69,7 +113,7 @@ ndn_lite_default_aes_cbc_decrypt(const uint8_t* input_value, uint8_t input_size,
   }
   if (tc_cbc_mode_decrypt(output_value, input_size - TC_AES_BLOCK_SIZE,
                           input_value + TC_AES_BLOCK_SIZE, input_size - TC_AES_BLOCK_SIZE,
-                          input_value, &schedule) == 0) {
+                          input_value, &schedule) != TC_CRYPTO_SUCCESS) {
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
   return NDN_SUCCESS;
@@ -84,4 +128,6 @@ ndn_lite_default_aes_load_backend(void)
   backend->load_key = ndn_lite_default_aes_load_key;
   backend->cbc_encrypt = ndn_lite_default_aes_cbc_encrypt;
   backend->cbc_decrypt = ndn_lite_default_aes_cbc_decrypt;
+  backend->probe_padding_size = ndn_lite_default_aes_probe_padding_size;
+  backend->parse_unpadding_size = ndn_lite_default_aes_parse_unpadding_size;
 }

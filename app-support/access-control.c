@@ -183,13 +183,14 @@ ndn_ac_on_dk_response_process(const ndn_data_t* data)
   ndn_aes_key_init(&sym_aes_key, symmetric_key, sizeof(symmetric_key), 1);
 
   // dk decryption
-  uint8_t ciphertext[NDN_APPSUPPORT_AC_EDK_SIZE + NDN_AES_BLOCK_SIZE] = {0};
-  uint8_t plaintext[NDN_APPSUPPORT_AC_EDK_SIZE] = {0};
+  uint8_t ciphertext[ndn_aes_probe_padding_size(NDN_APPSUPPORT_AC_EDK_SIZE) +
+                     NDN_AES_BLOCK_SIZE];
+  uint8_t plaintext[NDN_APPSUPPORT_AC_EDK_SIZE];
   decoder_get_type(&decoder, &probe);
   decoder_get_length(&decoder, &probe);
   decoder_get_raw_buffer_value(&decoder, ciphertext, sizeof(ciphertext));
-  ndn_aes_cbc_decrypt(ciphertext, sizeof(ciphertext),
-                      plaintext, sizeof(plaintext), NULL, &sym_aes_key);
+  ndn_aes_cbc_decrypt(ciphertext, sizeof(ciphertext), plaintext,
+                      sizeof(plaintext), NULL, &sym_aes_key);
 
   // insert dk into key storage
   ndn_aes_key_t* aes = NULL;
@@ -370,8 +371,9 @@ ndn_ac_prepare_dk_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
     return -1;
 
   // encrypt ek
-  uint8_t Encrypted[NDN_APPSUPPORT_AC_EDK_SIZE + NDN_AES_BLOCK_SIZE] = {0};
-  uint8_t aes_iv[NDN_AES_BLOCK_SIZE] = {0};
+  uint8_t Encrypted[ndn_aes_probe_padding_size(NDN_APPSUPPORT_AC_EDK_SIZE) +
+                    NDN_AES_BLOCK_SIZE];
+  uint8_t aes_iv[NDN_AES_BLOCK_SIZE];
 
   // TODO: update personalization, add, seed with truly randomness
   ndn_hmacprng(personalization, sizeof(personalization), aes_iv, NDN_AES_BLOCK_SIZE,
