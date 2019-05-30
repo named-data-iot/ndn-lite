@@ -21,7 +21,7 @@ ndn_key_storage_init(void)
     storage.ecc_prv_keys[i].key_id = NDN_SEC_INVALID_KEY_ID;
     storage.hmac_keys[i].key_id = NDN_SEC_INVALID_KEY_ID;
 
-    if (i <= NDN_SEC_ENCRYPTION_KEYS_SIZE)
+    if (i < NDN_SEC_ENCRYPTION_KEYS_SIZE)
       storage.aes_keys[i].key_id = NDN_SEC_INVALID_KEY_ID;
   }
   return &storage;
