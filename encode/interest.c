@@ -7,6 +7,7 @@
  */
 
 #include "interest.h"
+#include "../security/ndn-lite-sha.h"
 
 /************************************************************/
 /*  Definition of helper functions                          */
@@ -32,7 +33,7 @@ ndn_interest_probe_block_value_size(const ndn_interest_t* interest)
     interest_buffer_size += 3;
   // parameters
   if (interest->enable_Parameters)
-    interest_buffer_size += encoder_probe_block_size(TLV_Parameters, interest->parameters.size);
+    interest_buffer_size += encoder_probe_block_size(TLV_ApplicationParameters, interest->parameters.size);
   if (interest->is_SignedInterest > 0) {
     // signature info
     interest_buffer_size += ndn_signature_info_probe_block_size(&interest->signature);
@@ -102,7 +103,7 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
       ret_val = decoder_get_byte_value(&decoder, &interest->hop_limit);
       if (ret_val != NDN_SUCCESS) return ret_val;
     }
-    else if (type == TLV_Parameters) {
+    else if (type == TLV_ApplicationParameters) {
       interest->enable_Parameters = 1;
       ret_val = decoder_get_length(&decoder, &interest->parameters.size);
       if (ret_val != NDN_SUCCESS) return ret_val;
@@ -139,12 +140,27 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
 }
 
 int
-ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest)
+ndn_interest_tlv_encode(ndn_encoder_t* encoder, ndn_interest_t* interest)
 {
   int ret_val = -1;
 
-  if (interest->is_SignedInterest <= 0 && interest->enable_Parameters) {
-    // TODO added by Zhiyi: add a InterestParameters Digest Name component to Interest.name
+  if (interest->enable_Parameters || interest->is_SignedInterest <= 0) {
+    if (interest->name.components_size + 1 > NDN_NAME_COMPONENTS_SIZE) {
+      return NDN_OVERSIZE;
+    }
+    name_component_init(&interest->name.components[interest->name.components_size], TLV_ParametersSha256DigestComponent);
+    uint8_t be_hashed[NDN_INTEREST_PARAMS_BLOCK_SIZE] = {0};
+    ndn_encoder_t temp_encoder;
+    encoder_init(&temp_encoder, be_hashed, NDN_INTEREST_PARAMS_BLOCK_SIZE);
+    ret_val = encoder_append_type(&temp_encoder, TLV_ApplicationParameters);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(&temp_encoder, interest->parameters.size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_raw_buffer_value(&temp_encoder, interest->parameters.value, interest->parameters.size);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = ndn_sha256(temp_encoder.output_value, temp_encoder.offset,
+                         interest->name.components[interest->name.components_size].value);
+    interest->name.components_size += 1;
   }
 
   uint32_t interest_block_value_size = ndn_interest_probe_block_value_size(interest);
@@ -199,7 +215,7 @@ ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest)
   }
   // parameters
   if (interest->enable_Parameters > 0) {
-    ret_val = encoder_append_type(encoder, TLV_Parameters);
+    ret_val = encoder_append_type(encoder, TLV_ApplicationParameters);
     if (ret_val != NDN_SUCCESS) return ret_val;
     ret_val = encoder_append_length(encoder, interest->parameters.size);
     if (ret_val != NDN_SUCCESS) return ret_val;
@@ -253,7 +269,7 @@ ndn_interest_name_compare_block(const uint8_t* lhs_block_value, uint32_t lhs_blo
 
   /* compare Names */
   ret_val = ndn_name_compare_block(lhs_decoder.input_value + lhs_decoder.offset,
-                                   lhs_decoder.input_size - lhs_decoder.offset ,
+                                   lhs_decoder.input_size - lhs_decoder.offset,
                                    rhs_decoder.input_value + rhs_decoder.offset,
                                    rhs_decoder.input_size - rhs_decoder.offset);
   return ret_val;

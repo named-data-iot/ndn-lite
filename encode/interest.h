@@ -178,7 +178,7 @@ ndn_interest_set_Parameters(ndn_interest_t* interest,
  * @return 0 if there is no error.
  */
 int
-ndn_interest_tlv_encode(ndn_encoder_t* encoder, const ndn_interest_t* interest);
+ndn_interest_tlv_encode(ndn_encoder_t* encoder, ndn_interest_t* interest);
 
 /**
  * Compare two encoded Interests' names.

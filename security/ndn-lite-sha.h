@@ -79,6 +79,13 @@ ndn_sha256_update(ndn_sha256_state_t* state, const uint8_t* data, uint32_t datal
 int
 ndn_sha256_finish(ndn_sha256_state_t* state, uint8_t* hash_result);
 
+/**
+ *  SHA256 a series of bytes into the result
+ *  @param data. Input. The input data buffer.
+ *  @param datalen. Input. The length of the input data.
+ *  @param hash_result. Output. Output buffer whose length should be at least 32.
+ *  @return NDN_SUCCESS (0) if there is no error.
+ */
 int
 ndn_sha256(const uint8_t* data, uint32_t datalen, uint8_t* hash_result);
 

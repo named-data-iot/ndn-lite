@@ -71,6 +71,7 @@ ndn_lite_default_aes_parse_unpadding_size(uint8_t* plaintext_value, uint32_t pla
   for (uint8_t i = 0; i < TC_AES_BLOCK_SIZE; i++)
     if (*(plaintext_value + plaintext_size - 1) == byte[i])
       return plaintext_size - i - 1;
+  return 0;
 }
 
 int

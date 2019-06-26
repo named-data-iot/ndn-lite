@@ -24,7 +24,6 @@ enum {
   TLV_GenericNameComponent = 8,
   TLV_ImplicitSha256DigestComponent = 1,
   TLV_ParametersSha256DigestComponent = 2,
-  TLV_SignedInterestSha256DigestComponent = 3,
 
   // Interest packet
   TLV_CanBePrefix = 33,
@@ -33,7 +32,9 @@ enum {
   TLV_Nonce = 10,
   TLV_InterestLifetime = 12,
   TLV_HopLimit = 34,
-  TLV_Parameters = 35,
+  TLV_ApplicationParameters = 36,
+  TLV_InterestSignatureInfo = 42,
+  TLV_InterestSignatureValue = 44,
 
   // Data packet
   TLV_MetaInfo = 20,
@@ -46,10 +47,13 @@ enum {
   TLV_FreshnessPeriod = 25,
   TLV_FinalBlockId = 26,
 
-  // Data/Signature
+  // Signature
   TLV_SignatureType = 27,
   TLV_KeyLocator = 28,
-  TLV_KeyLocatorDigest = 29,
+  TLV_KeyDigest = 29,
+  TLV_SignatureNonce = 38,
+  TLV_Timestamp = 40,
+  TLV_SeqNum = 46,
 
   // Link Object
   TLV_Delegation = 31,
@@ -58,11 +62,7 @@ enum {
   // Certificate
   TLV_ValidityPeriod = 253,
   TLV_NotBefore = 254,
-  TLV_NotAfter = 255,
-
-  // Command Interest
-  TLV_SignedInterestParameters = 60,
-  TLV_SignedInterestTimestamp = 61,
+  TLV_NotAfter = 255
 };
 
 // App Support Specific

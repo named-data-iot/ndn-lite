@@ -13,14 +13,12 @@ name_component_tlv_decode(ndn_decoder_t* decoder, name_component_t* component)
 {
 
   int ret_val = -1;
-  
   uint32_t probe = 0;
   ret_val = decoder_get_type(decoder, &component->type);
   if (ret_val != NDN_SUCCESS) return ret_val;
   if (!(component->type == TLV_GenericNameComponent
         || component->type == TLV_ImplicitSha256DigestComponent
-        || component->type == TLV_ParametersSha256DigestComponent
-        || component->type == TLV_SignedInterestSha256DigestComponent)) {
+        || component->type == TLV_ParametersSha256DigestComponent)) {
     return NDN_WRONG_TLV_TYPE;
   }
   ret_val = decoder_get_length(decoder, &probe);
@@ -57,7 +55,6 @@ name_component_tlv_encode(ndn_encoder_t* encoder, const name_component_t* compon
 {
 
   int ret_val = -1;
-  
   ret_val = encoder_append_type(encoder, component->type);
   if (ret_val != NDN_SUCCESS) return ret_val;
   ret_val = encoder_append_length(encoder, component->size);

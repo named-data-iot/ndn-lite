@@ -58,8 +58,9 @@ static inline void
 name_component_init(name_component_t* component, uint32_t type)
 {
   component->type = type;
-  if (type == TLV_ImplicitSha256DigestComponent || type == TLV_ParametersSha256DigestComponent)
+  if (type == TLV_ImplicitSha256DigestComponent || type == TLV_ParametersSha256DigestComponent) {
     component->size = 32;
+  }
 }
 
 /**

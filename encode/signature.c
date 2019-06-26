@@ -13,7 +13,6 @@ ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* sig
 {
 
   int ret_val = -1;
-  
   uint32_t info_buffer_size = encoder_probe_block_size(TLV_SignatureType, 1);
   uint32_t key_name_block_size = 0;
   uint32_t validity_period_buffer_size = 0;
@@ -27,11 +26,11 @@ ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* sig
     validity_period_buffer_size += encoder_probe_block_size(TLV_NotAfter, 15);
     info_buffer_size += encoder_probe_block_size(TLV_ValidityPeriod, validity_period_buffer_size);
   }
-  if (signature->enable_SignatureInfoNonce > 0) {
+  if (signature->enable_SignatureNonce > 0) {
     info_buffer_size += encoder_probe_block_size(TLV_Nonce, 4);
   }
   if (signature->enable_Timestamp > 0) {
-    info_buffer_size += encoder_probe_block_size(TLV_SignedInterestTimestamp,
+    info_buffer_size += encoder_probe_block_size(TLV_Timestamp,
                                                  encoder_probe_uint_length(signature->timestamp));
   }
 
@@ -59,19 +58,19 @@ ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* sig
     if (ret_val != NDN_SUCCESS) return ret_val;
   }
 
-  // signature info nonce
-  if (signature->enable_SignatureInfoNonce > 0) {
+  // signature nonce
+  if (signature->enable_SignatureNonce > 0) {
     ret_val = encoder_append_type(encoder, TLV_Nonce);
     if (ret_val != NDN_SUCCESS) return ret_val;
     ret_val = encoder_append_length(encoder, 4);
     if (ret_val != NDN_SUCCESS) return ret_val;
-    ret_val = encoder_append_uint32_value(encoder, signature->signature_info_nonce);
+    ret_val = encoder_append_uint32_value(encoder, signature->signature_nonce);
     if (ret_val != NDN_SUCCESS) return ret_val;
   }
 
   // timestamp
   if (signature->enable_Timestamp > 0) {
-    ret_val = encoder_append_type(encoder, TLV_SignedInterestTimestamp);
+    ret_val = encoder_append_type(encoder, TLV_Timestamp);
     if (ret_val != NDN_SUCCESS) return ret_val;
     ret_val = encoder_append_length(encoder, encoder_probe_uint_length(signature->timestamp));
     if (ret_val != NDN_SUCCESS) return ret_val;
@@ -108,7 +107,6 @@ ndn_signature_value_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* si
 {
 
   int ret_val = -1;
-  
   ret_val = encoder_append_type(encoder, TLV_SignatureValue);
   if (ret_val != NDN_SUCCESS) return ret_val;
   ret_val = encoder_append_length(encoder, signature->sig_size);
@@ -123,7 +121,6 @@ ndn_signature_info_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signature
 {
 
   int ret_val = -1;
-  
   ndn_signature_init(signature);
 
   uint32_t probe = 0;
@@ -174,16 +171,16 @@ ndn_signature_info_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signature
       if (ret_val != NDN_SUCCESS) return ret_val;
     }
     else if (probe == TLV_Nonce) {
-      signature->enable_SignatureInfoNonce = 1;
+      signature->enable_SignatureNonce = 1;
       ret_val = decoder_get_length(decoder, &probe);
       if (ret_val != NDN_SUCCESS) return ret_val;
       if (probe != 4) {
         return NDN_WRONG_TLV_LENGTH;
       }
-      ret_val = decoder_get_uint32_value(decoder, &signature->signature_info_nonce);
+      ret_val = decoder_get_uint32_value(decoder, &signature->signature_nonce);
       if (ret_val != NDN_SUCCESS) return ret_val;
     }
-    else if (probe == TLV_SignedInterestTimestamp) {
+    else if (probe == TLV_Timestamp) {
       signature->enable_Timestamp = 1;
       ret_val = decoder_get_length(decoder, &probe);
       if (ret_val != NDN_SUCCESS) return ret_val;
@@ -201,7 +198,6 @@ ndn_signature_value_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signatur
 {
 
   int ret_val = -1;
-  
   uint32_t probe = 0;
   ret_val = decoder_get_type(decoder, &probe);
   if (ret_val != NDN_SUCCESS) return ret_val;

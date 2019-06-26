@@ -81,7 +81,6 @@ ndn_name_from_block(ndn_name_t* name, const uint8_t* block_value, uint32_t block
 int
 ndn_name_append_component(ndn_name_t* name, const name_component_t* component);
 
-
 /**
  * Init a name block from a string. This funcition will do memory copy and
  * only support regular string; not support URI currently.

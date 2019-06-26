@@ -33,7 +33,7 @@ enum TLV_DATAARG_TYPE{
    * make_data: [in] #ndn_name_t* @n
    * At least one Name is necessary, otherwise #NDN_INVALID_ARG is returned.
    * If multiple names are specified by mistake, the last one is used.
-   * 
+   *
    * parse_data: [out] #ndn_name_t*
    */
   TLV_DATAARG_NAME_PTR,
@@ -43,7 +43,7 @@ enum TLV_DATAARG_TYPE{
    *
    * make_data: [in] @c uint8_t* @n
    * It will automaticaly detect the length.
-   * 
+   *
    * parse_data: [out] @c uint8_t** @n
    * Output a pointer to where the name starts in @c buf.
    */
@@ -54,7 +54,7 @@ enum TLV_DATAARG_TYPE{
    *
    * make_data: [in] @c uint64_t @n
    * It will be added after name.
-   * 
+   *
    * parse_data: [out] @c uint64_t* @n
    * Output (uint64_t)-1 if the last component is not segment number.
    */
@@ -64,7 +64,7 @@ enum TLV_DATAARG_TYPE{
    * Content type.
    *
    * make_data: [in] @c uint8_t (promoted)
-   * 
+   *
    * parse_data: [out] @c uint8_t* @n
    * Output 0xFF if not included in the packet.
    */
@@ -74,7 +74,7 @@ enum TLV_DATAARG_TYPE{
    * Freshness period.
    *
    * make_data: [in] @c uint64_t
-   * 
+   *
    * parse_data: [out] @c uint64_t* @n
    * Output 0 if not included in the packet.
    */
@@ -84,7 +84,7 @@ enum TLV_DATAARG_TYPE{
    * A pointer to a final block id.
    *
    * make_data: [in] #name_component_t*
-   * 
+   *
    * parse_data: [out] #name_component_t* @n
    * Output <tt>size=0</tt> if not included.
    */
@@ -95,7 +95,7 @@ enum TLV_DATAARG_TYPE{
    *
    * make_data: [in] @c uint8_t* @n
    * It will automaticaly detect the length.
-   * 
+   *
    * parse_data: [out] @c uint8_t** @n
    * Output a pointer to where the FinalBlockId starts in @c buf.
    * @c NULL if not included.
@@ -106,7 +106,7 @@ enum TLV_DATAARG_TYPE{
    * A pointer to a final block id, in form of segment number.
    *
    * make_data: [in] @c uint64_t
-   * 
+   *
    * parse_data: [out] @c uint64_t* @n
    * If it fails, (uint64_t)-1 will be set.
    */
@@ -116,7 +116,7 @@ enum TLV_DATAARG_TYPE{
    * Payload.
    *
    * make_data: [in, opt] @c uint8_t*
-   * 
+   *
    * parse_data: [out] @c uint8_t** @n
    * Output a pointer to where the Content starts in @c buf.
    * @c NULL if not included.
@@ -127,7 +127,7 @@ enum TLV_DATAARG_TYPE{
    * The size of @c content.
    *
    * make_data: [in] @c size_t
-   * 
+   *
    * parse_data: [out] @c size_t*
    */
   TLV_DATAARG_CONTENT_SIZE,
@@ -137,7 +137,7 @@ enum TLV_DATAARG_TYPE{
    *
    * make_data: [in] @c uint8_t (promoted) @n
    * By default, #NDN_SIG_TYPE_DIGEST_SHA256 is used.
-   * 
+   *
    * parse_data: [out] @c uint8_t*
    */
   TLV_DATAARG_SIGTYPE_U8,
@@ -146,7 +146,7 @@ enum TLV_DATAARG_TYPE{
    * A pointer to the name of identity.
    *
    * make_data: [in, opt] #ndn_name_t*
-   * 
+   *
    * parse_data: N/A
    */
   TLV_DATAARG_IDENTITYNAME_PTR,
@@ -156,7 +156,7 @@ enum TLV_DATAARG_TYPE{
    *
    * make_data: [in, opt] #ndn_ecc_prv_t* or #ndn_hmac_key_t* @n
    * Not necessary for #NDN_SIG_TYPE_DIGEST_SHA256.
-   * 
+   *
    * parse_data: [in, opt] #ndn_ecc_pub_t* or #ndn_hmac_key_t* @n
    * Pass public key used by verification.
    */
@@ -166,7 +166,7 @@ enum TLV_DATAARG_TYPE{
    * The signature timestamp.
    *
    * make_data: [in] @c uint64_t
-   * 
+   *
    * parse_data: [out] @c uint64_t* @n
    * Output 0 if not included.
    */
@@ -176,7 +176,7 @@ enum TLV_DATAARG_TYPE{
    * Verify the Data after decoding.
    *
    * make_data: N/A
-   * 
+   *
    * parse_data: [in] @c bool (promoted)
    */
   TLV_DATAARG_VERIFY,
@@ -260,7 +260,7 @@ enum TLV_INTARG_TYPE{
    * make_interest: [in] #ndn_name_t* @n
    * At least one Name is necessary, otherwise #NDN_INVALID_ARG is returned.
    * If multiple names are specified by mistake, the last one is used.
-   * 
+   *
    * parse_interest: [out] #ndn_name_t*
    */
   TLV_INTARG_NAME_PTR,
@@ -281,7 +281,7 @@ enum TLV_INTARG_TYPE{
    *
    * make_interest: [in] @c uint64_t @n
    * It will be added after name.
-   * 
+   *
    * parse_interest: [out] @c uint64_t* @n
    * Output (uint64_t)-1 if the last component is not segment number.
    */
@@ -331,7 +331,7 @@ enum TLV_INTARG_TYPE{
    * Interest parameters.
    *
    * make_interest: [in, opt] @c uint8_t*
-   * 
+   *
    * parse_interest: [out] @c uint8_t** @n
    * Output a pointer to where the Interest parameters start in @c buf.
    * @c NULL if not included.
@@ -371,7 +371,7 @@ enum TLV_INTARG_TYPE{
    *
    * make_interest: [in, opt] #ndn_ecc_prv_t* or #ndn_hmac_key_t* @n
    * Not necessary for #NDN_SIG_TYPE_DIGEST_SHA256.
-   * 
+   *
    * parse_interest: [in, opt] #ndn_ecc_prv_t* or #ndn_hmac_key_t* @n
    * Pass public key used by verification.
    */

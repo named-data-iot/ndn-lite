@@ -18,6 +18,7 @@ extern "C" {
 
 /**
  * The structure to represent the signature validity period.
+ * This is designed for but not limited to the use of certificate.
  */
 typedef struct ndn_validity_period {
   /**
@@ -48,25 +49,29 @@ typedef struct ndn_signature {
    */
   uint32_t sig_size;
   /**
-   * Key locator of the signing key.
+   * Key locator of the signing key. Used when enable_KeyLocator > 0.
    */
+  uint8_t enable_KeyLocator;
   ndn_name_t key_locator_name;
   /**
    * The signature info nonce. Used when enable_SignatureInfoNonce > 0.
    */
-  uint8_t enable_SignatureInfoNonce;
-  uint32_t signature_info_nonce;
+  uint8_t enable_SignatureNonce;
+  uint32_t signature_nonce;
   /**
    * The signature timestamp. Used when enable_Timestamp > 0.
    */
   uint8_t enable_Timestamp;
   uint64_t timestamp;
   /**
+   * The signature sequence number. Used when enable_Seqnum > 0.
+   */
+  uint8_t enable_Seqnum;
+  uint64_t seqnum;
+  /**
    * Signature validity period.
    */
   ndn_validity_period_t validity_period;
-
-  uint8_t enable_KeyLocator;
   uint8_t enable_ValidityPeriod;
 } ndn_signature_t;
 
@@ -82,10 +87,12 @@ ndn_signature_init(ndn_signature_t* signature)
 {
   signature->enable_KeyLocator = 0;
   signature->enable_ValidityPeriod = 0;
-  signature->enable_SignatureInfoNonce = 0;
-  signature->signature_info_nonce = 0;
+  signature->enable_SignatureNonce = 0;
+  signature->signature_nonce = 0;
   signature->enable_Timestamp = 0;
   signature->timestamp = 0;
+  signature->enable_Seqnum = 0;
+  signature->seqnum = (uint64_t)(-1);
   return 0;
 }
 
@@ -169,10 +176,22 @@ ndn_signature_set_timestamp(ndn_signature_t* signature, uint64_t timestamp)
  * @param nonce. Input. Nonce value.
  */
 static inline void
-ndn_signature_set_signature_info_nonce(ndn_signature_t* signature, uint32_t nonce)
+ndn_signature_set_signature_nonce(ndn_signature_t* signature, uint32_t nonce)
 {
-  signature->enable_SignatureInfoNonce = 1;
-  signature->signature_info_nonce = nonce;
+  signature->enable_SignatureNonce = 1;
+  signature->signature_nonce = nonce;
+}
+
+/**
+ * Set SeqNum of the Signed Interest.
+ * @param interest. Output. The Interest whose Nonce SeqNum be set.
+ * @param SeqNum. Input. SeqNum value.
+ */
+static inline void
+ndn_signature_set_signature_seqnum(ndn_signature_t* signature, uint32_t seqnum)
+{
+  signature->enable_Seqnum = 1;
+  signature->seqnum = seqnum;
 }
 
 /**
@@ -212,11 +231,11 @@ ndn_signature_info_probe_block_size(const ndn_signature_t* signature)
     validity_period_buffer_size += encoder_probe_block_size(TLV_NotAfter, 15);
     info_buffer_size += encoder_probe_block_size(TLV_ValidityPeriod, validity_period_buffer_size);
   }
-  if (signature->enable_SignatureInfoNonce > 0) {
-    info_buffer_size += encoder_probe_block_size(TLV_Nonce, 4);
+  if (signature->enable_SignatureNonce > 0) {
+    info_buffer_size += encoder_probe_block_size(TLV_SignatureNonce, 4);
   }
   if (signature->enable_Timestamp > 0) {
-    info_buffer_size += encoder_probe_block_size(TLV_SignedInterestTimestamp,
+    info_buffer_size += encoder_probe_block_size(TLV_Timestamp,
                                                  encoder_probe_uint_length(signature->timestamp));
   }
   return encoder_probe_block_size(TLV_SignatureInfo, info_buffer_size);
