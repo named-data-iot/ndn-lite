@@ -49,8 +49,9 @@ ndn_ac_prepare_key_request_interest(ndn_encoder_t* encoder,
   // /[home_prefix]/AC/<encryptor_identity>/<parameters_digest>
   ndn_interest_t interest;
   ndn_interest_init(&interest);
-  interest.name = *home_prefix;
+  memcpy(&interest.name, home_prefix, sizeof(ndn_name_t));
 
+  // append AC component
   name_component_t comp_ac;
   const char* str_ac = "AC";
   name_component_from_string(&comp_ac, str_ac, strlen(str_ac));
@@ -86,7 +87,8 @@ ndn_ac_prepare_key_request_interest(ndn_encoder_t* encoder,
   interest.enable_Parameters = 1;
 
   // sign Interest
-  ndn_name_t self_name = *home_prefix;
+  ndn_name_t self_name;
+  memcpy(&self_name, home_prefix, sizeof(ndn_name_t));
   ndn_name_append_component(&self_name, self_identity);
   ndn_signed_interest_ecdsa_sign(&interest, &self_name, prv_key);
   ndn_interest_tlv_encode(encoder, &interest);
@@ -295,6 +297,7 @@ ndn_ac_prepare_ek_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
   uint32_t lifetime = 100;
 
   // prepare ek Response TLV
+  memcpy(response->name, interest->name, sizeof(ndn_name_t));
   response->name = interest->name;
   ndn_encoder_t encoder;
   encoder_init(&encoder, response->content_value, NDN_CONTENT_BUFFER_SIZE);
@@ -386,7 +389,7 @@ ndn_ac_prepare_dk_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
 
   // prepare DK Response TLV
   ndn_encoder_t encoder;
-  response->name = interest->name;
+  memcpy(&response->name, &interest->name, sizeof(ndn_name_t));
   encoder_init(&encoder, response->content_value, NDN_CONTENT_BUFFER_SIZE);
   encoder_append_type(&encoder, TLV_AC_ECDH_PUB);
   encoder_append_length(&encoder, 64);

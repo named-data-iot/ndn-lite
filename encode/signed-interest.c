@@ -57,7 +57,6 @@ int
 ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
                                const ndn_name_t* identity, const ndn_ecc_prv_t* prv_key)
 {
-
   int ret_val = -1;
   if (interest->name.components_size + 1 > NDN_NAME_COMPONENTS_SIZE)
     return NDN_OVERSIZE;
@@ -98,10 +97,9 @@ ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
   result = ndn_ecdsa_sign(temp_encoder.output_value, siginfo_block_ending,
                           interest->signature.sig_value, NDN_SIGNATURE_BUFFER_SIZE,
                           prv_key, prv_key->curve_type, &used_bytes);
+  if (result < 0) return result;
   interest->signature.sig_size = used_bytes;
 
-  if (result < 0)
-    return result;
   ret_val = ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
   if (ret_val != NDN_SUCCESS) return ret_val;
 
@@ -113,10 +111,9 @@ ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
                            temp_encoder.offset - param_block_starting,
                            interest->name.components[interest->name.components_size].value,
                            NDN_NAME_COMPONENT_BUFFER_SIZE, &used_bytes);
+  if (result < 0) return result;
   interest->name.components[interest->name.components_size].size = used_bytes;
   interest->name.components_size++;
-  if (result < 0)
-    return result;
   interest->is_SignedInterest = 1;
   return NDN_SUCCESS;
 }
@@ -125,7 +122,6 @@ int
 ndn_signed_interest_hmac_sign(ndn_interest_t* interest,
                               const ndn_name_t* identity, const ndn_hmac_key_t* hmac_key)
 {
-
   int ret_val = -1;
   if (interest->name.components_size + 1 > NDN_NAME_COMPONENTS_SIZE)
     return NDN_OVERSIZE;
@@ -166,9 +162,9 @@ ndn_signed_interest_hmac_sign(ndn_interest_t* interest,
   result = ndn_hmac_sign(temp_encoder.output_value, siginfo_block_ending,
                          interest->signature.sig_value, NDN_SIGNATURE_BUFFER_SIZE,
                          hmac_key, &used_bytes);
+  if (result < 0) return result;
   interest->signature.sig_size = used_bytes;
-  if (result < 0)
-    return result;
+
   ret_val = ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
   if (ret_val != NDN_SUCCESS) return ret_val;
 
@@ -180,10 +176,9 @@ ndn_signed_interest_hmac_sign(ndn_interest_t* interest,
                            temp_encoder.offset - param_block_starting,
                            interest->name.components[interest->name.components_size].value,
                            NDN_NAME_COMPONENT_BUFFER_SIZE, &used_bytes);
+  if (result < 0) return result;
   interest->name.components[interest->name.components_size].size = used_bytes;
   interest->name.components_size++;
-  if (result < 0)
-    return result;
   interest->is_SignedInterest = 1;
   return NDN_SUCCESS;
 }
@@ -191,7 +186,6 @@ ndn_signed_interest_hmac_sign(ndn_interest_t* interest,
 int
 ndn_signed_interest_digest_sign(ndn_interest_t* interest)
 {
-
   int ret_val = -1;
   if (interest->name.components_size + 1 > NDN_NAME_COMPONENTS_SIZE)
     return NDN_OVERSIZE;
@@ -234,13 +228,13 @@ ndn_signed_interest_digest_sign(ndn_interest_t* interest)
   result = ndn_sha256_sign(temp_encoder.output_value, siginfo_block_ending,
                            interest->signature.sig_value, NDN_SIGNATURE_BUFFER_SIZE,
                            &used_bytes);
+  if (result < 0) return result;
   interest->signature.sig_size = used_bytes;
-  if (result < 0)
-    return result;
+
   ret_val = ndn_signature_value_tlv_encode(&temp_encoder, &interest->signature);
   if (ret_val != NDN_SUCCESS) return ret_val;
 
-  // calculate the SignedInterestSha256DigestComponent
+  // calculate the TLV_ParametersSha256DigestComponent
   // signature is calculated over Name + Parameters + SignatureInfo
   name_component_init(&interest->name.components[interest->name.components_size],
                       TLV_ParametersSha256DigestComponent);
@@ -248,10 +242,9 @@ ndn_signed_interest_digest_sign(ndn_interest_t* interest)
                            temp_encoder.offset - param_block_starting,
                            interest->name.components[interest->name.components_size].value,
                            NDN_NAME_COMPONENT_BUFFER_SIZE, &used_bytes);
+  if (result < 0) return result;
   interest->name.components[interest->name.components_size].size = used_bytes;
   interest->name.components_size++;
-  if (result < 0)
-    return result;
   interest->is_SignedInterest = 1;
   return NDN_SUCCESS;
 }
@@ -259,7 +252,6 @@ ndn_signed_interest_digest_sign(ndn_interest_t* interest)
 int
 ndn_signed_interest_ecdsa_verify(const ndn_interest_t* interest, const ndn_ecc_pub_t* pub_key)
 {
-
   int ret_val = -1;
   uint8_t be_signed[NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE] = {0};
   ndn_encoder_t temp_encoder;
@@ -290,8 +282,7 @@ ndn_signed_interest_ecdsa_verify(const ndn_interest_t* interest, const ndn_ecc_p
   int result = ndn_ecdsa_verify(temp_encoder.output_value, siginfo_block_ending,
                                 interest->signature.sig_value, interest->signature.sig_size,
                                 pub_key, pub_key->curve_type);
-  if (result < 0)
-    return result;
+  if (result < 0) return result;
 
   result = ndn_sha256_verify(&temp_encoder.output_value[param_block_starting],
                              temp_encoder.offset - param_block_starting,
@@ -305,7 +296,6 @@ ndn_signed_interest_ecdsa_verify(const ndn_interest_t* interest, const ndn_ecc_p
 int
 ndn_signed_interest_hmac_verify(const ndn_interest_t* interest, const ndn_hmac_key_t* hmac_key)
 {
-
   int ret_val = -1;
   uint8_t be_signed[NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE] = {0};
   ndn_encoder_t temp_encoder;
@@ -335,8 +325,7 @@ ndn_signed_interest_hmac_verify(const ndn_interest_t* interest, const ndn_hmac_k
   int result = ndn_hmac_verify(temp_encoder.output_value, siginfo_block_ending,
                                interest->signature.sig_value, interest->signature.sig_size,
                                hmac_key);
-  if (result < 0)
-    return result;
+  if (result < 0) return result;
 
   result = ndn_sha256_verify(&temp_encoder.output_value[param_block_starting],
                              temp_encoder.offset - param_block_starting,

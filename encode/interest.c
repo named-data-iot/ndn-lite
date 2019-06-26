@@ -51,7 +51,6 @@ int
 ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, uint32_t block_size)
 {
   int ret_val = -1;
-
   ndn_interest_init(interest);
   ndn_decoder_t decoder;
   decoder_init(&decoder, block_value, block_size);
@@ -144,7 +143,7 @@ ndn_interest_tlv_encode(ndn_encoder_t* encoder, ndn_interest_t* interest)
 {
   int ret_val = -1;
 
-  if (interest->enable_Parameters || interest->is_SignedInterest <= 0) {
+  if (interest->enable_Parameters > 0 || interest->is_SignedInterest <= 0) {
     if (interest->name.components_size + 1 > NDN_NAME_COMPONENTS_SIZE) {
       return NDN_OVERSIZE;
     }

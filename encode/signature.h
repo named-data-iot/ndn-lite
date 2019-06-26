@@ -92,7 +92,7 @@ ndn_signature_init(ndn_signature_t* signature)
   signature->enable_Timestamp = 0;
   signature->timestamp = 0;
   signature->enable_Seqnum = 0;
-  signature->seqnum = (uint64_t)(-1);
+  signature->seqnum = 0;
   return 0;
 }
 
@@ -188,7 +188,7 @@ ndn_signature_set_signature_nonce(ndn_signature_t* signature, uint32_t nonce)
  * @param SeqNum. Input. SeqNum value.
  */
 static inline void
-ndn_signature_set_signature_seqnum(ndn_signature_t* signature, uint32_t seqnum)
+ndn_signature_set_seqnum(ndn_signature_t* signature, uint32_t seqnum)
 {
   signature->enable_Seqnum = 1;
   signature->seqnum = seqnum;
@@ -237,6 +237,10 @@ ndn_signature_info_probe_block_size(const ndn_signature_t* signature)
   if (signature->enable_Timestamp > 0) {
     info_buffer_size += encoder_probe_block_size(TLV_Timestamp,
                                                  encoder_probe_uint_length(signature->timestamp));
+  }
+  if (signature->enable_Seqnum > 0) {
+    info_buffer_size += encoder_probe_block_size(TLV_SeqNum,
+                                                 encoder_probe_uint_length(signature->seqnum));
   }
   return encoder_probe_block_size(TLV_SignatureInfo, info_buffer_size);
 }

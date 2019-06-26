@@ -11,7 +11,6 @@
 int
 ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* signature)
 {
-
   int ret_val = -1;
   uint32_t info_buffer_size = encoder_probe_block_size(TLV_SignatureType, 1);
   uint32_t key_name_block_size = 0;
@@ -32,6 +31,10 @@ ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* sig
   if (signature->enable_Timestamp > 0) {
     info_buffer_size += encoder_probe_block_size(TLV_Timestamp,
                                                  encoder_probe_uint_length(signature->timestamp));
+  }
+  if (signature->enable_Seqnum > 0) {
+    info_buffer_size += encoder_probe_block_size(TLV_SeqNum,
+                                                 encoder_probe_uint_length(signature->seqnum));
   }
 
   // signatureinfo header
@@ -78,6 +81,16 @@ ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* sig
     if (ret_val != NDN_SUCCESS) return ret_val;
   }
 
+  // timestamp
+  if (signature->enable_Seqnum > 0) {
+    ret_val = encoder_append_type(encoder, TLV_SeqNum);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_length(encoder, encoder_probe_uint_length(signature->seqnum));
+    if (ret_val != NDN_SUCCESS) return ret_val;
+    ret_val = encoder_append_uint_value(encoder, signature->seqnum);
+    if (ret_val != NDN_SUCCESS) return ret_val;
+  }
+
   // validity period
   if (signature->enable_ValidityPeriod) {
     ret_val = encoder_append_type(encoder, TLV_ValidityPeriod);
@@ -105,7 +118,6 @@ ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* sig
 int
 ndn_signature_value_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* signature)
 {
-
   int ret_val = -1;
   ret_val = encoder_append_type(encoder, TLV_SignatureValue);
   if (ret_val != NDN_SUCCESS) return ret_val;
@@ -119,7 +131,6 @@ ndn_signature_value_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* si
 int
 ndn_signature_info_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signature)
 {
-
   int ret_val = -1;
   ndn_signature_init(signature);
 
@@ -187,6 +198,13 @@ ndn_signature_info_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signature
       ret_val = decoder_get_uint_value(decoder, probe, &signature->timestamp);
       if (ret_val != NDN_SUCCESS) return ret_val;
     }
+    else if (probe == TLV_SeqNum) {
+      signature->enable_Seqnum = 1;
+      ret_val = decoder_get_length(decoder, &probe);
+      if (ret_val != NDN_SUCCESS) return ret_val;
+      ret_val = decoder_get_uint_value(decoder, probe, &signature->seqnum);
+      if (ret_val != NDN_SUCCESS) return ret_val;
+    }
     else
       return NDN_WRONG_TLV_TYPE;
   }
@@ -196,7 +214,6 @@ ndn_signature_info_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signature
 int
 ndn_signature_value_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signature)
 {
-
   int ret_val = -1;
   uint32_t probe = 0;
   ret_val = decoder_get_type(decoder, &probe);
