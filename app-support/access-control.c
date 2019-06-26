@@ -297,7 +297,7 @@ ndn_ac_prepare_ek_response(ndn_decoder_t* decoder, const ndn_interest_t* interes
   uint32_t lifetime = 100;
 
   // prepare ek Response TLV
-  memcpy(response->name, interest->name, sizeof(ndn_name_t));
+  memcpy(&response->name, &interest->name, sizeof(ndn_name_t));
   response->name = interest->name;
   ndn_encoder_t encoder;
   encoder_init(&encoder, response->content_value, NDN_CONTENT_BUFFER_SIZE);

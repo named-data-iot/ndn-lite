@@ -23,9 +23,7 @@ ndn_name_init(ndn_name_t *name, const name_component_t* components, uint32_t siz
 int
 ndn_name_tlv_decode(ndn_decoder_t* decoder, ndn_name_t* name)
 {
-
   int ret_val = -1;
-
   uint32_t type = 0;
   ret_val = decoder_get_type(decoder, &type);
   if (ret_val != NDN_SUCCESS) return ret_val;

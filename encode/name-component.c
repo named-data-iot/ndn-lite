@@ -11,7 +11,6 @@
 int
 name_component_tlv_decode(ndn_decoder_t* decoder, name_component_t* component)
 {
-
   int ret_val = -1;
   uint32_t probe = 0;
   ret_val = decoder_get_type(decoder, &component->type);

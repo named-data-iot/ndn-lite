@@ -104,7 +104,7 @@ ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
   if (ret_val != NDN_SUCCESS) return ret_val;
 
   // calculate the TLV_ParametersSha256DigestComponent
-  // signature is calculated over Name + Parameters + SignatureInfo
+  // component is calculated over Name + Parameters + SignatureInfo + SignatureValue
   name_component_init(&interest->name.components[interest->name.components_size],
                       TLV_ParametersSha256DigestComponent);
   result = ndn_sha256_sign(&temp_encoder.output_value[param_block_starting],
@@ -169,7 +169,7 @@ ndn_signed_interest_hmac_sign(ndn_interest_t* interest,
   if (ret_val != NDN_SUCCESS) return ret_val;
 
   // calculate the SignedInterestSha256DigestComponent
-  // signature is calculated over Name + Parameters + SignatureInfo
+  // component is calculated over Name + Parameters + SignatureInfo + SignatureValue
   name_component_init(&interest->name.components[interest->name.components_size],
                       TLV_ParametersSha256DigestComponent);
   result = ndn_sha256_sign(&temp_encoder.output_value[param_block_starting],
@@ -235,7 +235,7 @@ ndn_signed_interest_digest_sign(ndn_interest_t* interest)
   if (ret_val != NDN_SUCCESS) return ret_val;
 
   // calculate the TLV_ParametersSha256DigestComponent
-  // signature is calculated over Name + Parameters + SignatureInfo
+  // component is calculated over Name + Parameters + SignatureInfo + SignatureValue
   name_component_init(&interest->name.components[interest->name.components_size],
                       TLV_ParametersSha256DigestComponent);
   result = ndn_sha256_sign(&temp_encoder.output_value[param_block_starting],
@@ -252,6 +252,11 @@ ndn_signed_interest_digest_sign(ndn_interest_t* interest)
 int
 ndn_signed_interest_ecdsa_verify(const ndn_interest_t* interest, const ndn_ecc_pub_t* pub_key)
 {
+  // check the signed Interest format
+  if (interest->is_SignedInterest <= 0 ||
+      interest->name.components[interest->name.components_size - 1].type != TLV_ParametersSha256DigestComponent) {
+    return NDN_UNSUPPORTED_FORMAT;
+  }
   int ret_val = -1;
   uint8_t be_signed[NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE] = {0};
   ndn_encoder_t temp_encoder;
@@ -296,6 +301,11 @@ ndn_signed_interest_ecdsa_verify(const ndn_interest_t* interest, const ndn_ecc_p
 int
 ndn_signed_interest_hmac_verify(const ndn_interest_t* interest, const ndn_hmac_key_t* hmac_key)
 {
+  // check the signed Interest format
+  if (interest->is_SignedInterest <= 0 ||
+      interest->name.components[interest->name.components_size - 1].type != TLV_ParametersSha256DigestComponent) {
+    return NDN_UNSUPPORTED_FORMAT;
+  }
   int ret_val = -1;
   uint8_t be_signed[NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE] = {0};
   ndn_encoder_t temp_encoder;
@@ -339,7 +349,11 @@ ndn_signed_interest_hmac_verify(const ndn_interest_t* interest, const ndn_hmac_k
 int
 ndn_signed_interest_digest_verify(const ndn_interest_t* interest)
 {
-
+  // check the signed Interest format
+  if (interest->is_SignedInterest <= 0 ||
+      interest->name.components[interest->name.components_size - 1].type != TLV_ParametersSha256DigestComponent) {
+    return NDN_UNSUPPORTED_FORMAT;
+  }
   int ret_val = -1;
   uint8_t be_signed[NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE] = {0};
   ndn_encoder_t temp_encoder;
