@@ -103,13 +103,13 @@ tlv_interest_get_header(uint8_t* interest,
   uint8_t* ptr;
 
   ptr = tlv_get_type_length(interest, buflen, &real_type, &real_len);
-  if(ptr == NULL){
+  if (ptr == NULL) {
     return NDN_OVERSIZE_VAR;
   }
-  if(real_type != TLV_Interest){
+  if (real_type != TLV_Interest) {
     return NDN_WRONG_TLV_TYPE;
   }
-  if(real_len != buflen - (ptr - interest)){
+  if (real_len != buflen - (ptr - interest)) {
     return NDN_WRONG_TLV_LENGTH;
   }
 
@@ -134,20 +134,24 @@ tlv_interest_get_header(uint8_t* interest,
   options->lifetime = NDN_DEFAULT_INTEREST_LIFETIME;
   options->hop_limit = 0;
   options->nonce = 0;
-  while(ptr < interest + buflen){
+  while (ptr < interest + buflen) {
     ptr = tlv_get_type_length(ptr, buflen - (ptr - interest), &real_type, &real_len);
     if(ptr == NULL){
       return NDN_OVERSIZE_VAR;
     }
-    if(real_type == TLV_CanBePrefix){
+    if (real_type == TLV_CanBePrefix) {
       options->can_be_prefix = true;
-    }else if(real_type == TLV_MustBeFresh){
+    }
+    else if (real_type == TLV_MustBeFresh) {
       options->must_be_fresh = true;
-    }else if(real_type == TLV_HopLimit){
+    }
+    else if (real_type == TLV_HopLimit) {
       options->hop_limit = *ptr;
-    }else if(real_type == TLV_Nonce){
+    }
+    else if (real_type == TLV_Nonce) {
       options->nonce = *(uint32_t*)ptr;
-    }else if(real_type == TLV_InterestLifetime){
+    }
+    else if (real_type == TLV_InterestLifetime) {
       options->lifetime = tlv_get_uint(ptr, real_len);
     }
     ptr += real_len;

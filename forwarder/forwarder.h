@@ -103,14 +103,6 @@ ndn_forwarder_remove_all_routes(uint8_t* prefix, size_t length);
 
 /** Receive a packet from a face.
  *
- * Removing the last route of a FIB entry will delete the entry.
- * @param[in] face [Optional] The face of the route.
- * @param[in] prefix The prefix of the route.
- * @param[in] length The length of @c prefix.
- * @return #NDN_SUCCESS if the call succeeded. The error code otherwise.
- * @retval #NDN_FWD_PIT_FULL PIT or NameTree is full. See also #NDN_PIT_MAX_SIZE,
- *                          #NDN_NAMETREE_MAX_SIZE.
- * @note The application doesn't need to call this manually.
  */
 int
 ndn_forwarder_receive(ndn_face_intf_t* face, uint8_t* packet, size_t length);

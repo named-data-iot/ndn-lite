@@ -123,18 +123,20 @@ ndn_pit_find_or_insert(ndn_pit_t* self, uint8_t* name, size_t length){
 }
 
 ndn_pit_entry_t*
-ndn_pit_find(ndn_pit_t* self, uint8_t* prefix, size_t length){
+ndn_pit_find(ndn_pit_t* self, uint8_t* prefix, size_t length)
+{
   nametree_entry_t* entry = ndn_nametree_find(self->nametree, prefix, length);
-  if(entry == NULL || entry->pit_id == NDN_INVALID_ID){
+  if (entry == NULL || entry->pit_id == NDN_INVALID_ID) {
     return NULL;
   }
   return &self->slots[entry->pit_id];
 }
 
 ndn_pit_entry_t*
-ndn_pit_prefix_match(ndn_pit_t* self, uint8_t* prefix, size_t length){
+ndn_pit_prefix_match(ndn_pit_t* self, uint8_t* prefix, size_t length)
+{
   nametree_entry_t* entry = ndn_nametree_prefix_match(self->nametree, prefix, length, NDN_NAMETREE_PIT_TYPE);
-  if(entry == NULL || entry->pit_id == NDN_INVALID_ID){
+  if (entry == NULL || entry->pit_id == NDN_INVALID_ID) {
     return NULL;
   }
   return &self->slots[entry->pit_id];

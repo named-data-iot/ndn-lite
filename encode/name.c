@@ -70,9 +70,7 @@ ndn_name_append_component(ndn_name_t *name, const name_component_t* component)
 int
 ndn_name_from_string(ndn_name_t *name, const char* string, uint32_t size)
 {
-
   int ret_val = -1;
-
   name->components_size = 0;
 
   uint32_t i = 0;
@@ -109,9 +107,7 @@ ndn_name_from_string(ndn_name_t *name, const char* string, uint32_t size)
 int
 ndn_name_tlv_encode(ndn_encoder_t* encoder, const ndn_name_t *name)
 {
-
   int ret_val = -1;
-
   int block_sizes[name->components_size];
   ret_val = encoder_append_type(encoder, TLV_Name);
   if (ret_val != NDN_SUCCESS) return ret_val;

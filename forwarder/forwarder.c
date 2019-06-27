@@ -280,7 +280,8 @@ ndn_forwarder_put_data(uint8_t* data, size_t length)
 }
 
 int
-ndn_forwarder_receive(ndn_face_intf_t* face, uint8_t* packet, size_t length){
+ndn_forwarder_receive(ndn_face_intf_t* face, uint8_t* packet, size_t length)
+{
   uint32_t type, val_len;
   uint8_t* buf;
   uint8_t *name;
@@ -289,24 +290,26 @@ ndn_forwarder_receive(ndn_face_intf_t* face, uint8_t* packet, size_t length){
   int ret;
   ndn_table_id_t face_id = (face ? face->face_id : NDN_INVALID_ID);
 
-  if(packet == NULL)
+  if (packet == NULL)
     return NDN_INVALID_POINTER;
 
   buf = tlv_get_type_length(packet, length, &type, &val_len);
-  if(val_len != length - (buf - packet))
+  if (val_len != length - (buf - packet))
     return NDN_WRONG_TLV_LENGTH;
 
-  if(type == TLV_Interest){
+  if (type == TLV_Interest) {
     ret = tlv_interest_get_header(packet, length, &options, &name, &name_len);
-    if(ret != NDN_SUCCESS)
+    if (ret != NDN_SUCCESS)
       return ret;
     return fwd_on_incoming_interest(packet, length, &options, name, name_len, face_id);
-  }else if(type == TLV_Data){
+  }
+  else if(type == TLV_Data) {
     ret = tlv_data_get_name(packet, length, &name, &name_len);
-    if(ret != NDN_SUCCESS)
+    if (ret != NDN_SUCCESS)
       return ret;
     return fwd_data_pipeline(packet, length, name, name_len, face_id);
-  }else{
+  }
+  else {
     return NDN_WRONG_TLV_TYPE;
   }
 }
@@ -354,16 +357,16 @@ fwd_data_pipeline(uint8_t* data,
   ndn_pit_entry_t* pit_entry;
 
   pit_entry = ndn_pit_prefix_match(forwarder.pit, name, name_len);
-  if(pit_entry == NULL){
+  if (pit_entry == NULL) {
     return NDN_FWD_NO_ROUTE;
   }
-  if(!pit_entry->options.can_be_prefix){
+  if (!pit_entry->options.can_be_prefix) {
     // Quick and dirty solution
-    if(ndn_pit_find(forwarder.pit, name, name_len) != pit_entry)
+    if (ndn_pit_find(forwarder.pit, name, name_len) != pit_entry)
       return NDN_FWD_NO_ROUTE;
   }
 
-  if(pit_entry->on_data != NULL){
+  if (pit_entry->on_data != NULL) {
     pit_entry->on_data(data, length, pit_entry->userdata);
   }
 

@@ -143,7 +143,7 @@ ndn_interest_tlv_encode(ndn_encoder_t* encoder, ndn_interest_t* interest)
 {
   int ret_val = -1;
 
-  if (interest->enable_Parameters > 0 || interest->is_SignedInterest <= 0) {
+  if (interest->enable_Parameters > 0 && interest->is_SignedInterest <= 0) {
     if (interest->name.components_size + 1 > NDN_NAME_COMPONENTS_SIZE) {
       return NDN_OVERSIZE;
     }
