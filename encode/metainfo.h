@@ -20,10 +20,6 @@ extern "C" {
  */
 typedef struct ndn_metainfo {
   /**
-   * The content type the Data packet holds.
-   */
-  uint8_t content_type;
-  /**
    * The freshness period of the Data packet.
    */
   uint64_t freshness_period;
@@ -31,7 +27,11 @@ typedef struct ndn_metainfo {
    * The last name component in Name.
    */
   name_component_t final_block_id;
-
+  /**
+   * The content type the Data packet holds.
+   */
+  uint8_t content_type;
+  
   uint8_t enable_ContentType;
   uint8_t enable_FreshnessPeriod;
   uint8_t enable_FinalBlockId;
