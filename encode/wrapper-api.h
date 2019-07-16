@@ -235,6 +235,7 @@ tlv_make_data(uint8_t* buf, size_t buflen, size_t* result_size, int argc, ...);
  *                TLV_DATAARG_CONTENT_BUF,      &content,
  *                TLV_DATAARG_CONTENT_SIZE,     &content_size,
  *                TLV_DATAARG_VERIFY,           true);
+ * Do not allocate any space for content buffer pointer. Only the address of the buffer pointer is needed.
  * @endcode
  * @param[in] buf The encoded TLV Data block.
  * @param[in] buflen The size of @c buf.
@@ -432,6 +433,7 @@ tlv_make_interest(uint8_t* buf, size_t buflen, size_t* result_size, int argc, ..
  * tlv_parse_data(interest_buf, interest_size, 2,     // 2 args following
  *                TLV_INTARG_NAME_PTR,       &name,
  *                TLV_INTARG_NAME_SEGNO_U64, &segno);
+ * Do not allocate any space for content buffer pointer. Only the address of the buffer pointer is needed.
  * @endcode
  * @param[in] buf The encoded TLV Interest block.
  * @param[in] buflen The size of @c buf.
