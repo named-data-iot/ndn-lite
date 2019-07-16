@@ -152,7 +152,8 @@ ndn_interest_set_HopLimit(ndn_interest_t* interest, uint8_t hop)
 }
 
 /**
- * Set Parameters element of the Interest.
+ * Set Parameters element of the Interest. 
+ * A name component, which is the digest of the parameters, will be automatically added to the name of the interest later.
  * @param interest. Output. The Interest whose Parameters will be set.
  * @param params_value. Input. The interest parameters value (V).
  * @param params_size. Input. The size of the interest parameters value (V).
