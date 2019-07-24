@@ -200,7 +200,7 @@ enum TLV_DATAARG_TYPE{
  * // name = name + i (segment number), freshness period = 15s.
  * // And the data have seg_count segments in total.
  * @endcode
- * @param[out] buf The buffer where Data is stored. @c buflen bytes are written.
+ * @param[out] buf The buffer where Data is stored. @c result_size bytes are written.
  * @param[in] buflen The available size of @c buf.
  * @param[out] result_size [Optional] The encoded size of the Data packet.
  * @param[in] argc The number of variant args, without counting the type.
@@ -404,7 +404,7 @@ enum TLV_INTARG_TYPE{
  * // Create a Interest packet with its name = name/%00%13
  * // lifetime = 60s, CanBePrefix and MustBeFresh.
  * @endcode
- * @param[out] buf The buffer where Interest is stored. @c buflen bytes are written.
+ * @param[out] buf The buffer where Interest is stored. @c result_size bytes are written.
  * @param[in] buflen The available size of @c buf.
  * @param[out] result_size [Optional] The encoded size of the Interest packet.
  * @param[in] argc The number of variant args, without counting the type.
