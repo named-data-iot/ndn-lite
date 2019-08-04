@@ -7,7 +7,7 @@ The NDN-Lite library implements the Named Data Networking Stack with the high-le
 
 The library is written in standard C and requires a minimum version of C11 (ISO/IEC 9899:2011).
 
-Please go to our [wiki page](https://github.com/Zhiyi-Zhang/ndn_standalone/wiki) for the project details.
+Please go to our [wiki page](https://github.com/named-data-iot/ndn-lite/wiki) for the project details.
 
 Compatible Hardware/Software Platforms
 --------------------------------------
