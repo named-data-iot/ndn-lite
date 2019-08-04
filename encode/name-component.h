@@ -1,9 +1,11 @@
 /*
- * Copyright (C) 2018-2019 Zhiyi Zhang
+ * Copyright (C) 2018-2019
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
  * directory for more details.
+ *
+ * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
 #ifndef NDN_ENCODING_NAME_COMPONENT_H
@@ -32,7 +34,7 @@ typedef struct name_component {
   /**
    * The size of component value buffer.
    */
-  uint32_t size;
+  uint8_t size;
 } name_component_t;
 
 /**
@@ -46,7 +48,7 @@ typedef struct name_component_block {
   /**
    * The size of block.
    */
-  uint32_t size;
+  uint8_t size;
 } name_component_block_t;
 
 /**

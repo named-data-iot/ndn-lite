@@ -1,9 +1,11 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang
+ * Copyright (C) 2018-2019
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
  * directory for more details.
+ *
+ * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
 #ifndef NDN_ENCODING_NAME_H
@@ -29,7 +31,7 @@ typedef struct ndn_name {
   /**
    * The number of name components
    */
-  uint32_t components_size;
+  uint8_t components_size;
 } ndn_name_t;
 
 /**
