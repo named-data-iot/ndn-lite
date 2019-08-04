@@ -30,7 +30,6 @@ void
 sd_query_service(uint8_t service_id, ndn_name_t granularity, bool is_any)
 {}
 
-
 // static ndn_sd_context_t sd_context;
 
 // /************************************************************/

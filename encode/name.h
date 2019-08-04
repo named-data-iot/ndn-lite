@@ -82,6 +82,15 @@ int
 ndn_name_append_component(ndn_name_t* name, const name_component_t* component);
 
 /**
+ * Appends another name to the end of a name. This function will do memory copy.
+ * @param lhs. Output. The name to append to.
+ * @param rhs. Input. The name to append with.
+ * @return 0 if there is no error.
+ */
+int
+ndn_name_append_name(ndn_name_t* lhs, const ndn_name_t* rhs);
+
+/**
  * Init a name block from a string. This funcition will do memory copy and
  * only support regular string; not support URI currently.
  * @param name. Output. The Name to be inited.

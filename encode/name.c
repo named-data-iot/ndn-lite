@@ -68,6 +68,20 @@ ndn_name_append_component(ndn_name_t *name, const name_component_t* component)
 }
 
 int
+ndn_name_append_name(ndn_name_t* lhs, const ndn_name_t* rhs)
+{
+  if (lhs->components_size + rhs->components_size <= NDN_NAME_COMPONENTS_SIZE) {
+    for (int i = 0; i < lhs->components_size; i++) {
+      memcpy(lhs->components + lhs->components_size, rhs->components + i, sizeof(name_component_t));
+      lhs->components_size++;
+    }
+    return 0;
+  }
+  else
+    return NDN_OVERSIZE;
+}
+
+int
 ndn_name_from_string(ndn_name_t *name, const char* string, uint32_t size)
 {
   int ret_val = -1;
