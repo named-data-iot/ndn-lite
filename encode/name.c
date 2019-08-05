@@ -109,7 +109,7 @@ ndn_name_append_bytes_component(ndn_name_t* name, const uint8_t* value, uint32_t
   if (name->components_size + 1 <= NDN_NAME_COMPONENTS_SIZE) {
     name_component_t comp;
     name_component_from_buffer(&comp, TLV_GenericNameComponent, value, size);
-    ndn_name_append_component(&name, &comp);
+    ndn_name_append_component(name, &comp);
     return 0;
   }
   else
@@ -122,7 +122,7 @@ ndn_name_append_string_component(ndn_name_t* name, const char* string, uint32_t 
   if (name->components_size + 1 <= NDN_NAME_COMPONENTS_SIZE) {
     name_component_t comp;
     name_component_from_string(&comp, string, size);
-    ndn_name_append_component(&name, &comp);
+    ndn_name_append_component(name, &comp);
     return 0;
   }
   else
