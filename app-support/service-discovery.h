@@ -24,8 +24,10 @@ const static uint32_t sd_adv_interval = 3600;
  */
 typedef struct ndn_service {
   /**
-   * a bit vector showing: 1. whether to broadcast (leftmost bit)
-   *                       2. the state of the service (rightmost three bits)
+   * a bit vector:
+   * index 7 (leftmost) bit. whether initialized. 0: uninitialized 1: initialized
+   * index 6 bit. whether to advertise. 0: no adv, 1: adv.
+   * index 0-5 bits. The state of the service.
    */
   uint8_t status;
   /**
@@ -51,7 +53,7 @@ typedef struct sd_self_state {
    * Device IDs
    */
   ndn_service_t services[10];
-} sd_self_state;
+} sd_self_state_t;
 
 /**
  * The structure to keep the cached service information in the system
@@ -62,12 +64,21 @@ typedef struct sd_sys_state {
 } sd_sys_state_t;
 
 /**
- * Load a device's services into the state.
+ * Init state and load a device's meta info into the state.
  * @param dev_identity_name. Input. The name of a device in the format of
  *   /[home-prefix]/[device-locator], a device-locator could be "/bedroom/sensor1" or "/front-door-lock"
  */
 void
-sd_init_self_services(const ndn_name_t* dev_identity_name);
+sd_init(const ndn_name_t* dev_identity_name);
+
+/**
+ * Add a service provided by self device into the state.
+ * @param service_id. Input. Service ID.
+ * @param adv. Input. Whether to advertise.
+ * @param status_code. Input. The status of the service.
+ */
+void
+sd_add_or_update_self_service(uint8_t service_id, bool adv, uint8_t status_code);
 
 /**
  * Register the prefixes with corresponding onInterest, onData callbacks.

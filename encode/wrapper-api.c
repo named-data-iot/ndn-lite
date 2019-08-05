@@ -1,9 +1,11 @@
 /*
- * Copyright (C) 2018-2019 Zhiyi Zhang, Xinyu Ma
+ * Copyright (C) 2018-2019
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
  * directory for more details.
+ *
+ * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 #include "wrapper-api.h"
 #include "forwarder-helper.h"
@@ -560,7 +562,7 @@ tlv_make_interest(uint8_t* buf, size_t buflen, size_t* result_size, int argc, ..
 
       case TLV_INTARG_SIGTYPE_U8:
         ret = ndn_signature_set_signature_type(&interest.signature, (uint8_t)va_arg(vl, uint32_t));
-        interest.is_SignedInterest = true;
+        BIT_SET(interest.flags, 7);
         break;
 
       case TLV_INTARG_IDENTITYNAME_PTR:
@@ -600,7 +602,7 @@ tlv_make_interest(uint8_t* buf, size_t buflen, size_t* result_size, int argc, ..
 
   // Encode
   encoder_init(&encoder, buf, buflen);
-  if (interest.is_SignedInterest) {
+  if (ndn_interest_is_signed(&interest)) {
     switch(interest.signature.sig_type) {
       case NDN_SIG_TYPE_DIGEST_SHA256:
         ret = ndn_signed_interest_digest_sign(&interest);
@@ -717,7 +719,7 @@ tlv_parse_interest(uint8_t* buf, size_t buflen, int argc, ...)
           ret = NDN_INVALID_POINTER;
           break;
         }
-        *(bool*)arg_ptr = interest.enable_CanBePrefix;
+        *(bool*)arg_ptr = ndn_interest_get_CanBePrefix(&interest);
         break;
 
       case TLV_INTARG_MUSTBEFRESH_BOOL:
@@ -726,7 +728,7 @@ tlv_parse_interest(uint8_t* buf, size_t buflen, int argc, ...)
           ret = NDN_INVALID_POINTER;
           break;
         }
-        *(bool*)arg_ptr = interest.enable_MustBeFresh;
+        *(bool*)arg_ptr = ndn_interest_get_MustBeFresh(&interest);
         break;
 
       case TLV_INTARG_LIFETIME_U64:
@@ -744,7 +746,7 @@ tlv_parse_interest(uint8_t* buf, size_t buflen, int argc, ...)
           ret = NDN_INVALID_POINTER;
           break;
         }
-        if (interest.enable_HopLimit) {
+        if (ndn_interest_has_HopLimit(&interest)) {
           *(uint8_t*)arg_ptr = interest.hop_limit;
         }
         else {
@@ -767,7 +769,7 @@ tlv_parse_interest(uint8_t* buf, size_t buflen, int argc, ...)
           ret = NDN_INVALID_POINTER;
           break;
         }
-        if (interest.enable_Parameters) {
+        if (ndn_interest_has_Parameters(&interest)) {
           *(size_t*)arg_ptr = (size_t)interest.parameters.size;
         }
         else {
@@ -781,7 +783,7 @@ tlv_parse_interest(uint8_t* buf, size_t buflen, int argc, ...)
           ret = NDN_INVALID_POINTER;
           break;
         }
-        if (interest.is_SignedInterest) {
+        if (ndn_interest_is_signed(&interest)) {
           *(uint8_t*)arg_ptr = interest.signature.sig_type;
         }
         else {
@@ -818,7 +820,7 @@ tlv_parse_interest(uint8_t* buf, size_t buflen, int argc, ...)
   ptr = valptr + block_len;
 
   // Content if applicable
-  if (params_ptr && interest.enable_Parameters && interest.parameters.size > 0) {
+  if (params_ptr && ndn_interest_has_Parameters(&interest) && interest.parameters.size > 0) {
     do {
       valptr = tlv_get_type_length(ptr, end - ptr, &block_type, &block_len);
       ptr = valptr + block_len;
@@ -827,7 +829,7 @@ tlv_parse_interest(uint8_t* buf, size_t buflen, int argc, ...)
   }
 
   // Verify if required
-  if (verify_sig && interest.is_SignedInterest) {
+  if (verify_sig && ndn_interest_is_signed(&interest)) {
     switch(interest.signature.sig_type) {
       case NDN_SIG_TYPE_DIGEST_SHA256:
         ret = ndn_signed_interest_digest_verify(&interest);

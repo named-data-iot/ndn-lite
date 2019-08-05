@@ -1,9 +1,11 @@
 /*
- * Copyright (C) 2018-2019 Zhiyi Zhang
+ * Copyright (C) 2018-2019
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
  * directory for more details.
+ *
+ * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
 #ifndef NDN_ENCODING_INTEREST_H
@@ -11,6 +13,7 @@
 
 #include "name.h"
 #include "signature.h"
+#include "../util/bit-operations.h"
 #include "../security/ndn-lite-crypto-key.h"
 
 #ifdef __cplusplus
@@ -42,22 +45,27 @@ typedef struct ndn_interest {
    */
   uint64_t lifetime;
 
-  uint8_t enable_CanBePrefix;
-  uint8_t enable_MustBeFresh;
+  /**
+   * Bit field for interest flags.
+   * 0 (rightmost) bit: CanBePrefix
+   * 1 bit: MustBeFresh
+   * 2 bit: Hop Limit Enabled
+   * 3-6 bits: preserved
+   * 6 bit: Parameter Enabled
+   * 7 (leftmost) bit: Signature Enabled
+   */
+  uint8_t flags;
 
   /**
-   * The Parameters of the Interest. Used when enable_Parameters > 0.
+   * The Parameters of the Interest.
    */
   interest_params_t parameters;
-  uint8_t enable_Parameters;
 
   /**
-   * The HopLimit of the Interest. Used when enable_HopLimit > 0.
+   * The HopLimit of the Interest.
    */
   uint8_t hop_limit;
-  uint8_t enable_HopLimit;
 
-  uint8_t is_SignedInterest;
   /**
    * The signature structure. Used when is_SignedInterest > 0.
    */
@@ -73,12 +81,8 @@ typedef struct ndn_interest {
 static inline void
 ndn_interest_init(ndn_interest_t* interest)
 {
-  interest->enable_CanBePrefix = 0;
-  interest->enable_MustBeFresh = 0;
-  interest->enable_HopLimit = 0;
-  interest->enable_Parameters = 0;
-  interest->is_SignedInterest = 0;
-
+  ndn_name_init(&interest->name);
+  interest->flags = 0;
   interest->nonce = 0;
   interest->lifetime = NDN_DEFAULT_INTEREST_LIFETIME;
   interest->hop_limit = 0;
@@ -91,21 +95,8 @@ ndn_interest_init(ndn_interest_t* interest)
  * @param interest. Output. The Interest to be inited.
  * @param name. Input. The Interest name.
  */
-static inline void
-ndn_interest_from_name(ndn_interest_t* interest, const ndn_name_t* name)
-{
-  interest->name = *name;
-
-  interest->enable_CanBePrefix = 0;
-  interest->enable_MustBeFresh = 0;
-  interest->enable_HopLimit = 0;
-  interest->enable_Parameters = 0;
-  interest->is_SignedInterest = 0;
-
-  interest->nonce = 0;
-  interest->lifetime = NDN_DEFAULT_INTEREST_LIFETIME;
-  interest->hop_limit = 0;
-}
+void
+ndn_interest_from_name(ndn_interest_t* interest, const ndn_name_t* name);
 
 /**
  * Decode an Interest TLV block into an ndn_interest_t.
@@ -123,9 +114,19 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
  * @param can_be_prefix. Input. CanBePrefix is set if can_be_prefix is larger than 0.
  */
 static inline void
-ndn_interest_set_CanBePrefix(ndn_interest_t* interest, uint8_t can_be_prefix)
+ndn_interest_set_CanBePrefix(ndn_interest_t* interest, bool can_be_prefix)
 {
-  interest->enable_CanBePrefix = (can_be_prefix > 0 ? 1 : 0);
+  if (can_be_prefix) BIT_SET(interest->flags, 0);
+  else BIT_CLEAR(interest->flags, 0);
+}
+
+/**
+ * Return an Interest's CanBePrefix field.
+ */
+static inline bool
+ndn_interest_get_CanBePrefix(const ndn_interest_t* interest)
+{
+  return BIT_CHECK(interest->flags, 0);
 }
 
 /**
@@ -134,9 +135,19 @@ ndn_interest_set_CanBePrefix(ndn_interest_t* interest, uint8_t can_be_prefix)
  * @param can_be_prefix. Input. MustBeFresh is set if must_be_fresh is larger than 0.
  */
 static inline void
-ndn_interest_set_MustBeFresh(ndn_interest_t* interest, uint8_t must_be_fresh)
+ndn_interest_set_MustBeFresh(ndn_interest_t* interest, bool must_be_fresh)
 {
-  interest->enable_MustBeFresh = (must_be_fresh > 0 ? 1 : 0);
+  if (must_be_fresh) BIT_SET(interest->flags, 1);
+  else BIT_CLEAR(interest->flags, 1);
+}
+
+/**
+ * Return an Interest's MustBeFresh field.
+ */
+static inline bool
+ndn_interest_get_MustBeFresh(const ndn_interest_t* interest)
+{
+  return BIT_CHECK(interest->flags, 1);
 }
 
 /**
@@ -147,12 +158,21 @@ ndn_interest_set_MustBeFresh(ndn_interest_t* interest, uint8_t must_be_fresh)
 static inline void
 ndn_interest_set_HopLimit(ndn_interest_t* interest, uint8_t hop)
 {
-  interest->enable_HopLimit = 1;
+  BIT_SET(interest->flags, 2);
   interest->hop_limit = hop;
 }
 
 /**
- * Set Parameters element of the Interest. 
+ * Return whether an Interest carries a HopLimit field.
+ */
+static inline bool
+ndn_interest_has_HopLimit(const ndn_interest_t* interest)
+{
+  return BIT_CHECK(interest->flags, 2);
+}
+
+/**
+ * Set Parameters element of the Interest.
  * A name component, which is the digest of the parameters, will be automatically added to the name of the interest later.
  * @param interest. Output. The Interest whose Parameters will be set.
  * @param params_value. Input. The interest parameters value (V).
@@ -165,10 +185,28 @@ ndn_interest_set_Parameters(ndn_interest_t* interest,
 {
   if (params_size > NDN_INTEREST_PARAMS_BUFFER_SIZE)
     return NDN_OVERSIZE;
-  interest->enable_Parameters = 1;
+  BIT_SET(interest->flags, 6);
   memcpy(interest->parameters.value, params_value, params_size);
   interest->parameters.size = params_size;
   return 0;
+}
+
+/**
+ * Return whether an Interest carries an application parameter.
+ */
+static inline bool
+ndn_interest_has_Parameters(const ndn_interest_t* interest)
+{
+  return BIT_CHECK(interest->flags, 6);
+}
+
+/**
+ * Return whether an Interest is a signed Interest.
+ */
+static inline bool
+ndn_interest_is_signed(const ndn_interest_t* interest)
+{
+  return BIT_CHECK(interest->flags, 7);
 }
 
 /**

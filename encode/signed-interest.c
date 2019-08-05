@@ -1,9 +1,11 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang, Tianyuan Yu
+ * Copyright (C) 2018-2019
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
  * directory for more details.
+ *
+ * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
 #include "signed-interest.h"
@@ -77,7 +79,7 @@ ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
   }
   // the digest input starts at parameters
   uint32_t param_block_starting = temp_encoder.offset;
-  if (interest->enable_Parameters) {
+  if (ndn_interest_has_Parameters(interest)) {
     ret_val = encoder_append_type(&temp_encoder, TLV_ApplicationParameters);
     if (ret_val != NDN_SUCCESS) return ret_val;
     ret_val = encoder_append_length(&temp_encoder, interest->parameters.size);
@@ -114,7 +116,7 @@ ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
   if (result < 0) return result;
   interest->name.components[interest->name.components_size].size = used_bytes;
   interest->name.components_size++;
-  interest->is_SignedInterest = 1;
+  BIT_SET(interest->flags, 7);
   return NDN_SUCCESS;
 }
 
@@ -142,7 +144,7 @@ ndn_signed_interest_hmac_sign(ndn_interest_t* interest,
   }
   // the digest input starts at parameters
   uint32_t param_block_starting = temp_encoder.offset;
-  if (interest->enable_Parameters) {
+  if (ndn_interest_has_Parameters(interest)) {
     ret_val = encoder_append_type(&temp_encoder, TLV_ApplicationParameters);
     if (ret_val != NDN_SUCCESS) return ret_val;
     ret_val = encoder_append_length(&temp_encoder, interest->parameters.size);
@@ -179,7 +181,7 @@ ndn_signed_interest_hmac_sign(ndn_interest_t* interest,
   if (result < 0) return result;
   interest->name.components[interest->name.components_size].size = used_bytes;
   interest->name.components_size++;
-  interest->is_SignedInterest = 1;
+  BIT_SET(interest->flags, 7);
   return NDN_SUCCESS;
 }
 
@@ -208,7 +210,7 @@ ndn_signed_interest_digest_sign(ndn_interest_t* interest)
   }
   // the digest input starts at parameters
   uint32_t param_block_starting = temp_encoder.offset;
-  if (interest->enable_Parameters) {
+  if (ndn_interest_has_Parameters(interest)) {
     ret_val = encoder_append_type(&temp_encoder, TLV_ApplicationParameters);
     if (ret_val != NDN_SUCCESS) return ret_val;
     ret_val = encoder_append_length(&temp_encoder, interest->parameters.size);
@@ -245,7 +247,7 @@ ndn_signed_interest_digest_sign(ndn_interest_t* interest)
   if (result < 0) return result;
   interest->name.components[interest->name.components_size].size = used_bytes;
   interest->name.components_size++;
-  interest->is_SignedInterest = 1;
+  BIT_SET(interest->flags, 7);
   return NDN_SUCCESS;
 }
 
@@ -253,7 +255,7 @@ int
 ndn_signed_interest_ecdsa_verify(const ndn_interest_t* interest, const ndn_ecc_pub_t* pub_key)
 {
   // check the signed Interest format
-  if (interest->is_SignedInterest <= 0 ||
+  if (!ndn_interest_is_signed(interest) ||
       interest->name.components[interest->name.components_size - 1].type != TLV_ParametersSha256DigestComponent) {
     return NDN_UNSUPPORTED_FORMAT;
   }
@@ -269,7 +271,7 @@ ndn_signed_interest_ecdsa_verify(const ndn_interest_t* interest, const ndn_ecc_p
   }
   // the digest input starts at parameters
   uint32_t param_block_starting = temp_encoder.offset;
-  if (interest->enable_Parameters) {
+  if (ndn_interest_has_Parameters(interest)) {
     ret_val = encoder_append_type(&temp_encoder, TLV_ApplicationParameters);
     if (ret_val != NDN_SUCCESS) return ret_val;
     ret_val = encoder_append_length(&temp_encoder, interest->parameters.size);
@@ -302,7 +304,7 @@ int
 ndn_signed_interest_hmac_verify(const ndn_interest_t* interest, const ndn_hmac_key_t* hmac_key)
 {
   // check the signed Interest format
-  if (interest->is_SignedInterest <= 0 ||
+  if (!ndn_interest_is_signed(interest) ||
       interest->name.components[interest->name.components_size - 1].type != TLV_ParametersSha256DigestComponent) {
     return NDN_UNSUPPORTED_FORMAT;
   }
@@ -318,7 +320,7 @@ ndn_signed_interest_hmac_verify(const ndn_interest_t* interest, const ndn_hmac_k
   }
   // the digest input starts at parameters
   uint32_t param_block_starting = temp_encoder.offset;
-  if (interest->enable_Parameters) {
+  if (ndn_interest_has_Parameters(interest)) {
     ret_val = encoder_append_type(&temp_encoder, TLV_ApplicationParameters);
     if (ret_val != NDN_SUCCESS) return ret_val;
     ret_val = encoder_append_length(&temp_encoder, interest->parameters.size);
@@ -350,7 +352,7 @@ int
 ndn_signed_interest_digest_verify(const ndn_interest_t* interest)
 {
   // check the signed Interest format
-  if (interest->is_SignedInterest <= 0 ||
+  if (!ndn_interest_is_signed(interest) ||
       interest->name.components[interest->name.components_size - 1].type != TLV_ParametersSha256DigestComponent) {
     return NDN_UNSUPPORTED_FORMAT;
   }
@@ -366,7 +368,7 @@ ndn_signed_interest_digest_verify(const ndn_interest_t* interest)
   }
   // the digest input starts at parameters
   uint32_t param_block_starting = temp_encoder.offset;
-  if (interest->enable_Parameters) {
+  if (ndn_interest_has_Parameters(interest)) {
     ret_val = encoder_append_type(&temp_encoder, TLV_ApplicationParameters);
     if (ret_val != NDN_SUCCESS) return ret_val;
     ret_val = encoder_append_length(&temp_encoder, interest->parameters.size);

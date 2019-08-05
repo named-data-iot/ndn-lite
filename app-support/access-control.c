@@ -84,7 +84,7 @@ ndn_ac_prepare_key_request_interest(ndn_encoder_t* encoder,
 
   // finish Interest
   interest.parameters.size = params_encoder.offset;
-  interest.enable_Parameters = 1;
+  BIT_SET(interest.flags, 6);
 
   // sign Interest
   ndn_name_t self_name;

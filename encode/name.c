@@ -10,16 +10,13 @@
 
 #include "name.h"
 
-int
-ndn_name_init(ndn_name_t *name, const name_component_t* components, uint32_t size)
+void
+ndn_name_init(ndn_name_t *name)
 {
-  if (size <= NDN_NAME_COMPONENTS_SIZE) {
-    memcpy(name->components, components, size * sizeof(name_component_t));
-    name->components_size = size;
-    return 0;
+  name->components_size = 0;
+  for (int i = 0; i < NDN_NAME_COMPONENTS_SIZE; i++) {
+    name->components[i].size = NDN_FWD_INVALID_NAME_COMPONENT_SIZE;
   }
-  else
-    return NDN_OVERSIZE;
 }
 
 int
@@ -58,32 +55,6 @@ ndn_name_from_block(ndn_name_t* name, const uint8_t* block_value, uint32_t block
 }
 
 int
-ndn_name_append_component(ndn_name_t *name, const name_component_t* component)
-{
-  if (name->components_size + 1 <= NDN_NAME_COMPONENTS_SIZE) {
-    memcpy(name->components + name->components_size, component, sizeof(name_component_t));
-    name->components_size++;
-    return 0;
-  }
-  else
-    return NDN_OVERSIZE;
-}
-
-int
-ndn_name_append_name(ndn_name_t* lhs, const ndn_name_t* rhs)
-{
-  if (lhs->components_size + rhs->components_size <= NDN_NAME_COMPONENTS_SIZE) {
-    for (int i = 0; i < lhs->components_size; i++) {
-      memcpy(lhs->components + lhs->components_size, rhs->components + i, sizeof(name_component_t));
-      lhs->components_size++;
-    }
-    return 0;
-  }
-  else
-    return NDN_OVERSIZE;
-}
-
-int
 ndn_name_from_string(ndn_name_t *name, const char* string, uint32_t size)
 {
   int ret_val = -1;
@@ -118,6 +89,58 @@ ndn_name_from_string(ndn_name_t *name, const char* string, uint32_t size)
     ++i;
   }
   return 0;
+}
+
+int
+ndn_name_append_component(ndn_name_t *name, const name_component_t* component)
+{
+  if (name->components_size + 1 <= NDN_NAME_COMPONENTS_SIZE) {
+    memcpy(name->components + name->components_size, component, sizeof(name_component_t));
+    name->components_size++;
+    return 0;
+  }
+  else
+    return NDN_OVERSIZE;
+}
+
+int
+ndn_name_append_bytes_component(ndn_name_t* name, const uint8_t* value, uint32_t size)
+{
+  if (name->components_size + 1 <= NDN_NAME_COMPONENTS_SIZE) {
+    name_component_t comp;
+    name_component_from_buffer(&comp, TLV_GenericNameComponent, value, size);
+    ndn_name_append_component(&name, &comp);
+    return 0;
+  }
+  else
+    return NDN_OVERSIZE;
+}
+
+int
+ndn_name_append_string_component(ndn_name_t* name, const char* string, uint32_t size)
+{
+  if (name->components_size + 1 <= NDN_NAME_COMPONENTS_SIZE) {
+    name_component_t comp;
+    name_component_from_string(&comp, string, size);
+    ndn_name_append_component(&name, &comp);
+    return 0;
+  }
+  else
+    return NDN_OVERSIZE;
+}
+
+int
+ndn_name_append_name(ndn_name_t* lhs, const ndn_name_t* rhs)
+{
+  if (lhs->components_size + rhs->components_size <= NDN_NAME_COMPONENTS_SIZE) {
+    for (int i = 0; i < lhs->components_size; i++) {
+      memcpy(lhs->components + lhs->components_size, rhs->components + i, sizeof(name_component_t));
+      lhs->components_size++;
+    }
+    return 0;
+  }
+  else
+    return NDN_OVERSIZE;
 }
 
 int

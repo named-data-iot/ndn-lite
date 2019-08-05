@@ -9,10 +9,52 @@
  */
 
 #include "service-discovery.h"
+#include "../ndn-services.h"
+#include "../util/bit-operations.h"
+
+static sd_self_state_t m_self_state;
+static sd_sys_state_t m_sys_state;
+static const uint8_t SERVICE_STATUS_MASK = 0xAA;
 
 void
-sd_init_self_services(const ndn_name_t* dev_identity_name)
-{}
+sd_init(const ndn_name_t* dev_identity_name)
+{
+  m_self_state.home_prefix = &dev_identity_name->components;
+  for (int i = 0; i < 10; i++) {
+    m_self_state.services[i].status = 0;
+  }
+  for (int i = 0; i < NDN_SD_SERVICES_SIZE; i++) {
+    m_sys_state.cached_services[i].components_size = NDN_FWD_INVALID_NAME_SIZE;
+    m_sys_state.freshness_period[i] = 0;
+  }
+}
+
+void
+sd_add_or_update_self_service(uint8_t service_id, bool adv, uint8_t status_code)
+{
+  for (int i = 0; i < 10; i++) {
+    if (m_self_state.services[i].service_id == service_id) {
+      BIT_SET(m_self_state.services[i].status, 7);
+      if (adv) {
+        BIT_SET(m_self_state.services[i].status, 6);
+      }
+      BITMASK_CLEAR(m_self_state.services[i].status, SERVICE_STATUS_MASK);
+      m_self_state.services[i].status + status_code;
+      return;
+    }
+  }
+  for (int i = 0; i < 10; i++) {
+    if (!BIT_CHECK(m_self_state.services[i].status, 7)) {
+      m_self_state.services[i].service_id = service_id;
+      BIT_SET(m_self_state.services[i].status, 7);
+      if (adv) {
+        BIT_SET(m_self_state.services[i].status, 6);
+      }
+      BITMASK_CLEAR(m_self_state.services[i].status, SERVICE_STATUS_MASK);
+      m_self_state.services[i].status + status_code;
+    }
+  }
+}
 
 void
 sd_listen()
@@ -24,11 +66,23 @@ sd_start_adv_self_services()
 
 void
 sd_query_sys_services(uint8_t service_id)
-{}
+{
+  ndn_interest_t interest;
+  ndn_interest_init(&interest);
+  ndn_name_append_component(&interest.name, m_self_state.home_prefix);
+  ndn_name_append_bytes_component(&interest.name, NDN_SD_SD_CTL, 1);
+  ndn_name_append_bytes_component(&interest.name, NDN_SD_SD_CTL_META, 1);
+  ndn_interest_set_MustBeFresh(&interest, true);
+  // TODO signature signing
+}
 
 void
 sd_query_service(uint8_t service_id, ndn_name_t granularity, bool is_any)
-{}
+{
+  ndn_interest_t interest;
+  ndn_interest_init(&interest);
+  ndn_name_append_component(&interest.name, m_self_state.home_prefix);
+}
 
 // static ndn_sd_context_t sd_context;
 

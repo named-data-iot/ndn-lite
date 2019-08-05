@@ -48,13 +48,10 @@ ndn_name_print(ndn_name_t* name)
 }
 
 /**
- * Init a Name structure. This function will do memory copy.
- * @param name. Output. The Name Structure to be inited.
- * @param component. Input. The name component array from which Name is inited.
- * @param size. Input. Size of input name component array.
+ * Init an empty Name structure.
  */
-int
-ndn_name_init(ndn_name_t *name, const name_component_t* components, uint32_t size);
+void
+ndn_name_init(ndn_name_t *name);
 
 /**
  * Decode the Name from wire format (TLV block).
@@ -75,24 +72,6 @@ int
 ndn_name_from_block(ndn_name_t* name, const uint8_t* block_value, uint32_t block_size);
 
 /**
- * Appends a component to the end of a name. This function will do memory copy.
- * @param name. Output. The name to append to.
- * @param component. Input. The name component to append with.
- * @return 0 if there is no error.
- */
-int
-ndn_name_append_component(ndn_name_t* name, const name_component_t* component);
-
-/**
- * Appends another name to the end of a name. This function will do memory copy.
- * @param lhs. Output. The name to append to.
- * @param rhs. Input. The name to append with.
- * @return 0 if there is no error.
- */
-int
-ndn_name_append_name(ndn_name_t* lhs, const ndn_name_t* rhs);
-
-/**
  * Init a name block from a string. This funcition will do memory copy and
  * only support regular string; not support URI currently.
  * @param name. Output. The Name to be inited.
@@ -102,6 +81,44 @@ ndn_name_append_name(ndn_name_t* lhs, const ndn_name_t* rhs);
  */
 int
 ndn_name_from_string(ndn_name_t* name, const char* string, uint32_t size);
+
+/**
+ * Appends a component to the end of a name. This function will do memory copy.
+ * @param name. Output. The name to append to.
+ * @param component. Input. The name component to append with.
+ * @return 0 if there is no error.
+ */
+int
+ndn_name_append_component(ndn_name_t* name, const name_component_t* component);
+
+/**
+ * Appends bytes as a component to the end of a name. This function will do memory copy.
+ * @param name. Output. The name to append to.
+ * @param value. Input. Value.
+ * @param size. Input. Size of bytes.
+ * @return 0 if there is no error.
+ */
+int
+ndn_name_append_bytes_component(ndn_name_t* name, const uint8_t* value, uint32_t size);
+
+/**
+ * Appends a string component to the end of a name. This function will do memory copy.
+ * @param name. Output. The name to append to.
+ * @param string. Input. The string from which the name component is generated.
+ * @param size. Input. Size of the input string.
+ * @return 0 if there is no error.
+ */
+int
+ndn_name_append_string_component(ndn_name_t* name, const char* string, uint32_t size);
+
+/**
+ * Appends another name to the end of a name. This function will do memory copy.
+ * @param lhs. Output. The name to append to.
+ * @param rhs. Input. The name to append with.
+ * @return 0 if there is no error.
+ */
+int
+ndn_name_append_name(ndn_name_t* lhs, const ndn_name_t* rhs);
 
 /**
  * Probe the size of a Name TLV block before encoding it from a Name structure.
