@@ -83,6 +83,7 @@ ndn_aes_get_key_value(const ndn_aes_key_t* aes_key);
  * @param aes_key. Output. NDN aes key.
  * @param key_value. Input. Key bytes.
  * @param key_size. Input. The size of the key bytes.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 int
 ndn_aes_load_key(ndn_aes_key_t* aes_key,
@@ -94,7 +95,7 @@ ndn_aes_load_key(ndn_aes_key_t* aes_key,
  * @param key_value. Input. The key value bytes to set.
  * @param key_size. Input. The key size. Should not larger than 32 bytes.
  * @param key_id. Input. The key id to be set with this key.
- * @return 0 if there is no error.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 static inline int
 ndn_aes_key_init(ndn_aes_key_t* key, const uint8_t* key_value,
@@ -115,7 +116,7 @@ ndn_aes_key_init(ndn_aes_key_t* key, const uint8_t* key_value,
  * @param aes_iv. Input. AES Initialization Vector, whose length should be NDN_AES_BLOCK_SIZE.
  * @param key_value. Input. AES-128 key to perform encryption.
  * @param key_size. Input. Size of used AES-128 key.
- * @return NDN_SUCCESS if there is no error.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 int
 ndn_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
@@ -132,7 +133,7 @@ ndn_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
  * @param aes_iv. Input. AES Initialization Vector, whose length should be NDN_AES_BLOCK_SIZE.
  * @param key_value. Input. AES-128 key to perform decryption. Should be same as encryption key.
  * @param key_size. Input. Size of used AES-128 key.
- * @return NDN_SUCCESS if there is no error.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 int
 ndn_aes_cbc_decrypt(const uint8_t* input_value, uint8_t input_size,

@@ -20,5 +20,9 @@ ndn_rng_get_backend(void)
 int
 ndn_rng(uint8_t* dest, unsigned size)
 {
-  return ndn_rng_backend.rng(dest, size);
+  int ret = ndn_rng_backend.rng(dest, size);
+  if (ret == 1)
+    return NDN_SUCCESS;
+  else
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
 }

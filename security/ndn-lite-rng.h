@@ -47,6 +47,7 @@ ndn_rng_get_backend(void);
  *
  * @param dest Buffer to store random number.
  * @param size Length of random number to generate.
+ * @return NDN_SUCCESS (0) if rng runs successfully
  */
 int
 ndn_rng(uint8_t *dest, unsigned size);

@@ -92,6 +92,7 @@ ndn_hmac_get_key_value(const ndn_hmac_key_t* hmac_key);
  * @param hmac_key. Output. NDN hmac key.
  * @param key_value. Input. Key bytes.
  * @param key_size. Input. The size of the key bytes.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 int
 ndn_hmac_load_key(ndn_hmac_key_t* hmac_key,
@@ -103,7 +104,7 @@ ndn_hmac_load_key(ndn_hmac_key_t* hmac_key,
  * @param key_value. Input. The key value bytes to set.
  * @param key_size. Input. The key size. Should not larger than 32 bytes.
  * @param key_id. Input. The key id to be set with this key.
- * @return 0 if there is no error.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 static inline int
 ndn_hmac_key_init(ndn_hmac_key_t* hmac_key, const uint8_t* key_value,
@@ -111,12 +112,13 @@ ndn_hmac_key_init(ndn_hmac_key_t* hmac_key, const uint8_t* key_value,
 {
   ndn_hmac_load_key(hmac_key, key_value, key_size);
   hmac_key->key_id = key_id;
-  return 0;
+  return NDN_SUCCESS;
 }
 
 /**
  * Generate HMAC using sha256 digest algorithm.
  * @note This function will invoke different impl depending on the backend.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 int
 ndn_hmac_sha256(const void* payload, uint32_t payload_length,
@@ -133,7 +135,7 @@ ndn_hmac_sha256(const void* payload, uint32_t payload_length,
  * @param key_value. Input. HMAC key.
  * @param key_size. Input. Size of HMAC key.
  * @param output_used_size. Output. Size of used output buffer when signing complete.
- * @return NDN_SUCCESS if there is no error.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 int
 ndn_hmac_sign(const uint8_t* input_value, uint32_t input_size,
@@ -149,7 +151,7 @@ ndn_hmac_sign(const uint8_t* input_value, uint32_t input_size,
  * @param sig_size. Input. HMAC signature size. Should be 32 bytes.
  * @param key_value. Input. HMAC key buffer.
  * @param key_size. Input. size of HMAC key.
- * @return NDN_SUCCESS if verification succeeded.
+ * @return NDN_SUCCESS (0) if verification succeeded.
  */
 int
 ndn_hmac_verify(const uint8_t* input_value, uint32_t input_size,
@@ -168,7 +170,7 @@ ndn_hmac_verify(const uint8_t* input_value, uint32_t input_size,
  * @param seed_size. Input. Entropy length in bytes.
  * @param additional_value. Input. Additional input to the prng.
  * @param additional_size. Input. Additional input length in bytes.
- * @return NDN_SUCCESS if there is no error.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 int
 ndn_hmac_make_key(ndn_hmac_key_t* key, uint32_t key_id,
@@ -187,7 +189,7 @@ ndn_hmac_make_key(ndn_hmac_key_t* key, uint32_t key_id,
  * @param output_size. Input. Size of the output buffer.
  * @param seed_value. Input. Entropy to mix into the prng.
  * @param seed_size. Input. Entropy length in bytes.
- * @return NDN_SUCCESS if there is no error.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 int
 ndn_hkdf(const uint8_t* input_value, uint32_t input_size,
@@ -205,7 +207,7 @@ ndn_hkdf(const uint8_t* input_value, uint32_t input_size,
  * @param seed_size. Input. Entropy length in bytes, highly recommend larger than 32 bytes.
  * @param additional_value. Input. Additional input to the prng
  * @param additional_size. Input. Additional input length in bytes
- * @return NDN_SUCCESS if there is no error.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 int
 ndn_hmacprng(const uint8_t* input_value, uint32_t input_size,

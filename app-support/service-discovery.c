@@ -62,29 +62,56 @@ sd_listen()
 
 void
 sd_start_adv_self_services()
-{}
-
-void
-sd_query_sys_services(uint8_t service_id)
 {
-  ndn_interest_t interest;
-  ndn_interest_init(&interest);
-  ndn_name_append_component(&interest.name, m_self_state.home_prefix);
-  uint8_t sd_ctl = NDN_SD_SD_CTL;
-  uint8_t sd_ctl_meta = NDN_SD_SD_CTL_META;
-  ndn_name_append_bytes_component(&interest.name, &sd_ctl, 1);
-  ndn_name_append_bytes_component(&interest.name, &sd_ctl_meta, 1);
-  ndn_interest_set_MustBeFresh(&interest, true);
-  // TODO signature signing
+  // /[home-prefix]/SD/ADV/[locator]
+
 }
 
-void
-sd_query_service(uint8_t service_id, ndn_name_t granularity, bool is_any)
+int
+sd_query_sys_services(uint8_t service_id)
 {
+  // format: /[home-prefix]/SD-CTL/meta
+  int ret = 0;
   ndn_interest_t interest;
   ndn_interest_init(&interest);
-  ndn_name_append_component(&interest.name, m_self_state.home_prefix);
-  ndn_name_append_string_component(&interest.name, "SD", strlen("SD"));
+  ret = ndn_name_append_component(&interest.name, m_self_state.home_prefix);
+  if (ret != 0) return ret;
+  uint8_t sd_ctl = NDN_SD_SD_CTL;
+  uint8_t sd_ctl_meta = NDN_SD_SD_CTL_META;
+  ret = ndn_name_append_bytes_component(&interest.name, &sd_ctl, 1);
+  if (ret != 0) return ret;
+  ret = ndn_name_append_bytes_component(&interest.name, &sd_ctl_meta, 1);
+  if (ret != 0) return ret;
+  ndn_interest_set_MustBeFresh(&interest, true);
+  // TODO signature signing
+  // Express Interest
+}
+
+int
+sd_query_service(uint8_t service_id, const ndn_name_t* granularity, bool is_any)
+{
+  // Format: /[home-prefix]/SD/[service]/[granularity]/[descriptor: ANY, ALL]
+  int ret = 0;
+  ndn_interest_t interest;
+  ndn_interest_init(&interest);
+  ret = ndn_name_append_component(&interest.name, m_self_state.home_prefix);
+  if (ret != 0) return ret;
+  uint8_t sd = NDN_SD_SD;
+  ret = ndn_name_append_bytes_component(&interest.name, &sd, 1);
+  if (ret != 0) return ret;
+  ret = ndn_name_append_bytes_component(&interest.name, &service_id, 1);
+  if (ret != 0) return ret;
+  ret = ndn_name_append_name(&interest.name, granularity);
+  if (ret != 0) return ret;
+  if (is_any) {
+    ret = ndn_name_append_string_component(&interest.name, "ANY", strlen("ANY"));
+  }
+  else {
+    ret = ndn_name_append_string_component(&interest.name, "ALL", strlen("ALL"));
+  }
+  if (ret != 0) return ret;
+  // TODO signature signing
+  // Express Interest
 }
 
 // static ndn_sd_context_t sd_context;

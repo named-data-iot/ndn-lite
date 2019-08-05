@@ -98,7 +98,7 @@ sd_start_adv_self_services();
  * Usually used at the end of the security bootstrapping.
  * @param service_id. Input. The service ID that the device is interested in.
  */
-void
+int
 sd_query_sys_services(uint8_t service_id);
 
 /**
@@ -107,8 +107,8 @@ sd_query_sys_services(uint8_t service_id);
  * @param is_any. Input. If is true, query one SP that can provide the service.
  *   If is false, query all the SPs that can provide the service.
  */
-void
-sd_query_service(uint8_t service_id, ndn_name_t granularity, bool is_any);
+int
+sd_query_service(uint8_t service_id, const ndn_name_t* granularity, bool is_any);
 
 
 // /**

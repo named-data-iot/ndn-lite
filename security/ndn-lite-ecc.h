@@ -124,6 +124,7 @@ ndn_ecc_get_pub_key_value(const ndn_ecc_pub_t* pub_key);
  * @param pub_key. Output. NDN ECC public key.
  * @param key_value. Input. Key bytes.
  * @param key_size. Input. The size of the key bytes.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 int
 ndn_ecc_load_pub_key(ndn_ecc_pub_t* pub_key,
@@ -137,7 +138,7 @@ ndn_ecc_load_pub_key(ndn_ecc_pub_t* pub_key,
  * @param curve_type. Input. Type of ECC Curve. Can be secp160r1, secp192r1, secp224r1,
  *        secp256r1, secp256k1.
  * @param key_id. Input. The key id to be set with this ECC public key.
- * @return 0 if there is no error.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 static inline int
 ndn_ecc_pub_init(ndn_ecc_pub_t* ecc_pub, const uint8_t* key_value,
@@ -154,6 +155,7 @@ ndn_ecc_pub_init(ndn_ecc_pub_t* ecc_pub, const uint8_t* key_value,
  * @param prv_key. Output. NDN ECC private key.
  * @param key_value. Input. Key bytes.
  * @param key_size. Input. The size of the key bytes.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 int
 ndn_ecc_load_prv_key(ndn_ecc_prv_t* prv_key,
@@ -167,7 +169,7 @@ ndn_ecc_load_prv_key(ndn_ecc_prv_t* prv_key,
  * @param curve_type. Input. Type of ECC Curve. Can be secp160r1, secp192r1, secp224r1,
  *        secp256r1, secp256k1.
  * @param key_id. Input. The key id to be set with this ECC private key.
- * @return 0 if there is no error.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 static inline int
 ndn_ecc_prv_init(ndn_ecc_prv_t* ecc_prv, const uint8_t* key_value,
@@ -183,7 +185,9 @@ ndn_ecc_prv_init(ndn_ecc_prv_t* ecc_prv, const uint8_t* key_value,
  * Set RNG function for backend implementation library,
  * which need this to perform non-deterministic signing.
  * This function should be called before ndn_ecdsa_sign() and ndn_ecc_make_key().
+ * IMPROTANT: the rng should return 1 if running successfully
  * @param rng. Input. RNG function which will be bound to the backend implementation library.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 int
 ndn_ecc_set_rng(ndn_rng_impl rng);
@@ -194,7 +198,7 @@ ndn_ecc_set_rng(ndn_rng_impl rng);
  * @param ecc_prv. Output. ECC private key whose key bytes to be generated.
  * @param curve_type. Input. The chosen ECC curve type to generate the key pair.
  * @param key_id. Input. The key id to be set with public and private key.
- * @return NDN_SUCCESS if there is no error.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 int
 ndn_ecc_make_key(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
@@ -207,7 +211,7 @@ ndn_ecc_make_key(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
  * @param curve_type. Input. ECC curve type. Should be the same type of input public and private key.
  * @param output. Output. Buffer to receive negotiated shared secret.
  * @param output_size. Input. Size of the output buffer. Should not be smaller than 24 bytes.
- * @return NDN_SUCCESS if there is no error.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 int
 ndn_ecc_dh_shared_secret(const ndn_ecc_pub_t* ecc_pub, const ndn_ecc_prv_t* ecc_prv,
@@ -226,7 +230,7 @@ ndn_ecc_dh_shared_secret(const ndn_ecc_pub_t* ecc_pub, const ndn_ecc_prv_t* ecc_
  * @param ecdsa_type. Input. Type of ECDSA signature. Can be secp160r1, secp192r1, secp224r1,
  *        secp256r1, secp256k1.
  * @param output_used_size. Output. Size of used output buffer when signing complete.
- * @return NDN_SUCCESS if there is no error.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 int
 ndn_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
@@ -242,7 +246,7 @@ ndn_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
  * @param sig_size. Input. ECDSA signature size. Should not be larger than 64 bytes.
  * @param pub_key_value. Input. ECDSA public key.
  * @param pub_key_size. Input. size of public key. Should not be larger than 64 bytes.
- * @return NDN_SUCCESS if verification succeeded.
+ * @return NDN_SUCCESS(0) if verification succeeded.
  */
 int
 ndn_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,

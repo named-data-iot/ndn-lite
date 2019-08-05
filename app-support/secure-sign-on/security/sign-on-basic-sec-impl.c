@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Edward Lu
+ * Copyright (C) 2018-2019 Edward Lu, Zhiyi Zhang
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
@@ -9,12 +9,9 @@
  */
 
 #include "sign-on-basic-sec-impl.h"
-
 #include "sign-on-basic-sec-consts.h"
-
 #include "../../../ndn-enums.h"
 #include "../../../ndn-error-code.h"
-
 #include "../../../security/ndn-lite-aes.h"
 #include "../../../security/ndn-lite-ecc.h"
 #include "../../../security/ndn-lite-hmac.h"
@@ -41,7 +38,7 @@ int sign_on_basic_gen_sha256_hash(const uint8_t *payload, uint32_t payload_len, 
   return SIGN_ON_BASIC_SEC_OP_FAILURE;
 }
 
-int sign_on_basic_aes_cbc_decrypt(uint8_t *key, uint32_t key_len, 
+int sign_on_basic_aes_cbc_decrypt(uint8_t *key, uint32_t key_len,
                                            const uint8_t *encrypted_payload, uint32_t encrypted_payload_len,
                                            uint8_t *decrypted_payload, uint32_t decrypted_payload_buf_len) {
 
@@ -59,10 +56,10 @@ int sign_on_basic_aes_cbc_decrypt(uint8_t *key, uint32_t key_len,
 
   // according to Tinycrypt's comments in tc_cbc_mode.h, I need to make sure IV and
   // cipher text are contiguous in the buffer passed in for decryption
-  
-  if (ndn_aes_cbc_decrypt(encrypted_payload_copy, 
+
+  if (ndn_aes_cbc_decrypt(encrypted_payload_copy,
                       encrypted_payload_copy_len_byte, decrypted_payload,
-                      decrypted_payload_buf_len_byte, encrypted_payload_copy, 
+                      decrypted_payload_buf_len_byte, encrypted_payload_copy,
                       &aes_key) != NDN_SUCCESS) {
     return SIGN_ON_BASIC_SEC_OP_FAILURE;
   }
@@ -84,21 +81,20 @@ int sign_on_basic_vrfy_hmac_sha256_sig(const uint8_t *payload, uint32_t payload_
 
 int sign_on_basic_gen_sha256_ecdsa_sig(const uint8_t *pri_key_raw, uECC_Curve curve,
                                        const uint8_t *payload, uint32_t payload_len,
-                                       uint8_t *output_buf, uint32_t output_buf_len, 
+                                       uint8_t *output_buf, uint32_t output_buf_len,
                                        uint32_t *output_len) {
-  ndn_ecc_set_rng(ndn_rng);
+  ndn_rng_backend_t* rng_backend = ndn_rng_get_backend();
+  ndn_ecc_set_rng(rng_backend->rng);
   int ndn_ecc_curve = get_ndn_lite_curve(curve);
   if (ndn_ecc_curve == -1) {
     return SIGN_ON_BASIC_SEC_OP_FAILURE;
   }
 
   uint32_t pri_key_raw_len = (uint32_t) uECC_curve_private_key_size(curve);
-
   ndn_ecc_prv_t ecc_prv_key;
   ndn_ecc_prv_init(&ecc_prv_key, pri_key_raw, pri_key_raw_len, ndn_ecc_curve, sign_on_basic_arbitrary_key_id);
 
-  
-  if (ndn_ecdsa_sign(payload, payload_len, output_buf, output_buf_len, &ecc_prv_key, 
+  if (ndn_ecdsa_sign(payload, payload_len, output_buf, output_buf_len, &ecc_prv_key,
                      ndn_ecc_curve, output_len) != NDN_SUCCESS) {
     return SIGN_ON_BASIC_SEC_OP_FAILURE;
   }
@@ -108,7 +104,7 @@ int sign_on_basic_gen_sha256_ecdsa_sig(const uint8_t *pri_key_raw, uECC_Curve cu
 int sign_on_basic_gen_ecdh_shared_secret(const uint8_t *pub_key_raw, uint32_t pub_key_raw_len,
                                          const uint8_t *pri_key_raw, uint32_t pri_key_raw_len,
                                          uECC_Curve curve,
-                                         uint8_t *output_buf, uint32_t output_buf_len, 
+                                         uint8_t *output_buf, uint32_t output_buf_len,
                                          uint32_t *output_len) {
   ndn_ecc_set_rng(ndn_rng);
   int ndn_ecc_curve = get_ndn_lite_curve(curve);
@@ -119,8 +115,8 @@ int sign_on_basic_gen_ecdh_shared_secret(const uint8_t *pub_key_raw, uint32_t pu
   ndn_ecc_prv_t ecc_prv_key;
   ndn_ecc_pub_init(&ecc_pub_key, pub_key_raw, pub_key_raw_len, ndn_ecc_curve, sign_on_basic_arbitrary_key_id);
   ndn_ecc_prv_init(&ecc_prv_key, pri_key_raw, pri_key_raw_len, ndn_ecc_curve, sign_on_basic_arbitrary_key_id);
-  if (ndn_ecc_dh_shared_secret(&ecc_pub_key, &ecc_prv_key, 
-                               ndn_ecc_curve, 
+  if (ndn_ecc_dh_shared_secret(&ecc_pub_key, &ecc_prv_key,
+                               ndn_ecc_curve,
                                output_buf, output_buf_len) != NDN_SUCCESS) {
     return SIGN_ON_BASIC_SEC_OP_FAILURE;
   }
@@ -128,9 +124,9 @@ int sign_on_basic_gen_ecdh_shared_secret(const uint8_t *pub_key_raw, uint32_t pu
   return SIGN_ON_BASIC_SEC_OP_SUCCESS;
 }
 
-int sign_on_basic_gen_ec_keypair(uint8_t *pub_key_buf, uint32_t pub_key_buf_len, 
+int sign_on_basic_gen_ec_keypair(uint8_t *pub_key_buf, uint32_t pub_key_buf_len,
                                  uint32_t *pub_key_output_len,
-                                 uint8_t *pri_key_buf, uint32_t pri_key_buf_len, 
+                                 uint8_t *pri_key_buf, uint32_t pri_key_buf_len,
                                  uint32_t *pri_key_output_len,
                                  uECC_Curve curve) {
     ndn_ecc_set_rng(ndn_rng);
@@ -141,7 +137,7 @@ int sign_on_basic_gen_ec_keypair(uint8_t *pub_key_buf, uint32_t pub_key_buf_len,
     }
     ndn_ecc_pub_t ecc_pub_key;
     ndn_ecc_prv_t ecc_prv_key;
-    if (ndn_ecc_make_key(&ecc_pub_key, &ecc_prv_key, ndn_ecc_curve, sign_on_basic_arbitrary_key_id) 
+    if (ndn_ecc_make_key(&ecc_pub_key, &ecc_prv_key, ndn_ecc_curve, sign_on_basic_arbitrary_key_id)
         != NDN_SUCCESS) {
       return SIGN_ON_BASIC_SEC_OP_FAILURE;
     }
