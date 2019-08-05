@@ -7,16 +7,13 @@
  */
 
 #include "ndn-lite-default-ecc-impl.h"
-#include "ndn-lite-default-sha-impl.h"
-#include "sec-lib/tinycrypt/tc_hmac.h"
 #include "sec-lib/tinycrypt/tc_ecc_dh.h"
 #include "sec-lib/tinycrypt/tc_constants.h"
-#include "../../ndn-lite-ecc.h"
-#include "../../ndn-lite-sha.h"
-#include "../../ndn-lite-sec-utils.h"
-#include "../../../ndn-constants.h"
-#include "../../../ndn-error-code.h"
-#include "../../../ndn-enums.h"
+#include "../ndn-lite-ecc.h"
+#include "../ndn-lite-sec-utils.h"
+#include "../../ndn-constants.h"
+#include "../../ndn-error-code.h"
+#include "../../ndn-enums.h"
 #include <string.h>
 
 #ifndef FEATURE_PERIPH_HWRNG

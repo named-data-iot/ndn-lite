@@ -9,8 +9,8 @@
 #include "ndn-lite-default-aes-impl.h"
 #include "sec-lib/tinycrypt/tc_cbc_mode.h"
 #include "sec-lib/tinycrypt/tc_constants.h"
-#include "../../ndn-lite-aes.h"
-#include "../../../ndn-constants.h"
+#include "../ndn-lite-aes.h"
+#include "../../ndn-constants.h"
 #include <string.h>
 
 /************************************************************/

@@ -9,8 +9,8 @@
  */
 
 #include "ndn-lite-default-sha-impl.h"
-#include "../../../ndn-error-code.h"
-#include "../../ndn-lite-sha.h"
+#include "../../ndn-error-code.h"
+#include "../ndn-lite-sha.h"
 #include "sec-lib/tinycrypt/tc_constants.h"
 
 int

@@ -11,10 +11,10 @@
 #ifndef NDN_LITE_SEC_CONFIG_H
 #define NDN_LITE_SEC_CONFIG_H
 
-#include "detail/default-backend/ndn-lite-default-sha-impl.h"
-#include "detail/default-backend/ndn-lite-default-aes-impl.h"
-#include "detail/default-backend/ndn-lite-default-ecc-impl.h"
-#include "detail/default-backend/ndn-lite-default-hmac-impl.h"
+#include "default-backend/ndn-lite-default-sha-impl.h"
+#include "default-backend/ndn-lite-default-aes-impl.h"
+#include "default-backend/ndn-lite-default-ecc-impl.h"
+#include "default-backend/ndn-lite-default-hmac-impl.h"
 
 #ifdef __cplusplus
 extern "C" {

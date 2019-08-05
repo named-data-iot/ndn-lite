@@ -10,10 +10,10 @@
 #include "sec-lib/tinycrypt/tc_hmac.h"
 #include "sec-lib/tinycrypt/tc_hmac_prng.h"
 #include "sec-lib/tinycrypt/tc_constants.h"
-#include "../../ndn-lite-hmac.h"
-#include "../../../ndn-constants.h"
-#include "../../../ndn-error-code.h"
-#include "../../../ndn-enums.h"
+#include "../ndn-lite-hmac.h"
+#include "../../ndn-constants.h"
+#include "../../ndn-error-code.h"
+#include "../../ndn-enums.h"
 #include <string.h>
 
 uint32_t

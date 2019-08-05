@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include "sec-lib/tinycrypt/tc_ecc.h"
 #include "sec-lib/micro-ecc/uECC.h"
-#include "../../../ndn-constants.h"
+#include "../../ndn-constants.h"
 
 struct abstract_ecc_pub_key {
   uint8_t key_value[NDN_SEC_ECC_MAX_PUBLIC_KEY_SIZE];
