@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Zhiyi Zhang, Tianyuan Yu
+ * Copyright (C) 2018-2019
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level

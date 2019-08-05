@@ -19,7 +19,7 @@ static const uint8_t SERVICE_STATUS_MASK = 0xAA;
 void
 sd_init(const ndn_name_t* dev_identity_name)
 {
-  m_self_state.home_prefix = &dev_identity_name->components;
+  m_self_state.home_prefix = &dev_identity_name->components[0];
   for (int i = 0; i < 10; i++) {
     m_self_state.services[i].status = 0;
   }
@@ -39,7 +39,7 @@ sd_add_or_update_self_service(uint8_t service_id, bool adv, uint8_t status_code)
         BIT_SET(m_self_state.services[i].status, 6);
       }
       BITMASK_CLEAR(m_self_state.services[i].status, SERVICE_STATUS_MASK);
-      m_self_state.services[i].status + status_code;
+      m_self_state.services[i].status += status_code;
       return;
     }
   }
@@ -51,7 +51,7 @@ sd_add_or_update_self_service(uint8_t service_id, bool adv, uint8_t status_code)
         BIT_SET(m_self_state.services[i].status, 6);
       }
       BITMASK_CLEAR(m_self_state.services[i].status, SERVICE_STATUS_MASK);
-      m_self_state.services[i].status + status_code;
+      m_self_state.services[i].status += status_code;
     }
   }
 }
@@ -70,8 +70,10 @@ sd_query_sys_services(uint8_t service_id)
   ndn_interest_t interest;
   ndn_interest_init(&interest);
   ndn_name_append_component(&interest.name, m_self_state.home_prefix);
-  ndn_name_append_bytes_component(&interest.name, NDN_SD_SD_CTL, 1);
-  ndn_name_append_bytes_component(&interest.name, NDN_SD_SD_CTL_META, 1);
+  uint8_t sd_ctl = NDN_SD_SD_CTL;
+  uint8_t sd_ctl_meta = NDN_SD_SD_CTL_META;
+  ndn_name_append_bytes_component(&interest.name, &sd_ctl, 1);
+  ndn_name_append_bytes_component(&interest.name, &sd_ctl_meta, 1);
   ndn_interest_set_MustBeFresh(&interest, true);
   // TODO signature signing
 }
@@ -82,6 +84,7 @@ sd_query_service(uint8_t service_id, ndn_name_t granularity, bool is_any)
   ndn_interest_t interest;
   ndn_interest_init(&interest);
   ndn_name_append_component(&interest.name, m_self_state.home_prefix);
+  ndn_name_append_string_component(&interest.name, "SD", strlen("SD"));
 }
 
 // static ndn_sd_context_t sd_context;
