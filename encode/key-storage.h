@@ -18,6 +18,11 @@ extern "C" {
 
 /**
  * The structure to implement keys storage and management.
+ * The self identity key and trust anchor will only be available after security bootstrapping.
+ * Once after bootstrapping, ndn_key_storage_after_bootstrapping should be invoked and is_bootstrapping
+ *   will be set to true.
+ * The key storage uses the KEY-ID as the index. Application or library modules should keep a state of
+ * related KEY-ID, which will be used to fetch key from the key_storage and later to free the memory use of the key.
  */
 typedef struct ndn_key_storage {
   bool is_bootstrapped;
