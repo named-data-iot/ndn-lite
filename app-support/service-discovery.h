@@ -71,7 +71,7 @@ typedef struct sd_sys_state {
  *   /[home-prefix]/[device-locator], a device-locator could be "/bedroom/sensor1" or "/front-door-lock"
  */
 void
-sd_init(const ndn_name_t* dev_identity_name);
+ndn_sd_init(const ndn_name_t* dev_identity_name);
 
 /**
  * Add a service provided by self device into the state.

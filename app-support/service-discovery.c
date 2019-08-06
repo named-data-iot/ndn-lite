@@ -14,14 +14,16 @@
 #include "../ndn-services.h"
 #include "../util/bit-operations.h"
 #include "../util/uniform-time.h"
+#include "../util/msg-queue.h"
 
 static sd_self_state_t m_self_state;
 static sd_sys_state_t m_sys_state;
 static const uint8_t SERVICE_STATUS_MASK = 0xAA;
 static uint8_t sd_buf[4096];
+static ndn_time_ms_t m_next_adv;
 
 void
-sd_init(const ndn_name_t* dev_identity_name)
+ndn_sd_init(const ndn_name_t* dev_identity_name)
 {
   m_self_state.home_prefix = &dev_identity_name->components[0];
   m_self_state.device_locator_size = dev_identity_name->components_size - 1;
@@ -36,6 +38,7 @@ sd_init(const ndn_name_t* dev_identity_name)
     m_sys_state.cached_services[i].components_size = NDN_FWD_INVALID_NAME_COMPONENT_SIZE;
     m_sys_state.expire_tps[i] = 0;
   }
+  m_next_adv = 0;
 }
 
 int
@@ -250,6 +253,12 @@ on_sd_interest_timeout (void* userdata)
 int
 sd_start_adv_self_services()
 {
+  ndn_time_ms_t now = ndn_time_now_ms();
+  if (now < m_next_adv) {
+    ndn_msgqueue_post(NULL, sd_start_adv_self_services, NULL, NULL);
+    return NDN_SUCCESS;
+  }
+  m_next_adv = now + (uint64_t)SD_ADV_INTERVAL;
   // Format: /[home-prefix]/SD/ADV/[locator]
   int ret = 0;
   ndn_interest_t interest;
@@ -283,6 +292,8 @@ sd_start_adv_self_services()
   encoder_init(&encoder, sd_buf, sizeof(sd_buf));
   ndn_interest_tlv_encode(&encoder, &interest);
   ndn_forwarder_express_interest(encoder.output_value, encoder.offset, NULL, NULL, NULL);
+
+  ndn_msgqueue_post(NULL, sd_start_adv_self_services, NULL, NULL);
   return NDN_SUCCESS;
 }
 
