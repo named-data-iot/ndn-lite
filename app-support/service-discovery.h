@@ -12,6 +12,7 @@
 
 #include "../encode/interest.h"
 #include "../encode/data.h"
+#include "../util/uniform-time.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,7 +62,7 @@ typedef struct sd_self_state {
 typedef struct sd_sys_state {
   uint8_t interested_services[NDN_SD_SERVICES_SIZE];
   ndn_name_t cached_services[NDN_SD_SERVICES_SIZE];
-  uint32_t freshness_period[NDN_SD_SERVICES_SIZE];
+  ndn_time_ms_t expire_tps[NDN_SD_SERVICES_SIZE];
 } sd_sys_state_t;
 
 /**

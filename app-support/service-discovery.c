@@ -13,6 +13,7 @@
 #include "../encode/key-storage.h"
 #include "../ndn-services.h"
 #include "../util/bit-operations.h"
+#include "../util/uniform-time.h"
 
 static sd_self_state_t m_self_state;
 static sd_sys_state_t m_sys_state;
@@ -33,7 +34,7 @@ sd_init(const ndn_name_t* dev_identity_name)
   for (int i = 0; i < NDN_SD_SERVICES_SIZE; i++) {
     m_sys_state.interested_services[i] = NDN_SD_NONE;
     m_sys_state.cached_services[i].components_size = NDN_FWD_INVALID_NAME_COMPONENT_SIZE;
-    m_sys_state.freshness_period[i] = 0;
+    m_sys_state.expire_tps[i] = 0;
   }
 }
 
@@ -73,16 +74,22 @@ sd_add_or_update_self_service(uint8_t service_id, bool adv, uint8_t status_code)
 }
 
 int
-sd_add_or_update_cached_service(const ndn_name_t* service_name, uint32_t freshness)
+sd_add_or_update_cached_service(const ndn_name_t* service_name, uint64_t expire_time)
 {
+  ndn_time_ms_t now = ndn_time_now_ms();
   for (int i = 0; i < NDN_SD_SERVICES_SIZE; i++) {
     if (m_sys_state.cached_services[i].components_size == NDN_FWD_INVALID_NAME_COMPONENT_SIZE) {
+      // empty cache, skip
       continue;
     }
-    // TODO check freshness period: if (m_sys_state.freshness_period[i] < now()), delete
+    if (m_sys_state.expire_tps[i] < now) {
+      // outdated cache, delete it
+      m_sys_state.cached_services[i].components_size = NDN_FWD_INVALID_NAME_COMPONENT_SIZE;
+      m_sys_state.expire_tps[i] = 0;
+    }
     if (0 == ndn_name_compare(&m_sys_state.cached_services[i], service_name)) {
-      // same name
-      m_sys_state.freshness_period[i] = freshness;
+      // find existing
+      m_sys_state.expire_tps[i] = expire_time;
       return NDN_SUCCESS;
     }
   }
@@ -90,7 +97,7 @@ sd_add_or_update_cached_service(const ndn_name_t* service_name, uint32_t freshne
   for (int i = 0; i < NDN_SD_SERVICES_SIZE; i++) {
     if (m_sys_state.cached_services[i].components_size == NDN_FWD_INVALID_NAME_COMPONENT_SIZE) {
       memcpy(&m_sys_state.cached_services[i], service_name, sizeof(ndn_name_t));
-      m_sys_state.freshness_period[i] = freshness;
+      m_sys_state.expire_tps[i] = expire_time;
       added = true;
     }
   }
@@ -134,6 +141,7 @@ on_sd_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
   // TODO signature verification
   uint8_t sd_adv = NDN_SD_SD_ADV_ADV;
   uint8_t sd_query = NDN_SD_SD_QUERY;
+  ndn_time_ms_t now = ndn_time_now_ms();
   if (interest.name.components[2].size != 1) {
     // unrecognized Interest, ignore it
     return NDN_SUCCESS;
@@ -143,6 +151,7 @@ on_sd_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
     decoder_init(&decoder, interest.parameters.value, interest.parameters.size);
     uint32_t freshness_period = 0;
     decoder_get_uint32_value(&decoder, &freshness_period);
+    ndn_time_ms_t expire_tp = now + (uint64_t)freshness_period;
     ndn_name_t service_name;
     while (decoder.offset < decoder.input_size) {
       uint8_t service_type = NDN_SD_NONE;
@@ -155,7 +164,7 @@ on_sd_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
           for (int i = 3; i < interest.name.components_size - 1; i++) {
             ndn_name_append_component(&service_name, &interest.name.components[i]);
           }
-          sd_add_or_update_cached_service(&service_name, freshness_period);
+          sd_add_or_update_cached_service(&service_name, expire_tp);
         }
       }
     }
@@ -170,10 +179,10 @@ on_sd_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
         encoder_init(&encoder, sd_buf, sizeof(sd_buf));
         for (int i = 0; i < NDN_SD_SERVICES_SIZE; i++) {
           if (m_sys_state.cached_services[i].components_size != NDN_FWD_INVALID_NAME_COMPONENT_SIZE
-             && m_sys_state.cached_services[i].components[1].value[0] == interested_service) {
-               ndn_name_tlv_encode(&encoder, &m_sys_state.cached_services[i]);
-               encoder_append_uint32_value(&encoder, m_sys_state.freshness_period[i]);
-               // TODO replace m_sys_state.freshness_period[i] with expire_tp - now()
+              && m_sys_state.cached_services[i].components[1].value[0] == interested_service
+              && m_sys_state.expire_tps[i] > now) {
+            ndn_name_tlv_encode(&encoder, &m_sys_state.cached_services[i]);
+            encoder_append_uint32_value(&encoder, (uint32_t)(m_sys_state.expire_tps[i] - now));
           }
         }
         if (encoder.offset > 0) {
