@@ -21,7 +21,7 @@ extern "C" {
 
 /** @defgroup NDNUtilMemPool Memory Array
  * @ingroup NDNUtil
- * 
+ *
  * Memory pool manages pseudo memory blocks in a static memory array.
  * All memory blocks should be in fixed size.
  * @{

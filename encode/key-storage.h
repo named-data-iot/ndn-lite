@@ -20,18 +20,18 @@ extern "C" {
  * The structure to implement keys storage and management.
  */
 typedef struct ndn_key_storage {
+  bool is_bootstrapped;
   /**
-   * The trust anchor storage.
+   * Identity Key.
+   */
+  ndn_name_t self_identity;
+  ndn_ecc_prv_t self_identity_key;
+  ndn_data_t self_cert;
+  /**
+   * Trust anchor.
    */
   ndn_data_t trust_anchor;
-  /**
-   * The trust anchor public key.
-   */
   ndn_ecc_pub_t trust_anchor_key;
-  /**
-   * Boolean indicating whether the device is bootstrapped.
-   */
-  uint8_t is_bootstrapped;
   /**
    * The self signing key storage.
    */
@@ -59,12 +59,15 @@ ndn_key_storage_t*
 ndn_key_storage_get_instance(void);
 
 /**
- * Set trust anchor for the key storage structure.
+ * Set trust anchor for the key storage structure. Will do memcpy.
+ * @param self_cert. Input. Certificate issued by the system controller.
  * @param trust_anchor. Input. Trust anchor to configure the key storage structure.
+ * @param self_prv_key. Input. Self priv key.
  * @return 0 if there is no error.
  */
 int
-ndn_key_storage_set_anchor(const ndn_data_t* trust_anchor);
+ndn_key_storage_after_bootstrapping(const ndn_data_t* self_cert, const ndn_data_t* trust_anchor,
+                                    const ndn_ecc_prv_t* self_prv_key);
 
 /**
  * Get an empty HMAC key pointer from key storage structure.

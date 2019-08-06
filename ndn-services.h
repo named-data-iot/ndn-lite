@@ -13,12 +13,13 @@
 #include <stdint.h>
 
 // service types: 0-10 preserved for ndn-lite system default
+#define NDN_SD_NONE ((uint8_t)(-1))
 #define NDN_SD_DEV_CTL 0 // device control service, (ideally) run by ALL devices
 #define NDN_SD_SD 1 // service discovery service, (ideally) run by ALL devices
 #define NDN_SD_SD_CTL 2 // service discovery control service, run by authorized devices ONLY
 #define NDN_SD_AC 3 // access control service, run by authorized devices ONLY
 
-// service types: >10 application services
+// service types: >10, <255 application services
 #define NDN_SD_LED 11 // LED service
 #define NDN_SD_TEMP 12 // temperature service
 
@@ -35,7 +36,7 @@
 // SD service
 #define NDN_SD_SD_ADV false // no advertisement
 #define NDN_SD_SD_ADV_ADV 0 // advertisement of self services
-#define NDN_SD_SD_ADV_QUERY 1 // query services provided by the system
+#define NDN_SD_SD_QUERY 1 // query services provided by the system
 
 // SD_CTL service
 #define NDN_SD_SD_CTL_ADV false // no advertisement

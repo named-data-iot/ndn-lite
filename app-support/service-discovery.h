@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-const static uint32_t sd_adv_interval = 3600;
+const static uint32_t SD_ADV_INTERVAL = 3600;
 
 /**
  * The structure to represent a NDN service.
@@ -45,20 +45,21 @@ typedef struct sd_self_state {
    */
   const name_component_t* home_prefix;
   /**
-   * The locator name of the device
+   * The locator name components of the device
    */
-  const name_component_t* device_locator[5];
+  const name_component_t* device_locator[NDN_NAME_COMPONENTS_SIZE];
   uint8_t device_locator_size;
   /**
    * Device IDs
    */
-  ndn_service_t services[10];
+  ndn_service_t services[NDN_SD_SERVICES_SIZE];
 } sd_self_state_t;
 
 /**
  * The structure to keep the cached service information in the system
  */
 typedef struct sd_sys_state {
+  uint8_t interested_services[NDN_SD_SERVICES_SIZE];
   ndn_name_t cached_services[NDN_SD_SERVICES_SIZE];
   uint32_t freshness_period[NDN_SD_SERVICES_SIZE];
 } sd_sys_state_t;
@@ -76,9 +77,18 @@ sd_init(const ndn_name_t* dev_identity_name);
  * @param service_id. Input. Service ID.
  * @param adv. Input. Whether to advertise.
  * @param status_code. Input. The status of the service.
+ * @return NDN_SUCCESS if there is no error.
  */
-void
+int
 sd_add_or_update_self_service(uint8_t service_id, bool adv, uint8_t status_code);
+
+/**
+ * Add an interested service type so sd will cache related service provider information.
+ * @param service_id. Input. Service ID.
+ * @return NDN_SUCCESS if there is no error.
+ */
+int
+sd_add_interested_service(uint8_t service_id);
 
 /**
  * Register the prefixes with corresponding onInterest, onData callbacks.
@@ -89,14 +99,16 @@ sd_listen();
 
 /**
  * Express an Interest packet to advertise one's own services.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
-void
+int
 sd_start_adv_self_services();
 
 /**
  * Query interested services from the system controller.
  * Usually used at the end of the security bootstrapping.
  * @param service_id. Input. The service ID that the device is interested in.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 int
 sd_query_sys_services(uint8_t service_id);
@@ -106,6 +118,7 @@ sd_query_sys_services(uint8_t service_id);
  * @param service_id. Input. The service to be queried.
  * @param is_any. Input. If is true, query one SP that can provide the service.
  *   If is false, query all the SPs that can provide the service.
+ * @return NDN_SUCCESS(0) if there is no error.
  */
 int
 sd_query_service(uint8_t service_id, const ndn_name_t* granularity, bool is_any);

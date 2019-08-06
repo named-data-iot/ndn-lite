@@ -15,7 +15,12 @@ static ndn_key_storage_t storage;
 ndn_key_storage_t*
 ndn_key_storage_init(void)
 {
-  storage.is_bootstrapped = 0;
+  storage.is_bootstrapped = false;
+  ndn_name_init(&storage.self_identity);
+  ndn_data_init(&storage.self_cert);
+  ndn_data_init(&storage.trust_anchor);
+  storage.self_identity_key.key_id = NDN_SEC_INVALID_KEY_ID;
+  storage.trust_anchor_key.key_id = NDN_SEC_INVALID_KEY_ID;
   for (uint8_t i = 0; i < NDN_SEC_SIGNING_KEYS_SIZE; i++) {
     storage.ecc_pub_keys[i].key_id = NDN_SEC_INVALID_KEY_ID;
     storage.ecc_prv_keys[i].key_id = NDN_SEC_INVALID_KEY_ID;
@@ -34,16 +39,24 @@ ndn_key_storage_get_instance(void)
 }
 
 int
-ndn_key_storage_set_anchor(const ndn_data_t* trust_anchor)
+ndn_key_storage_after_bootstrapping(const ndn_data_t* self_cert, const ndn_data_t* trust_anchor,
+                                    const ndn_ecc_prv_t* self_prv_key)
 {
   memcpy(&storage.trust_anchor, trust_anchor, sizeof(ndn_data_t));
-
-  // TBD parse key
-  // ndn_ecc_pub_init(&storage.trust_anchor_key, uint8_t* key_value,
-  //                  uint32_t key_size, NDN_ECDSA_CURVE_SECP256R1, uint32_t key_id)
-
-  storage.is_bootstrapped = 1;
-  return 0;
+  memcpy(&storage.self_cert, self_cert, sizeof(ndn_data_t));
+  memcpy(&storage.self_identity_key, self_prv_key, sizeof(ndn_ecc_prv_t));
+  storage.self_identity.components_size = self_cert->name.components_size - 4;
+  for (int i = 0; i < storage.self_identity.components_size; i++) {
+    ndn_name_append_component(&storage.self_identity, &self_cert->name.components[i]);
+  }
+  uint32_t anchor_keyid = *((uint32_t*)trust_anchor->name.components[trust_anchor->name.components_size - 3].value);
+  int ret = ndn_ecc_pub_init(&storage.trust_anchor_key, trust_anchor->content_value,
+                             trust_anchor->content_size, NDN_ECDSA_CURVE_SECP256R1, anchor_keyid);
+  if (ret != NDN_SUCCESS) return ret;
+  else {
+    storage.is_bootstrapped = true;
+    return NDN_SUCCESS;
+  }
 }
 
 // pass NULL pointers into the function to get empty ecc key pointers

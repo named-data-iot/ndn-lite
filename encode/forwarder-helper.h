@@ -28,7 +28,7 @@ extern "C" {
 
 /**
  * Interest options which the forwarder cares.
- * 
+ *
  * Currently only used in the forwarder.
  */
 typedef struct interest_options{
