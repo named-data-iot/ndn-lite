@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-const static uint32_t SD_ADV_INTERVAL = 3600;
+const static uint32_t SD_ADV_INTERVAL = 5000;
 
 /**
  * The structure to represent a NDN service.

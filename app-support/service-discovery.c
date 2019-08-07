@@ -11,6 +11,7 @@
 #include "service-discovery.h"
 #include "../encode/wrapper-api.h"
 #include "../encode/key-storage.h"
+#include "../forwarder/forwarder.h"
 #include "../ndn-services.h"
 #include "../util/bit-operations.h"
 #include "../util/uniform-time.h"
@@ -141,6 +142,8 @@ on_sd_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
   ndn_interest_t interest;
   ndn_decoder_t decoder;
   decoder_init(&decoder, raw_int, raw_int_size);
+  printf("Receive Interest packet with name: \n");
+  ndn_name_print(&interest.name);
   // TODO signature verification
   uint8_t sd_adv = NDN_SD_SD_ADV_ADV;
   uint8_t sd_query = NDN_SD_SD_QUERY;
@@ -226,10 +229,11 @@ void
 on_query_or_sd_meta_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 {
   ndn_data_t data;
-  printf("On data\n");
   if (ndn_data_tlv_decode_digest_verify(&data, raw_data, data_size)) {
     printf("Decoding failed.\n");
   }
+  printf("Receive Data packet with name: \n");
+  ndn_name_print(&data.name);
   ndn_time_ms_t now = ndn_time_now_ms();
   ndn_name_t service_full_name;
   uint32_t freshness_period = 0;
@@ -290,9 +294,15 @@ sd_start_adv_self_services()
   // TODO signature signing
   // Express Interest
   encoder_init(&encoder, sd_buf, sizeof(sd_buf));
-  ndn_interest_tlv_encode(&encoder, &interest);
-  ndn_forwarder_express_interest(encoder.output_value, encoder.offset, NULL, NULL, NULL);
-
+  ret = ndn_interest_tlv_encode(&encoder, &interest);
+  if (ret != 0) return ret;
+  ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, on_sd_interest_timeout, NULL, NULL);
+  if (ret != 0) {
+    printf("Fail to send out adv Interest. Error Code: %d\n", ret);
+    return ret;
+  }
+  printf("Send Interest packet with name: \n");
+  ndn_name_print(&interest.name);
   ndn_msgqueue_post(NULL, sd_start_adv_self_services, NULL, NULL);
   return NDN_SUCCESS;
 }
@@ -318,8 +328,14 @@ sd_query_sys_services(uint8_t service_id)
   ndn_encoder_t encoder;
   encoder_init(&encoder, sd_buf, sizeof(sd_buf));
   ndn_interest_tlv_encode(&encoder, &interest);
-  ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
-                                 on_query_or_sd_meta_data, on_sd_interest_timeout, NULL);
+  ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
+                                       on_query_or_sd_meta_data, on_sd_interest_timeout, NULL);
+  if (ret != 0) {
+    printf("Fail to send out adv Interest. Error Code: %d\n", ret);
+    return ret;
+  }
+  printf("Send Interest packet with name: \n");
+  ndn_name_print(&interest.name);
   return NDN_SUCCESS;
 }
 
