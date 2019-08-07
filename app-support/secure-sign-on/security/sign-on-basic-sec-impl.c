@@ -106,7 +106,8 @@ int sign_on_basic_gen_ecdh_shared_secret(const uint8_t *pub_key_raw, uint32_t pu
                                          uECC_Curve curve,
                                          uint8_t *output_buf, uint32_t output_buf_len,
                                          uint32_t *output_len) {
-  ndn_ecc_set_rng(ndn_rng);
+  ndn_rng_backend_t* rng_backend = ndn_rng_get_backend();
+  ndn_ecc_set_rng(rng_backend->rng);
   int ndn_ecc_curve = get_ndn_lite_curve(curve);
   if (ndn_ecc_curve == -1) {
     return SIGN_ON_BASIC_SEC_OP_FAILURE;
@@ -129,7 +130,8 @@ int sign_on_basic_gen_ec_keypair(uint8_t *pub_key_buf, uint32_t pub_key_buf_len,
                                  uint8_t *pri_key_buf, uint32_t pri_key_buf_len,
                                  uint32_t *pri_key_output_len,
                                  uECC_Curve curve) {
-    ndn_ecc_set_rng(ndn_rng);
+    ndn_rng_backend_t* rng_backend = ndn_rng_get_backend();
+    ndn_ecc_set_rng(rng_backend->rng);
 
     int ndn_ecc_curve = get_ndn_lite_curve(curve);
     if (ndn_ecc_curve == -1) {

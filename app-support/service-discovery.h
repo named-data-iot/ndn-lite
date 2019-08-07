@@ -112,7 +112,7 @@ sd_start_adv_self_services();
  * @return NDN_SUCCESS(0) if there is no error.
  */
 int
-sd_query_sys_services(uint8_t service_id);
+sd_query_sys_services(const uint8_t* service_ids, size_t size);
 
 /**
  * Express an Interest packet to query the SPs for the service.

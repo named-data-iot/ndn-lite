@@ -311,7 +311,7 @@ sd_start_adv_self_services()
 // TODO: This function behaves differently from the specification.
 // The spec said the param is a LIST but here it only accepts ONE id.
 int
-sd_query_sys_services(uint8_t service_id)
+sd_query_sys_services(const uint8_t* service_ids, size_t size)
 {
   // format: /[home-prefix]/SD-CTL/meta
   int ret = 0;
@@ -326,11 +326,9 @@ sd_query_sys_services(uint8_t service_id)
   ret = ndn_name_append_bytes_component(&interest.name, &sd_ctl_meta, 1);
   if (ret != 0) return ret;
   ndn_interest_set_MustBeFresh(&interest, true);
+  ndn_interest_set_Parameters(&interest, service_ids, size);
+
   // TODO signature signing
-
-  sd_buf[0] = service_id;
-  ndn_interest_set_Parameters(&interest, sd_buf, 1);
-
   // Express Interest
   ndn_encoder_t encoder;
   encoder_init(&encoder, sd_buf, sizeof(sd_buf));
