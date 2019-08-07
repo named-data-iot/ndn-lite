@@ -64,9 +64,10 @@ sd_add_or_update_self_service(uint8_t service_id, bool adv, uint8_t status_code)
       if (adv) {
         BIT_SET(m_self_state.services[i].status, 6);
       }
-      BITMASK_CLEAR(m_self_state.services[i].status, SERVICE_STATUS_MASK);
+      BITMASK_CLEAR(m_self_state.services[i].status, ~SERVICE_STATUS_MASK);
       m_self_state.services[i].status += status_code;
       added = true;
+      break;
     }
   }
   if (added) {
@@ -307,6 +308,8 @@ sd_start_adv_self_services()
   return NDN_SUCCESS;
 }
 
+// TODO: This function behaves differently from the specification.
+// The spec said the param is a LIST but here it only accepts ONE id.
 int
 sd_query_sys_services(uint8_t service_id)
 {
@@ -324,6 +327,10 @@ sd_query_sys_services(uint8_t service_id)
   if (ret != 0) return ret;
   ndn_interest_set_MustBeFresh(&interest, true);
   // TODO signature signing
+
+  sd_buf[0] = service_id;
+  ndn_interest_set_Parameters(&interest, sd_buf, 1);
+
   // Express Interest
   ndn_encoder_t encoder;
   encoder_init(&encoder, sd_buf, sizeof(sd_buf));
@@ -364,6 +371,12 @@ sd_query_service(uint8_t service_id, const ndn_name_t* granularity, bool is_any)
   if (ret != 0) return ret;
   ndn_interest_set_MustBeFresh(&interest, true);
   // TODO signature signing
+  if(ndn_interest_is_signed(&interest)){
+    printf("How is this possible?");
+    interest.flags = 0;
+    ndn_interest_set_MustBeFresh(&interest, true);
+  }
+
   ndn_encoder_t encoder;
   encoder_init(&encoder, sd_buf, sizeof(sd_buf));
   ndn_interest_tlv_encode(&encoder, &interest);
