@@ -118,7 +118,7 @@ void
 ndn_key_storage_delete_aes_key(uint32_t key_id);
 
 /**
- * Get an empty HMAC key pointer from key storage structure.
+ * Get an existing HMAC key pointer from key storage structure.
  * @param key_id. Input. Key id which indicates the key to fetch.
  * @param hmac. Output. Pass NULL pointers into the function to get output hmac key pointers.
  */
@@ -126,7 +126,7 @@ void
 ndn_key_storage_get_hmac_key(uint32_t key_id, ndn_hmac_key_t** hmac);
 
 /**
- * Get an empty ECC key pointer from key storage structure.
+ * Get an existing ECC key pointer from key storage structure.
  * @param key_id. Input. Key id which indicates the key to fetch.
  * @param hmac. Output. Pass NULL pointers into the function to get output ECC key pointers.
  */
@@ -134,7 +134,7 @@ void
 ndn_key_storage_get_ecc_key(uint32_t key_id, ndn_ecc_pub_t** pub, ndn_ecc_prv_t** prv);
 
 /**
- * Get an empty AES-128 key pointer from key storage structure.
+ * Get an existing AES-128 key pointer from key storage structure.
  * @param key_id. Input. Key id which indicates the key to fetch.
  * @param hmac. Output. Pass NULL pointers into the function to get output AES-128 key pointers.
  */

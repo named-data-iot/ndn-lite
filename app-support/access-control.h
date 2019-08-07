@@ -22,6 +22,12 @@ ac_init_state(); //  which is to load one’s own produced data prefixes into th
 void
 ac_add_data_prefix_need_ek(const ndn_name_t* data_prefix);
 
+int
+ac_get_ek_for_prefix(const ndn_name_t* data_prefix, ndn_aes_key_t* ek);
+
+int
+ac_get_dk(const ndn_name_t* key_prefix, ndn_aes_key_t* dk);
+
 void
 ac_start_auto_key_rollover();
 

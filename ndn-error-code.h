@@ -162,13 +162,17 @@
 /** @defgroup NDNErrorCodeSD Service Discovery Errors
  * @ingroup NDNErrorCode
  * @{ */
-#define NDN_SD_NO_MATCH_SERVCE -61
+#define NDN_SD_NOT_INITIALIZED -61
+#define NDN_SD_NO_MATCH_SERVCE -62
 /* @} */
 
 /** @defgroup NDNErrorCodeAC Access Control Errors
  * @ingroup NDNErrorCode
  * @{ */
-#define NDN_AC_UNRECOGNIZED_KEY_REQUEST -62
+#define NDN_AC_NOT_INITIALIZED -70
+#define NDN_AC_KEY_NOT_OBTAINED -71
+#define NDN_AC_KEY_EXPIRED -72
+#define NDN_AC_KEY_NOT_FOUND -73
 /* @} */
 
 /** @defgroup NDNErrorCodeSign Sign-on Protocol Errors

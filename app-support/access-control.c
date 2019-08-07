@@ -48,15 +48,90 @@ static ac_state_t m_ac_state;
 
 void
 ac_init_state()
-{}
+{
+  m_onging_dh.started = false;
+  m_onging_dh.dh_pub.key_id = NDN_SEC_INVALID_KEY_ID;
+  m_onging_dh.dh_prv.key_id = NDN_SEC_INVALID_KEY_ID;
+
+  for (int i = 0; i < NDN_APPSUPPORT_AC_KEY_LIST_SIZE; i++) {
+    m_ac_state.ek_state[i].data_prefix.components_size = NDN_FWD_INVALID_NAME_COMPONENT_SIZE;
+    m_ac_state.dk_state[i].data_prefix.components_size = NDN_FWD_INVALID_NAME_COMPONENT_SIZE;
+    m_ac_state.ek_state[i].key_id = NDN_SEC_INVALID_KEY_ID;
+    m_ac_state.dk_state[i].key_id = NDN_SEC_INVALID_KEY_ID;
+  }
+}
 
 void
 ac_add_data_prefix_need_ek(const ndn_name_t* data_prefix)
-{}
+{
+  for (int i = 0; i < NDN_APPSUPPORT_AC_KEY_LIST_SIZE; i++) {
+    if (m_ac_state.ek_state[i].data_prefix.components_size == NDN_FWD_INVALID_NAME_COMPONENT_SIZE) {
+      continue;
+    }
+    if (ndn_name_compare(data_prefix, &m_ac_state.ek_state[i].data_prefix)) {
+      // already added
+      return;
+    }
+  }
+  for (int i = 0; i < NDN_APPSUPPORT_AC_KEY_LIST_SIZE; i++) {
+    if (m_ac_state.ek_state[i].data_prefix.components_size == NDN_FWD_INVALID_NAME_COMPONENT_SIZE) {
+      memcpy(&m_ac_state.ek_state[i].data_prefix, data_prefix, sizeof(ndn_name_t));
+    }
+  }
+}
+
+int
+ac_get_ek_for_prefix(const ndn_name_t* data_prefix, ndn_aes_key_t* ek)
+{
+  ndn_time_ms_t now = ndn_time_now_ms();
+  for (int i = 0; i < NDN_APPSUPPORT_AC_KEY_LIST_SIZE; i++) {
+    if (ndn_name_compare(data_prefix, &m_ac_state.ek_state[i].data_prefix)) {
+      if (m_ac_state.ek_state[i].key_id == NDN_SEC_INVALID_KEY_ID) {
+        return NDN_AC_KEY_NOT_OBTAINED;
+      }
+      else if (m_ac_state.ek_state[i].expire_tp < now) {
+        return NDN_AC_KEY_EXPIRED;
+      }
+      else {
+        ndn_key_storage_get_aes_key(m_ac_state.ek_state[i].key_id, &ek);
+        return NDN_SUCCESS;
+      }
+    }
+  }
+  return NDN_AC_KEY_NOT_FOUND;
+}
+
+int
+ac_get_dk(const ndn_name_t* key_prefix, ndn_aes_key_t* dk)
+{
+  ndn_time_ms_t now = ndn_time_now_ms();
+  for (int i = 0; i < NDN_APPSUPPORT_AC_KEY_LIST_SIZE; i++) {
+    if (ndn_name_compare(key_prefix, &m_ac_state.dk_state[i].data_prefix)) {
+      if (m_ac_state.dk_state[i].key_id == NDN_SEC_INVALID_KEY_ID) {
+        return NDN_AC_KEY_NOT_OBTAINED;
+      }
+      else if (m_ac_state.dk_state[i].expire_tp < now) {
+        return NDN_AC_KEY_EXPIRED;
+      }
+      else {
+        ndn_key_storage_get_aes_key(m_ac_state.dk_state[i].key_id, &dk);
+        return NDN_SUCCESS;
+      }
+    }
+  }
+  return NDN_AC_KEY_NOT_FOUND;
+}
 
 void
-ac_on_data()
-{}
+ac_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
+{
+  ndn_data_t data;
+  if (ndn_data_tlv_decode_digest_verify(&data, raw_data, data_size)) {
+    printf("Decoding failed.\n");
+  }
+  printf("Receive SD related Data packet with name: \n");
+  ndn_name_print(&data.name);
+}
 
 void
 ac_start_auto_key_rollover()

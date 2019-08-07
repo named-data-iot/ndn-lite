@@ -133,8 +133,8 @@ int
 ndn_name_append_name(ndn_name_t* lhs, const ndn_name_t* rhs)
 {
   if (lhs->components_size + rhs->components_size <= NDN_NAME_COMPONENTS_SIZE) {
-    for (int i = 0; i < lhs->components_size; i++) {
-      memcpy(lhs->components + lhs->components_size, rhs->components + i, sizeof(name_component_t));
+    for (int i = 0; i < rhs->components_size; i++) {
+      memcpy(&lhs->components[lhs->components_size], &rhs->components[i], sizeof(name_component_t));
       lhs->components_size++;
     }
     return 0;
