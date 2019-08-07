@@ -143,7 +143,7 @@ on_sd_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
   ndn_interest_t interest;
   ndn_decoder_t decoder;
   decoder_init(&decoder, raw_int, raw_int_size);
-  printf("Receive Interest packet with name: \n");
+  printf("Receive SD related Interest packet with name: \n");
   ndn_name_print(&interest.name);
   // TODO signature verification
   uint8_t sd_adv = NDN_SD_SD_ADV_ADV;
@@ -233,7 +233,7 @@ on_query_or_sd_meta_data(const uint8_t* raw_data, uint32_t data_size, void* user
   if (ndn_data_tlv_decode_digest_verify(&data, raw_data, data_size)) {
     printf("Decoding failed.\n");
   }
-  printf("Receive Data packet with name: \n");
+  printf("Receive SD related Data packet with name: \n");
   ndn_name_print(&data.name);
   ndn_time_ms_t now = ndn_time_now_ms();
   ndn_name_t service_full_name;
@@ -302,7 +302,7 @@ sd_start_adv_self_services()
     printf("Fail to send out adv Interest. Error Code: %d\n", ret);
     return ret;
   }
-  printf("Send Interest packet with name: \n");
+  printf("Send adv Interest packet with name: \n");
   ndn_name_print(&interest.name);
   ndn_msgqueue_post(NULL, sd_start_adv_self_services, NULL, NULL);
   return NDN_SUCCESS;
@@ -341,7 +341,7 @@ sd_query_sys_services(uint8_t service_id)
     printf("Fail to send out adv Interest. Error Code: %d\n", ret);
     return ret;
   }
-  printf("Send Interest packet with name: \n");
+  printf("Send SD/META Interest packet with name: \n");
   ndn_name_print(&interest.name);
   return NDN_SUCCESS;
 }

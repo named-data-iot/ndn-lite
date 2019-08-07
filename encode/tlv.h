@@ -33,8 +33,8 @@ enum {
   TLV_InterestLifetime = 12,
   TLV_HopLimit = 34,
   TLV_ApplicationParameters = 36,
-  TLV_InterestSignatureInfo = 42,
-  TLV_InterestSignatureValue = 44,
+  TLV_InterestSignatureInfo = 44,
+  TLV_InterestSignatureValue = 46,
 
   // Data packet
   TLV_MetaInfo = 20,
@@ -53,7 +53,7 @@ enum {
   TLV_KeyDigest = 29,
   TLV_SignatureNonce = 38,
   TLV_Timestamp = 40,
-  TLV_SeqNum = 46,
+  TLV_SeqNum = 42,
 
   // Link Object
   TLV_Delegation = 31,
