@@ -145,6 +145,75 @@ ac_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   }
   printf("Receive SD related Data packet with name: \n");
   ndn_name_print(&data.name);
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, data.content_value, data.content_size);
+  uint8_t ek_reply = NDN_SD_AC_EK;
+  uint8_t dk_reply = NDN_SD_AC_DK;
+  if (memcmp(data.name.components[2].value, &ek_reply, 1)) {
+    uint32_t probe = 0;
+    // read ecdh pub key from the controller
+    decoder_get_type(&decoder, &probe);
+    if (probe != TLV_AC_ECDH_PUB) return;
+    decoder_get_length(&decoder, &probe);
+    uint8_t ecdh_bytes[64];
+    decoder_get_raw_buffer_value(&decoder, ecdh_bytes, probe);
+    // run ecdh process to obtain shared secret
+    uint8_t shared[32];
+    ndn_ecc_pub_t ecdh_pubkey;
+    ndn_ecc_pub_init(&ecdh_pubkey, ecdh_bytes, probe, NDN_ECDSA_CURVE_SECP256R1, 1);
+    ndn_ecc_dh_shared_secret(&ecdh_pubkey, &m_onging_dh.dh_prv, NDN_ECDSA_CURVE_SECP256R1,
+                             shared, sizeof(shared));
+    // decode Salt from content
+    uint8_t salt[NDN_APPSUPPORT_AC_SALT_SIZE];
+    decoder_get_type(&decoder, &probe);
+    if (probe != TLV_AC_SALT) return;
+    decoder_get_length(&decoder, &probe);
+    decoder_get_raw_buffer_value(&decoder, salt, probe);
+    // aes key generation
+    uint8_t symmetric_key[NDN_APPSUPPORT_AC_EDK_SIZE];
+    ndn_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key), salt, sizeof(salt));
+    ndn_aes_key_t aes_key;
+    ndn_aes_key_init(&aes_key, symmetric_key, sizeof(symmetric_key), 2);
+    // iv read
+    uint8_t aes_iv[NDN_AES_BLOCK_SIZE];
+    decoder_get_type(&decoder, &probe);
+    if (probe != TLV_AC_AES_IV) return;
+    decoder_get_length(&decoder, &probe);
+    decoder_get_raw_buffer_value(&decoder, aes_iv, NDN_AES_BLOCK_SIZE);
+    // read encrypted eks
+    ndn_time_ms_t now = ndn_time_now_ms();
+    ndn_name_t key_name;
+
+    // read freshness period of the key
+    decoder_get_uint32_value(&decoder, &probe);
+    uint64_t expire_tp = now + (uint64_t)probe;
+    // read keyname
+    ndn_name_init(&key_name);
+    ndn_name_tlv_decode(&decoder, &key_name);
+    // read ciphertext
+    decoder_get_type(&decoder, &probe);
+    if (probe != TLV_AC_ENCRYPTED_PAYLOAD) return;
+    decoder_get_length(&decoder, &probe);
+    ndn_aes_cbc_decrypt(decoder.input_value + decoder.offset, probe,
+                        ac_buf, probe - NDN_AES_BLOCK_SIZE, aes_iv, &aes_key);
+    uint32_t real_len = ndn_aes_parse_unpadding_size(ac_buf, probe - NDN_AES_BLOCK_SIZE);
+  }
+  else if (memcmp(data.name.components[2].value, &ek_reply, 1)) {
+
+  }
+}
+
+void
+ac_on_rollover_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
+{
+  ndn_data_t data;
+  if (ndn_data_tlv_decode_digest_verify(&data, raw_data, data_size)) {
+    printf("Decoding failed.\n");
+  }
+  printf("Receive SD related Data packet with name: \n");
+  ndn_name_print(&data.name);
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, data.content_value, data.content_size);
 }
 
 void
@@ -179,7 +248,7 @@ ac_start_auto_key_rollover()
       encoder_init(&encoder, ac_buf, sizeof(ac_buf));
       ndn_interest_tlv_encode(&encoder, &interest);
       ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
-                                     ac_on_data, ac_on_interest_timeout, NULL);
+                                     ac_on_rollover_data, ac_on_interest_timeout, NULL);
     }
     if (m_ac_state.dk_state[i].key_prefix.components_size != NDN_FWD_INVALID_NAME_COMPONENT_SIZE
         && m_ac_state.dk_state[i].key_id != NDN_SEC_INVALID_KEY_ID
@@ -196,7 +265,7 @@ ac_start_auto_key_rollover()
       encoder_init(&encoder, ac_buf, sizeof(ac_buf));
       ndn_interest_tlv_encode(&encoder, &interest);
       ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
-                                     ac_on_data, ac_on_interest_timeout, NULL);
+                                     ac_on_rollover_data, ac_on_interest_timeout, NULL);
     }
   }
   ndn_msgqueue_post(NULL, ac_start_auto_key_rollover, NULL, NULL);
