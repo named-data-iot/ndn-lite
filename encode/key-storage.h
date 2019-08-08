@@ -71,8 +71,9 @@ ndn_key_storage_get_instance(void);
  * @return 0 if there is no error.
  */
 int
-ndn_key_storage_after_bootstrapping(const ndn_data_t* self_cert, const ndn_data_t* trust_anchor,
-                                    const ndn_ecc_prv_t* self_prv_key);
+ndn_key_storage_set_trust_anchor(const ndn_data_t* trust_anchor);
+int
+ndn_key_storage_set_self_identity(const ndn_data_t* self_cert, const ndn_ecc_prv_t* self_prv_key);
 
 /**
  * Get an empty HMAC key pointer from key storage structure.

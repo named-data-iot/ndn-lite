@@ -62,12 +62,46 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   printf("Receive SD related Data packet with name: \n");
   ndn_name_print(&data.name);
   ndn_time_ms_t now = ndn_time_now_ms();
-  ndn_name_t service_full_name;
-  uint32_t freshness_period = 0;
+  uint32_t probe = 0;
   // parse content
   ndn_decoder_t decoder;
   decoder_init(&decoder, data.content_value, data.content_size);
-  // TODO
+  decoder_get_type(&decoder, &probe);
+  if (probe != TLV_Data) return;
+  decoder_get_length(&decoder, &probe);
+  ndn_data_t trust_anchor_cert;
+  if (ndn_data_tlv_decode_hmac_verify(&trust_anchor_cert, data.content_value, probe,
+                                      m_sec_boot_state.pre_shared_hmac_key) != NDN_SUCCESS) {
+    return;
+  }
+  // key storage set trust anchor
+  ndn_key_storage_set_trust_anchor(&trust_anchor_cert);
+  // parse ecdh pub key
+  decoder_get_type(&decoder, &probe);
+  if (probe != TLV_AC_ECDH_PUB) return;
+  decoder_get_length(&decoder, &probe);
+  uint8_t dh_pub_buf[100];
+  decoder_get_raw_buffer_value(&decoder, dh_pub_buf, probe);
+  ndn_ecc_pub_t controller_pub_key;
+  ndn_ecc_pub_init(&controller_pub_key, dh_pub_buf, probe, NDN_ECDSA_CURVE_SECP256R1, 1);
+  ndn_ecc_prv_t* self_prv_key = NULL;
+  ndn_key_storage_get_ecc_key(SEC_BOOT_DH_KEY_ID, NULL, &self_prv_key);
+  // get shared secret using DH process
+  uint8_t shared[32];
+  ndn_ecc_dh_shared_secret(&controller_pub_key, self_prv_key, NDN_ECDSA_CURVE_SECP256R1, shared, sizeof(shared));
+  // decode salt from the replied data
+  decoder_get_type(&decoder, &probe);
+  if (probe != TLV_AC_SALT) return;
+  decoder_get_length(&decoder, &probe);
+  uint8_t salt[NDN_APPSUPPORT_AC_SALT_SIZE];
+  decoder_get_raw_buffer_value(&decoder, salt, sizeof(salt));
+  // generate AES key using HKDF
+  ndn_aes_key_t* sym_aes_key;
+  ndn_key_storage_get_empty_aes_key(&sym_aes_key);
+  uint8_t symmetric_key[NDN_APPSUPPORT_AC_EDK_SIZE];
+  ndn_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key),
+           salt, sizeof(salt));
+  ndn_aes_key_init(&sym_aes_key, symmetric_key, sizeof(symmetric_key), SEC_BOOT_AES_KEY_ID);
   // send cert interest
   sec_boot_send_cert_interest();
 }
