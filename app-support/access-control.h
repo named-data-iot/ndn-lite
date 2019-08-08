@@ -17,7 +17,7 @@
 const static uint32_t KEY_ROLLOVER_AHEAD_TIME = 86400000;
 
 void
-ac_init_state(); //  which is to load one’s own produced data prefixes into the state
+ac_init_state(const name_component_t* home_prefix); //  which is to load one’s own produced data prefixes into the state
 
 void
 ac_add_data_prefix_need_ek(const ndn_name_t* data_prefix);
@@ -35,7 +35,7 @@ void
 ac_apply_ek();
 
 void
-ac_apply_dk(const ndn_name_t* key_name);
+ac_apply_dk(const ndn_name_t* key_name, bool one_time);
 
 
 // /**

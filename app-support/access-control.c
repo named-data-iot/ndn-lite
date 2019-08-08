@@ -10,6 +10,7 @@
 
 #include "access-control.h"
 #include "../encode/signed-interest.h"
+#include "../ndn-services.h"
 #include "../util/uniform-time.h"
 #include "../encode/key-storage.h"
 #include "../security/ndn-lite-aes.h"
@@ -32,30 +33,43 @@ typedef struct ac_ongoing_dh {
   ndn_ecc_prv_t dh_prv;
 } ac_ongoing_dh_t;
 
-typedef struct ac_key_state {
+typedef struct e_key_state {
   ndn_name_t data_prefix;
   uint32_t key_id;
   ndn_time_ms_t expire_tp;
-} ac_key_state_t;
+  uint8_t key_prefix_offset;
+} ac_ek_state_t;
+
+typedef struct d_key_state {
+  ndn_name_t key_prefix;
+  uint32_t key_id;
+  ndn_time_ms_t expire_tp;
+} ac_dk_state_t;
 
 typedef struct ac_state {
-  ac_key_state_t ek_state[NDN_APPSUPPORT_AC_KEY_LIST_SIZE];
-  ac_key_state_t dk_state[NDN_APPSUPPORT_AC_KEY_LIST_SIZE];
+  /**
+   * The home prefix component
+   */
+  const name_component_t* home_prefix;
+  ac_ek_state_t ek_state[NDN_APPSUPPORT_AC_KEY_LIST_SIZE];
+  ac_dk_state_t dk_state[NDN_APPSUPPORT_AC_KEY_LIST_SIZE];
 } ac_state_t;
 
 static ac_ongoing_dh_t m_onging_dh;
 static ac_state_t m_ac_state;
+static uint8_t ac_buf[4096];
 
 void
-ac_init_state()
+ac_init_state(const name_component_t* home_prefix)
 {
   m_onging_dh.started = false;
   m_onging_dh.dh_pub.key_id = NDN_SEC_INVALID_KEY_ID;
   m_onging_dh.dh_prv.key_id = NDN_SEC_INVALID_KEY_ID;
 
+  m_ac_state.home_prefix = home_prefix;
   for (int i = 0; i < NDN_APPSUPPORT_AC_KEY_LIST_SIZE; i++) {
     m_ac_state.ek_state[i].data_prefix.components_size = NDN_FWD_INVALID_NAME_COMPONENT_SIZE;
-    m_ac_state.dk_state[i].data_prefix.components_size = NDN_FWD_INVALID_NAME_COMPONENT_SIZE;
+    m_ac_state.dk_state[i].key_prefix.components_size = NDN_FWD_INVALID_NAME_COMPONENT_SIZE;
     m_ac_state.ek_state[i].key_id = NDN_SEC_INVALID_KEY_ID;
     m_ac_state.dk_state[i].key_id = NDN_SEC_INVALID_KEY_ID;
   }
@@ -106,7 +120,7 @@ ac_get_dk(const ndn_name_t* key_prefix, ndn_aes_key_t* dk)
 {
   ndn_time_ms_t now = ndn_time_now_ms();
   for (int i = 0; i < NDN_APPSUPPORT_AC_KEY_LIST_SIZE; i++) {
-    if (ndn_name_compare(key_prefix, &m_ac_state.dk_state[i].data_prefix)) {
+    if (ndn_name_compare(key_prefix, &m_ac_state.dk_state[i].key_prefix)) {
       if (m_ac_state.dk_state[i].key_id == NDN_SEC_INVALID_KEY_ID) {
         return NDN_AC_KEY_NOT_OBTAINED;
       }
@@ -134,16 +148,133 @@ ac_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 }
 
 void
+ac_on_interest_timeout(void* userdata)
+{
+  // do nothing for now
+  (void)userdata;
+}
+
+void
 ac_start_auto_key_rollover()
-{}
+{
+  ndn_time_ms_t now = ndn_time_now_ms();
+  ndn_interest_t interest;
+  uint32_t new_key_id = 0;
+  ndn_encoder_t encoder;
+  for (int i = 0; i < NDN_APPSUPPORT_AC_KEY_LIST_SIZE; i++) {
+    if (m_ac_state.ek_state[i].data_prefix.components_size != NDN_FWD_INVALID_NAME_COMPONENT_SIZE
+        && m_ac_state.ek_state[i].key_id != NDN_SEC_INVALID_KEY_ID
+        && m_ac_state.ek_state[i].expire_tp < now + KEY_ROLLOVER_AHEAD_TIME) {
+      ndn_interest_init(&interest);
+      for (int i = 0; i < m_ac_state.ek_state[i].key_prefix_offset; i++) {
+        ndn_name_append_component(&interest.name, &m_ac_state.ek_state[i].data_prefix.components[i]);
+      }
+      ndn_name_append_string_component(&interest.name, "EK", strlen("EK"));
+      new_key_id = m_ac_state.ek_state[i].key_id + 1;
+      if (new_key_id == NDN_SEC_INVALID_KEY_ID) {
+        new_key_id++;
+      }
+      ndn_name_append_bytes_component(&interest.name, (uint8_t*)new_key_id, sizeof(uint32_t));
+      // TODO: signature signing
+      encoder_init(&encoder, ac_buf, sizeof(ac_buf));
+      ndn_interest_tlv_encode(&encoder, &interest);
+      ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
+                                     ac_on_data, ac_on_interest_timeout, NULL);
+    }
+    if (m_ac_state.dk_state[i].key_prefix.components_size != NDN_FWD_INVALID_NAME_COMPONENT_SIZE
+        && m_ac_state.dk_state[i].key_id != NDN_SEC_INVALID_KEY_ID
+        && m_ac_state.dk_state[i].expire_tp < now + KEY_ROLLOVER_AHEAD_TIME) {
+      ndn_interest_init(&interest);
+      ndn_name_append_name(&interest.name, &m_ac_state.dk_state[i].key_prefix);
+      ndn_name_append_string_component(&interest.name, "DK", strlen("DK"));
+      new_key_id = m_ac_state.dk_state[i].key_id + 1;
+      if (new_key_id == NDN_SEC_INVALID_KEY_ID) {
+        new_key_id++;
+      }
+      ndn_name_append_bytes_component(&interest.name, (uint8_t*)new_key_id, sizeof(uint32_t));
+      // TODO: signature signing
+      encoder_init(&encoder, ac_buf, sizeof(ac_buf));
+      ndn_interest_tlv_encode(&encoder, &interest);
+      ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
+                                     ac_on_data, ac_on_interest_timeout, NULL);
+    }
+  }
+  ndn_msgqueue_post(NULL, ac_start_auto_key_rollover, NULL, NULL);
+}
 
 void
 ac_apply_ek()
-{}
+{
+  ndn_interest_t interest;
+  ndn_interest_init(&interest);
+  ndn_name_append_component(&interest.name, m_ac_state.home_prefix);
+  uint8_t ac_service = NDN_SD_AC;
+  uint8_t ac_ek_service = NDN_SD_AC_EK;
+  ndn_name_append_bytes_component(&interest.name, &ac_service, 1);
+  ndn_name_append_bytes_component(&interest.name, &ac_ek_service, 1);
+
+  ndn_encoder_t encoder;
+  encoder_init(&encoder, ac_buf, sizeof(ac_buf));
+  // create ecc key pair
+  ndn_ecc_make_key(&m_onging_dh.dh_pub, &m_onging_dh.dh_prv, NDN_ECDSA_CURVE_SECP256R1, 1);
+  m_onging_dh.started = true;
+  // append an ECDH public key into application parameter
+  encoder_append_type(&encoder, TLV_AC_ECDH_PUB);
+  encoder_append_length(&encoder, ndn_ecc_get_pub_key_size(&m_onging_dh.dh_pub));
+  encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(&m_onging_dh.dh_pub),
+                                  ndn_ecc_get_pub_key_size(&m_onging_dh.dh_pub));
+  // append production prefixes into application parameter
+  for (int i = 0; i < NDN_APPSUPPORT_AC_KEY_LIST_SIZE; i++) {
+    if (m_ac_state.ek_state[i].data_prefix.components_size != NDN_FWD_INVALID_NAME_COMPONENT_SIZE
+        && m_ac_state.ek_state[i].key_id == NDN_SEC_INVALID_KEY_ID) {
+      ndn_name_tlv_encode(&encoder, &m_ac_state.ek_state[i].data_prefix);
+    }
+  }
+  ndn_interest_set_Parameters(&interest, encoder.output_value, encoder.offset);
+
+  encoder_init(&encoder, ac_buf, sizeof(ac_buf));
+  ndn_interest_tlv_encode(&encoder, &interest);
+  ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
+                                 ac_on_data, ac_on_interest_timeout, NULL);
+}
 
 void
-ac_apply_dk(const ndn_name_t* key_name)
-{}
+ac_apply_dk(const ndn_name_t* key_name, bool one_time)
+{
+  ndn_interest_t interest;
+  ndn_interest_init(&interest);
+  ndn_name_append_component(&interest.name, m_ac_state.home_prefix);
+  uint8_t ac_service = NDN_SD_AC;
+  uint8_t ac_ek_service = NDN_SD_AC_DK;
+  ndn_name_append_bytes_component(&interest.name, &ac_service, 1);
+  ndn_name_append_bytes_component(&interest.name, &ac_ek_service, 1);
+
+  ndn_encoder_t encoder;
+  encoder_init(&encoder, ac_buf, sizeof(ac_buf));
+  // create ecc key pair
+  ndn_ecc_make_key(&m_onging_dh.dh_pub, &m_onging_dh.dh_prv, NDN_ECDSA_CURVE_SECP256R1, 1);
+  m_onging_dh.started = true;
+  // append an ECDH public key into application parameter
+  encoder_append_type(&encoder, TLV_AC_ECDH_PUB);
+  encoder_append_length(&encoder, ndn_ecc_get_pub_key_size(&m_onging_dh.dh_pub));
+  encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(&m_onging_dh.dh_pub),
+                                  ndn_ecc_get_pub_key_size(&m_onging_dh.dh_pub));
+  // append the bool indicating whether a long-term access right
+  if (one_time) {
+    encoder_append_byte_value(&encoder, 1);
+  }
+  else {
+    encoder_append_byte_value(&encoder, 0);
+  }
+  // append desired key name
+  ndn_name_tlv_encode(&encoder, key_name);
+  ndn_interest_set_Parameters(&interest, encoder.output_value, encoder.offset);
+
+  encoder_init(&encoder, ac_buf, sizeof(ac_buf));
+  ndn_interest_tlv_encode(&encoder, &interest);
+  ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
+                                 ac_on_data, ac_on_interest_timeout, NULL);
+}
 
 // static ndn_ac_unfinished_key_t unfinished_key;
 // static ndn_ac_state_t ac_state;
