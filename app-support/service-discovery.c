@@ -196,7 +196,7 @@ on_sd_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
   ndn_time_ms_t now = ndn_time_now_ms();
   if (interest.name.components[2].size != 1) {
     // unrecognized Interest, ignore it
-    return NDN_SUCCESS;
+    return NDN_FWD_STRATEGY_MULTICAST;
   }
   if (memcmp(interest.name.components[2].value, &sd_adv, 1)) {
     // adv Interest packet
@@ -248,13 +248,13 @@ on_sd_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
                                   // TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                                   // TLV_DATAARG_IDENTITYNAME_PTR, &keys->self_identity,
                                   // TLV_DATAARG_SIGKEY_PTR, &keys->self_identity_key);
-          if (ret != NDN_SUCCESS) return ret;
+          if (ret != NDN_SUCCESS) return NDN_FWD_STRATEGY_SUPPRESS;
           ndn_forwarder_put_data(data_buf, data_length);
         }
       }
     }
   }
-  return NDN_SUCCESS;
+  return NDN_FWD_STRATEGY_SUPPRESS;
 }
 
 void
