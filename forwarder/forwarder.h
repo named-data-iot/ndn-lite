@@ -78,6 +78,9 @@ ndn_forwarder_unregister_face(ndn_face_intf_t* face);
 int
 ndn_forwarder_add_route(ndn_face_intf_t* face, uint8_t* prefix, size_t length);
 
+int
+ndn_forwarder_add_route_str_prefix(ndn_face_intf_t* face, const char* prefix, size_t length);
+
 /** Remove a route from FIB.
  *
  * Removing the last route of a not registered FIB entry will delete the entry.

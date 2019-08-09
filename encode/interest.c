@@ -8,6 +8,7 @@
 
 #include "interest.h"
 #include "../security/ndn-lite-sha.h"
+#include "../util/uniform-time.h"
 
 /************************************************************/
 /*  Definition of helper functions                          */
@@ -200,6 +201,9 @@ ndn_interest_tlv_encode(ndn_encoder_t* encoder, ndn_interest_t* interest)
     if (ret_val != NDN_SUCCESS) return ret_val;
   }
   // nonce
+  if (interest->nonce == 0) {
+    interest->nonce = (uint32_t) ndn_time_now_us();
+  }
   ret_val = encoder_append_type(encoder, TLV_Nonce);
   if (ret_val != NDN_SUCCESS) return ret_val;
   ret_val = encoder_append_length(encoder, 4);

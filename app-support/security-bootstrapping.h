@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2019
+ * Copyright (C) 2018-2019 Zhiyi Zhang
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
@@ -12,6 +12,7 @@
 
 #include "../security/ndn-lite-ecc.h"
 #include "../security/ndn-lite-hmac.h"
+#include "../forwarder/forwarder.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,8 +25,9 @@ extern "C" {
  * @param service_list. INPUT. A array of uint8_t, each uint8_t represents a service provided by the device.
  * @param list_size. INPUT. The list size.
  */
-void
-ndn_security_bootstrapping(const ndn_ecc_prv_t* pre_installed_prv_key, const ndn_hmac_key_t* pre_shared_hmac_key,
+int
+ndn_security_bootstrapping(ndn_face_intf_t* face,
+                           const ndn_ecc_prv_t* pre_installed_prv_key, const ndn_hmac_key_t* pre_shared_hmac_key,
                            const char* device_identifier, size_t len,
                            const uint8_t* service_list, size_t list_size);
 

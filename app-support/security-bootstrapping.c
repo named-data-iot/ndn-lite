@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2019
+ * Copyright (C) 2018-2019 Zhiyi Zhang
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
@@ -19,6 +19,7 @@
 #include "../security/ndn-lite-sha.h"
 
 typedef struct ndn_sec_boot_state {
+  ndn_face_intf_t* face;
   const uint8_t* service_list;
   size_t list_size;
   const char* device_identifier;
@@ -44,10 +45,21 @@ sec_boot_after_bootstrapping()
 }
 
 void
-on_sec_boot_interest_timeout (void* userdata)
+on_sec_boot_sign_on_interest_timeout (void* userdata)
 {
   // do nothing for now
   (void)userdata;
+  printf("\nSEC BOOTSTRAPPING sign on interest timeout\n");
+  sec_boot_send_sign_on_interest();
+}
+
+void
+on_sec_boot_cert_interest_timeout (void* userdata)
+{
+  // do nothing for now
+  (void)userdata;
+  printf("\nSEC BOOTSTRAPPING cert timeout\n");
+  sec_boot_send_cert_interest();
 }
 
 void
@@ -63,7 +75,6 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   ndn_name_print(&data.name);
   ndn_time_ms_t now = ndn_time_now_ms();
   ndn_name_t service_full_name;
-  uint32_t freshness_period = 0;
   // parse content
   // format: self certificate, encrypted key
   ndn_decoder_t decoder;
@@ -102,7 +113,8 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 }
 
 int
-sec_boot_send_cert_interest() {
+sec_boot_send_cert_interest()
+{
   // generate the cert interest (2nd interest)
   int ret = 0;
   ndn_interest_t interest;
@@ -130,7 +142,7 @@ sec_boot_send_cert_interest() {
   encoder_append_raw_buffer_value(&encoder, m_sec_boot_state.trust_anchor_sha, NDN_SEC_SHA256_HASH_SIZE);
   // append the ecdh pub key, N1
   ndn_ecc_pub_t* self_dh_pub = NULL;
-  ndn_key_storage_get_ecc_key(SEC_BOOT_DH_KEY_ID, &self_dh_pub, NULL);
+  ndn_key_storage_get_ecc_pub_key(SEC_BOOT_DH_KEY_ID, &self_dh_pub);
   encoder_append_type(&encoder, TLV_AC_ECDH_PUB);
   encoder_append_length(&encoder, ndn_ecc_get_pub_key_size(self_dh_pub));
   encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(self_dh_pub),
@@ -146,12 +158,12 @@ sec_boot_send_cert_interest() {
   encoder_init(&encoder, sec_boot_buf, sizeof(sec_boot_buf));
   ndn_interest_tlv_encode(&encoder, &interest);
   ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
-                                       on_cert_data, on_sec_boot_interest_timeout, NULL);
+                                       on_cert_data, on_sec_boot_cert_interest_timeout, NULL);
   if (ret != 0) {
     printf("Fail to send out adv Interest. Error Code: %d\n", ret);
     return ret;
   }
-  printf("Send SD/META Interest packet with name: \n");
+  printf("Send SEC BOOT cert Interest packet with name: \n");
   ndn_name_print(&interest.name);
 
 }
@@ -194,7 +206,7 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   decoder_get_raw_buffer_value(&decoder, dh_pub_buf, probe);
   ndn_ecc_pub_init(&m_sec_boot_state.controller_dh_pub, dh_pub_buf, probe, NDN_ECDSA_CURVE_SECP256R1, 1);
   ndn_ecc_prv_t* self_prv_key = NULL;
-  ndn_key_storage_get_ecc_key(SEC_BOOT_DH_KEY_ID, NULL, &self_prv_key);
+  ndn_key_storage_get_ecc_prv_key(SEC_BOOT_DH_KEY_ID, &self_prv_key);
   // get shared secret using DH process
   uint8_t shared[32];
   ndn_ecc_dh_shared_secret(&m_sec_boot_state.controller_dh_pub, self_prv_key, NDN_ECDSA_CURVE_SECP256R1, shared, sizeof(shared));
@@ -211,6 +223,9 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   ndn_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key),
            salt, sizeof(salt));
   ndn_aes_key_init(&sym_aes_key, symmetric_key, sizeof(symmetric_key), SEC_BOOT_AES_KEY_ID);
+  // prepare for the next interest: register the prefix
+  ndn_forwarder_add_route_str_prefix(m_sec_boot_state.face, trust_anchor_cert.name.components[0].value,
+                                     trust_anchor_cert.name.components[0].size);
   // send cert interest
   sec_boot_send_cert_interest();
 }
@@ -220,12 +235,6 @@ sec_boot_send_sign_on_interest()
 {
   int ret = 0;
   // generate the sign on interest  (1st interest)
-  ndn_ecc_pub_t* dh_pub = NULL;
-  ndn_ecc_prv_t* dh_prv = NULL;
-  ndn_key_storage_get_empty_ecc_key(&dh_pub, &dh_prv);
-  if (ndn_ecc_make_key(dh_pub, dh_prv, NDN_ECDSA_CURVE_SECP256R1, SEC_BOOT_DH_KEY_ID) != NDN_SUCCESS) {
-    return NDN_SEC_CRYPTO_ALGO_FAILURE;
-  }
   // make the Interest packet
   ndn_interest_t interest;
   ndn_interest_init(&interest);
@@ -245,6 +254,8 @@ sec_boot_send_sign_on_interest()
   encoder_append_length(&encoder, m_sec_boot_state.list_size);
   encoder_append_raw_buffer_value(&encoder, m_sec_boot_state.service_list, m_sec_boot_state.list_size);
   // append the ecdh pub key
+  ndn_ecc_pub_t* dh_pub = NULL;
+  ndn_key_storage_get_ecc_pub_key(SEC_BOOT_DH_KEY_ID, &dh_pub);
   encoder_append_type(&encoder, TLV_AC_ECDH_PUB);
   encoder_append_length(&encoder, ndn_ecc_get_pub_key_size(dh_pub));
   encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(dh_pub), ndn_ecc_get_pub_key_size(dh_pub));
@@ -259,17 +270,18 @@ sec_boot_send_sign_on_interest()
   encoder_init(&encoder, sec_boot_buf, sizeof(sec_boot_buf));
   ndn_interest_tlv_encode(&encoder, &interest);
   ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
-                                       on_sign_on_data, on_sec_boot_interest_timeout, NULL);
+                                       on_sign_on_data, on_sec_boot_sign_on_interest_timeout, NULL);
   if (ret != 0) {
     printf("Fail to send out adv Interest. Error Code: %d\n", ret);
     return ret;
   }
-  printf("Send SD/META Interest packet with name: \n");
+  printf("Send SEC BOOT sign on Interest packet with name: \n");
   ndn_name_print(&interest.name);
 }
 
-void
-ndn_security_bootstrapping(const ndn_ecc_prv_t* pre_installed_prv_key, const ndn_hmac_key_t* pre_shared_hmac_key,
+int
+ndn_security_bootstrapping(ndn_face_intf_t* face,
+                           const ndn_ecc_prv_t* pre_installed_prv_key, const ndn_hmac_key_t* pre_shared_hmac_key,
                            const char* device_identifier, size_t identifier_size,
                            const uint8_t* service_list, size_t list_size)
 {
@@ -281,6 +293,7 @@ ndn_security_bootstrapping(const ndn_ecc_prv_t* pre_installed_prv_key, const ndn
   ndn_key_storage_init();
 
   // remember the state for future use
+  m_sec_boot_state.face = face;
   m_sec_boot_state.pre_installed_ecc_key = pre_installed_prv_key;
   m_sec_boot_state.pre_shared_hmac_key = pre_shared_hmac_key;
   m_sec_boot_state.service_list = service_list;
@@ -288,6 +301,15 @@ ndn_security_bootstrapping(const ndn_ecc_prv_t* pre_installed_prv_key, const ndn
   m_sec_boot_state.device_identifier = device_identifier;
   m_sec_boot_state.identifier_size = identifier_size;
 
+  // preparation
+  ndn_ecc_pub_t* dh_pub = NULL;
+  ndn_ecc_prv_t* dh_prv = NULL;
+  ndn_key_storage_get_empty_ecc_key(&dh_pub, &dh_prv);
+  if (ndn_ecc_make_key(dh_pub, dh_prv, NDN_ECDSA_CURVE_SECP256R1, SEC_BOOT_DH_KEY_ID) != NDN_SUCCESS) {
+    return NDN_SEC_CRYPTO_ALGO_FAILURE;
+  }
+
   // send the first interest out
   sec_boot_send_sign_on_interest();
+  return NDN_SUCCESS;
 }

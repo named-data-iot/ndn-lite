@@ -133,7 +133,10 @@ ndn_key_storage_get_hmac_key(uint32_t key_id, ndn_hmac_key_t** hmac);
  */
 void
 ndn_key_storage_get_ecc_key(uint32_t key_id, ndn_ecc_pub_t** pub, ndn_ecc_prv_t** prv);
-
+void
+ndn_key_storage_get_ecc_pub_key(uint32_t key_id, ndn_ecc_pub_t** pub);
+void
+ndn_key_storage_get_ecc_prv_key(uint32_t key_id, ndn_ecc_prv_t** pub);
 /**
  * Get an existing AES-128 key pointer from key storage structure.
  * @param key_id. Input. Key id which indicates the key to fetch.

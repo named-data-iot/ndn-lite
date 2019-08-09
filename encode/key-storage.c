@@ -175,6 +175,20 @@ ndn_key_storage_get_ecc_key(uint32_t key_id, ndn_ecc_pub_t** pub, ndn_ecc_prv_t*
   *prv = NULL;
 }
 
+void
+ndn_key_storage_get_ecc_pub_key(uint32_t key_id, ndn_ecc_pub_t** pub)
+{
+  ndn_ecc_prv_t* prv = NULL;
+  ndn_key_storage_get_ecc_key(key_id, pub, &prv);
+}
+
+void
+ndn_key_storage_get_ecc_prv_key(uint32_t key_id, ndn_ecc_prv_t** prv)
+{
+  ndn_ecc_pub_t* pub = NULL;
+  ndn_key_storage_get_ecc_key(key_id, &pub, prv);
+}
+
 // pass NULL pointers into the function to get empty ecc key pointers
 void
 ndn_key_storage_get_aes_key(uint32_t key_id, ndn_aes_key_t** aes)

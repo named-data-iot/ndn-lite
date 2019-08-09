@@ -13,6 +13,7 @@
 #include "../ndn-constants.h"
 #include "../ndn-error-code.h"
 #include "../encode/tlv.h"
+#include "../encode/name.h"
 
 #define NDN_FORWARDER_RESERVE_SIZE(nametree_size, facetab_size, fib_size, pit_size) \
   (NDN_NAMETREE_RESERVE_SIZE(nametree_size) + \
@@ -156,6 +157,18 @@ ndn_forwarder_add_route(ndn_face_intf_t* face, uint8_t* prefix, size_t length){
     return NDN_FWD_FIB_FULL;
   fib_entry->nexthop = bitset_set(fib_entry->nexthop, face->face_id);
   return NDN_SUCCESS;
+}
+
+int
+ndn_forwarder_add_route_str_prefix(ndn_face_intf_t* face, const char* prefix, size_t length)
+{
+  ndn_name_t name_prefix;
+  ndn_name_from_string(&name_prefix, prefix, length);
+  ndn_encoder_t encoder;
+  uint8_t buf[NDN_NAME_MAX_BLOCK_SIZE];
+  encoder_init(&encoder, buf, sizeof(buf));
+  ndn_name_tlv_encode(&encoder, &name_prefix);
+  return ndn_forwarder_add_route(face, encoder.output_value, encoder.offset);
 }
 
 int
