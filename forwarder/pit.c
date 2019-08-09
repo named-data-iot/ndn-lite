@@ -26,6 +26,8 @@ static void ndn_pit_timeout(void *selfptr, size_t param_len, void *param){
   ndn_pit_t* self = (ndn_pit_t*)selfptr;
   ndn_table_id_t i;
   ndn_time_ms_t now = ndn_time_now_ms();
+  ndn_on_timeout_func on_timeout = NULL;
+  void* userdata = NULL;
 
   for(i = 0; i < self->capacity; i ++){
     if(self->slots[i].nametree_id == NDN_INVALID_ID){
@@ -35,17 +37,23 @@ static void ndn_pit_timeout(void *selfptr, size_t param_len, void *param){
     // User timeout
     if(self->slots[i].on_data != NULL){
       if(now - self->slots[i].express_time > self->slots[i].options.lifetime){
-        if(self->slots[i].on_timeout){
-          self->slots[i].on_timeout(self->slots[i].userdata);
-        }
+        on_timeout = self->slots[i].on_timeout;
+        userdata = self->slots[i].userdata;
+        
         self->slots[i].on_timeout = NULL;
         self->slots[i].on_data = NULL;
         self->slots[i].userdata = NULL;
         self->slots[i].express_time = 0;
+
+        if(on_timeout){
+          on_timeout(userdata);
+        }
       }
     }
     // PIT timeout
-    if(now - self->slots[i].last_time > self->slots[i].options.lifetime){
+    if((now > self->slots[i].last_time) &&
+       (now - self->slots[i].last_time > self->slots[i].options.lifetime))
+    {
       ndn_pit_remove_entry(self, &self->slots[i]);
     }
   }
