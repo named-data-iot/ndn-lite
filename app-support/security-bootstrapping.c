@@ -107,7 +107,7 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 }
 
 int
-sec_boot_send_sign_on_interest(const char* device_identifier, size_t len,
+sec_boot_send_sign_on_interest(const char* device_identifier, size_t device_identifier_len,
                                const uint8_t* service_list, size_t list_size)
 {
   int ret = 0;
@@ -130,17 +130,22 @@ sec_boot_send_sign_on_interest(const char* device_identifier, size_t len,
   ndn_encoder_t encoder;
   encoder_init(&encoder, sec_boot_buf, sizeof(sec_boot_buf));
   name_component_t device_identifier_comp;
-  name_component_from_string(&device_identifier_comp, device_identifier, len);
+  name_component_from_string(&device_identifier_comp, device_identifier, device_identifier_len);
+  encoder_append_type(&encoder,TLV_SSP_DEVICE_IDENTIFIER);
+  encoder_append_length(&encoder, device_identifier_len);
+  encoder_append_raw_buffer_value(&encoder,device_identifier,device_identifier_len);
   // append the capabilities
-  encoder_append_type(&encoder, TLV_SEC_BOOT_CAPACITIES);
+  encoder_append_type(&encoder, TLV_SSP_DEVICE_CAPABILITIES);
   encoder_append_length(&encoder, list_size);
   encoder_append_raw_buffer_value(&encoder, service_list, list_size);
   // append the ecdh pub key
-  encoder_append_type(&encoder, TLV_AC_ECDH_PUB);
+  encoder_append_type(&encoder, TLV_SSP_N1_PUB);
   encoder_append_length(&encoder, ndn_ecc_get_pub_key_size(dh_pub));
   encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(dh_pub), ndn_ecc_get_pub_key_size(dh_pub));
   // set parameter
   ndn_interest_set_Parameters(&interest, encoder.output_value, encoder.offset);
+  // set must be fresh
+  ndn_interest_set_MustBeFresh(&interest,true);
   // sign the interest
   ndn_name_t temp_name;
   ndn_signed_interest_ecdsa_sign(&interest, &interest.name, m_sec_boot_state.pre_installed_ecc_key);
