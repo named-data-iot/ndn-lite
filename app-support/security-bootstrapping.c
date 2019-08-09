@@ -16,11 +16,15 @@
 #include "../ndn-error-code.h"
 #include "../util/uniform-time.h"
 #include "../security/ndn-lite-aes.h"
-#include "../security/ndn-lite-rng.h"
+#include "../security/ndn-lite-sha.h"
 
 typedef struct ndn_sec_boot_state {
   const uint8_t* service_list;
   size_t list_size;
+  const char* device_identifier;
+  size_t identifier_size;
+  uint8_t trust_anchor_sha[NDN_SEC_SHA256_HASH_SIZE];
+  ndn_ecc_pub_t controller_dh_pub;
   const ndn_ecc_prv_t* pre_installed_ecc_key;
   const ndn_hmac_key_t* pre_shared_hmac_key;
 } ndn_sec_boot_state_t;
@@ -35,7 +39,8 @@ static const uint32_t SEC_BOOT_AES_KEY_ID = 10002;
 void
 sec_boot_after_bootstrapping()
 {
-  // set up self id and trust anchor
+  ndn_key_storage_delete_aes_key(SEC_BOOT_AES_KEY_ID);
+  ndn_key_storage_delete_ecc_key(SEC_BOOT_DH_KEY_ID);
 }
 
 void
@@ -46,9 +51,109 @@ on_sec_boot_interest_timeout (void* userdata)
 }
 
 void
+on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
+{
+  // parse received data
+  ndn_data_t data;
+  if (ndn_data_tlv_decode_hmac_verify(&data, raw_data, data_size, m_sec_boot_state.pre_shared_hmac_key) != NDN_SUCCESS) {
+    printf("Decoding failed.\n");
+    return;
+  }
+  printf("Receive SD related Data packet with name: \n");
+  ndn_name_print(&data.name);
+  ndn_time_ms_t now = ndn_time_now_ms();
+  ndn_name_t service_full_name;
+  uint32_t freshness_period = 0;
+  // parse content
+  // format: self certificate, encrypted key
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, data.content_value, data.content_size);
+  // self cert certificate
+  uint32_t probe = 0;
+  decoder_get_type(&decoder, &probe);
+  if (probe != TLV_Data) return;
+  decoder_get_length(&decoder, &probe);
+  ndn_data_t self_cert;
+  if (ndn_data_tlv_decode_no_verify(&self_cert, data.content_value, encoder_probe_block_size(TLV_Data, probe)) != NDN_SUCCESS) {
+    return;
+  }
+  // iv
+  decoder_get_type(&decoder, &probe);
+  if (probe != TLV_AC_AES_IV) return;
+  decoder_get_length(&decoder, &probe);
+  uint8_t aes_iv[NDN_SEC_AES_IV_LENGTH];
+  decoder_get_raw_buffer_value(&decoder, aes_iv, NDN_SEC_AES_IV_LENGTH);
+  // encrypted private key
+  decoder_get_type(&decoder, &probe);
+  if (probe != TLV_AC_ENCRYPTED_PAYLOAD) return;
+  decoder_get_length(&decoder, &probe);
+  uint8_t plaintext[1024];
+  ndn_aes_key_t* sym_aes_key = NULL;
+  ndn_key_storage_get_aes_key(SEC_BOOT_AES_KEY_ID, &sym_aes_key);
+  ndn_aes_cbc_decrypt(decoder.input_value + decoder.offset, probe,
+                      plaintext, probe - NDN_AES_BLOCK_SIZE, aes_iv, sym_aes_key);
+  // set key storage
+  ndn_ecc_prv_t self_prv;
+  uint32_t keyid = *(uint32_t*)&self_cert.name.components[self_cert.name.components_size - 3].value;
+  ndn_ecc_prv_init(&self_prv, plaintext, 64, NDN_ECDSA_CURVE_SECP256R1, keyid);
+  ndn_key_storage_set_self_identity(&self_cert, &self_prv);
+  // finish the bootstrapping process
+  sec_boot_after_bootstrapping();
+}
+
+int
 sec_boot_send_cert_interest() {
   // generate the cert interest (2nd interest)
+  int ret = 0;
+  ndn_interest_t interest;
+  ndn_interest_init(&interest);
+  ndn_key_storage_t* key_storage = ndn_key_storage_get_instance();
+  ndn_name_append_component(&interest.name, &key_storage->trust_anchor.name.components[0]);
+  ndn_name_append_string_component(&interest.name, "cert", strlen("cert"));
+  // set params
+  // format: name component, N2, sha2 of trust anchor, N1
+  ndn_encoder_t encoder;
+  encoder_init(&encoder, sec_boot_buf, sizeof(sec_boot_buf));
+  // identifier name component
+  name_component_t device_identifier_comp;
+  name_component_from_string(&device_identifier_comp, m_sec_boot_state.device_identifier,
+                             m_sec_boot_state.identifier_size);
+  name_component_tlv_encode(&encoder, &device_identifier_comp);
+  // append the ecdh pub key, N2
+  encoder_append_type(&encoder, TLV_AC_ECDH_PUB);
+  encoder_append_length(&encoder, ndn_ecc_get_pub_key_size(&m_sec_boot_state.controller_dh_pub));
+  encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(&m_sec_boot_state.controller_dh_pub), 
+                                  ndn_ecc_get_pub_key_size(&m_sec_boot_state.controller_dh_pub));
+  // append sha256 of the trust anchor
+  encoder_append_type(&encoder, TLV_SEC_BOOT_ANCHOR_DIGEST);
+  encoder_append_length(&encoder, NDN_SEC_SHA256_HASH_SIZE);
+  encoder_append_raw_buffer_value(&encoder, m_sec_boot_state.trust_anchor_sha, NDN_SEC_SHA256_HASH_SIZE);
+  // append the ecdh pub key, N1
+  ndn_ecc_pub_t* self_dh_pub = NULL;
+  ndn_key_storage_get_ecc_key(SEC_BOOT_DH_KEY_ID, &self_dh_pub, NULL);
+  encoder_append_type(&encoder, TLV_AC_ECDH_PUB);
+  encoder_append_length(&encoder, ndn_ecc_get_pub_key_size(self_dh_pub));
+  encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(self_dh_pub),
+                                  ndn_ecc_get_pub_key_size(self_dh_pub));
+  // set parameter
+  ndn_interest_set_Parameters(&interest, encoder.output_value, encoder.offset);
+  // set must be fresh
+  ndn_interest_set_MustBeFresh(&interest,true);
+  // sign the interest
+  ndn_name_t temp_name;
+  ndn_signed_interest_ecdsa_sign(&interest, &interest.name, m_sec_boot_state.pre_installed_ecc_key);
   // send it out
+  encoder_init(&encoder, sec_boot_buf, sizeof(sec_boot_buf));
+  ndn_interest_tlv_encode(&encoder, &interest);
+  ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
+                                       on_cert_data, on_sec_boot_interest_timeout, NULL);
+  if (ret != 0) {
+    printf("Fail to send out adv Interest. Error Code: %d\n", ret);
+    return ret;
+  }
+  printf("Send SD/META Interest packet with name: \n");
+  ndn_name_print(&interest.name);
+
 }
 
 void
@@ -56,22 +161,27 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 {
   // parse received data
   ndn_data_t data;
-  if (ndn_data_tlv_decode_digest_verify(&data, raw_data, data_size)) {
+  if (ndn_data_tlv_decode_hmac_verify(&data, raw_data, data_size, m_sec_boot_state.pre_shared_hmac_key) != NDN_SUCCESS) {
     printf("Decoding failed.\n");
+    return;
   }
   printf("Receive SD related Data packet with name: \n");
   ndn_name_print(&data.name);
   ndn_time_ms_t now = ndn_time_now_ms();
   uint32_t probe = 0;
   // parse content
+  // format: a data packet, ecdh pub, salt
   ndn_decoder_t decoder;
   decoder_init(&decoder, data.content_value, data.content_size);
+  // trust anchor certificate
   decoder_get_type(&decoder, &probe);
   if (probe != TLV_Data) return;
   decoder_get_length(&decoder, &probe);
+  // calculate the shaa256 digest of the trust anchor
+  ndn_sha256(decoder.input_value, encoder_probe_block_size(TLV_Data, probe),
+             m_sec_boot_state.trust_anchor_sha);
   ndn_data_t trust_anchor_cert;
-  if (ndn_data_tlv_decode_hmac_verify(&trust_anchor_cert, data.content_value, probe,
-                                      m_sec_boot_state.pre_shared_hmac_key) != NDN_SUCCESS) {
+  if (ndn_data_tlv_decode_no_verify(&trust_anchor_cert, data.content_value, encoder_probe_block_size(TLV_Data, probe)) != NDN_SUCCESS) {
     return;
   }
   // key storage set trust anchor
@@ -82,13 +192,12 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   decoder_get_length(&decoder, &probe);
   uint8_t dh_pub_buf[100];
   decoder_get_raw_buffer_value(&decoder, dh_pub_buf, probe);
-  ndn_ecc_pub_t controller_pub_key;
-  ndn_ecc_pub_init(&controller_pub_key, dh_pub_buf, probe, NDN_ECDSA_CURVE_SECP256R1, 1);
+  ndn_ecc_pub_init(&m_sec_boot_state.controller_dh_pub, dh_pub_buf, probe, NDN_ECDSA_CURVE_SECP256R1, 1);
   ndn_ecc_prv_t* self_prv_key = NULL;
   ndn_key_storage_get_ecc_key(SEC_BOOT_DH_KEY_ID, NULL, &self_prv_key);
   // get shared secret using DH process
   uint8_t shared[32];
-  ndn_ecc_dh_shared_secret(&controller_pub_key, self_prv_key, NDN_ECDSA_CURVE_SECP256R1, shared, sizeof(shared));
+  ndn_ecc_dh_shared_secret(&m_sec_boot_state.controller_dh_pub, self_prv_key, NDN_ECDSA_CURVE_SECP256R1, shared, sizeof(shared));
   // decode salt from the replied data
   decoder_get_type(&decoder, &probe);
   if (probe != TLV_AC_SALT) return;
@@ -107,8 +216,7 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 }
 
 int
-sec_boot_send_sign_on_interest(const char* device_identifier, size_t device_identifier_len,
-                               const uint8_t* service_list, size_t list_size)
+sec_boot_send_sign_on_interest()
 {
   int ret = 0;
   // generate the sign on interest  (1st interest)
@@ -123,23 +231,21 @@ sec_boot_send_sign_on_interest(const char* device_identifier, size_t device_iden
   ndn_interest_init(&interest);
   ndn_name_append_string_component(&interest.name, "ndn", strlen("ndn"));
   ndn_name_append_string_component(&interest.name, "sign-on", strlen("sign-on"));
-
   // make Interest parameter
-  // format: a name component (a string), a list of services provided, the EC_pub_key
-  // append the identifier name component
+  // format: a name component, a list of services provided, the EC_pub_key
   ndn_encoder_t encoder;
   encoder_init(&encoder, sec_boot_buf, sizeof(sec_boot_buf));
+  // append the identifier name component
   name_component_t device_identifier_comp;
-  name_component_from_string(&device_identifier_comp, device_identifier, device_identifier_len);
-  encoder_append_type(&encoder,TLV_SSP_DEVICE_IDENTIFIER);
-  encoder_append_length(&encoder, device_identifier_len);
-  encoder_append_raw_buffer_value(&encoder,device_identifier,device_identifier_len);
+  name_component_from_string(&device_identifier_comp, m_sec_boot_state.device_identifier,
+                             m_sec_boot_state.identifier_size);
+  name_component_tlv_encode(&encoder, &device_identifier_comp);
   // append the capabilities
-  encoder_append_type(&encoder, TLV_SSP_DEVICE_CAPABILITIES);
-  encoder_append_length(&encoder, list_size);
-  encoder_append_raw_buffer_value(&encoder, service_list, list_size);
+  encoder_append_type(&encoder, TLV_SEC_BOOT_CAPACITIES);
+  encoder_append_length(&encoder, m_sec_boot_state.list_size);
+  encoder_append_raw_buffer_value(&encoder, m_sec_boot_state.service_list, m_sec_boot_state.list_size);
   // append the ecdh pub key
-  encoder_append_type(&encoder, TLV_SSP_N1_PUB);
+  encoder_append_type(&encoder, TLV_AC_ECDH_PUB);
   encoder_append_length(&encoder, ndn_ecc_get_pub_key_size(dh_pub));
   encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(dh_pub), ndn_ecc_get_pub_key_size(dh_pub));
   // set parameter
@@ -163,28 +269,8 @@ sec_boot_send_sign_on_interest(const char* device_identifier, size_t device_iden
 }
 
 void
-on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
-{
-  // parse received data
-  ndn_data_t data;
-  if (ndn_data_tlv_decode_digest_verify(&data, raw_data, data_size)) {
-    printf("Decoding failed.\n");
-  }
-  printf("Receive SD related Data packet with name: \n");
-  ndn_name_print(&data.name);
-  ndn_time_ms_t now = ndn_time_now_ms();
-  ndn_name_t service_full_name;
-  uint32_t freshness_period = 0;
-  // parse content
-  ndn_decoder_t decoder;
-  decoder_init(&decoder, data.content_value, data.content_size);
-  // TODO
-  // finish the bootstrapping process
-}
-
-void
 ndn_security_bootstrapping(const ndn_ecc_prv_t* pre_installed_prv_key, const ndn_hmac_key_t* pre_shared_hmac_key,
-                           const char* device_identifier, size_t len,
+                           const char* device_identifier, size_t identifier_size,
                            const uint8_t* service_list, size_t list_size)
 {
   // set ECC RNG backend
@@ -199,7 +285,9 @@ ndn_security_bootstrapping(const ndn_ecc_prv_t* pre_installed_prv_key, const ndn
   m_sec_boot_state.pre_shared_hmac_key = pre_shared_hmac_key;
   m_sec_boot_state.service_list = service_list;
   m_sec_boot_state.list_size = list_size;
+  m_sec_boot_state.device_identifier = device_identifier;
+  m_sec_boot_state.identifier_size = identifier_size;
 
   // send the first interest out
-  sec_boot_send_sign_on_interest(device_identifier, len, service_list, list_size);
+  sec_boot_send_sign_on_interest();
 }
