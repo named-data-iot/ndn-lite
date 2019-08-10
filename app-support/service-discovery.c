@@ -196,7 +196,7 @@ on_sd_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
   ndn_time_ms_t now = ndn_time_now_ms();
   if (interest.name.components[2].size != 1) {
     // unrecognized Interest, ignore it
-    return NDN_FWD_STRATEGY_MULTICAST;
+    return NDN_FWD_STRATEGY_SUPPRESS;
   }
   if (memcmp(interest.name.components[2].value, &sd_adv, 1)) {
     // adv Interest packet
@@ -326,7 +326,7 @@ sd_start_adv_self_services()
     if (ret != 0) return ret;
   }
   ndn_interest_set_MustBeFresh(&interest, true);
-  // Parameter: uint32_t (freshness period), NameComponent, NameComponent, ...
+  // Parameter: uint32_t (freshness period), byte array
   ndn_encoder_t encoder;
   encoder_init(&encoder, sd_buf, sizeof(sd_buf));
   encoder_append_uint32_value(&encoder, SD_ADV_INTERVAL);
@@ -353,8 +353,6 @@ sd_start_adv_self_services()
   return NDN_SUCCESS;
 }
 
-// TODO: This function behaves differently from the specification.
-// The spec said the param is a LIST but here it only accepts ONE id.
 int
 sd_query_sys_services(const uint8_t* service_ids, size_t size)
 {
@@ -413,17 +411,17 @@ sd_query_service(uint8_t service_id, const ndn_name_t* granularity, bool is_any)
   }
   if (ret != 0) return ret;
   ndn_interest_set_MustBeFresh(&interest, true);
-  // TODO signature signing
-  if(ndn_interest_is_signed(&interest)){
-    printf("How is this possible?");
-    interest.flags = 0;
-    ndn_interest_set_MustBeFresh(&interest, true);
-  }
-
+  // send Interest out
   ndn_encoder_t encoder;
   encoder_init(&encoder, sd_buf, sizeof(sd_buf));
   ndn_interest_tlv_encode(&encoder, &interest);
-  ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
-                                 on_query_or_sd_meta_data, on_sd_interest_timeout, NULL);
+  ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
+                                       on_query_or_sd_meta_data, on_sd_interest_timeout, NULL);
+  if (ret != 0) {
+    printf("Fail to send out adv Interest. Error Code: %d\n", ret);
+    return ret;
+  }
+  printf("Send SD query Interest packet with name: \n");
+  ndn_name_print(&interest.name);
   return NDN_SUCCESS;
 }

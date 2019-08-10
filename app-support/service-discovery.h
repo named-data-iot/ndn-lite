@@ -63,7 +63,9 @@ sd_start_adv_self_services();
 /**
  * Query interested services from the system controller.
  * Usually used at the end of the security bootstrapping.
- * @param service_id. Input. The service ID that the device is interested in.
+ * @param service_ids. Input. The service IDs that the device is interested in.
+ *   Each uint8_t in the list represents a service type;
+ * @param size. Input. The size of the service id list.
  * @return NDN_SUCCESS(0) if there is no error.
  */
 int
