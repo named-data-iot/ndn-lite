@@ -228,6 +228,18 @@ ndn_forwarder_register_prefix(uint8_t* prefix,
 }
 
 int
+ndn_forwarder_register_name_prefix(const ndn_name_t* prefix,
+                                   ndn_on_interest_func on_interest,
+                                   void* userdata)
+{
+  uint8_t buf[NDN_NAME_MAX_BLOCK_SIZE];
+  ndn_encoder_t encoder;
+  encoder_init(&encoder, buf, sizeof(buf));
+  ndn_name_tlv_encode(&encoder, prefix);
+  return ndn_forwarder_register_prefix(encoder.output_value, encoder.offset, on_interest, userdata);
+}
+
+int
 ndn_forwarder_unregister_prefix(uint8_t* prefix, size_t length)
 {
   int ret = tlv_check_type_length(prefix, length, TLV_Name);

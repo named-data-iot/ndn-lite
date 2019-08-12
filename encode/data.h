@@ -65,6 +65,9 @@ ndn_data_init(ndn_data_t* data)
   ndn_metainfo_init(&data->metainfo);
 }
 
+int
+ndn_data_tlv_encode(ndn_encoder_t* encoder, ndn_data_t* data);
+
 /**
  * Use Digest (SHA256) to sign the Data and encode the Data into wire format.
  * This function will automatically set signature info and signature value.

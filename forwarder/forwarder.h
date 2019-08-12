@@ -10,6 +10,7 @@
 #define FORWARDER_FORWARDER_H
 
 #include "face.h"
+#include "../encode/name.h"
 #include "callback-funcs.h"
 #include "../util/msg-queue.h"
 
@@ -126,6 +127,11 @@ ndn_forwarder_register_prefix(uint8_t* prefix,
                               size_t length,
                               ndn_on_interest_func on_interest,
                               void* userdata);
+
+int
+ndn_forwarder_register_name_prefix(const ndn_name_t* prefix,
+                                   ndn_on_interest_func on_interest,
+                                   void* userdata);
 
 /** Unregister a prefix.
  *

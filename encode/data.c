@@ -77,11 +77,50 @@ _prepare_signature_info(ndn_data_t* data, uint8_t signature_type,
 /************************************************************/
 
 int
+ndn_data_tlv_encode(ndn_encoder_t* encoder, ndn_data_t* data)
+{
+  int ret_val = -1;
+  uint32_t data_buffer_size = ndn_name_probe_block_size(&data->name);
+  // meta info
+  data_buffer_size += ndn_metainfo_probe_block_size(&data->metainfo);
+  // content
+  data_buffer_size += encoder_probe_block_size(TLV_Content, data->content_size);
+  // signature info
+  data_buffer_size += ndn_signature_info_probe_block_size(&data->signature);
+  // signature value
+  data_buffer_size += ndn_signature_value_probe_block_size(&data->signature);
+
+  // data T and L
+  ret_val = encoder_append_type(encoder, TLV_Data);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_length(encoder, data_buffer_size);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  // name
+  ret_val = ndn_name_tlv_encode(encoder, &data->name);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  // meta info
+  ret_val = ndn_metainfo_tlv_encode(encoder, &data->metainfo);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  // content
+  ret_val = encoder_append_type(encoder, TLV_Content);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_length(encoder, data->content_size);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_raw_buffer_value(encoder, data->content_value, data->content_size);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  // signature info
+  ret_val = ndn_signature_info_tlv_encode(encoder, &data->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  // signature value
+  ret_val = ndn_signature_value_tlv_encode(encoder, &data->signature);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  return 0;
+}
+
+int
 ndn_data_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_data_t* data)
 {
-
   int ret_val = -1;
-
   // set signature info
   ret_val = ndn_signature_init(&data->signature);
   if (ret_val != NDN_SUCCESS) return ret_val;

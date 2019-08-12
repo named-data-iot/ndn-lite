@@ -346,8 +346,8 @@ sd_start_adv_self_services()
   encoder_init(&encoder, sd_buf, sizeof(sd_buf));
   ret = ndn_interest_tlv_encode(&encoder, &interest);
   if (ret != 0) return ret;
-  if(service_cnt > 0){
-    ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, on_sd_interest_timeout, NULL, NULL);
+  if (service_cnt > 0) {
+    ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, on_query_or_sd_meta_data, NULL, NULL);
   }
   if (ret != 0) {
     printf("Fail to send out adv Interest. Error Code: %d\n", ret);

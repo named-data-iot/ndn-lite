@@ -165,7 +165,7 @@ sec_boot_send_cert_interest()
   }
   printf("Send SEC BOOT cert Interest packet with name: \n");
   ndn_name_print(&interest.name);
-
+  return NDN_SUCCESS;
 }
 
 void
@@ -222,9 +222,9 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   uint8_t symmetric_key[NDN_APPSUPPORT_AC_EDK_SIZE];
   ndn_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key),
            salt, sizeof(salt));
-  ndn_aes_key_init(&sym_aes_key, symmetric_key, sizeof(symmetric_key), SEC_BOOT_AES_KEY_ID);
+  ndn_aes_key_init(sym_aes_key, symmetric_key, sizeof(symmetric_key), SEC_BOOT_AES_KEY_ID);
   // prepare for the next interest: register the prefix
-  ndn_forwarder_add_route_str_prefix(m_sec_boot_state.face, trust_anchor_cert.name.components[0].value,
+  ndn_forwarder_add_route_str_prefix(m_sec_boot_state.face, (char*)trust_anchor_cert.name.components[0].value,
                                      trust_anchor_cert.name.components[0].size);
   // send cert interest
   sec_boot_send_cert_interest();
@@ -277,6 +277,7 @@ sec_boot_send_sign_on_interest()
   }
   printf("Send SEC BOOT sign on Interest packet with name: \n");
   ndn_name_print(&interest.name);
+  return NDN_SUCCESS;
 }
 
 int
