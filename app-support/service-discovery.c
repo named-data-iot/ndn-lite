@@ -303,6 +303,8 @@ on_sd_interest_timeout (void* userdata)
 int
 sd_start_adv_self_services()
 {
+  int service_cnt;
+
   ndn_time_ms_t now = ndn_time_now_ms();
   if (now < m_next_adv) {
     ndn_msgqueue_post(NULL, sd_start_adv_self_services, NULL, NULL);
@@ -330,10 +332,12 @@ sd_start_adv_self_services()
   ndn_encoder_t encoder;
   encoder_init(&encoder, sd_buf, sizeof(sd_buf));
   encoder_append_uint32_value(&encoder, SD_ADV_INTERVAL);
+  service_cnt = 0;
   for (int i = 0; i < 10; i++) {
     if (BIT_CHECK(m_self_state.services[i].status, 7)) {
       // TODO: add service status check (available, unavailable, etc.)
       encoder_append_byte_value(&encoder, m_self_state.services[i].service_id);
+      service_cnt ++;
     }
   }
   ndn_interest_set_Parameters(&interest, sd_buf, encoder.offset);
@@ -342,7 +346,9 @@ sd_start_adv_self_services()
   encoder_init(&encoder, sd_buf, sizeof(sd_buf));
   ret = ndn_interest_tlv_encode(&encoder, &interest);
   if (ret != 0) return ret;
-  ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, on_sd_interest_timeout, NULL, NULL);
+  if(service_cnt > 0){
+    ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, on_sd_interest_timeout, NULL, NULL);
+  }
   if (ret != 0) {
     printf("Fail to send out adv Interest. Error Code: %d\n", ret);
     return ret;
