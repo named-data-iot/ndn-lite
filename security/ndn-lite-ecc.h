@@ -208,14 +208,12 @@ ndn_ecc_make_key(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
  * Negotiate a shared secret wih given ECC public and private keys via ECDH.
  * @param ecc_pub. Input. Input ECC public key.
  * @param ecc_prv. Input. Input ECC private key.
- * @param curve_type. Input. ECC curve type. Should be the same type of input public and private key.
  * @param output. Output. Buffer to receive negotiated shared secret.
  * @param output_size. Input. Size of the output buffer. Should not be smaller than 24 bytes.
  * @return NDN_SUCCESS(0) if there is no error.
  */
 int
-ndn_ecc_dh_shared_secret(const ndn_ecc_pub_t* ecc_pub, const ndn_ecc_prv_t* ecc_prv,
-                         uint8_t curve_type, uint8_t* output, uint32_t output_size);
+ndn_ecc_dh_shared_secret(const ndn_ecc_pub_t* ecc_pub, const ndn_ecc_prv_t* ecc_prv, uint8_t* output, uint32_t output_size);
 
 /**
  * Sign a buffer using ECDSA algorithm. This function will automatically use
@@ -227,16 +225,13 @@ ndn_ecc_dh_shared_secret(const ndn_ecc_pub_t* ecc_pub, const ndn_ecc_prv_t* ecc_
  * @param output_max_size. Input. Buffer size of output_value
  * @param prv_key_value. Input. ECDSA private key buffer.
  * @param prv_key_size. Input. Size of private key.
- * @param ecdsa_type. Input. Type of ECDSA signature. Can be secp160r1, secp192r1, secp224r1,
- *        secp256r1, secp256k1.
  * @param output_used_size. Output. Size of used output buffer when signing complete.
  * @return NDN_SUCCESS(0) if there is no error.
  */
 int
 ndn_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
                uint8_t* output_value, uint32_t output_max_size,
-               const ndn_ecc_prv_t* ecc_prv_key,
-               uint8_t ecdsa_type, uint32_t* output_used_size);
+               const ndn_ecc_prv_t* ecc_prv_key, uint32_t* output_used_size);
 
 /**
  * Verify an ECDSA signature in ASN.1 DER format.
@@ -244,15 +239,13 @@ ndn_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
  * @param input_size. Input. Size of input buffer.
  * @param sig_value. Input. ECDSA signature value.
  * @param sig_size. Input. ECDSA signature size. Should not be larger than 64 bytes.
- * @param pub_key_value. Input. ECDSA public key.
- * @param pub_key_size. Input. size of public key. Should not be larger than 64 bytes.
+ * @param ecc_pub_key. Input. ECDSA public key.
  * @return NDN_SUCCESS(0) if verification succeeded.
  */
 int
 ndn_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
                  const uint8_t* sig_value, uint32_t sig_size,
-                 const ndn_ecc_pub_t* ecc_pub_key,
-                 uint8_t ecdsa_type);
+                 const ndn_ecc_pub_t* ecc_pub_key);
 
 
 #ifdef __cplusplus

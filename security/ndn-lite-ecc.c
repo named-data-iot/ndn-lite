@@ -68,18 +68,16 @@ ndn_ecc_make_key(ndn_ecc_pub_t* ecc_pub, ndn_ecc_prv_t* ecc_prv,
 }
 
 int
-ndn_ecc_dh_shared_secret(const ndn_ecc_pub_t* ecc_pub, const ndn_ecc_prv_t* ecc_prv,
-                         uint8_t curve_type, uint8_t* output, uint32_t output_size)
+ndn_ecc_dh_shared_secret(const ndn_ecc_pub_t* ecc_pub, const ndn_ecc_prv_t* ecc_prv, uint8_t* output, uint32_t output_size)
 {
   return ndn_ecc_backend.dh_shared_secret(&ecc_pub->abs_key, &ecc_prv->abs_key,
-                                          curve_type, output, output_size);
+                                          ecc_prv->curve_type, output, output_size);
 }
 
 int
 ndn_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
                uint8_t* output_value, uint32_t output_max_size,
-               const ndn_ecc_prv_t* ecc_prv_key,
-               uint8_t ecdsa_type, uint32_t* output_used_size)
+               const ndn_ecc_prv_t* ecc_prv_key, uint32_t* output_used_size)
 {
   uint8_t hash_result[NDN_SEC_SHA256_HASH_SIZE] = {0};
   if (ndn_sha256(input_value, input_size, hash_result) != NDN_SUCCESS)
@@ -88,14 +86,13 @@ ndn_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
   return ndn_ecc_backend.ecdsa_sign(hash_result, sizeof(hash_result),
                                     output_value, output_max_size,
                                     &ecc_prv_key->abs_key,
-                                    ecdsa_type, output_used_size);
+                                    ecc_prv_key->curve_type, output_used_size);
 }
 
 int
 ndn_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
                  const uint8_t* sig_value, uint32_t sig_size,
-                 const ndn_ecc_pub_t* ecc_pub_key,
-                 uint8_t ecdsa_type)
+                 const ndn_ecc_pub_t* ecc_pub_key)
 {
   uint8_t hash_result[NDN_SEC_SHA256_HASH_SIZE] = {0};
   if (ndn_sha256(input_value, input_size, hash_result) != NDN_SUCCESS)
@@ -103,5 +100,5 @@ ndn_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
 
   return ndn_ecc_backend.ecdsa_verify(hash_result, sizeof(hash_result),
                                       sig_value, sig_size,
-                                      &ecc_pub_key->abs_key, ecdsa_type);
+                                      &ecc_pub_key->abs_key, ecc_pub_key->curve_type);
 }

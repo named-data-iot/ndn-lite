@@ -24,6 +24,8 @@ extern "C" {
  * The key storage uses the KEY-ID as the index. Application or library modules should keep a state of
  * related KEY-ID, which will be used to fetch key from the key_storage and later to free the memory use of the key.
  */
+
+
 typedef struct ndn_key_storage {
   bool is_bootstrapped;
   /**
@@ -44,10 +46,25 @@ typedef struct ndn_key_storage {
   ndn_ecc_prv_t ecc_prv_keys[NDN_SEC_SIGNING_KEYS_SIZE];
   ndn_hmac_key_t hmac_keys[NDN_SEC_SIGNING_KEYS_SIZE];
   /**
+   * Trusted other keys
+   */
+  ndn_ecc_pub_t trusted_ecc_pub_keys[NDN_SEC_SIGNING_KEYS_SIZE];
+  /**
    * The self encryption/decryption key storage.
    */
   ndn_aes_key_t aes_keys[NDN_SEC_ENCRYPTION_KEYS_SIZE];
 } ndn_key_storage_t;
+
+static inline uint32_t
+key_id_from_key_name(const ndn_name_t* key_name)
+{
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, key_name->components[key_name->components_size - 1].value,
+               key_name->components[key_name->components_size - 1].size);
+  uint32_t result = 0;
+  decoder_get_uint32_value(&decoder, &result);
+  return result;
+}
 
 /**
  * Init an in-library key storage structure.

@@ -112,7 +112,8 @@ ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
  * @return 0 if there is no error.
  */
 int
-ndn_data_tlv_decode_no_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size);
+ndn_data_tlv_decode_no_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size,
+                              uint32_t* be_signed_start, uint32_t* be_signed_end);
 
 /**
  * Decode the encoded Data into a ndn_data_t and verify the Digest (SHA256) signature.

@@ -163,13 +163,23 @@ void
 ndn_key_storage_get_ecc_key(uint32_t key_id, ndn_ecc_pub_t** pub, ndn_ecc_prv_t** prv)
 {
   for (uint8_t i = 0; i <NDN_SEC_SIGNING_KEYS_SIZE; i++) {
-    if (storage.ecc_pub_keys[i].key_id != NDN_SEC_INVALID_KEY_ID) {
-      if (key_id == storage.ecc_pub_keys[i].key_id) {
-        *pub = &storage.ecc_pub_keys[i];
-        *prv = &storage.ecc_prv_keys[i];
-        return;
-      }
+    if (storage.ecc_pub_keys[i].key_id != NDN_SEC_INVALID_KEY_ID
+        && key_id == storage.ecc_pub_keys[i].key_id) {
+      *pub = &storage.ecc_pub_keys[i];
+      *prv = &storage.ecc_prv_keys[i];
+      return;
     }
+    if (storage.trusted_ecc_pub_keys[i].key_id != NDN_SEC_INVALID_KEY_ID
+        && key_id == storage.trusted_ecc_pub_keys[i].key_id) {
+      *pub = &storage.trusted_ecc_pub_keys[i];
+      *prv = NULL;
+      return;
+    }
+  }
+  if (storage.trust_anchor_key.key_id == key_id) {
+    *pub = &storage.trust_anchor_key;
+    *prv = NULL;
+    return;
   }
   *pub = NULL;
   *prv = NULL;

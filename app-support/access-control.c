@@ -161,8 +161,7 @@ ac_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     uint8_t shared[32];
     ndn_ecc_pub_t ecdh_pubkey;
     ndn_ecc_pub_init(&ecdh_pubkey, ecdh_bytes, probe, NDN_ECDSA_CURVE_SECP256R1, 1);
-    ndn_ecc_dh_shared_secret(&ecdh_pubkey, &m_onging_dh.dh_prv, NDN_ECDSA_CURVE_SECP256R1,
-                             shared, sizeof(shared));
+    ndn_ecc_dh_shared_secret(&ecdh_pubkey, &m_onging_dh.dh_prv, shared, sizeof(shared));
     // decode Salt from content
     uint8_t salt[NDN_APPSUPPORT_AC_SALT_SIZE];
     decoder_get_type(&decoder, &probe);

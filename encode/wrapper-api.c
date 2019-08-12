@@ -257,7 +257,7 @@ tlv_parse_data(uint8_t* buf, size_t buflen, int argc, ...)
   }
 
   // Decode data
-  ret = ndn_data_tlv_decode_no_verify(&data, buf, buflen);
+  ret = ndn_data_tlv_decode_no_verify(&data, buf, buflen, NULL, NULL);
   if (ret != NDN_SUCCESS) {
     return ret;
   }

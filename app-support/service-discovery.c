@@ -64,7 +64,7 @@ typedef struct sd_sys_state {
 
 static sd_self_state_t m_self_state;
 static sd_sys_state_t m_sys_state;
-static const uint8_t SERVICE_STATUS_MASK = 0xAA;
+static const uint8_t SERVICE_STATUS_MASK = 0x3F;
 static uint8_t sd_buf[4096];
 static ndn_time_ms_t m_next_adv;
 
@@ -109,7 +109,7 @@ sd_add_or_update_self_service(uint8_t service_id, bool adv, uint8_t status_code)
       if (adv) {
         BIT_SET(m_self_state.services[i].status, 6);
       }
-      BITMASK_CLEAR(m_self_state.services[i].status, ~SERVICE_STATUS_MASK);
+      BITMASK_CLEAR(m_self_state.services[i].status, SERVICE_STATUS_MASK);
       m_self_state.services[i].status += status_code;
       added = true;
       break;

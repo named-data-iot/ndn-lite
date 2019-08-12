@@ -37,6 +37,9 @@ static const uint32_t SEC_BOOT_AES_KEY_ID = 10002;
 
 // some common rules: 1. keep keys in key_storage 2. delete the key from key storage if its not used any longer
 
+int sec_boot_send_sign_on_interest();
+int sec_boot_send_cert_interest();
+
 void
 sec_boot_after_bootstrapping()
 {
@@ -73,8 +76,6 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   }
   printf("Receive SD related Data packet with name: \n");
   ndn_name_print(&data.name);
-  ndn_time_ms_t now = ndn_time_now_ms();
-  ndn_name_t service_full_name;
   // parse content
   // format: self certificate, encrypted key
   ndn_decoder_t decoder;
@@ -85,7 +86,7 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   if (probe != TLV_Data) return;
   decoder_get_length(&decoder, &probe);
   ndn_data_t self_cert;
-  if (ndn_data_tlv_decode_no_verify(&self_cert, data.content_value, encoder_probe_block_size(TLV_Data, probe)) != NDN_SUCCESS) {
+  if (ndn_data_tlv_decode_no_verify(&self_cert, data.content_value, encoder_probe_block_size(TLV_Data, probe), NULL, NULL) != NDN_SUCCESS) {
     return;
   }
   // iv
@@ -152,7 +153,6 @@ sec_boot_send_cert_interest()
   // set must be fresh
   ndn_interest_set_MustBeFresh(&interest,true);
   // sign the interest
-  ndn_name_t temp_name;
   ndn_signed_interest_ecdsa_sign(&interest, &interest.name, m_sec_boot_state.pre_installed_ecc_key);
   // send it out
   encoder_init(&encoder, sec_boot_buf, sizeof(sec_boot_buf));
@@ -193,7 +193,7 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   ndn_sha256(decoder.input_value, encoder_probe_block_size(TLV_Data, probe),
              m_sec_boot_state.trust_anchor_sha);
   ndn_data_t trust_anchor_cert;
-  if (ndn_data_tlv_decode_no_verify(&trust_anchor_cert, data.content_value, encoder_probe_block_size(TLV_Data, probe)) != NDN_SUCCESS) {
+  if (ndn_data_tlv_decode_no_verify(&trust_anchor_cert, data.content_value, encoder_probe_block_size(TLV_Data, probe), NULL, NULL) != NDN_SUCCESS) {
     return;
   }
   // key storage set trust anchor
@@ -209,7 +209,7 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   ndn_key_storage_get_ecc_prv_key(SEC_BOOT_DH_KEY_ID, &self_prv_key);
   // get shared secret using DH process
   uint8_t shared[32];
-  ndn_ecc_dh_shared_secret(&m_sec_boot_state.controller_dh_pub, self_prv_key, NDN_ECDSA_CURVE_SECP256R1, shared, sizeof(shared));
+  ndn_ecc_dh_shared_secret(&m_sec_boot_state.controller_dh_pub, self_prv_key, shared, sizeof(shared));
   // decode salt from the replied data
   decoder_get_type(&decoder, &probe);
   if (probe != TLV_AC_SALT) return;

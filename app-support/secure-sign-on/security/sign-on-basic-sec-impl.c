@@ -94,8 +94,7 @@ int sign_on_basic_gen_sha256_ecdsa_sig(const uint8_t *pri_key_raw, uECC_Curve cu
   ndn_ecc_prv_t ecc_prv_key;
   ndn_ecc_prv_init(&ecc_prv_key, pri_key_raw, pri_key_raw_len, ndn_ecc_curve, sign_on_basic_arbitrary_key_id);
 
-  if (ndn_ecdsa_sign(payload, payload_len, output_buf, output_buf_len, &ecc_prv_key,
-                     ndn_ecc_curve, output_len) != NDN_SUCCESS) {
+  if (ndn_ecdsa_sign(payload, payload_len, output_buf, output_buf_len, &ecc_prv_key, output_len) != NDN_SUCCESS) {
     return SIGN_ON_BASIC_SEC_OP_FAILURE;
   }
   return SIGN_ON_BASIC_SEC_OP_SUCCESS;
@@ -117,7 +116,6 @@ int sign_on_basic_gen_ecdh_shared_secret(const uint8_t *pub_key_raw, uint32_t pu
   ndn_ecc_pub_init(&ecc_pub_key, pub_key_raw, pub_key_raw_len, ndn_ecc_curve, sign_on_basic_arbitrary_key_id);
   ndn_ecc_prv_init(&ecc_prv_key, pri_key_raw, pri_key_raw_len, ndn_ecc_curve, sign_on_basic_arbitrary_key_id);
   if (ndn_ecc_dh_shared_secret(&ecc_pub_key, &ecc_prv_key,
-                               ndn_ecc_curve,
                                output_buf, output_buf_len) != NDN_SUCCESS) {
     return SIGN_ON_BASIC_SEC_OP_FAILURE;
   }

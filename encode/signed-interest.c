@@ -98,7 +98,7 @@ ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
   int result = NDN_SUCCESS;
   result = ndn_ecdsa_sign(temp_encoder.output_value, siginfo_block_ending,
                           interest->signature.sig_value, NDN_SIGNATURE_BUFFER_SIZE,
-                          prv_key, prv_key->curve_type, &used_bytes);
+                          prv_key, &used_bytes);
   if (result < 0) return result;
   interest->signature.sig_size = used_bytes;
 
@@ -288,7 +288,7 @@ ndn_signed_interest_ecdsa_verify(const ndn_interest_t* interest, const ndn_ecc_p
 
   int result = ndn_ecdsa_verify(temp_encoder.output_value, siginfo_block_ending,
                                 interest->signature.sig_value, interest->signature.sig_size,
-                                pub_key, pub_key->curve_type);
+                                pub_key);
   if (result < 0) return result;
 
   result = ndn_sha256_verify(&temp_encoder.output_value[param_block_starting],
