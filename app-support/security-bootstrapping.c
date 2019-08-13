@@ -133,7 +133,7 @@ sec_boot_send_cert_interest()
                              m_sec_boot_state.identifier_size);
   name_component_tlv_encode(&encoder, &device_identifier_comp);
   // append the ecdh pub key, N2
-  encoder_append_type(&encoder, TLV_AC_ECDH_PUB);
+  encoder_append_type(&encoder, TLV_SEC_BOOT_N2_ECDH_PUB);
   encoder_append_length(&encoder, ndn_ecc_get_pub_key_size(&m_sec_boot_state.controller_dh_pub));
   encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(&m_sec_boot_state.controller_dh_pub), 
                                   ndn_ecc_get_pub_key_size(&m_sec_boot_state.controller_dh_pub));
@@ -144,7 +144,7 @@ sec_boot_send_cert_interest()
   // append the ecdh pub key, N1
   ndn_ecc_pub_t* self_dh_pub = NULL;
   ndn_key_storage_get_ecc_pub_key(SEC_BOOT_DH_KEY_ID, &self_dh_pub);
-  encoder_append_type(&encoder, TLV_AC_ECDH_PUB);
+  encoder_append_type(&encoder, TLV_SEC_BOOT_N1_ECDH_PUB);
   encoder_append_length(&encoder, ndn_ecc_get_pub_key_size(self_dh_pub));
   encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(self_dh_pub),
                                   ndn_ecc_get_pub_key_size(self_dh_pub));
@@ -190,7 +190,7 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   if (probe != TLV_Data) return;
   decoder_get_length(&decoder, &probe);
   decoder.offset += probe;
-  // calculate the shaa256 digest of the trust anchor
+  // calculate the sha256 digest of the trust anchor
   ndn_sha256(decoder.input_value, encoder_probe_block_size(TLV_Data, probe),
              m_sec_boot_state.trust_anchor_sha);
   ndn_data_t trust_anchor_cert;
@@ -199,9 +199,9 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   }
   // key storage set trust anchor
   ndn_key_storage_set_trust_anchor(&trust_anchor_cert);
-  // parse ecdh pub key
+  // parse ecdh pub key, N2
   decoder_get_type(&decoder, &probe);
-  if (probe != TLV_AC_ECDH_PUB) return;
+  if (probe != TLV_SEC_BOOT_N2_ECDH_PUB) return;
   decoder_get_length(&decoder, &probe);
   uint8_t dh_pub_buf[100];
   decoder_get_raw_buffer_value(&decoder, dh_pub_buf, probe);
@@ -259,10 +259,10 @@ sec_boot_send_sign_on_interest()
   encoder_append_type(&encoder, TLV_SEC_BOOT_CAPACITIES);
   encoder_append_length(&encoder, m_sec_boot_state.list_size);
   encoder_append_raw_buffer_value(&encoder, m_sec_boot_state.service_list, m_sec_boot_state.list_size);
-  // append the ecdh pub key
+  // append the ecdh pub key, N1
   ndn_ecc_pub_t* dh_pub = NULL;
   ndn_key_storage_get_ecc_pub_key(SEC_BOOT_DH_KEY_ID, &dh_pub);
-  encoder_append_type(&encoder, TLV_AC_ECDH_PUB);
+  encoder_append_type(&encoder, TLV_SEC_BOOT_N1_ECDH_PUB);
   encoder_append_length(&encoder, ndn_ecc_get_pub_key_size(dh_pub));
   encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(dh_pub), ndn_ecc_get_pub_key_size(dh_pub));
   // set parameter
