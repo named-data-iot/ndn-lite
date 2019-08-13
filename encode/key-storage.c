@@ -42,7 +42,7 @@ int
 ndn_key_storage_set_trust_anchor(const ndn_data_t* trust_anchor)
 {
   memcpy(&storage.trust_anchor, trust_anchor, sizeof(ndn_data_t));
-  uint32_t anchor_keyid = *((uint32_t*)trust_anchor->name.components[trust_anchor->name.components_size - 3].value);
+  uint32_t anchor_keyid = key_id_from_cert_name(&trust_anchor->name);
   int ret = ndn_ecc_pub_init(&storage.trust_anchor_key, trust_anchor->content_value,
                              trust_anchor->content_size, NDN_ECDSA_CURVE_SECP256R1, anchor_keyid);
   if (ret != NDN_SUCCESS) return ret;
