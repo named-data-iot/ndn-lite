@@ -189,6 +189,7 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   decoder_get_type(&decoder, &probe);
   if (probe != TLV_Data) return;
   decoder_get_length(&decoder, &probe);
+  decoder.offset += probe;
   // calculate the shaa256 digest of the trust anchor
   ndn_sha256(decoder.input_value, encoder_probe_block_size(TLV_Data, probe),
              m_sec_boot_state.trust_anchor_sha);
@@ -224,8 +225,13 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
            salt, sizeof(salt));
   ndn_aes_key_init(sym_aes_key, symmetric_key, sizeof(symmetric_key), SEC_BOOT_AES_KEY_ID);
   // prepare for the next interest: register the prefix
-  ndn_forwarder_add_route_str_prefix(m_sec_boot_state.face, (char*)trust_anchor_cert.name.components[0].value,
-                                     trust_anchor_cert.name.components[0].size);
+  ndn_name_t prefix_to_register;
+  ndn_name_init(&prefix_to_register);
+  ndn_name_append_component(&prefix_to_register, &trust_anchor_cert.name.components[0]);
+  ndn_encoder_t encoder;
+  encoder_init(&encoder, sec_boot_buf, sizeof(sec_boot_buf));
+  ndn_name_tlv_encode(&encoder, &prefix_to_register);
+  ndn_forwarder_add_route(m_sec_boot_state.face, encoder.output_value, encoder.offset);
   // send cert interest
   sec_boot_send_cert_interest();
 }

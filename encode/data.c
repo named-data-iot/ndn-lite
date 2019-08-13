@@ -254,9 +254,7 @@ int
 ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
                               const ndn_name_t* producer_identity, const ndn_hmac_key_t* hmac_key)
 {
-
   int ret_val = -1;
-
   // set signature info
   _prepare_signature_info(data, NDN_SIG_TYPE_HMAC_SHA256, producer_identity, hmac_key->key_id);
   uint32_t data_buffer_size = ndn_name_probe_block_size(&data->name);
