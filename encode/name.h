@@ -120,6 +120,9 @@ ndn_name_append_string_component(ndn_name_t* name, const char* string, uint32_t 
 int
 ndn_name_append_name(ndn_name_t* lhs, const ndn_name_t* rhs);
 
+int
+ndn_name_append_keyid(ndn_name_t* name, uint32_t key_id);
+
 /**
  * Probe the size of a Name TLV block before encoding it from a Name structure.
  * This function is used to check whether the output buffer size is enough or not.

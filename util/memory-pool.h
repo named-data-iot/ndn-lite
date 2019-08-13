@@ -42,6 +42,9 @@ extern "C" {
  * @param[in] block_size Size of a block.
  * @param[in] block_count Length of the array.
  * @note No check for <tt> (base != NULL) </tt>.
+ * Steps: uint8 buf[NDN_MEMORY_POOL_RESERVE_SIZE(size, count)]
+ *        ndn_memory_pool_init(buf, size, count)
+ * 
  */
 void
 ndn_memory_pool_init(void* pool, size_t block_size, size_t block_count);

@@ -66,6 +66,17 @@ key_id_from_key_name(const ndn_name_t* key_name)
   return result;
 }
 
+static inline uint32_t
+key_id_from_cert_name(const ndn_name_t* key_name)
+{
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, key_name->components[key_name->components_size - 3].value,
+               key_name->components[key_name->components_size - 3].size);
+  uint32_t result = 0;
+  decoder_get_uint32_value(&decoder, &result);
+  return result;
+}
+
 /**
  * Init an in-library key storage structure.
  * @return The pointer to the initialized key storage structure

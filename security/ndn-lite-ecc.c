@@ -37,17 +37,21 @@ ndn_ecc_get_pub_key_value(const ndn_ecc_pub_t* pub_key)
 }
 
 int
-ndn_ecc_load_pub_key(ndn_ecc_pub_t* pub_key,
-                     const uint8_t* key_value, uint32_t key_size)
+ndn_ecc_pub_init(ndn_ecc_pub_t* ecc_pub, const uint8_t* key_value,
+                 uint32_t key_size, uint8_t curve_type, uint32_t key_id)
 {
-  return ndn_ecc_backend.load_pub_key(&pub_key->abs_key, key_value, key_size);
+  ecc_pub->curve_type = curve_type;
+  ecc_pub->key_id = key_id;
+  return ndn_ecc_backend.load_pub_key(&ecc_pub->abs_key, key_value, key_size);
 }
 
 int
-ndn_ecc_load_prv_key(ndn_ecc_prv_t* prv_key,
-                     const uint8_t* key_value, uint32_t key_size)
+ndn_ecc_prv_init(ndn_ecc_prv_t* ecc_prv, const uint8_t* key_value,
+                 uint32_t key_size, uint8_t curve_type, uint32_t key_id)
 {
-  return ndn_ecc_backend.load_prv_key(&prv_key->abs_key, key_value, key_size);
+  ecc_prv->curve_type = curve_type;
+  ecc_prv->key_id = key_id;
+  return ndn_ecc_backend.load_prv_key(&ecc_prv->abs_key, key_value, key_size);
 }
 
 int

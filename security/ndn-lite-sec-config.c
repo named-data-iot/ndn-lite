@@ -9,6 +9,8 @@
  */
 
 #include "ndn-lite-sec-config.h"
+#include "ndn-lite-rng.h"
+#include "ndn-lite-ecc.h"
 
 void (*platform_security_init)(void) = NULL;
 
@@ -37,5 +39,9 @@ ndn_security_init(void)
 
   if (platform_security_init != NULL) {
     platform_security_init();
+  }
+  ndn_rng_backend_t* rng_backend = ndn_rng_get_backend();
+  if (rng_backend) {
+    ndn_ecc_set_rng(rng_backend->rng);
   }
 }

@@ -54,8 +54,7 @@ ndn_key_storage_set_self_identity(const ndn_data_t* self_cert, const ndn_ecc_prv
 {
   memcpy(&storage.self_cert, self_cert, sizeof(ndn_data_t));
   memcpy(&storage.self_identity_key, self_prv_key, sizeof(ndn_ecc_prv_t));
-  storage.self_identity.components_size = self_cert->name.components_size - 4;
-  for (int i = 0; i < storage.self_identity.components_size; i++) {
+  for (int i = 0; i < self_cert->name.components_size - 4; i++) {
     ndn_name_append_component(&storage.self_identity, &self_cert->name.components[i]);
   }
   storage.is_bootstrapped = true;

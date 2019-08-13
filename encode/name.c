@@ -144,6 +144,23 @@ ndn_name_append_name(ndn_name_t* lhs, const ndn_name_t* rhs)
 }
 
 int
+ndn_name_append_keyid(ndn_name_t* name, uint32_t key_id)
+{
+  if (name->components_size + 1 <= NDN_NAME_COMPONENTS_SIZE) {
+    uint8_t bytes[4];
+    ndn_encoder_t encoder;
+    encoder_init(&encoder, bytes, 4);
+    encoder_append_uint32_value(&encoder, key_id);
+    name_component_t comp;
+    name_component_from_buffer(&comp, TLV_GenericNameComponent, bytes, 4);
+    ndn_name_append_component(name, &comp);
+    return 0;
+  }
+  else
+    return NDN_OVERSIZE;
+}
+
+int
 ndn_name_tlv_encode(ndn_encoder_t* encoder, const ndn_name_t *name)
 {
   int ret_val = -1;

@@ -126,9 +126,9 @@ ndn_ecc_get_pub_key_value(const ndn_ecc_pub_t* pub_key);
  * @param key_size. Input. The size of the key bytes.
  * @return NDN_SUCCESS(0) if there is no error.
  */
-int
-ndn_ecc_load_pub_key(ndn_ecc_pub_t* pub_key,
-                     const uint8_t* key_value, uint32_t key_size);
+// int
+// ndn_ecc_load_pub_key(ndn_ecc_pub_t* pub_key, uint8_t curve_type, uint32_t key_id,
+//                      const uint8_t* key_value, uint32_t key_size);
 
 /**
  * Initialize an ECC public key.
@@ -140,15 +140,9 @@ ndn_ecc_load_pub_key(ndn_ecc_pub_t* pub_key,
  * @param key_id. Input. The key id to be set with this ECC public key.
  * @return NDN_SUCCESS(0) if there is no error.
  */
-static inline int
+int
 ndn_ecc_pub_init(ndn_ecc_pub_t* ecc_pub, const uint8_t* key_value,
-                 uint32_t key_size, uint8_t curve_type, uint32_t key_id)
-{
-  ndn_ecc_load_pub_key(ecc_pub, key_value, key_size);
-  ecc_pub->curve_type = curve_type;
-  ecc_pub->key_id = key_id;
-  return 0;
-}
+                 uint32_t key_size, uint8_t curve_type, uint32_t key_id);
 
 /**
  * Load in-memory key bits into an NDN private key.
@@ -157,9 +151,9 @@ ndn_ecc_pub_init(ndn_ecc_pub_t* ecc_pub, const uint8_t* key_value,
  * @param key_size. Input. The size of the key bytes.
  * @return NDN_SUCCESS(0) if there is no error.
  */
-int
-ndn_ecc_load_prv_key(ndn_ecc_prv_t* prv_key,
-                     const uint8_t* key_value, uint32_t key_size);
+// int
+// ndn_ecc_load_prv_key(ndn_ecc_prv_t* prv_key, uint8_t curve_type, uint32_t key_id,
+//                      const uint8_t* key_value, uint32_t key_size);
 
 /**
  * Initialize an ECC private key.
@@ -171,15 +165,9 @@ ndn_ecc_load_prv_key(ndn_ecc_prv_t* prv_key,
  * @param key_id. Input. The key id to be set with this ECC private key.
  * @return NDN_SUCCESS(0) if there is no error.
  */
-static inline int
+int
 ndn_ecc_prv_init(ndn_ecc_prv_t* ecc_prv, const uint8_t* key_value,
-                 uint32_t key_size, uint8_t curve_type, uint32_t key_id)
-{
-  ndn_ecc_load_prv_key(ecc_prv, key_value, key_size);
-  ecc_prv->curve_type = curve_type;
-  ecc_prv->key_id = key_id;
-  return 0;
-}
+                 uint32_t key_size, uint8_t curve_type, uint32_t key_id);
 
 /**
  * Set RNG function for backend implementation library,

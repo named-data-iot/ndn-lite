@@ -27,13 +27,15 @@ static ndn_sig_verifier_state_t m_sig_verifier_state;
 uint8_t verifier_buf[4096];
 
 void
-sign_verifier_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
+sig_verifier_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 {
   ndn_sig_verifier_userdata_t* dataptr = (ndn_sig_verifier_userdata_t*)userdata;
 
   ndn_data_t cert;
   uint32_t start, end;
   ndn_data_tlv_decode_no_verify(&cert, raw_data, data_size, &start, &end);
+  printf("Sig Verifier received certificate: \n");
+  ndn_name_print(&cert.name);
   uint32_t keyid = key_id_from_key_name(&cert.signature.key_locator_name);
   ndn_ecc_pub_t* pub_key;
   ndn_key_storage_get_ecc_pub_key(keyid, &pub_key);
@@ -66,7 +68,7 @@ sign_verifier_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdat
 }
 
 void
-sign_verifier_on_timeout(void* userdata)
+sig_verifier_on_timeout(void* userdata)
 {
   printf("\nSign Verifier cert fetch interest timeout\n");
   ndn_sig_verifier_userdata_t* dataptr = (ndn_sig_verifier_userdata_t*)userdata;
@@ -81,10 +83,12 @@ sign_verifier_on_timeout(void* userdata)
 }
 
 int
-sign_verifier_on_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
+sig_verifier_on_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
 {
   ndn_interest_t interest;
   ndn_interest_from_block(&interest, raw_int, raw_int_size);
+  printf("Sig Verifier received certificate fetching Interest: \n");
+  ndn_name_print(&interest.name);
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
   if (ndn_name_is_prefix_of(&interest.name, &storage->self_cert.name) == NDN_SUCCESS) {
     ndn_encoder_t encoder;
@@ -102,7 +106,7 @@ ndn_sig_verifier_init(ndn_face_intf_t* face)
   ndn_name_t prefix;
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
   memcpy(&prefix, &storage->self_identity, sizeof(ndn_name_t));
-  ndn_forwarder_register_name_prefix(&prefix, sign_verifier_on_interest, NULL);
+  ndn_forwarder_register_name_prefix(&prefix, sig_verifier_on_interest, NULL);
   return NDN_SUCCESS;
 }
 
@@ -114,9 +118,11 @@ ndn_sig_verifier_verify_int(const uint8_t* raw_pkt, size_t pkt_size, ndn_interes
   ndn_interest_from_block(interest, raw_pkt, pkt_size);
   if (!ndn_interest_is_signed(interest)) {
     on_success(interest);
+    return;
   }
   if (interest->signature.sig_type < 0 || interest->signature.sig_type > 4) {
     on_failure(interest);
+    return;
   }
   int result = 0;
   if (interest->signature.sig_type == NDN_SIG_TYPE_DIGEST_SHA256) {
@@ -126,6 +132,7 @@ ndn_sig_verifier_verify_int(const uint8_t* raw_pkt, size_t pkt_size, ndn_interes
   }
   if (interest->signature.enable_KeyLocator <= 0) {
     on_failure(interest);
+    return;
   }
   uint32_t keyid = key_id_from_key_name(&interest->signature.key_locator_name);
   bool need_interest_out = false;
@@ -139,6 +146,7 @@ ndn_sig_verifier_verify_int(const uint8_t* raw_pkt, size_t pkt_size, ndn_interes
       result = ndn_signed_interest_ecdsa_verify(interest, pub_key);
       if (result == NDN_SUCCESS) on_success(interest);
       else on_failure(interest);
+      return;
     }
   }
   else if (interest->signature.sig_type == NDN_SIG_TYPE_HMAC_SHA256) {
@@ -146,11 +154,13 @@ ndn_sig_verifier_verify_int(const uint8_t* raw_pkt, size_t pkt_size, ndn_interes
     ndn_key_storage_get_hmac_key(keyid, &hmac_key);
     if (hmac_key == NULL) {
       on_failure(interest);
+      return;
     }
     else {
       result = ndn_signed_interest_hmac_verify(interest, hmac_key);
       if (result == NDN_SUCCESS) on_success(interest);
       else on_failure(interest);
+      return;
     }
   }
   if (need_interest_out) {
@@ -163,10 +173,11 @@ ndn_sig_verifier_verify_int(const uint8_t* raw_pkt, size_t pkt_size, ndn_interes
     ndn_interest_tlv_encode(&encoder, &cert_interest);
     ndn_sig_verifier_userdata_t userdata = {.is_interest = true, (void*)interest, on_success, on_failure};
     ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
-                                   sign_verifier_on_data, sign_verifier_on_timeout, &userdata);
+                                   sig_verifier_on_data, sig_verifier_on_timeout, &userdata);
     return;
   }
   on_failure(interest);
+  return;
 }
 
 void
@@ -178,6 +189,7 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size, ndn_data_t
   ndn_data_tlv_decode_no_verify(data, raw_pkt, pkt_size, &be_signed_start, &be_signed_end);
   if (data->signature.sig_type < 0 || data->signature.sig_type > 4) {
     on_failure(data);
+    return;
   }
   int result = 0;
   if (data->signature.sig_type == NDN_SIG_TYPE_DIGEST_SHA256) {
@@ -185,9 +197,11 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size, ndn_data_t
                                data->signature.sig_value, data->signature.sig_size);
     if (result == NDN_SUCCESS) on_success(data);
     else on_failure(data);
+    return;
   }
   if (data->signature.enable_KeyLocator <= 0) {
     on_failure(data);
+    return;
   }
   uint32_t keyid = key_id_from_key_name(&data->signature.key_locator_name);
   bool need_interest_out = false;
@@ -202,6 +216,7 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size, ndn_data_t
                                 data->signature.sig_value, data->signature.sig_size, pub_key);
       if (result == NDN_SUCCESS) on_success(data);
       else on_failure(data);
+      return;
     }
   }
   else if (data->signature.sig_type == NDN_SIG_TYPE_HMAC_SHA256) {
@@ -209,12 +224,14 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size, ndn_data_t
     ndn_key_storage_get_hmac_key(keyid, &hmac_key);
     if (hmac_key == NULL) {
       on_failure(data);
+      return;
     }
     else {
       result = ndn_hmac_verify(raw_pkt + be_signed_start, be_signed_end - be_signed_start,
                                data->signature.sig_value, data->signature.sig_size, hmac_key);
       if (result == NDN_SUCCESS) on_success(data);
       else on_failure(data);
+      return;
     }
   }
   if (need_interest_out) {
@@ -227,8 +244,9 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size, ndn_data_t
     ndn_interest_tlv_encode(&encoder, &cert_interest);
     ndn_sig_verifier_userdata_t userdata = {.is_interest = false, (void*)data, on_success, on_failure};
     ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
-                                   sign_verifier_on_data, sign_verifier_on_timeout, &userdata);
+                                   sig_verifier_on_data, sig_verifier_on_timeout, &userdata);
     return;
   }
   on_failure(data);
+  return;
 }
