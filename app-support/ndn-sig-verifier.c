@@ -23,6 +23,7 @@ typedef struct ndn_sig_verifier_userdata {
   void* on_failure_cbk;
 } ndn_sig_verifier_userdata_t;
 
+static ndn_sig_verifier_userdata_t m_userdata;
 static ndn_sig_verifier_state_t m_sig_verifier_state;
 uint8_t verifier_buf[4096];
 
@@ -165,15 +166,31 @@ ndn_sig_verifier_verify_int(const uint8_t* raw_pkt, size_t pkt_size, ndn_interes
   }
   if (need_interest_out) {
     ndn_interest_t cert_interest;
-    memcmp(&cert_interest.name, &interest->signature.key_locator_name, sizeof(ndn_name_t));
+    ndn_interest_init(&cert_interest);
+    memcpy(&cert_interest.name, &interest->signature.key_locator_name, sizeof(ndn_name_t));
     ndn_interest_set_CanBePrefix(&cert_interest, true);
     ndn_interest_set_MustBeFresh(&cert_interest, true);
     ndn_encoder_t encoder;
     encoder_init(&encoder, verifier_buf, sizeof(verifier_buf));
     ndn_interest_tlv_encode(&encoder, &cert_interest);
-    ndn_sig_verifier_userdata_t userdata = {.is_interest = true, (void*)interest, on_success, on_failure};
-    ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
-                                   sig_verifier_on_data, sig_verifier_on_timeout, &userdata);
+    m_userdata.is_interest = true;
+    m_userdata.original_pkt = (void*)interest;
+    m_userdata.on_success_cbk = on_success;
+    m_userdata.on_failure_cbk = on_failure;
+    int ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
+                                             sig_verifier_on_data, sig_verifier_on_timeout, &m_userdata);
+    if (ret == NDN_FWD_NO_ROUTE) {
+      ndn_forwarder_add_route_by_name(m_sig_verifier_state.face, &cert_interest.name);
+      ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
+                                           sig_verifier_on_data, sig_verifier_on_timeout, &m_userdata);
+    }
+    if (ret != 0) {
+      printf("Fail to send out cert fetch Interest. Error Code: %d\n", ret);
+      on_failure(interest);
+      return;
+    }
+    printf("Send SD/META Interest packet with name: \n");
+    ndn_name_print(&cert_interest.name);
     return;
   }
   on_failure(interest);
@@ -242,9 +259,12 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size, ndn_data_t
     ndn_encoder_t encoder;
     encoder_init(&encoder, verifier_buf, sizeof(verifier_buf));
     ndn_interest_tlv_encode(&encoder, &cert_interest);
-    ndn_sig_verifier_userdata_t userdata = {.is_interest = false, (void*)data, on_success, on_failure};
+    m_userdata.is_interest = false;
+    m_userdata.original_pkt = (void*)data;
+    m_userdata.on_success_cbk = on_success;
+    m_userdata.on_failure_cbk = on_failure;
     ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
-                                   sig_verifier_on_data, sig_verifier_on_timeout, &userdata);
+                                   sig_verifier_on_data, sig_verifier_on_timeout, &m_userdata);
     return;
   }
   on_failure(data);
