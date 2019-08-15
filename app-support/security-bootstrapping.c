@@ -31,6 +31,7 @@ typedef struct ndn_sec_boot_state {
   const ndn_ecc_prv_t* pre_installed_ecc_key;
   // TODO: add the hmac key into the keystorage
   const ndn_hmac_key_t* pre_shared_hmac_key;
+  ndn_secruity_bootstrapping_after_bootstrapping after_sec_boot;
 } ndn_sec_boot_state_t;
 
 static uint8_t sec_boot_buf[4096];
@@ -53,6 +54,9 @@ sec_boot_after_bootstrapping()
   ndn_sd_after_bootstrapping();
   sd_listen(m_sec_boot_state.face);
   sd_start_adv_self_services();
+
+  // call application-defined after_bootstrapping function
+  m_sec_boot_state.after_sec_boot();
 }
 
 void
@@ -300,7 +304,8 @@ int
 ndn_security_bootstrapping(ndn_face_intf_t* face,
                            const ndn_ecc_prv_t* pre_installed_prv_key, const ndn_hmac_key_t* pre_shared_hmac_key,
                            const char* device_identifier, size_t identifier_size,
-                           const uint8_t* service_list, size_t list_size)
+                           const uint8_t* service_list, size_t list_size,
+                           ndn_secruity_bootstrapping_after_bootstrapping after_bootstrapping)
 {
   // set ECC RNG backend
   ndn_rng_backend_t* rng_backend = ndn_rng_get_backend();
@@ -319,6 +324,7 @@ ndn_security_bootstrapping(ndn_face_intf_t* face,
   m_sec_boot_state.list_size = list_size;
   m_sec_boot_state.device_identifier = device_identifier;
   m_sec_boot_state.identifier_size = identifier_size;
+  m_sec_boot_state.after_sec_boot = after_bootstrapping;
 
   // preparation
   ndn_ecc_pub_t* dh_pub = NULL;

@@ -18,6 +18,8 @@
 extern "C" {
 #endif
 
+typedef void (*ndn_secruity_bootstrapping_after_bootstrapping) (void);
+
 /**
  * Start the security boostrapping process.
  * @param device_identifier. INPUT. A string uniquely represent the device, e.g., a randomness.
@@ -29,7 +31,8 @@ int
 ndn_security_bootstrapping(ndn_face_intf_t* face,
                            const ndn_ecc_prv_t* pre_installed_prv_key, const ndn_hmac_key_t* pre_shared_hmac_key,
                            const char* device_identifier, size_t len,
-                           const uint8_t* service_list, size_t list_size);
+                           const uint8_t* service_list, size_t list_size,
+                           ndn_secruity_bootstrapping_after_bootstrapping after_bootstrapping);
 
 #ifdef __cplusplus
 }

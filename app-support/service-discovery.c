@@ -69,7 +69,7 @@ static uint8_t sd_buf[4096];
 static ndn_time_ms_t m_next_adv;
 
 void
-ndn_sd_init(const ndn_name_t* dev_identity_name)
+ndn_sd_init()
 {
   for (int i = 0; i < NDN_SD_SERVICES_SIZE; i++) {
     m_self_state.services[i].status = 0;
