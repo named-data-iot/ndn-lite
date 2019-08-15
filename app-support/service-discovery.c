@@ -193,7 +193,8 @@ on_sd_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
 {
   ndn_interest_t interest;
   ndn_decoder_t decoder;
-  decoder_init(&decoder, raw_int, raw_int_size);
+  // decoder_init(&decoder, raw_int, raw_int_size);
+  ndn_interest_from_block(&interest, raw_int, raw_int_size);
   printf("Receive SD related Interest packet with name: \n");
   ndn_name_print(&interest.name);
   // TODO signature verification
@@ -202,7 +203,7 @@ on_sd_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
   ndn_time_ms_t now = ndn_time_now_ms();
   if (interest.name.components[2].size != 1) {
     // unrecognized Interest, ignore it
-    return NDN_FWD_STRATEGY_SUPPRESS;
+    return NDN_FWD_STRATEGY_MULTICAST;
   }
   if (memcmp(interest.name.components[2].value, &sd_adv, 1)) {
     // adv Interest packet
@@ -254,17 +255,17 @@ on_sd_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
                                   // TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                                   // TLV_DATAARG_IDENTITYNAME_PTR, &keys->self_identity,
                                   // TLV_DATAARG_SIGKEY_PTR, &keys->self_identity_key);
-          if (ret != NDN_SUCCESS) return NDN_FWD_STRATEGY_SUPPRESS;
+          if (ret != NDN_SUCCESS) return NDN_FWD_STRATEGY_MULTICAST;
           ndn_forwarder_put_data(data_buf, data_length);
         }
       }
     }
   }
-  return NDN_FWD_STRATEGY_SUPPRESS;
+  return NDN_FWD_STRATEGY_MULTICAST;
 }
 
 void
-sd_listen()
+sd_listen(ndn_face_intf_t *face)
 {
   ndn_name_t listen_prefix;
   ndn_name_init(&listen_prefix);
@@ -275,6 +276,8 @@ sd_listen()
   encoder_init(&encoder, sd_buf, sizeof(sd_buf));
   ndn_name_tlv_encode(&encoder, &listen_prefix);
   ndn_forwarder_register_prefix(encoder.output_value, encoder.offset, on_sd_interest, NULL);
+  // Register outgoing route
+  ndn_forwarder_add_route(face, encoder.output_value, encoder.offset);
 }
 
 void

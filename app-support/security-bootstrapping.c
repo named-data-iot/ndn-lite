@@ -51,7 +51,7 @@ sec_boot_after_bootstrapping()
 
   // start running service discovery protocol
   ndn_sd_after_bootstrapping();
-  sd_listen();
+  sd_listen(m_sec_boot_state.face);
   sd_start_adv_self_services();
 }
 

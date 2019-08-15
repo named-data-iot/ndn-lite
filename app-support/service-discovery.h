@@ -13,6 +13,7 @@
 #include "../encode/interest.h"
 #include "../encode/data.h"
 #include "../util/uniform-time.h"
+#include "../forwarder/face.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,7 +62,7 @@ sd_add_interested_service(uint8_t service_id);
  * Should not be called by application developers. Will be called by the bootstrapping protocol.
  */
 void
-sd_listen();
+sd_listen(ndn_face_intf_t *face);
 
 /**
  * Express an Interest packet to advertise one's own services.
