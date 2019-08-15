@@ -233,6 +233,7 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   ndn_name_tlv_encode(&encoder, &prefix_to_register);
   ndn_forwarder_add_route(m_sec_boot_state.face, encoder.output_value, encoder.offset);
   // send cert interest
+  ndn_time_delay(60);
   sec_boot_send_cert_interest();
 }
 

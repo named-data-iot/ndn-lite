@@ -85,6 +85,7 @@ ndn_msgqueue_empty(void);
  *
  * Process all messages currently in the queue.
  * New messages posted during this function will not be dispatched.
+ * @warning Calling this function in any callback functions is not allowed.
  */
 void
 ndn_msgqueue_process(void);
