@@ -25,8 +25,11 @@ typedef struct ndn_sec_boot_state {
   const char* device_identifier;
   size_t identifier_size;
   uint8_t trust_anchor_sha[NDN_SEC_SHA256_HASH_SIZE];
+  // TODO: add the dh Pub key into the keystorage
   ndn_ecc_pub_t controller_dh_pub;
+  // TODO: add the hmac key into the keystorage
   const ndn_ecc_prv_t* pre_installed_ecc_key;
+  // TODO: add the hmac key into the keystorage
   const ndn_hmac_key_t* pre_shared_hmac_key;
 } ndn_sec_boot_state_t;
 
@@ -45,6 +48,11 @@ sec_boot_after_bootstrapping()
 {
   ndn_key_storage_delete_aes_key(SEC_BOOT_AES_KEY_ID);
   ndn_key_storage_delete_ecc_key(SEC_BOOT_DH_KEY_ID);
+
+  // start running service discovery protocol
+  ndn_sd_after_bootstrapping();
+  sd_listen();
+  sd_start_adv_self_services();
 }
 
 void
@@ -303,7 +311,9 @@ ndn_security_bootstrapping(ndn_face_intf_t* face,
 
   // remember the state for future use
   m_sec_boot_state.face = face;
+  // TODO: add the pre-installed key into the key storage
   m_sec_boot_state.pre_installed_ecc_key = pre_installed_prv_key;
+  // TODO: add the hmac key into the key storage
   m_sec_boot_state.pre_shared_hmac_key = pre_shared_hmac_key;
   m_sec_boot_state.service_list = service_list;
   m_sec_boot_state.list_size = list_size;

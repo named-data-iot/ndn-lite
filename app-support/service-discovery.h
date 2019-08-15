@@ -21,15 +21,23 @@ extern "C" {
 const static uint32_t SD_ADV_INTERVAL = 5000;
 
 /**
- * Init state and load a device's meta info into the state.
+ * Init state used in service discovery.
+ * Use before ndn_sd_after_bootstrapping.
+ */
+void
+ndn_sd_init();
+
+/**
+ * Load a device's meta info into the state.
  * @param dev_identity_name. Input. The name of a device in the format of
  *   /[home-prefix]/[device-locator], a device-locator could be "/bedroom/sensor1" or "/front-door-lock"
  */
 void
-ndn_sd_init(const ndn_name_t* dev_identity_name);
+ndn_sd_after_bootstrapping();
 
 /**
  * Add a service provided by self device into the state.
+ * Use before or after ndn_sd_after_bootstrapping.
  * @param service_id. Input. Service ID.
  * @param adv. Input. Whether to advertise.
  * @param status_code. Input. The status of the service.
@@ -40,6 +48,7 @@ sd_add_or_update_self_service(uint8_t service_id, bool adv, uint8_t status_code)
 
 /**
  * Add an interested service type so sd will cache related service provider information.
+ * Use before or after ndn_sd_after_bootstrapping.
  * @param service_id. Input. Service ID.
  * @return NDN_SUCCESS if there is no error.
  */
@@ -48,13 +57,16 @@ sd_add_interested_service(uint8_t service_id);
 
 /**
  * Register the prefixes with corresponding onInterest, onData callbacks.
- * Should be called ONLY ONCE after the service discovery state is initialized.
+ * Should be called ONLY ONCE after ndn_sd_after_bootstrapping.
+ * Should not be called by application developers. Will be called by the bootstrapping protocol.
  */
 void
 sd_listen();
 
 /**
  * Express an Interest packet to advertise one's own services.
+ * ONLY after ndn_sd_after_bootstrapping.
+ * Should not be called by application developers. Will be called by the bootstrapping protocol.
  * @return NDN_SUCCESS(0) if there is no error.
  */
 int
@@ -62,7 +74,7 @@ sd_start_adv_self_services();
 
 /**
  * Query interested services from the system controller.
- * Usually used at the end of the security bootstrapping.
+ * ONLY after ndn_sd_after_bootstrapping.
  * @param service_ids. Input. The service IDs that the device is interested in.
  *   Each uint8_t in the list represents a service type;
  * @param size. Input. The size of the service id list.
@@ -73,6 +85,7 @@ sd_query_sys_services(const uint8_t* service_ids, size_t size);
 
 /**
  * Express an Interest packet to query the SPs for the service.
+ * ONLY after ndn_sd_after_bootstrapping.
  * @param service_id. Input. The service to be queried.
  * @param is_any. Input. If is true, query one SP that can provide the service.
  *   If is false, query all the SPs that can provide the service.

@@ -71,11 +71,6 @@ static ndn_time_ms_t m_next_adv;
 void
 ndn_sd_init(const ndn_name_t* dev_identity_name)
 {
-  m_self_state.home_prefix = &dev_identity_name->components[0];
-  m_self_state.device_locator_size = dev_identity_name->components_size - 1;
-  for (int i = 0; i < dev_identity_name->components_size - 1; i++) {
-    m_self_state.device_locator[i] = &dev_identity_name->components[i + 1];
-  }
   for (int i = 0; i < NDN_SD_SERVICES_SIZE; i++) {
     m_self_state.services[i].status = 0;
   }
@@ -85,6 +80,17 @@ ndn_sd_init(const ndn_name_t* dev_identity_name)
     m_sys_state.expire_tps[i] = 0;
   }
   m_next_adv = 0;
+}
+
+void
+ndn_sd_after_bootstrapping()
+{
+  ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+  m_self_state.home_prefix = &storage->self_identity.components[0];
+  m_self_state.device_locator_size = storage->self_identity.components_size - 1;
+  for (int i = 0; i < storage->self_identity.components_size - 1; i++) {
+    m_self_state.device_locator[i] = &storage->self_identity.components[i + 1];
+  }
 }
 
 int
