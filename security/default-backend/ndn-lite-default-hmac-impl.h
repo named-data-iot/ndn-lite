@@ -9,6 +9,7 @@
 #ifndef NDN_LITE_DEFAULT_HMAC_IMPL_H
 #define NDN_LITE_DEFAULT_HMAC_IMPL_H
 
+#include "sec-lib/tinycrypt/tc_hmac.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -21,6 +22,10 @@ struct abstract_hmac_key {
    * The key size of key bytes.
    */
   uint32_t key_size;
+};
+
+struct abstract_hmac_sha256_state {
+  struct tc_hmac_state_struct s;
 };
 
 void

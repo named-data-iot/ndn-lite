@@ -222,7 +222,7 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   ndn_key_storage_get_empty_aes_key(&sym_aes_key);
   uint8_t symmetric_key[NDN_APPSUPPORT_AC_EDK_SIZE];
   ndn_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key),
-           salt, sizeof(salt));
+           salt, sizeof(salt), NULL, 0);
   ndn_aes_key_init(sym_aes_key, symmetric_key, sizeof(symmetric_key), SEC_BOOT_AES_KEY_ID);
   // prepare for the next interest: register the prefix
   ndn_name_t prefix_to_register;

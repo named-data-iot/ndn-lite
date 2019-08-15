@@ -21,6 +21,7 @@ extern "C" {
  * The opaque abstract hmac key struct to be implemented by the backend.
  */
 typedef struct abstract_hmac_key abstract_hmac_key_t;
+typedef struct abstract_hmac_sha256_state abstract_hmac_sha256_state_t;
 
 /**
  * The APIs that are supposed to be implemented by the backend.
@@ -29,18 +30,10 @@ typedef uint32_t (*ndn_hmac_get_key_size_impl)(const abstract_hmac_key_t* hmac_k
 typedef const uint8_t* (*ndn_hmac_get_key_value_impl)(const abstract_hmac_key_t* hmac_key);
 typedef int (*ndn_hmac_load_key_impl)(abstract_hmac_key_t* hmac_key,
                                       const uint8_t* key_value, uint32_t key_size);
-typedef int (*ndn_hmac_sha256_impl)(const void* payload, uint32_t payload_length,
-                                    const abstract_hmac_key_t* hmac_key,
-                                    uint8_t* hmac_result);
-typedef int (*ndn_hmac_make_key_impl)(abstract_hmac_key_t* key,
-                                      const uint8_t* input_value, uint32_t input_size,
-                                      const uint8_t* personalization, uint32_t personalization_size,
-                                      const uint8_t* seed_value, uint32_t seed_size,
-                                      const uint8_t* additional_value, uint32_t additional_size,
-                                      uint32_t salt_size);
-typedef int (*ndn_hkdf_impl)(const uint8_t* input_value, uint32_t input_size,
-                             uint8_t* output_value, uint32_t output_size,
-                             const uint8_t* seed_value, uint32_t seed_size);
+
+typedef int (*ndn_hmac_sha256_init_impl)(abstract_hmac_sha256_state_t* state, const abstract_hmac_key_t* hmac_key);
+typedef int (*ndn_hmac_sha256_update_impl)(abstract_hmac_sha256_state_t* state, const uint8_t* data, uint32_t datalen);
+typedef int (*ndn_hmac_sha256_final_impl)(abstract_hmac_sha256_state_t* state, uint8_t* hmac_result);
 typedef int (*ndn_hmacprng_impl)(const uint8_t* input_value, uint32_t input_size,
                                  uint8_t* output_value, uint32_t output_size,
                                  const uint8_t* seed_value, uint32_t seed_size,
@@ -53,9 +46,9 @@ typedef struct ndn_hmac_backend {
   ndn_hmac_get_key_size_impl get_key_size;
   ndn_hmac_get_key_value_impl get_key_value;
   ndn_hmac_load_key_impl load_key;
-  ndn_hmac_sha256_impl hmac_sha256;
-  ndn_hmac_make_key_impl make_key;
-  ndn_hkdf_impl hkdf;
+  ndn_hmac_sha256_init_impl hmac_sha256_init;
+  ndn_hmac_sha256_update_impl hmac_sha256_update;
+  ndn_hmac_sha256_final_impl hmac_sha256_final;
   ndn_hmacprng_impl hmacprng;
 } ndn_hmac_backend_t;
 
@@ -69,6 +62,10 @@ typedef struct ndn_hmac_key {
    */
   uint32_t key_id;
 } ndn_hmac_key_t;
+
+typedef struct ndn_hmac_sha256_state {
+  abstract_hmac_sha256_state_t abs_state;
+} ndn_hmac_sha256_state_t;
 
 ndn_hmac_backend_t*
 ndn_hmac_get_backend(void);
@@ -120,6 +117,15 @@ ndn_hmac_key_init(ndn_hmac_key_t* hmac_key, const uint8_t* key_value,
  * @note This function will invoke different impl depending on the backend.
  * @return NDN_SUCCESS(0) if there is no error.
  */
+int
+ndn_hmac_sha256_init(ndn_hmac_sha256_state_t* state, const ndn_hmac_key_t* hmac_key);
+
+int
+ndn_hmac_sha256_update(ndn_hmac_sha256_state_t* state, const void* payload, uint32_t payload_length);
+
+int
+ndn_hmac_sha256_final(ndn_hmac_sha256_state_t* state, uint8_t* hmac_result);
+
 int
 ndn_hmac_sha256(const void* payload, uint32_t payload_length,
                 const ndn_hmac_key_t* hmac_key,
@@ -187,6 +193,7 @@ ndn_hmac_make_key(ndn_hmac_key_t* key, uint32_t key_id,
  * @param input_size. Input. Random input length in bytes.
  * @param output_value. Output. Buffer to receive output.
  * @param output_size. Input. Size of the output buffer.
+ *   Important! in ndn-lite, the max allowed output size is NDN_SEC_HMAC_MAX_OUTPUT_SIZE
  * @param seed_value. Input. Entropy to mix into the prng.
  * @param seed_size. Input. Entropy length in bytes.
  * @return NDN_SUCCESS(0) if there is no error.
@@ -194,7 +201,8 @@ ndn_hmac_make_key(ndn_hmac_key_t* key, uint32_t key_id,
 int
 ndn_hkdf(const uint8_t* input_value, uint32_t input_size,
          uint8_t* output_value, uint32_t output_size,
-         const uint8_t* seed_value, uint32_t seed_size);
+         const uint8_t* seed_value, uint32_t seed_size,
+         const uint8_t* info_value, uint32_t info_size);
 
 /**
  * Use HMAC-PRNG algorithm to generate pseudo-random bytes.

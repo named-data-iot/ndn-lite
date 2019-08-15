@@ -170,7 +170,7 @@ ac_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     decoder_get_raw_buffer_value(&decoder, salt, probe);
     // aes key generation
     uint8_t symmetric_key[NDN_APPSUPPORT_AC_EDK_SIZE];
-    ndn_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key), salt, sizeof(salt));
+    ndn_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key), salt, sizeof(salt), NULL, 0);
     ndn_aes_key_t aes_key;
     ndn_aes_key_init(&aes_key, symmetric_key, sizeof(symmetric_key), 2);
     // iv read
