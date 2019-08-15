@@ -56,7 +56,7 @@ _prepare_signature_info(ndn_data_t* data, uint8_t signature_type,
   raw_key_id[2] = (key_id >> 8) & 0xFF;
   raw_key_id[3] = key_id & 0xFF;
 
-  ndn_signature_init(&data->signature);
+  ndn_signature_init(&data->signature, false);
   ndn_signature_set_signature_type(&data->signature, signature_type);
   ndn_signature_set_key_locator(&data->signature, producer_identity);
 
@@ -122,7 +122,7 @@ ndn_data_tlv_encode_digest_sign(ndn_encoder_t* encoder, ndn_data_t* data)
 {
   int ret_val = -1;
   // set signature info
-  ret_val = ndn_signature_init(&data->signature);
+  ret_val = ndn_signature_init(&data->signature, false);
   if (ret_val != NDN_SUCCESS) return ret_val;
   ret_val = ndn_signature_set_signature_type(&data->signature, NDN_SIG_TYPE_DIGEST_SHA256);
   if (ret_val != NDN_SUCCESS) return ret_val;

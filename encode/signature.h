@@ -73,6 +73,10 @@ typedef struct ndn_signature {
    */
   ndn_validity_period_t validity_period;
   uint8_t enable_ValidityPeriod;
+  /**
+   * Whether is Interest Signature
+   */
+  bool is_interest;
 } ndn_signature_t;
 
 /**
@@ -83,7 +87,7 @@ typedef struct ndn_signature {
  * @return 0 if there is no error.
  */
 static inline int
-ndn_signature_init(ndn_signature_t* signature)
+ndn_signature_init(ndn_signature_t* signature, bool is_interest)
 {
   signature->enable_KeyLocator = 0;
   signature->enable_ValidityPeriod = 0;
@@ -93,6 +97,7 @@ ndn_signature_init(ndn_signature_t* signature)
   signature->timestamp = 0;
   signature->enable_Seqnum = 0;
   signature->seqnum = 0;
+  signature->is_interest = is_interest;
   return 0;
 }
 
@@ -124,7 +129,7 @@ ndn_signature_set_signature_type(ndn_signature_t* signature, uint8_t type)
  * @return 0 if there is no error.
  */
 static inline int
-ndn_signature_set_signature(ndn_signature_t* signature, const uint8_t* sig_value, size_t sig_size)
+ndn_signature_set_signature_value(ndn_signature_t* signature, const uint8_t* sig_value, size_t sig_size)
 {
   if (sig_size > NDN_SIGNATURE_BUFFER_SIZE)
     return NDN_OVERSIZE;
@@ -242,7 +247,10 @@ ndn_signature_info_probe_block_size(const ndn_signature_t* signature)
     info_buffer_size += encoder_probe_block_size(TLV_SeqNum,
                                                  encoder_probe_uint_length(signature->seqnum));
   }
-  return encoder_probe_block_size(TLV_SignatureInfo, info_buffer_size);
+  if (signature->is_interest)
+    return encoder_probe_block_size(TLV_InterestSignatureInfo, info_buffer_size);
+  else
+    return encoder_probe_block_size(TLV_SignatureInfo, info_buffer_size);
 }
 
 /**
@@ -254,7 +262,10 @@ ndn_signature_info_probe_block_size(const ndn_signature_t* signature)
 static inline uint32_t
 ndn_signature_value_probe_block_size(const ndn_signature_t* signature)
 {
-  return encoder_probe_block_size(TLV_SignatureValue, signature->sig_size);
+  if (signature->is_interest)
+    return encoder_probe_block_size(TLV_InterestSignatureValue, signature->sig_size);
+  else
+    return encoder_probe_block_size(TLV_SignatureValue, signature->sig_size);
 }
 
 /**

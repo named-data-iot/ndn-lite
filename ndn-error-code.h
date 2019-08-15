@@ -82,6 +82,8 @@
 #define NDN_UNSUPPORTED_FORMAT -17
 
 #define NDN_INVALID_ARG -18
+#define NDN_STATE_NOT_INITIALIZED -19
+
 
 /* @} */
 

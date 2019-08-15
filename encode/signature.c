@@ -38,7 +38,12 @@ ndn_signature_info_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* sig
   }
 
   // signatureinfo header
-  ret_val = encoder_append_type(encoder, TLV_SignatureInfo);
+  if (signature->is_interest) {
+    ret_val = encoder_append_type(encoder, TLV_InterestSignatureInfo);
+  }
+  else {
+    ret_val = encoder_append_type(encoder, TLV_SignatureInfo);
+  }
   if (ret_val != NDN_SUCCESS) return ret_val;
   ret_val = encoder_append_length(encoder, info_buffer_size);
   if (ret_val != NDN_SUCCESS) return ret_val;
@@ -119,7 +124,12 @@ int
 ndn_signature_value_tlv_encode(ndn_encoder_t* encoder, const ndn_signature_t* signature)
 {
   int ret_val = -1;
-  ret_val = encoder_append_type(encoder, TLV_SignatureValue);
+  if (signature->is_interest) {
+    ret_val = encoder_append_type(encoder, TLV_InterestSignatureValue);
+  }
+  else {
+    ret_val = encoder_append_type(encoder, TLV_SignatureValue);
+  }
   if (ret_val != NDN_SUCCESS) return ret_val;
   ret_val = encoder_append_length(encoder, signature->sig_size);
   if (ret_val != NDN_SUCCESS) return ret_val;
@@ -132,13 +142,20 @@ int
 ndn_signature_info_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signature)
 {
   int ret_val = -1;
-  ndn_signature_init(signature);
+  ndn_signature_init(signature, false);
 
   uint32_t probe = 0;
   ret_val = decoder_get_type(decoder, &probe);
   if (ret_val != NDN_SUCCESS) return ret_val;
-  if (probe != TLV_SignatureInfo)
+  if (probe == TLV_SignatureInfo) {
+    signature->is_interest = false;
+  }
+  else if (probe == TLV_InterestSignatureInfo) {
+    signature->is_interest = true;
+  }
+  else {
     return NDN_WRONG_TLV_TYPE;
+  }
   uint32_t value_length = 0;
   ret_val = decoder_get_length(decoder, &value_length);
   if (ret_val != NDN_SUCCESS) return ret_val;
@@ -218,8 +235,15 @@ ndn_signature_value_tlv_decode(ndn_decoder_t* decoder, ndn_signature_t* signatur
   uint32_t probe = 0;
   ret_val = decoder_get_type(decoder, &probe);
   if (ret_val != NDN_SUCCESS) return ret_val;
-  if (probe != TLV_SignatureValue)
+  if (probe == TLV_SignatureValue) {
+    signature->is_interest = false;
+  }
+  else if (probe == TLV_InterestSignatureValue) {
+    signature->is_interest = true;
+  }
+  else {
     return NDN_WRONG_TLV_TYPE;
+  }
   ret_val = decoder_get_length(decoder, &probe);
   if (probe > NDN_SEC_MAX_SIG_SIZE)
     return NDN_WRONG_TLV_LENGTH;

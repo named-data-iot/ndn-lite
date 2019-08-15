@@ -334,6 +334,11 @@ ndn_security_bootstrapping(ndn_face_intf_t* face,
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
 
+  // register route
+  int ret = ndn_forwarder_add_route_by_str(face, "/ndn/sign-on", strlen("/ndn/sign-on"));
+  if (ret != NDN_SUCCESS) return ret;
+  printf("SEC BOOT: successfully add route.");
+
   // send the first interest out
   sec_boot_send_sign_on_interest();
   return NDN_SUCCESS;

@@ -121,16 +121,16 @@ ndn_interest_from_block(ndn_interest_t* interest, const uint8_t* block_value, ui
 				   interest->parameters.size);
       if (ret_val != NDN_SUCCESS) return ret_val;
     }
-    else if (type == TLV_SignatureInfo) {
+    else if (type == TLV_InterestSignatureInfo) {
       BIT_SET(interest->flags, 7);
-      ret_val = decoder_move_backward(&decoder, encoder_get_var_size(TLV_SignatureInfo));
+      ret_val = decoder_move_backward(&decoder, encoder_get_var_size(TLV_InterestSignatureInfo));
       if (ret_val != NDN_SUCCESS) return ret_val;
       ret_val = ndn_signature_info_tlv_decode(&decoder, &interest->signature);
       if (ret_val != NDN_SUCCESS) return ret_val;
     }
-    else if (type == TLV_SignatureValue) {
+    else if (type == TLV_InterestSignatureValue) {
       BIT_SET(interest->flags, 7);
-      ret_val = decoder_move_backward(&decoder, encoder_get_var_size(TLV_SignatureValue));
+      ret_val = decoder_move_backward(&decoder, encoder_get_var_size(TLV_InterestSignatureValue));
       if (ret_val != NDN_SUCCESS) return ret_val;
       ret_val = ndn_signature_value_tlv_decode(&decoder, &interest->signature);
       if (ret_val != NDN_SUCCESS) return ret_val;

@@ -29,7 +29,7 @@ _prepare_signature_info(ndn_interest_t* interest, uint8_t signature_type,
   raw_key_id[2] = (key_id >> 8) & 0xFF;
   raw_key_id[3] = key_id & 0xFF;
 
-  ndn_signature_init(&interest->signature);
+  ndn_signature_init(&interest->signature, true);
   ndn_signature_set_signature_type(&interest->signature, signature_type);
   ndn_signature_set_key_locator(&interest->signature, identity);
 
@@ -193,7 +193,7 @@ ndn_signed_interest_digest_sign(ndn_interest_t* interest)
     return NDN_OVERSIZE;
 
   // set signature info
-  ndn_signature_init(&interest->signature);
+  ndn_signature_init(&interest->signature, true);
   ndn_signature_set_signature_type(&interest->signature, NDN_SIG_TYPE_DIGEST_SHA256);
   // set signature nonce
   ndn_signature_set_signature_nonce(&interest->signature, 0);

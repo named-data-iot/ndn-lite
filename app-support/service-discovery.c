@@ -64,6 +64,8 @@ typedef struct sd_sys_state {
 
 static sd_self_state_t m_self_state;
 static sd_sys_state_t m_sys_state;
+static bool m_has_initialized = false;
+static bool m_has_bootstrapped = false;
 static const uint8_t SERVICE_STATUS_MASK = 0x3F;
 static uint8_t sd_buf[4096];
 static ndn_time_ms_t m_next_adv;
@@ -80,6 +82,7 @@ ndn_sd_init()
     m_sys_state.expire_tps[i] = 0;
   }
   m_next_adv = 0;
+  m_has_initialized = true;
 }
 
 void
@@ -91,6 +94,7 @@ ndn_sd_after_bootstrapping()
   for (int i = 0; i < storage->self_identity.components_size - 1; i++) {
     m_self_state.device_locator[i] = &storage->self_identity.components[i + 1];
   }
+  m_has_bootstrapped = true;
 }
 
 int
@@ -312,8 +316,10 @@ on_sd_interest_timeout (void* userdata)
 int
 sd_start_adv_self_services()
 {
+  if (!m_has_initialized || !m_has_bootstrapped) {
+    return NDN_STATE_NOT_INITIALIZED;
+  }
   int service_cnt;
-
   ndn_time_ms_t now = ndn_time_now_ms();
   if (now < m_next_adv) {
     ndn_msgqueue_post(NULL, sd_start_adv_self_services, NULL, NULL);
@@ -371,6 +377,9 @@ sd_start_adv_self_services()
 int
 sd_query_sys_services(const uint8_t* service_ids, size_t size)
 {
+  if (!m_has_initialized || !m_has_bootstrapped) {
+    return NDN_STATE_NOT_INITIALIZED;
+  }
   // format: /[home-prefix]/SD-CTL/meta
   int ret = 0;
   ndn_interest_t interest;
@@ -405,6 +414,9 @@ sd_query_sys_services(const uint8_t* service_ids, size_t size)
 int
 sd_query_service(uint8_t service_id, const ndn_name_t* granularity, bool is_any)
 {
+  if (!m_has_initialized || !m_has_bootstrapped) {
+    return NDN_STATE_NOT_INITIALIZED;
+  }
   // Format: /[home-prefix]/SD/[service]/[granularity]/[descriptor: ANY, ALL]
   int ret = 0;
   ndn_interest_t interest;
