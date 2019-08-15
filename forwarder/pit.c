@@ -44,6 +44,7 @@ static void ndn_pit_timeout(void *selfptr, size_t param_len, void *param){
         self->slots[i].on_data = NULL;
         self->slots[i].userdata = NULL;
         self->slots[i].express_time = 0;
+        self->slots[i].outgoing_faces = 0;
 
         if(on_timeout){
           on_timeout(userdata);
