@@ -85,6 +85,7 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   decoder_get_type(&decoder, &probe);
   if (probe != TLV_Data) return;
   decoder_get_length(&decoder, &probe);
+  decoder.offset += probe;
   ndn_data_t self_cert;
   if (ndn_data_tlv_decode_no_verify(&self_cert, data.content_value, encoder_probe_block_size(TLV_Data, probe), NULL, NULL) != NDN_SUCCESS) {
     return;
