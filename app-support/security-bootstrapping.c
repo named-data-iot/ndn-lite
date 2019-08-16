@@ -165,6 +165,7 @@ sec_boot_send_cert_interest()
   ndn_interest_set_Parameters(&interest, encoder.output_value, encoder.offset);
   // set must be fresh
   ndn_interest_set_MustBeFresh(&interest,true);
+  interest.lifetime = 5000;
   // sign the interest
   ndn_signed_interest_ecdsa_sign(&interest, &interest.name, m_sec_boot_state.pre_installed_ecc_key);
   // send it out
@@ -283,6 +284,7 @@ sec_boot_send_sign_on_interest()
   ndn_interest_set_Parameters(&interest, encoder.output_value, encoder.offset);
   // set must be fresh
   ndn_interest_set_MustBeFresh(&interest,true);
+  interest.lifetime = 5000;
   // sign the interest
   ndn_name_t temp_name;
   ndn_signed_interest_ecdsa_sign(&interest, &interest.name, m_sec_boot_state.pre_installed_ecc_key);
