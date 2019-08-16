@@ -19,7 +19,7 @@
 extern "C" {
 #endif
 
-const static uint32_t SD_ADV_INTERVAL = 5000;
+const static uint32_t SD_ADV_INTERVAL = 15000;
 
 /**
  * Init state used in service discovery.
