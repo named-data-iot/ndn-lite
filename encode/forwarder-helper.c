@@ -145,11 +145,11 @@ tlv_interest_get_header(uint8_t* interest,
     else if (real_type == TLV_MustBeFresh) {
       options->must_be_fresh = true;
     }
-    else if (real_type == TLV_HopLimit) {
+    else if (real_type == TLV_HopLimit && real_len == sizeof(options->hop_limit)) {
       options->hop_limit = *ptr;
     }
-    else if (real_type == TLV_Nonce) {
-      options->nonce = *(uint32_t*)ptr;
+    else if (real_type == TLV_Nonce && real_len == sizeof(options->nonce)) {
+      memcpy(&options->nonce, ptr, sizeof(options->nonce));
     }
     else if (real_type == TLV_InterestLifetime) {
       options->lifetime = tlv_get_uint(ptr, real_len);
