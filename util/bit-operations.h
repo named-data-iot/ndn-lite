@@ -39,7 +39,35 @@ static inline ndn_bitset_t bitset_unset(ndn_bitset_t set, size_t val){
 }
 
 static inline size_t bitset_log2(ndn_bitset_t val){
+#if defined(__GNUC__) || defined(__clang__)
   return __builtin_ctz(val);
+#else
+  size_t n = 0;
+  if((x & 0x00000000FFFFFFFFllu) == 0){
+    n += 32;
+    val >>= 32llu;
+  }
+  if((x & 0x000000000000FFFFllu) == 0){
+    n += 16;
+    val >>= 16llu;
+  }
+  if((x & 0x00000000000000FFllu) == 0){
+    n += 8;
+    val >>= 8llu;
+  }
+  if((x & 0x000000000000000Fllu) == 0){
+    n += 4;
+    val >>= 4llu;
+  }
+  if((x & 0x0000000000000003llu) == 0){
+    n += 2;
+    val >>= 2llu;
+  }
+  if((x & 0x0000000000000001llu) == 0){
+    n += 1;
+  }
+  return n;
+#endif
 }
 
 static inline size_t bitset_pop_least(ndn_bitset_t* val){
