@@ -53,10 +53,15 @@ typedef void (*ndn_face_intf_destroy)(struct ndn_face_intf* self);
 
 /** Abstract NDN network face.
  *
- * An abstract base class for all faces.
- * Derived classes should implement the function ndn_face_intf#up, ndn_face_intf#send,
- * ndn_face_intf#down, and ndn_face_intf#destroy with platform-specific APIs via assigning
- * function pointers in @c ndn_face_intf.
+ * An abstract base "class" for all faces.
+ * Derived "classes" should implement the function ndn_face_intf#up, ndn_face_intf#send,
+ * ndn_face_intf#down, and ndn_face_intf#destroy with platform-specific APIs.
+ * Developers should assign the implementation of interfaces to function pointers in @c ndn_face_intf.
+ * The assignment usually takes place in the face contrustion function.
+ *
+ * A minimum face implementation example is face/dummy-face.h .c
+ * Real examples can be found in ndn-lite platform-specific platform packages.
+ *
  * @attention @c ndn_face_intf should always be the first member of any face class.
  */
 typedef struct ndn_face_intf {
