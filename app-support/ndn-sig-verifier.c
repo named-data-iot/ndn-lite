@@ -253,7 +253,7 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size, ndn_data_t
   }
   if (need_interest_out) {
     ndn_interest_t cert_interest;
-    memcmp(&cert_interest.name, &data->signature.key_locator_name, sizeof(ndn_name_t));
+    memcpy(&cert_interest.name, &data->signature.key_locator_name, sizeof(ndn_name_t));
     ndn_interest_set_CanBePrefix(&cert_interest, true);
     ndn_interest_set_MustBeFresh(&cert_interest, true);
     ndn_encoder_t encoder;

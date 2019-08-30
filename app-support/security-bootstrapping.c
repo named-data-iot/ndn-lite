@@ -86,7 +86,7 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     printf("Decoding failed.\n");
     return;
   }
-  printf("Receive SD related Data packet with name: \n");
+  printf("Receive Sign On Certificate Data packet with name: \n");
   ndn_name_print(&data.name);
   // parse content
   // format: self certificate, encrypted key
@@ -191,9 +191,8 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     printf("Decoding failed.\n");
     return;
   }
-  printf("Receive SD related Data packet with name: \n");
+  printf("Receive Sign On Data packet with name: \n");
   ndn_name_print(&data.name);
-  ndn_time_ms_t now = ndn_time_now_ms();
   uint32_t probe = 0;
   // parse content
   // format: a data packet, ecdh pub, salt
@@ -286,7 +285,6 @@ sec_boot_send_sign_on_interest()
   ndn_interest_set_MustBeFresh(&interest,true);
   interest.lifetime = 5000;
   // sign the interest
-  ndn_name_t temp_name;
   ndn_signed_interest_ecdsa_sign(&interest, &interest.name, m_sec_boot_state.pre_installed_ecc_key);
   // send it out
   encoder_init(&encoder, sec_boot_buf, sizeof(sec_boot_buf));

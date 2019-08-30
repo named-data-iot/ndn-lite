@@ -255,10 +255,10 @@ on_sd_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
           int ret = tlv_make_data(data_buf, sizeof(data_buf), &data_length,
                                   TLV_DATAARG_NAME_PTR, &interest.name,
                                   TLV_DATAARG_CONTENT_BUF, sd_buf,
-                                  TLV_DATAARG_CONTENT_SIZE, encoder.offset);
-                                  // TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
-                                  // TLV_DATAARG_IDENTITYNAME_PTR, &keys->self_identity,
-                                  // TLV_DATAARG_SIGKEY_PTR, &keys->self_identity_key);
+                                  TLV_DATAARG_CONTENT_SIZE, encoder.offset,
+                                  TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
+                                  TLV_DATAARG_IDENTITYNAME_PTR, &keys->self_identity,
+                                  TLV_DATAARG_SIGKEY_PTR, &keys->self_identity_key);
           if (ret != NDN_SUCCESS) return NDN_FWD_STRATEGY_MULTICAST;
           ndn_forwarder_put_data(data_buf, data_length);
         }

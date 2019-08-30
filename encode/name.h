@@ -38,14 +38,8 @@ typedef struct ndn_name {
  * Print a name.
  * @param name. Input. The name to be printed.
  */
-static inline void
-ndn_name_print(ndn_name_t* name)
-{
-  for (int i = 0; i < name->components_size; i++) {
-    printf("/%.*s", name->components[i].size, name->components[i].value);
-  }
-  printf("\n");
-}
+void
+ndn_name_print(const ndn_name_t* name);
 
 /**
  * Init an empty Name structure.

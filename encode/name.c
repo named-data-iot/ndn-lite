@@ -11,6 +11,31 @@
 #include "name.h"
 
 void
+ndn_name_print(const ndn_name_t* name)
+{
+  for (int i = 0; i < name->components_size; i++) {
+    if (name->components[i].type == TLV_GenericNameComponent) {
+      printf("/");
+      for (int j = 0; j < name->components[i].size; j++) {
+        if (name->components[i].value[j] >= 33 && name->components[i].value[j] < 126) {
+          printf("%c", name->components[i].value[j]);
+        }
+        else {
+          printf("0x%02x", name->components[i].value[j]);
+        }
+      }
+    }
+    else {
+      printf("/digest=0x");
+      for (int j = 0; j < name->components[i].size; j++) {
+        printf("%02x", name->components[i].value[j]);
+      }
+    }
+  }
+  printf("\n");
+}
+
+void
 ndn_name_init(ndn_name_t *name)
 {
   name->components_size = 0;
