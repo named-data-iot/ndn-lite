@@ -9,14 +9,16 @@
  */
 
 #include "access-control.h"
-#include "../encode/signed-interest.h"
 #include "../ndn-services.h"
-#include "../util/uniform-time.h"
 #include "../encode/key-storage.h"
+#include "../encode/signed-interest.h"
+#include "../forwarder/forwarder.h"
 #include "../security/ndn-lite-aes.h"
-#include "../security/ndn-lite-rng.h"
 #include "../security/ndn-lite-ecc.h"
 #include "../security/ndn-lite-hmac.h"
+#include "../security/ndn-lite-rng.h"
+#include "../util/msg-queue.h"
+#include "../util/uniform-time.h"
 
 /**
  * The structure to present an unfinished dh key.
@@ -267,7 +269,7 @@ ac_start_auto_key_rollover()
                                      ac_on_rollover_data, ac_on_interest_timeout, NULL);
     }
   }
-  ndn_msgqueue_post(NULL, ac_start_auto_key_rollover, NULL, NULL);
+  ndn_msgqueue_post(NULL, ac_start_auto_key_rollover, 0, NULL);
 }
 
 void
