@@ -82,7 +82,7 @@ tlv_make_data(uint8_t* buf, size_t buflen, size_t* result_size, int argc, ...)
 
   va_start(vl, argc);
   for (i = 0; i < argc && ret == NDN_SUCCESS; i++) {
-    argtype = va_arg(vl, enum TLV_DATAARG_TYPE);
+    argtype = va_arg(vl, int);
     switch(argtype) {
       case TLV_DATAARG_NAME_PTR:
         arg_ptr = va_arg(vl, void*);
@@ -265,7 +265,7 @@ tlv_parse_data(uint8_t* buf, size_t buflen, int argc, ...)
   // Parse args
   va_start(vl, argc);
   for(i = 0; i < argc && ret == NDN_SUCCESS; i ++) {
-    argtype = va_arg(vl, enum TLV_DATAARG_TYPE);
+    argtype = va_arg(vl, int);
     switch(argtype) {
       case TLV_DATAARG_NAME_PTR:
         arg_ptr = va_arg(vl, ndn_name_t*);
@@ -511,7 +511,7 @@ tlv_make_interest(uint8_t* buf, size_t buflen, size_t* result_size, int argc, ..
   ndn_interest_init(&interest);
   va_start(vl, argc);
   for(i = 0; i < argc && ret == NDN_SUCCESS; i ++) {
-    argtype = va_arg(vl, enum TLV_INTARG_TYPE);
+    argtype = va_arg(vl, int);
     switch(argtype) {
       case TLV_INTARG_NAME_PTR:
         arg_ptr = va_arg(vl, void*);
@@ -679,7 +679,7 @@ tlv_parse_interest(uint8_t* buf, size_t buflen, int argc, ...)
   // Parse args
   va_start(vl, argc);
   for (i = 0; i < argc && ret == NDN_SUCCESS; i++) {
-    argtype = va_arg(vl, enum TLV_INTARG_TYPE);
+    argtype = va_arg(vl, int);
     switch(argtype) {
       case TLV_INTARG_NAME_PTR:
         arg_ptr = va_arg(vl, ndn_name_t*);
