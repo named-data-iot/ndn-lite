@@ -25,9 +25,6 @@ ndn_security_init(void)
   // SHA256 backend
   ndn_lite_default_sha_load_backend();
 
-  // RNG backend
-  // doing nothing
-
   // AES backend
   ndn_lite_default_aes_load_backend();
 
