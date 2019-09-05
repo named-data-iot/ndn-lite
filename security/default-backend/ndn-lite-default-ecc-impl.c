@@ -16,21 +16,6 @@
 #include "../../ndn-enums.h"
 #include <string.h>
 
-static uint64_t g_rand = 88172645463325252ull;
-int fake_rng(uint8_t *dest, unsigned size) {
-    while (size) {
-        g_rand ^= (g_rand << 13);
-        g_rand ^= (g_rand >> 7);
-        g_rand ^= (g_rand << 17);
-
-        unsigned amount = (size > 8 ? 8 : size);
-        memcpy(dest, &g_rand, amount);
-        dest += amount;
-        size -= amount;
-    }
-    return 1;
-}
-
 #ifndef FEATURE_PERIPH_HWRNG
 typedef struct uECC_SHA256_HashContext {
   uECC_HashContext uECC;
@@ -161,11 +146,11 @@ ndn_lite_default_ecdsa_verify(const uint8_t* input_value, uint32_t input_size,
   if (ecdsa_type != NDN_ECDSA_CURVE_SECP256R1)
     return NDN_SEC_UNSUPPORT_CRYPTO_ALGO;
 
-  uint32_t raw_signature_size = NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE;
-  uint8_t raw_sig_temp_buf[raw_signature_size];
+  uint8_t raw_sig_temp_buf[NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE];
   uint32_t decoded_raw_signature_size;
   int ret_val = ndn_asn1_decode_ecdsa_signature(sig_value, sig_size, raw_sig_temp_buf,
-                                      raw_signature_size, &decoded_raw_signature_size);
+                                                NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE,
+                                                &decoded_raw_signature_size);
   if (ret_val != NDN_SUCCESS) {
     return ret_val;
   }
@@ -206,7 +191,6 @@ ndn_lite_default_ecdsa_sign(const uint8_t* input_value, uint32_t input_size,
   ctx->uECC.result_size = NDN_SEC_ECC_SECP256R1_PRIVATE_KEY_SIZE;
   ctx->uECC.tmp = tmp;
 
-  uECC_set_rng(&fake_rng);
   ecc_sign_result = uECC_sign_deterministic(abs_key->key_value, input_value,
                                             &ctx->uECC, output_value);
 #else
