@@ -37,11 +37,10 @@ ndn_security_init(void)
   // HMAC backend
   ndn_lite_default_hmac_load_backend();
 
+  // RNG fake backend
+  ndn_lite_default_rng_load_backend();
+
   if (platform_security_init != NULL) {
     platform_security_init();
-  }
-  ndn_rng_backend_t* rng_backend = ndn_rng_get_backend();
-  if (rng_backend) {
-    ndn_ecc_set_rng(rng_backend->rng);
   }
 }
