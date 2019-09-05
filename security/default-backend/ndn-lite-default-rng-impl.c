@@ -8,7 +8,6 @@
 
 #include "ndn-lite-default-rng-impl.h"
 #include "../ndn-lite-rng.h"
-#include "../ndn-lite-ecc.h"
 #include "../../ndn-error-code.h"
 
 /* always fails and return 0 */
@@ -22,5 +21,4 @@ ndn_lite_default_rng_load_backend(void)
 {
   ndn_rng_backend_t* backend = ndn_rng_get_backend();
   backend->rng = ndn_lite_default_rng;
-  ndn_ecc_set_rng(backend->rng);
 }

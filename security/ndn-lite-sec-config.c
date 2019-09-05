@@ -43,4 +43,6 @@ ndn_security_init(void)
   if (platform_security_init != NULL) {
     platform_security_init();
   }
+
+  ndn_ecc_set_rng(ndn_rng);
 }
