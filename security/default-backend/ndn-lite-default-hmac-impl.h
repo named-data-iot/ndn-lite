@@ -10,6 +10,7 @@
 #define NDN_LITE_DEFAULT_HMAC_IMPL_H
 
 #include "sec-lib/tinycrypt/tc_hmac.h"
+#include "../../ndn-constants.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -17,7 +18,7 @@ struct abstract_hmac_key {
   /**
    * The key bytes buffer of current key.
    */
-  uint8_t key_value[32];
+  uint8_t key_value[NDN_SEC_HMAC_MAX_KEY_SIZE];
   /**
    * The key size of key bytes.
    */
