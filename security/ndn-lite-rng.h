@@ -43,7 +43,9 @@ ndn_rng_get_backend(void);
  * Generate a random number.
  *
  * YOU CANNOT USE THIS FUNCTION IF YOU ARE USING THE
- * DEFAULT SECURITY BACKEND.
+ * DEFAULT SECURITY BACKEND. IT'S A FAKE RNG WHICH
+ * ALWAYS FAILS. YOU SHOULD LOAD ANOTHER PLATFORM-SEPCIFIC
+ * RNG BACKEND BEFORE CALLING THIS.
  *
  * @param dest Buffer to store random number.
  * @param size Length of random number to generate.
