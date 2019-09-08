@@ -67,7 +67,6 @@ timeout()
 void 
 send_sync_interet(full_consumer* consumer) 
 {
-  
   ndn_name_append_name(&consumer->m_syncPrefix, &consumer->m_iblt);
   ndn_name_print(&consumer->m_syncPrefix);
   uint8_t buf[4096];
@@ -79,7 +78,7 @@ send_sync_interet(full_consumer* consumer)
   ndn_name_tlv_encode(&encoder, &consumer->m_syncPrefix);
   
   ndn_forwarder_add_route(&consumer->udp_face->intf, buf, encoder.offset);
-
+  
   ndn_interest_from_name(&interest, &consumer->m_syncPrefix);
 
   ndn_interest_set_MustBeFresh(&interest, true);
@@ -90,8 +89,6 @@ send_sync_interet(full_consumer* consumer)
   ndn_forwarder_express_interest(encoder.output_value, encoder.offset, on_sync_data, timeout, NULL);
 
 }
-
-
 
 void 
 stop () 

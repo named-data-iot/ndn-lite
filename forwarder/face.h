@@ -126,6 +126,7 @@ ndn_face_up(ndn_face_intf_t* self)
 static inline int
 ndn_face_send(ndn_face_intf_t* self, const uint8_t* packet, uint32_t size)
 {
+  printf("%s\n", "forward multicast nfd face sent face send 2");
   if (self->state != NDN_FACE_STATE_UP)
     self->up(self);
   return self->send(self, packet, size);

@@ -418,6 +418,7 @@ fwd_multicast(uint8_t* packet,
               ndn_bitset_t out_faces,
               ndn_table_id_t in_face)
 {
+  printf("%s\n", "forward multicast");
   ndn_table_id_t id;
   ndn_face_intf_t* face;
   ndn_bitset_t ret = 0;
@@ -441,6 +442,7 @@ fwd_on_outgoing_interest(uint8_t* interest,
                          ndn_pit_entry_t* entry,
                          ndn_table_id_t face_id)
 {
+
   ndn_fib_entry_t* fib_entry;
   int strategy;
   uint8_t *hop_limit;
@@ -448,10 +450,12 @@ fwd_on_outgoing_interest(uint8_t* interest,
 
   fib_entry = ndn_fib_prefix_match(forwarder.fib, name, name_len);
   if(fib_entry == NULL){
+    printf("%s\n", "did i reach outgoing interest 1");
     return NDN_FWD_NO_ROUTE;
   }
 
   if(fib_entry->on_interest){
+    printf("%s\n", "did i reach outgoing interest 2");
     strategy = fib_entry->on_interest(interest, length, fib_entry->userdata);
   }else{
     strategy = NDN_FWD_STRATEGY_MULTICAST;
@@ -459,12 +463,14 @@ fwd_on_outgoing_interest(uint8_t* interest,
 
   // The interest may be satisfied immediately so check again
   if(entry->nametree_id == NDN_INVALID_ID){
+    printf("%s\n", "did i reach outgoing interest 3");
     return NDN_SUCCESS;
   }
 
   hop_limit = tlv_interest_get_hoplimit_ptr(interest, length);
   if(hop_limit != NULL){
     if(*hop_limit <= 0){
+      printf("%s\n", "did i reach outgoing interest 4");
       return NDN_FWD_INTEREST_REJECTED;
     }
     // If the Interest is received from another hop
@@ -475,6 +481,7 @@ fwd_on_outgoing_interest(uint8_t* interest,
 
   outfaces = (fib_entry->nexthop & (~entry->outgoing_faces));
   if(strategy == NDN_FWD_STRATEGY_MULTICAST){
+    printf("%s\n", "did i reach outgoing interest 5");
     entry->outgoing_faces |= fwd_multicast(interest, length, outfaces, face_id);
   }
 
