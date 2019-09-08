@@ -9,10 +9,8 @@
 #include <time.h>
 #include <stdlib.h>
 
-
 #ifndef FULL_CONSUMER_H
 #define FULL_CONSUMER_H
-
 
 typedef struct 
 {   
@@ -24,14 +22,15 @@ typedef struct
 typedef struct
 {
 // define all the required variables i.e. face, io-service and all
-
-    ndn_unix_face_t* unix_face;
+    // ndn_unix_face_t* unix_face;
     ndn_udp_face_t* udp_face;
     ndn_name_t m_syncPrefix;
     ndn_name_t m_syncInterestPrefix;
     ndn_name_t m_iblt;
     ndn_name_t m_syncDataName;
     uint32_t jitter;
+
+
     // srand(time(NULL)); //we can use this to create a random number
 
 
@@ -43,7 +42,7 @@ typedef struct
 //                    ndn::time::milliseconds syncInterestLifetime
 
 
-void init_full_consumer (char* syncPrefix, ndn_udp_face_t* face, 
+void init_full_consumer (const char* syncPrefix, ndn_udp_face_t* face, 
                          void (*onUpdate)(void*));
 
 void send_sync_interet();
