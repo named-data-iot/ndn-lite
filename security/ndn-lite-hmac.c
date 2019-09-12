@@ -164,7 +164,7 @@ ndn_hkdf(const uint8_t* input_value, uint32_t input_size,
   }
 
   // load prk
-  struct abstract_hmac_key prk;
+  ndn_hmac_key_t prk;
   ndn_hmac_load_key(&prk, prk_bytes, NDN_SEC_SHA256_HASH_SIZE);
 
   // HKDF expand
@@ -172,7 +172,7 @@ ndn_hkdf(const uint8_t* input_value, uint32_t input_size,
   if (output_size % NDN_SEC_SHA256_HASH_SIZE)
     N += 1;
   for (int i = 1; i <= N; i++) {
-    struct abstract_hmac_sha256_state state;
+    ndn_hmac_sha256_state_t state;
     ndn_hmac_sha256_init(&state, &prk);
     ndn_hmac_sha256_update(&state, previous_output, i == 1 ? 0 : NDN_SEC_SHA256_HASH_SIZE);
     ndn_hmac_sha256_update(&state, info_value, info_size);
