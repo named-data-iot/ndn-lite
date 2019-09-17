@@ -27,6 +27,8 @@
                              NDN_FIB_MAX_SIZE, \
                              NDN_PIT_MAX_SIZE)
 
+uint8_t encoding_buf[2048];
+
 /**
  * NDN-Lite forwarder.
  * We will support content store in future versions.
@@ -165,8 +167,7 @@ ndn_forwarder_add_route_by_str(ndn_face_intf_t* face, const char* prefix, size_t
   ndn_name_t name_prefix;
   ndn_name_from_string(&name_prefix, prefix, length);
   ndn_encoder_t encoder;
-  uint8_t buf[NDN_NAME_MAX_BLOCK_SIZE];
-  encoder_init(&encoder, buf, sizeof(buf));
+  encoder_init(&encoder, encoding_buf, sizeof(encoding_buf));
   ndn_name_tlv_encode(&encoder, &name_prefix);
   return ndn_forwarder_add_route(face, encoder.output_value, encoder.offset);
 }
@@ -175,8 +176,7 @@ int
 ndn_forwarder_add_route_by_name(ndn_face_intf_t* face, const ndn_name_t* prefix)
 {
   ndn_encoder_t encoder;
-  uint8_t buf[NDN_NAME_MAX_BLOCK_SIZE];
-  encoder_init(&encoder, buf, sizeof(buf));
+  encoder_init(&encoder, encoding_buf, sizeof(encoding_buf));
   ndn_name_tlv_encode(&encoder, prefix);
   return ndn_forwarder_add_route(face, encoder.output_value, encoder.offset);
 }
@@ -218,8 +218,7 @@ ndn_forwarder_remove_all_routes(uint8_t* prefix, size_t length)
 }
 
 int
-ndn_forwarder_register_prefix(uint8_t* prefix,
-                              size_t length,
+ndn_forwarder_register_prefix(uint8_t* prefix, size_t length,
                               ndn_on_interest_func on_interest,
                               void* userdata)
 {
@@ -242,9 +241,8 @@ ndn_forwarder_register_name_prefix(const ndn_name_t* prefix,
                                    ndn_on_interest_func on_interest,
                                    void* userdata)
 {
-  uint8_t buf[NDN_NAME_MAX_BLOCK_SIZE];
   ndn_encoder_t encoder;
-  encoder_init(&encoder, buf, sizeof(buf));
+  encoder_init(&encoder, encoding_buf, sizeof(encoding_buf));
   ndn_name_tlv_encode(&encoder, prefix);
   return ndn_forwarder_register_prefix(encoder.output_value, encoder.offset, on_interest, userdata);
 }
@@ -266,8 +264,7 @@ ndn_forwarder_unregister_prefix(uint8_t* prefix, size_t length)
 }
 
 int
-ndn_forwarder_express_interest(uint8_t* interest,
-                               size_t length,
+ndn_forwarder_express_interest(uint8_t* interest, size_t length,
                                ndn_on_data_func on_data,
                                ndn_on_timeout_func on_timeout,
                                void* userdata)
@@ -296,6 +293,19 @@ ndn_forwarder_express_interest(uint8_t* interest,
   pit_entry->last_time = pit_entry->express_time = ndn_time_now_ms();
 
   return fwd_on_outgoing_interest(interest, length, name, name_len, pit_entry, NDN_INVALID_ID);
+}
+
+int
+ndn_forwarder_express_interest_struct(const ndn_interest_t* interest,
+                                      ndn_on_data_func on_data,
+                                      ndn_on_timeout_func on_timeout,
+                                      void* userdata)
+{
+  ndn_encoder_t encoder;
+  encoder_init(&encoder, encoding_buf, sizeof(encoding_buf));
+  ndn_interest_tlv_encode(&encoder, interest);
+  ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
+                                 on_data, on_timeout, userdata);
 }
 
 int

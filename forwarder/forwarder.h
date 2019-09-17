@@ -11,6 +11,7 @@
 
 #include "face.h"
 #include "../encode/name.h"
+#include "../encode/interest.h"
 #include "callback-funcs.h"
 #include "../util/msg-queue.h"
 
@@ -126,8 +127,7 @@ ndn_forwarder_receive(ndn_face_intf_t* face, uint8_t* packet, size_t length);
  *                          #NDN_NAMETREE_MAX_SIZE.
  */
 int
-ndn_forwarder_register_prefix(uint8_t* prefix,
-                              size_t length,
+ndn_forwarder_register_prefix(uint8_t* prefix, size_t length,
                               ndn_on_interest_func on_interest,
                               void* userdata);
 
@@ -160,11 +160,16 @@ ndn_forwarder_unregister_prefix(uint8_t* prefix, size_t length);
  *                          #NDN_NAMETREE_MAX_SIZE.
  */
 int
-ndn_forwarder_express_interest(uint8_t* interest,
-                               size_t length,
+ndn_forwarder_express_interest(uint8_t* interest, size_t length,
                                ndn_on_data_func on_data,
                                ndn_on_timeout_func on_timeout,
                                void* userdata);
+
+int
+ndn_forwarder_express_interest_struct(const ndn_interest_t* interest,
+                                      ndn_on_data_func on_data,
+                                      ndn_on_timeout_func on_timeout,
+                                      void* userdata);
 
 /** Produce a data packet.
  *

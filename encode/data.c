@@ -279,7 +279,6 @@ ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
   if (ret_val != NDN_SUCCESS) return ret_val;
   uint32_t sign_input_ending = encoder->offset;
 
-
   // sign data
   uint32_t used_bytes = 0;
   int result = ndn_hmac_sign(encoder->output_value + sign_input_starting,
