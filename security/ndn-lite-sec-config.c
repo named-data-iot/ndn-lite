@@ -41,5 +41,5 @@ ndn_security_init(void)
     platform_security_init();
   }
 
-  ndn_ecc_set_rng(ndn_rng);
+  ndn_ecc_set_rng(ndn_rng_get_backend()->rng);
 }
