@@ -22,19 +22,15 @@ extern "C" {
 const static uint32_t SD_ADV_INTERVAL = 15000;
 
 /**
- * Init state used in service discovery.
- * Use before ndn_sd_after_bootstrapping.
- */
-void
-ndn_sd_init();
-
-/**
  * Load a device's meta info into the state.
- * @param dev_identity_name. Input. The name of a device in the format of
- *   /[home-prefix]/[device-locator], a device-locator could be "/bedroom/sensor1" or "/front-door-lock"
+ * @param face. Input. The network interface to listen to.
+ * This function will be called by Bootstrapping module automatically.
+ * Service Discovery relies on two components obtained from Bootstrapping process:
+ *  1. self_identity, which is kept in ndn_key_storage.self_identity
+ *  2. self_identity_key, which is kept in ndn_key_storage.self_identity_key
  */
 void
-ndn_sd_after_bootstrapping();
+ndn_sd_after_bootstrapping(ndn_face_intf_t *face);
 
 /**
  * Add a service provided by self device into the state.
@@ -55,23 +51,6 @@ sd_add_or_update_self_service(uint8_t service_id, bool adv, uint8_t status_code)
  */
 int
 sd_add_interested_service(uint8_t service_id);
-
-/**
- * Register the prefixes with corresponding onInterest, onData callbacks.
- * Should be called ONLY ONCE after ndn_sd_after_bootstrapping.
- * Should not be called by application developers. Will be called by the bootstrapping protocol.
- */
-void
-sd_listen(ndn_face_intf_t *face);
-
-/**
- * Express an Interest packet to advertise one's own services.
- * ONLY after ndn_sd_after_bootstrapping.
- * Should not be called by application developers. Will be called by the bootstrapping protocol.
- * @return NDN_SUCCESS(0) if there is no error.
- */
-int
-sd_start_adv_self_services();
 
 /**
  * Query interested services from the system controller.

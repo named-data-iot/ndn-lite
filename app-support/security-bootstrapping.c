@@ -51,9 +51,7 @@ sec_boot_after_bootstrapping()
   ndn_key_storage_delete_ecc_key(SEC_BOOT_DH_KEY_ID);
 
   // start running service discovery protocol
-  ndn_sd_after_bootstrapping();
-  sd_listen(m_sec_boot_state.face);
-  sd_start_adv_self_services();
+  ndn_sd_after_bootstrapping(m_sec_boot_state.face);
 
   // call application-defined after_bootstrapping function
   m_sec_boot_state.after_sec_boot();
