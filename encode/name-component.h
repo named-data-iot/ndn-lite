@@ -87,9 +87,8 @@ name_component_from_buffer(name_component_t* component, uint32_t type,
 }
 
 /**
- * Init a Name Component structure from string. Please include the last byte of the string,
- * which is "\0". The function will do memory copy.
- * @param component. Output. The Name Component structure to be inited.
+ * Init a Name Component structure from string.
+ * @param component. Output. The Name Component structure to be intialized.
  * @param string. Input. String variable which name component initing from.
  * @param size. Input. Size of input string.
  * @return 0 if there is no error.
@@ -97,12 +96,15 @@ name_component_from_buffer(name_component_t* component, uint32_t type,
 static inline int
 name_component_from_string(name_component_t* component, const char* string, uint32_t size)
 {
-  if (string[size - 1] == '\0')
-    return name_component_from_buffer(component, TLV_GenericNameComponent,
-                                      (const uint8_t*)string, size - 1);
-  else
-    return name_component_from_buffer(component, TLV_GenericNameComponent,
-                                      (const uint8_t*)string, size);
+  int starting = 0;
+  int length = size;
+  if (string[starting] == '/') {
+    starting = 1;
+  }
+  if (string[length - 1] == '\0') {
+    length -= 1;
+  }
+  return name_component_from_buffer(component, TLV_GenericNameComponent, (const uint8_t*)string + starting, length);
 }
 
 /**

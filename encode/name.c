@@ -86,9 +86,9 @@ ndn_name_from_string(ndn_name_t *name, const char* string, uint32_t size)
   name->components_size = 0;
 
   uint32_t i = 0;
-  uint32_t last_divider = 0;
+  int last_divider = 0;
   if (string[i] != '/') {
-    return NDN_NAME_INVALID_FORMAT;
+    last_divider = -1;
   }
   ++i;
   while (i < size) {
