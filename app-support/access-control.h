@@ -14,28 +14,17 @@
 #include "../encode/interest.h"
 #include "../encode/data.h"
 
-const static uint32_t KEY_ROLLOVER_AHEAD_TIME = 86400000;
+// const static uint32_t KEY_ROLLOVER_AHEAD_TIME = 86400000;
 
-void
-ac_init_state(const name_component_t* home_prefix); //  which is to load one’s own produced data prefixes into the state
+// Basic Design:
+// 1. The access control policy are decided by schema
+// 2. The access control key can be roll overed by existing key (e.g., through one-way function)
+// 3. The access control granularity can be kept in the service type level at the moment
 
-void
-ac_add_data_prefix_need_ek(const ndn_name_t* data_prefix);
+// void
+// ac_after_bootstrapping(ndn_face_intf_t* face); // which is to load one’s own produced data prefixes into the state
 
-int
-ac_get_ek_for_prefix(const ndn_name_t* data_prefix, ndn_aes_key_t* ek);
 
-int
-ac_get_dk(const ndn_name_t* key_prefix, ndn_aes_key_t* dk);
-
-void
-ac_start_auto_key_rollover();
-
-void
-ac_apply_ek();
-
-void
-ac_apply_dk(const ndn_name_t* key_name, bool one_time);
 
 
 // /**
