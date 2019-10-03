@@ -8,6 +8,13 @@
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
+#include <stdbool.h>
+#include <stdint.h>
+#include "../encode/name-component.h"
+
+typedef int (*ndn_on_content_published)(uint16_t service, uint16_t type_action,
+                                        const name_component_t* identifier, uint32_t component_size,
+                                        const uint8_t* content, uint32_t content_len);
 
 /** subscribe
  * This function will register a event that periodically send an Interest to the name prefix and fetch data.
@@ -21,8 +28,9 @@
  * Example: each device can subscribe to CONTROL, device's own prefix, SCHEMA, to obtain the new configuration to verify other's commands
  * each device can subscribe to AC, device's service, EKEY, to obtain the encryption key to encrypt their content published
  */
-// void
-// ps_subscribe_to(uint16_t service, char* identifier, uint32_t identifier_len, uint32_t frequency, ndn_on_content_published callback);
+void
+ps_subscribe_to(uint16_t service, char* identifier, uint32_t identifier_len,
+                uint32_t frequency, ndn_on_content_published callback);
 
 /** publish
  * This function will publish data to a content repo.
@@ -36,7 +44,10 @@
  * Example: temp sensor can publish to: TEMP, bedroom, READ, "37.5 c degree" to publish temp data under /home/TEMP/bedroom/READ
  * controller can publish to: AC, TEMP, EKEY, "fetch from controller for new keys" to distribute new encryption keys
  */
-// void
-// ps_publish_content(uint16_t service, char* datatype, uint32_t datatype_len, uint8_t* content, uint32_t content_len);
-// void
-// ps_publish_command(uint16_t service, uint16_t action, char* identifier, uint32_t identifier_len, uint8_t* content, uint32_t content_len);
+void
+ps_publish_content(uint16_t service, uint16_t datatype, uint32_t datatype_len,
+                   uint8_t* content, uint32_t content_len);
+
+void
+ps_publish_command(uint16_t service, uint16_t action, char* identifier, uint32_t identifier_len,
+                   uint8_t* content, uint32_t content_len);
