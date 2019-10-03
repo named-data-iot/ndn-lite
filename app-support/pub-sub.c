@@ -8,4 +8,4 @@
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
-// implementation of trust schema
+// implementation of pub sub
