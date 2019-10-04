@@ -63,9 +63,17 @@ _on_subscription_interest()
   // reply the latest content
 }
 
+
+/* 
+E.g., LED => /home/LED
+E.g., TEMP, bedroom => /home/TEMP/bedroom
+*/
 void
 ps_subscribe_to(uint8_t service, char* identifier, uint32_t identifier_len,
-                uint32_t frequency, ndn_on_content_published callback);
+                uint32_t frequency, ndn_on_content_published callback)
+{
+
+}
 
 void
 ps_publish_content(uint8_t service, uint16_t datatype, uint32_t datatype_len,

@@ -17,51 +17,6 @@
 #include "../util/uniform-time.h"
 #include "../util/msg-queue.h"
 
-/**
- * The structure to represent a NDN service.
- */
-typedef struct ndn_service {
-  /**
-   * a bit vector:
-   * index 7 (leftmost) bit. whether initialized. 0: uninitialized 1: initialized
-   * index 6 bit. whether to advertise. 0: no adv, 1: adv.
-   * index 0-5 bits. The state of the service.
-   */
-  uint8_t status;
-  /**
-   * The NDN service ID.
-   */
-  uint8_t service_id;
-} ndn_service_t;
-
-/**
- * The structure to keep the state of one's own services
- */
-typedef struct sd_self_state {
-  /**
-   * The home prefix component
-   */
-  const name_component_t* home_prefix;
-  /**
-   * The locator name components of the device
-   */
-  const name_component_t* device_locator;
-  uint8_t device_locator_size;
-  /**
-   * Device IDs
-   */
-  ndn_service_t services[NDN_SD_SERVICES_SIZE];
-} sd_self_state_t;
-
-/**
- * The structure to keep the cached service information in the system
- */
-typedef struct sd_sys_state {
-  uint8_t interested_services[NDN_SD_SERVICES_SIZE];
-  ndn_name_t cached_services[NDN_SD_SERVICES_SIZE];
-  ndn_time_ms_t expire_tps[NDN_SD_SERVICES_SIZE];
-} sd_sys_state_t;
-
 static sd_self_state_t m_self_state;
 static sd_sys_state_t m_sys_state;
 static bool m_has_initialized = false;
