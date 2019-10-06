@@ -29,7 +29,7 @@ typedef int (*ndn_on_content_published)(uint8_t service, uint16_t type_action,
  * each device can subscribe to AC, device's service, EKEY, to obtain the encryption key to encrypt their content published
  */
 void
-ps_subscribe_to(uint8_t service, char* identifier, uint32_t identifier_len,
+ps_subscribe_to(uint8_t service, const name_component_t* identifier, uint32_t component_size,
                 uint32_t frequency, ndn_on_content_published callback);
 
 /** publish
@@ -45,9 +45,9 @@ ps_subscribe_to(uint8_t service, char* identifier, uint32_t identifier_len,
  * controller can publish to: AC, TEMP, EKEY, "fetch from controller for new keys" to distribute new encryption keys
  */
 void
-ps_publish_content(uint8_t service, uint16_t datatype, uint32_t datatype_len,
+ps_publish_content(uint8_t service, const name_component_t* identifier, uint32_t component_size,
                    uint8_t* content, uint32_t content_len);
 
 void
-ps_publish_command(uint8_t service, uint16_t action, char* identifier, uint32_t identifier_len,
+ps_publish_command(uint8_t service, uint16_t action, const name_component_t* identifier, uint32_t component_size,
                    uint8_t* content, uint32_t content_len);
