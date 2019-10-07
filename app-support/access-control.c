@@ -20,6 +20,46 @@
 #include "../util/msg-queue.h"
 #include "../util/uniform-time.h"
 
+void
+_construct_ekey_interest(uint8_t service)
+{
+  // send /home/AC/EKEY/<the service provided by my self> to the controller
+  // sign
+}
+
+void
+_construct_dkey_interest(uint8_t service)
+{
+  // send /home/AC/DKEY/<the services that I need to access> to the controller
+  // sign
+}
+
+void
+_on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
+{
+  // parse Data
+  // get key: decrypt the key
+  // store it into key_storage
+}
+
+void
+_on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
+{
+  // parse Data
+  // get key: decrypt the key
+  // store it into key_storage
+}
+
+void
+ac_after_bootstrapping(ndn_face_intf_t* face)
+{
+  // send /home/AC/EKEY/<the service provided by my self> to the controller
+  // send /home/AC/DKEY/<the services that I need to access> to the controller
+  // e.g. Temp sensor produce under TEMP, access SD
+  // 1. send /home/AC/EKEY/TEMP to obtain encryption key
+  // 2. send /home/AC/DKEY/SD to obtain decryption key
+}
+
 // /**
 //  * The structure to present an unfinished dh key.
 //  */

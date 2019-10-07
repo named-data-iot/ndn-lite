@@ -25,7 +25,6 @@ extern "C" {
  * related KEY-ID, which will be used to fetch key from the key_storage and later to free the memory use of the key.
  */
 
-
 typedef struct ndn_key_storage {
   bool is_bootstrapped;
   /**

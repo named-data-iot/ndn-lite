@@ -47,11 +47,15 @@ int sec_boot_send_cert_interest();
 void
 sec_boot_after_bootstrapping()
 {
-  ndn_key_storage_delete_aes_key(SEC_BOOT_AES_KEY_ID);
-  ndn_key_storage_delete_ecc_key(SEC_BOOT_DH_KEY_ID);
-
   // start running service discovery protocol
   ndn_sd_after_bootstrapping(m_sec_boot_state.face);
+
+  // call access control's after bootstrapping
+  // ac_after_bootstrapping
+
+  // we shouldn't delete the AES key because they may be used in other places
+  // ndn_key_storage_delete_aes_key(SEC_BOOT_AES_KEY_ID);
+  ndn_key_storage_delete_ecc_key(SEC_BOOT_DH_KEY_ID);
 
   // call application-defined after_bootstrapping function
   m_sec_boot_state.after_sec_boot();
