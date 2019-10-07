@@ -15,7 +15,7 @@
 
 #define NDN_PUBSUB_TOPIC_SIZE 10
 #define NDN_PUBSUB_IDENTIFIER_SIZE 2
-
+#define NDN_PUBSUB_MAC_TIMEOUT 2
 
 // the struct to keep each topic subscribed
 typedef struct topic {
@@ -27,6 +27,7 @@ typedef struct topic {
   ndn_on_content_published callback;
   
   uint8_t is_sub;
+  uint8_t timeout_cnt;
   uint8_t cache[200];
   uint32_t cache_size;
 } topic_t;
@@ -75,6 +76,24 @@ _match_topic(const ndn_name_t* data_name, uint8_t is_sub)
     }
   }
   return NULL;
+}
+
+void
+_on_sub_timeout(void* userdata)
+{
+  topic_t* entry = (topic_t*)userdata;
+  entry->timeout_cnt++;
+  if (entry->timeout_cnt > NDN_PUBSUB_MAC_TIMEOUT) {
+    // remove the entry and reinitilize it
+    entry->identifier_size = NDN_FWD_INVALID_NAME_SIZE;
+    entry->is_sub = 0;
+    entry->service = 0;
+    entry->timeout_cnt = 0;
+    entry->interval = 0;
+    entry->next_interest = 0;
+    printf("remove the entry\n");
+    return;
+  }
 }
 
 void
@@ -128,8 +147,6 @@ _periodic_data_fetching(void *self, size_t param_length, void *param)
         if (entry->service)
           ndn_name_append_bytes_component(&name, &entry->service, 
                                            sizeof(entry->service));
-
-
         if(entry->identifier_size > 0)
           for (int i = 0; i < entry->identifier_size; i++)
             ndn_name_append_component(&name, &entry->identifier[i]);
@@ -142,7 +159,7 @@ _periodic_data_fetching(void *self, size_t param_length, void *param)
 
         int ret = ndn_forwarder_express_interest(m_sub_state.topics[i].cache, 
                                                  m_sub_state.topics[i].cache_size,
-                                                 _on_new_content, NULL, NULL);
+                                                 _on_new_content, _on_sub_timeout, entry);
         
         printf("_periodic_data_fetching: ");
         ndn_name_print(&name);putchar('\n');
@@ -191,6 +208,7 @@ _ps_topics_init()
     m_sub_state.topics[i].identifier_size = NDN_FWD_INVALID_NAME_SIZE;
     m_sub_state.topics[i].callback = NULL;
     m_sub_state.topics[i].next_interest = 0;
+    m_sub_state.topics[i].timeout_cnt = 0;
   }
   m_has_initialized = true;
 }
@@ -228,9 +246,17 @@ ps_subscribe_to(uint8_t service, const name_component_t* identifier, uint32_t co
   }
   
   printf("before finding entry ");ndn_name_print(&name);putchar('\n');
-    // retrieve an topic entry
+  
+  // retrieve an topic entry
+  // first to do topic match to see if a prefix find
+  topic_t* entry = _match_topic(&name, 1);
+  if (entry) 
+  { 
+    printf("ps_subscribeL already sub this one or a bigger topic, reject\n");
+    return;
+  }
+
   // TODO need removing mechanism
-  topic_t* entry = NULL;
   for (int i = 0; i < NDN_PUBSUB_TOPIC_SIZE; i++) {
     if (m_sub_state.topics[i].identifier_size == NDN_FWD_INVALID_NAME_SIZE)
       m_sub_state.topics[i].callback = callback;
@@ -244,17 +270,10 @@ ps_subscribe_to(uint8_t service, const name_component_t* identifier, uint32_t co
           m_sub_state.topics[i].identifier[j] = identifier[j];
         m_sub_state.topics[i].identifier_size = component_size;
       }
-      entry = &m_sub_state.topics[i];
       printf("_ps_subscribe_to, find an empty entry!\n");
       break;
   }
-  
-  tlv_make_interest(&entry->cache, sizeof(entry->cache), &entry->cache_size, 4,
-                    TLV_INTARG_NAME_PTR, &name,
-                    TLV_INTARG_CANBEPREFIX_BOOL, true,
-                    TLV_INTARG_MUSTBEFRESH_BOOL, true,
-                    TLV_INTARG_LIFETIME_U64, (uint64_t)600);
-  printf("ps_subscribe_to: encoded interest cache size = %d\n", entry->cache_size);
+
   _periodic_data_fetching(NULL, 0, NULL);
   return;
 }
