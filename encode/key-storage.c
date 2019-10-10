@@ -11,11 +11,11 @@
 #include "key-storage.h"
 
 static ndn_key_storage_t storage;
+bool _key_storage_initialized = false;
 
-ndn_key_storage_t*
-ndn_key_storage_init(void)
+void
+_ndn_key_storage_init(void)
 {
-  storage.is_bootstrapped = false;
   ndn_name_init(&storage.self_identity);
   ndn_data_init(&storage.self_cert);
   ndn_data_init(&storage.trust_anchor);
@@ -29,18 +29,22 @@ ndn_key_storage_init(void)
     if (i < NDN_SEC_ENCRYPTION_KEYS_SIZE)
       storage.aes_keys[i].key_id = NDN_SEC_INVALID_KEY_ID;
   }
-  return &storage;
+  _key_storage_initialized = true;
 }
 
 ndn_key_storage_t*
 ndn_key_storage_get_instance(void)
 {
+  if (!_key_storage_initialized)
+    _ndn_key_storage_init();
   return &storage;
 }
 
 int
 ndn_key_storage_set_trust_anchor(const ndn_data_t* trust_anchor)
 {
+  if (!_key_storage_initialized)
+    _ndn_key_storage_init();
   memcpy(&storage.trust_anchor, trust_anchor, sizeof(ndn_data_t));
   uint32_t anchor_keyid = key_id_from_cert_name(&trust_anchor->name);
   int ret = ndn_ecc_pub_init(&storage.trust_anchor_key,
@@ -53,12 +57,13 @@ ndn_key_storage_set_trust_anchor(const ndn_data_t* trust_anchor)
 int
 ndn_key_storage_set_self_identity(const ndn_data_t* self_cert, const ndn_ecc_prv_t* self_prv_key)
 {
+  if (!_key_storage_initialized)
+    _ndn_key_storage_init();
   memcpy(&storage.self_cert, self_cert, sizeof(ndn_data_t));
   memcpy(&storage.self_identity_key, self_prv_key, sizeof(ndn_ecc_prv_t));
   for (int i = 0; i < self_cert->name.components_size - 4; i++) {
     ndn_name_append_component(&storage.self_identity, &self_cert->name.components[i]);
   }
-  storage.is_bootstrapped = true;
   return NDN_SUCCESS;
 }
 
@@ -66,6 +71,8 @@ ndn_key_storage_set_self_identity(const ndn_data_t* self_cert, const ndn_ecc_prv
 void
 ndn_key_storage_get_empty_hmac_key(ndn_hmac_key_t** hmac)
 {
+  if (!_key_storage_initialized)
+    _ndn_key_storage_init();
   for (uint8_t i = 0; i < NDN_SEC_SIGNING_KEYS_SIZE; i++) {
     if (storage.hmac_keys[i].key_id == NDN_SEC_INVALID_KEY_ID) {
       *hmac = &storage.hmac_keys[i];
@@ -79,6 +86,8 @@ ndn_key_storage_get_empty_hmac_key(ndn_hmac_key_t** hmac)
 void
 ndn_key_storage_get_empty_ecc_key(ndn_ecc_pub_t** pub, ndn_ecc_prv_t** prv)
 {
+  if (!_key_storage_initialized)
+    _ndn_key_storage_init();
   for (uint8_t i = 0; i < NDN_SEC_SIGNING_KEYS_SIZE; i++) {
     if (storage.ecc_pub_keys[i].key_id == NDN_SEC_INVALID_KEY_ID) {
       *pub = &storage.ecc_pub_keys[i];
@@ -94,6 +103,8 @@ ndn_key_storage_get_empty_ecc_key(ndn_ecc_pub_t** pub, ndn_ecc_prv_t** prv)
 void
 ndn_key_storage_get_empty_aes_key(ndn_aes_key_t** aes)
 {
+  if (!_key_storage_initialized)
+    _ndn_key_storage_init();
   for (uint8_t i = 0; i < NDN_SEC_ENCRYPTION_KEYS_SIZE; i++) {
     if (storage.aes_keys[i].key_id == NDN_SEC_INVALID_KEY_ID) {
       *aes = &storage.aes_keys[i];
@@ -147,6 +158,8 @@ ndn_key_storage_delete_aes_key(uint32_t key_id)
 void
 ndn_key_storage_get_hmac_key(uint32_t key_id, ndn_hmac_key_t** hmac)
 {
+  if (!_key_storage_initialized)
+    _ndn_key_storage_init();
   for (uint8_t i = 0; i <NDN_SEC_SIGNING_KEYS_SIZE; i++) {
     if (storage.hmac_keys[i].key_id != NDN_SEC_INVALID_KEY_ID) {
       if (key_id == storage.hmac_keys[i].key_id) {
@@ -162,6 +175,8 @@ ndn_key_storage_get_hmac_key(uint32_t key_id, ndn_hmac_key_t** hmac)
 void
 ndn_key_storage_get_ecc_key(uint32_t key_id, ndn_ecc_pub_t** pub, ndn_ecc_prv_t** prv)
 {
+  if (!_key_storage_initialized)
+    _ndn_key_storage_init();
   for (uint8_t i = 0; i <NDN_SEC_SIGNING_KEYS_SIZE; i++) {
     if (storage.ecc_pub_keys[i].key_id != NDN_SEC_INVALID_KEY_ID
         && key_id == storage.ecc_pub_keys[i].key_id) {
@@ -188,6 +203,8 @@ ndn_key_storage_get_ecc_key(uint32_t key_id, ndn_ecc_pub_t** pub, ndn_ecc_prv_t*
 void
 ndn_key_storage_get_ecc_pub_key(uint32_t key_id, ndn_ecc_pub_t** pub)
 {
+  if (!_key_storage_initialized)
+    _ndn_key_storage_init();
   ndn_ecc_prv_t* prv = NULL;
   ndn_key_storage_get_ecc_key(key_id, pub, &prv);
 }
@@ -195,6 +212,8 @@ ndn_key_storage_get_ecc_pub_key(uint32_t key_id, ndn_ecc_pub_t** pub)
 void
 ndn_key_storage_get_ecc_prv_key(uint32_t key_id, ndn_ecc_prv_t** prv)
 {
+  if (!_key_storage_initialized)
+    _ndn_key_storage_init();
   ndn_ecc_pub_t* pub = NULL;
   ndn_key_storage_get_ecc_key(key_id, &pub, prv);
 }
@@ -203,6 +222,8 @@ ndn_key_storage_get_ecc_prv_key(uint32_t key_id, ndn_ecc_prv_t** prv)
 void
 ndn_key_storage_get_aes_key(uint32_t key_id, ndn_aes_key_t** aes)
 {
+  if (!_key_storage_initialized)
+    _ndn_key_storage_init();
   for (uint8_t i = 0; i <NDN_SEC_ENCRYPTION_KEYS_SIZE; i++) {
     if (storage.aes_keys[i].key_id != NDN_SEC_INVALID_KEY_ID) {
       if (key_id == storage.aes_keys[i].key_id) {

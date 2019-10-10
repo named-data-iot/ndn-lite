@@ -313,9 +313,6 @@ ndn_security_bootstrapping(ndn_face_intf_t* face,
   ndn_rng_backend_t* rng_backend = ndn_rng_get_backend();
   ndn_ecc_set_rng(rng_backend->rng);
 
-  // init key storage
-  ndn_key_storage_init();
-
   // remember the state for future use
   m_sec_boot_state.face = face;
   // TODO: add the pre-installed key into the key storage

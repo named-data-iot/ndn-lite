@@ -263,8 +263,7 @@ decoder_move_forward(ndn_decoder_t* decoder, uint32_t step)
 static inline int
 decoder_move_backward(ndn_decoder_t* decoder, uint32_t step)
 {
-  int new_position = decoder->offset - step;
-  if (new_position < 0)
+  if (decoder->offset < step)
     return NDN_OVERSIZE;
   decoder->offset -= step;
   return 0;

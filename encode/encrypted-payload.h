@@ -18,11 +18,29 @@
 extern "C" {
 #endif
 
-void
-ndn_gen_encrypted_payload(const uint8_t* input, uint32_t input_size, uint32_t aes_key_id);
+/** Encrypted Payload TLV Format
+ * T=TLV_AC_AES_IV L V=Bytes: IV for AES encryption
+ * T=TLV_AC_ENCRYPTED_PAYLOAD L V=Bytes: Encrypted Content
+ */
 
-void
-ndn_parse_encrypted_payload(uint8_t* output, uint32_t* output_size, uint32_t aes_key_id);
+int
+ndn_probe_encrypted_payload_length(uint32_t input_size);
+
+/**
+ * @param input. Output. The buffer to keep the result.
+ * @param input_size. Input. The max size of the buffer.
+ * @param aes_key_id. Input. The key id used to fetch a key from ndn-lite key storage.
+ * @param used_size. Output. The bytes used by this function.
+ * @param iv. Input. IV. Can be NULL.
+ * @param iv_size. Input. IV's size. Can be zero.
+ */
+int
+ndn_gen_encrypted_payload(const uint8_t* input, uint32_t input_size, uint8_t* output, uint32_t* used_size,
+                          uint32_t aes_key_id, const uint8_t* iv, uint32_t iv_size);
+
+int
+ndn_parse_encrypted_payload(const uint8_t* input, uint32_t input_size,
+                            uint8_t* output, uint32_t* output_size, uint32_t aes_key_id);
 
 #ifdef __cplusplus
 }

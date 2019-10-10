@@ -177,33 +177,27 @@ ndn_data_set_content(ndn_data_t* data, uint8_t* content_value, uint32_t content_
  * @param data. Output. The data whose content will be set.
  * @param content_value. Input. The content buffer (Content Value only, no T(type) and L(length)).
  * @param content_size. Input. The size of the content buffer.
- * @param key_id. Input. The encryption key name.
- * @param aes_iv. Input. The IV used for AES encryption.
- * @param key. Input. The AES key used for AES encryption.
+ * @param key_name. Input. The encryption key name.
  * @return 0 if there is no error.
  */
 int
-ndn_data_set_encrypted_content(ndn_data_t* data,
-                               const uint8_t* content_value, uint32_t content_size,
-                               const ndn_name_t* key_id, const uint8_t* aes_iv,
-                               const ndn_aes_key_t* key);
+ndn_data_set_encrypted_content(ndn_data_t* data, const uint8_t* content_value, uint32_t content_size,
+                               const ndn_name_t* key_name, const uint8_t* iv, uint32_t iv_size);
 
 /**
  * Parse the Data encrypted content and get the decrypted content.
  * The content payload will be decrypted with AES CBC without padding.
  * @param data. Input. The data whose content will be set.
- * @param content_value. Output. The decrypted content buffer
- *        (Content Value only, no T(type) and L(length)).
- * @param content_used_size. Output. The size of the decrypted content buffer.
+ * @param payload_value. Output. The decrypted content buffer.
+ * @param payload_used_size. Output. The size of the decrypted content buffer.
  * @param key_id. Output. The encryption key name.
  * @param aes_iv. Output. The IV used for AES decryption.
  * @param key. Input. The AES key used for AES decryption.
  * @return 0 if there is no error.
  */
 int
-ndn_data_parse_encrypted_content(const ndn_data_t* data,
-                                 uint8_t* content_value, uint32_t* content_used_size,
-                                 ndn_name_t* key_id, uint8_t* aes_iv, const ndn_aes_key_t* key);
+ndn_data_parse_encrypted_content(const ndn_data_t* data, uint8_t* payload_value, uint32_t* payload_used_size,
+                                 ndn_name_t* key_name);
 
 #ifdef __cplusplus
 }

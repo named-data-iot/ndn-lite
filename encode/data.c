@@ -13,7 +13,8 @@
 #include "../security/ndn-lite-sha.h"
 #include "../security/ndn-lite-aes.h"
 #include "../security/ndn-lite-ecc.h"
-#include "encoder.h"
+#include "encrypted-payload.h"
+#include "key-storage.h"
 #include "../ndn-error-code.h"
 
 /************************************************************/
@@ -400,102 +401,50 @@ ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, ui
 }
 
 int
-ndn_data_set_encrypted_content(ndn_data_t* data,
-                               const uint8_t* content_value, uint32_t content_size,
-                               const ndn_name_t* key_id, const uint8_t* aes_iv,
-                               const ndn_aes_key_t* key)
+ndn_data_set_encrypted_content(ndn_data_t* data, const uint8_t* content_value, uint32_t content_size,
+                               const ndn_name_t* key_name, const uint8_t* iv, uint32_t iv_size)
 {
   int ret_val = -1;
-
-  uint32_t v_size = 0;
-  v_size += ndn_name_probe_block_size(key_id);
-  v_size += encoder_probe_block_size(TLV_AC_AES_IV, NDN_AES_BLOCK_SIZE);
-  v_size += encoder_probe_block_size(TLV_AC_ENCRYPTED_PAYLOAD,
-                                     content_size + NDN_AES_BLOCK_SIZE);
-  if (v_size > NDN_CONTENT_BUFFER_SIZE)
+  uint32_t tlv_size = 0;
+  tlv_size += ndn_name_probe_block_size(key_name);
+  tlv_size += ndn_probe_encrypted_payload_length(content_size);
+  if (tlv_size > NDN_CONTENT_BUFFER_SIZE)
     return NDN_OVERSIZE;
 
   // prepare output block
   memset(data->content_value, 0, NDN_CONTENT_BUFFER_SIZE);
+  data->content_size = tlv_size;
 
   ndn_encoder_t encoder;
   encoder_init(&encoder, data->content_value, NDN_CONTENT_BUFFER_SIZE);
 
-  // type: TLV_AC_ENCRYPTED_CONTENT
-  ret_val = encoder_append_type(&encoder, TLV_AC_ENCRYPTED_CONTENT);
-  if (ret_val != NDN_SUCCESS) return ret_val;
-  ret_val = encoder_append_length(&encoder, v_size);
-  if (ret_val != NDN_SUCCESS) return ret_val;
-
   // type: TLV_NAME
-  ret_val = ndn_name_tlv_encode(&encoder, key_id);
+  ret_val = ndn_name_tlv_encode(&encoder, key_name);
   if (ret_val != NDN_SUCCESS) return ret_val;
 
-  // type: TLV_AES_IV
-  ret_val = encoder_append_type(&encoder, TLV_AC_AES_IV);
+  uint32_t used_size = 0;
+  ret_val = ndn_gen_encrypted_payload(content_value, content_size,
+                                      encoder.output_value + encoder.offset, &used_size,
+                                      key_id_from_key_name(key_name), iv, iv_size);
   if (ret_val != NDN_SUCCESS) return ret_val;
-  ret_val = encoder_append_length(&encoder, NDN_AES_BLOCK_SIZE);
-  if (ret_val != NDN_SUCCESS) return ret_val;
-  ret_val = encoder_append_raw_buffer_value(&encoder, aes_iv, NDN_AES_BLOCK_SIZE);
-  if (ret_val != NDN_SUCCESS) return ret_val;
-
-  // type: ENCRYPTED PAYLOAD
-  ret_val = encoder_append_type(&encoder, TLV_AC_ENCRYPTED_PAYLOAD);
-  if (ret_val != NDN_SUCCESS) return ret_val;
-  ret_val = encoder_append_length(&encoder, ndn_aes_probe_padding_size(content_size) +
-                                            NDN_AES_BLOCK_SIZE);
-  if (ret_val != NDN_SUCCESS) return ret_val;
-  ret_val = ndn_aes_cbc_encrypt(content_value, content_size,
-                      encoder.output_value + encoder.offset,
-                      encoder.output_max_size - encoder.offset,
-                      aes_iv, key);
-  if (ret_val != NDN_SUCCESS) return ret_val;
-  encoder.offset += ndn_aes_probe_padding_size(content_size) + NDN_AES_BLOCK_SIZE;
-  data->content_size = encoder.offset;
   return 0;
 }
 
 int
-ndn_data_parse_encrypted_content(const ndn_data_t* data,
-                                 uint8_t* content_value, uint32_t* content_used_size,
-                                 ndn_name_t* key_id, uint8_t* aes_iv, const ndn_aes_key_t* key)
+ndn_data_parse_encrypted_content(const ndn_data_t* data, uint8_t* payload_value, uint32_t* payload_used_size,
+                                 ndn_name_t* key_name)
 {
   int ret_val = -1;
-
   ndn_decoder_t decoder;
-  // uint8_t toTransform[NDN_CONTENT_BUFFER_SIZE] = {0};
   decoder_init(&decoder, data->content_value, data->content_size);
   uint32_t probe = 0;
 
-  // type: TLV_AC_ENCRYPTED_CONTENT
-  ret_val = decoder_get_type(&decoder, &probe);
-  if (ret_val != NDN_SUCCESS) return ret_val;
-  if (probe != TLV_AC_ENCRYPTED_CONTENT)
-    return NDN_WRONG_TLV_TYPE;
-  ret_val = decoder_get_length(&decoder, &probe);
-  if (ret_val != NDN_SUCCESS) return ret_val;
-
   // type: TLV_NAME
-  ret_val = ndn_name_tlv_decode(&decoder, key_id);
+  ret_val = ndn_name_tlv_decode(&decoder, key_name);
   if (ret_val != NDN_SUCCESS) return ret_val;
 
-  // type: TLV_AES_IV
-  ret_val = decoder_get_type(&decoder, &probe);
+  ret_val = ndn_parse_encrypted_payload(decoder.input_value + decoder.offset, decoder.input_size - decoder.offset,
+                                        payload_value, payload_used_size, key_id_from_key_name(key_name));
   if (ret_val != NDN_SUCCESS) return ret_val;
-  ret_val = decoder_get_length(&decoder, &probe);
-  if (ret_val != NDN_SUCCESS) return ret_val;
-  ret_val = decoder_get_raw_buffer_value(&decoder, aes_iv, NDN_AES_BLOCK_SIZE);
-  if (ret_val != NDN_SUCCESS) return ret_val;
-
-  // type: ENCRYPTED PAYLOAD
-  ret_val = decoder_get_type(&decoder, &probe);
-  if (ret_val != NDN_SUCCESS) return ret_val;
-  ret_val = decoder_get_length(&decoder, &probe);
-  if (ret_val != NDN_SUCCESS) return ret_val;
-  ret_val = ndn_aes_cbc_decrypt(decoder.input_value + decoder.offset, probe,
-                      content_value, probe - NDN_AES_BLOCK_SIZE, aes_iv, key);
-  *content_used_size = ndn_aes_parse_unpadding_size(content_value, probe - NDN_AES_BLOCK_SIZE);
-  if (ret_val != NDN_SUCCESS) return ret_val;
-  decoder.offset -= probe;
   return 0;
 }

@@ -24,9 +24,7 @@ extern "C" {
  * The key storage uses the KEY-ID as the index. Application or library modules should keep a state of
  * related KEY-ID, which will be used to fetch key from the key_storage and later to free the memory use of the key.
  */
-
 typedef struct ndn_key_storage {
-  bool is_bootstrapped;
   /**
    * Identity Key.
    */
@@ -75,13 +73,6 @@ key_id_from_cert_name(const ndn_name_t* cert_name)
   decoder_get_uint32_value(&decoder, &result);
   return result;
 }
-
-/**
- * Init an in-library key storage structure.
- * @return The pointer to the initialized key storage structure
- */
-ndn_key_storage_t*
-ndn_key_storage_init(void);
 
 /**
  * Get a running instance of key storage structure.
@@ -160,10 +151,13 @@ ndn_key_storage_get_hmac_key(uint32_t key_id, ndn_hmac_key_t** hmac);
  */
 void
 ndn_key_storage_get_ecc_key(uint32_t key_id, ndn_ecc_pub_t** pub, ndn_ecc_prv_t** prv);
+
 void
 ndn_key_storage_get_ecc_pub_key(uint32_t key_id, ndn_ecc_pub_t** pub);
+
 void
 ndn_key_storage_get_ecc_prv_key(uint32_t key_id, ndn_ecc_prv_t** pub);
+
 /**
  * Get an existing AES-128 key pointer from key storage structure.
  * @param key_id. Input. Key id which indicates the key to fetch.
