@@ -8,11 +8,23 @@
  * See AUTHORS.md for complete list of NDN IOT PKG authors and contributors.
  */
 
+
+#ifndef NDN_APP_SUPPORT_PUB_SUB_H
+#define NDN_APP_SUPPORT_PUB_SUB_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#define DATA    1
+#define CMD     0
+
 #include <stdbool.h>
 #include <stdint.h>
 #include "../encode/name-component.h"
 
-typedef int (*ndn_on_content_published)(uint8_t service, uint16_t type_action,
+typedef int (*ndn_on_published)(uint8_t service, uint16_t type_action,
                                         const name_component_t* identifier, uint32_t component_size,
                                         const uint8_t* content, uint32_t content_len);
 
@@ -29,8 +41,8 @@ typedef int (*ndn_on_content_published)(uint8_t service, uint16_t type_action,
  * each device can subscribe to AC, device's service, EKEY, to obtain the encryption key to encrypt their content published
  */
 void
-ps_subscribe_to(uint8_t service, const name_component_t* identifier, uint32_t component_size,
-                uint32_t frequency, ndn_on_content_published callback);
+ps_subscribe_to(uint8_t service, uint8_t type, const name_component_t* identifier, uint32_t component_size,
+                uint32_t frequency, ndn_on_published callback);
 
 /** publish
  * This function will publish data to a content repo.
@@ -49,5 +61,10 @@ ps_publish_content(uint8_t service, const name_component_t* identifier, uint32_t
                    uint8_t* content, uint32_t content_len);
 
 void
-ps_publish_command(uint8_t service, uint16_t action, const name_component_t* identifier, uint32_t component_size,
-                   uint8_t* content, uint32_t content_len);
+ps_publish_command(uint8_t service, uint16_t action, const name_component_t* identifier, uint32_t component_size);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* NDN_APP_SUPPORT_PUB_SUB_H */
