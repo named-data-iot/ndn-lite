@@ -20,34 +20,146 @@
 #include "../util/msg-queue.h"
 #include "../util/uniform-time.h"
 
+static uint8_t sd_buf[4096];
+
 void
 _construct_ekey_interest(uint8_t service)
 {
   // send /home/AC/EKEY/<the service provided by my self> to the controller
-  // sign
+  int ret = 0;
+  ndn_interest_t interest;
+  ndn_interest_init(&interest);
+  ret = ndn_name_append_component(&interest.name, m_self_state.home_prefix);
+  if (ret != 0) return ret;
+  uint8_t ac = NDN_SD_AC;
+  ret = ndn_name_append_bytes_component(&interest.name, &ac, 1);
+  if (ret != 0) return ret;
+  uint8_t ekey = NDN_SD_AC_EK;
+  ret = ndn_name_append_bytes_component(&interest.name, &ekey, 1);
+  if (ret != 0) return ret;
+  ret = ndn_name_append_bytes_component(&interest.name, &service, 1);
+  if (ret != 0) return ret;
+
+  ndn_encoder_t encoder;
+  encoder_init(&encoder, sd_buf, sizeof(sd_buf));
+
+  // TODO signature signing
+
+  // Express Interest
+  encoder_init(&encoder, sd_buf, sizeof(sd_buf));
+  ret = ndn_interest_tlv_encode(&encoder, &interest);
+  if (ret != 0) return ret;
+  ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, _on_ekey_data, NULL, NULL);
+  if (ret != 0) {
+    printf("Fail to send out adv Interest. Error Code: %d\n", ret);
+    return ret;
+  }
+  printf("Send AC Interest packet with name: \n");
+  ndn_name_print(&interest.name);
+  ndn_msgqueue_post(NULL, _construct_ekey_interest, NULL, NULL);
+  return NDN_SUCCESS;
 }
 
 void
 _construct_dkey_interest(uint8_t service)
 {
   // send /home/AC/DKEY/<the services that I need to access> to the controller
-  // sign
+  int ret = 0;
+  ndn_interest_t interest;
+  ndn_interest_init(&interest);
+  ret = ndn_name_append_component(&interest.name, m_self_state.home_prefix);
+  if (ret != 0) return ret;
+  uint8_t ac = NDN_SD_AC;
+  ret = ndn_name_append_bytes_component(&interest.name, &ac, 1);
+  if (ret != 0) return ret;
+  uint8_t dkey = NDN_SD_AC_DK;
+  ret = ndn_name_append_bytes_component(&interest.name, &dkey, 1);
+  if (ret != 0) return ret;
+  ret = ndn_name_append_bytes_component(&interest.name, &service, 1);
+  if (ret != 0) return ret;
+
+  ndn_encoder_t encoder;
+  encoder_init(&encoder, sd_buf, sizeof(sd_buf));
+
+  // TODO signature signing
+
+  // Express Interest
+  encoder_init(&encoder, sd_buf, sizeof(sd_buf));
+  ret = ndn_interest_tlv_encode(&encoder, &interest);
+  if (ret != 0) return ret;
+  ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, _on_ekey_data, NULL, NULL);
+  if (ret != 0) {
+    printf("Fail to send out adv Interest. Error Code: %d\n", ret);
+    return ret;
+  }
+  printf("Send AC Interest packet with name: \n");
+  ndn_name_print(&interest.name);
+  ndn_msgqueue_post(NULL, _construct_ekey_interest, NULL, NULL);
+  return NDN_SUCCESS;
 }
 
 void
 _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 {
   // parse Data
+
+  ndn_data_t data;
+  if (ndn_data_tlv_decode_digest_verify(&data, raw_data, data_size)) {
+    printf("Decoding failed.\n");
+  }
+  printf("Receive EKEY packet with name: \n");
+  ndn_name_print(&data.name);
+  ndn_time_ms_t now = ndn_time_now_ms();
+
   // get key: decrypt the key
+  uint32_t freshness_period = 0;
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, data.content_value, data.content_size);
+  uint32_t length;
+  uint8_t value[36];
+  decoder_get_length(&decoder, &length);
+  decoder_get_raw_buffer_value(&decoder, value, length);
+
   // store it into key_storage
+  ndn_ecc_pub_t** pub = NULL;
+  ndn_ecc_prv_t** prv;
+  ndn_ecc_prv_init(prv, value,
+                 32, secp256k1, uint32_t key_id);
+  ndn_key_storage_get_empty_ecc_key(pub, prv);
+
+  freshness_period = *((uint32_t*)value + 8);
 }
 
 void
 _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 {
   // parse Data
+
+  ndn_data_t data;
+  if (ndn_data_tlv_decode_digest_verify(&data, raw_data, data_size)) {
+    printf("Decoding failed.\n");
+  }
+  printf("Receive EKEY packet with name: \n");
+  ndn_name_print(&data.name);
+  ndn_time_ms_t now = ndn_time_now_ms();
+
   // get key: decrypt the key
+  uint32_t freshness_period = 0;
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, data.content_value, data.content_size);
+  uint32_t length;
+  uint8_t value[36];
+  decoder_get_length(&decoder, &length);
+  decoder_get_raw_buffer_value(&decoder, value, length);
+
   // store it into key_storage
+  ndn_ecc_pub_t** pub = NULL;
+  ndn_ecc_prv_t** prv;
+  ndn_ecc_prv_init(prv, value,
+                 32, secp256k1, uint32_t key_id);
+  ndn_key_storage_get_empty_ecc_key(pub, prv);
+
+  freshness_period = *((uint32_t*)value + 8);
 }
 
 void
