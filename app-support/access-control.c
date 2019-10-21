@@ -22,14 +22,40 @@
 
 static uint8_t sd_buf[4096];
 
+typedef struct ndn_access_control {
+  uint8_t access_services[10];
+  uint32_t access_keys[10];
+  uint8_t self_services[2];
+  uint32_t ekeys[2];
+} ndn_access_control_t;
+
+ndn_access_control_t _ac_self_state;
+bool _ac_initialized = false;
+
 void
-_construct_ekey_interest(uint8_t service)
+_init_ac_state()
+{
+  for (int i = 0; i < 10; i++) {
+    _ac_self_state.access_keys[i] = NDN_SEC_INVALID_KEY_ID;
+    _ac_self_state.access_services[i] = NDN_SD_NONE;
+  }
+  for (int i = 0; i < 2; i++) {
+    _ac_self_state.ekeys[i] = NDN_SEC_INVALID_KEY_ID;
+    _ac_self_state.self_services[i] = NDN_SD_NONE;
+  }
+  _ac_initialized = true;
+}
+
+void
+_express_ekey_interest(uint8_t service)
 {
   // send /home/AC/EKEY/<the service provided by my self> to the controller
   int ret = 0;
   ndn_interest_t interest;
   ndn_interest_init(&interest);
-  ret = ndn_name_append_component(&interest.name, m_self_state.home_prefix);
+  ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+  // @Guan Yu storage->self_identity.components[0] is the home prefix
+  ret = ndn_name_append_component(&interest.name, &storage->self_identity.components[0]);
   if (ret != 0) return ret;
   uint8_t ac = NDN_SD_AC;
   ret = ndn_name_append_bytes_component(&interest.name, &ac, 1);
@@ -56,18 +82,21 @@ _construct_ekey_interest(uint8_t service)
   }
   printf("Send AC Interest packet with name: \n");
   ndn_name_print(&interest.name);
-  ndn_msgqueue_post(NULL, _construct_ekey_interest, NULL, NULL);
+  // @Guan Yu this is not needed
+  // ndn_msgqueue_post(NULL, _construct_ekey_interest, NULL, NULL);
   return NDN_SUCCESS;
 }
 
 void
-_construct_dkey_interest(uint8_t service)
+_express_dkey_interest(uint8_t service)
 {
   // send /home/AC/DKEY/<the services that I need to access> to the controller
   int ret = 0;
   ndn_interest_t interest;
   ndn_interest_init(&interest);
-  ret = ndn_name_append_component(&interest.name, m_self_state.home_prefix);
+  ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+  // @Guan Yu storage->self_identity.components[0] is the home prefix
+  ret = ndn_name_append_component(&interest.name, &storage->self_identity.components[0]);
   if (ret != 0) return ret;
   uint8_t ac = NDN_SD_AC;
   ret = ndn_name_append_bytes_component(&interest.name, &ac, 1);
@@ -94,7 +123,7 @@ _construct_dkey_interest(uint8_t service)
   }
   printf("Send AC Interest packet with name: \n");
   ndn_name_print(&interest.name);
-  ndn_msgqueue_post(NULL, _construct_ekey_interest, NULL, NULL);
+  // ndn_msgqueue_post(NULL, _construct_ekey_interest, NULL, NULL);
   return NDN_SUCCESS;
 }
 
@@ -123,8 +152,7 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   // store it into key_storage
   ndn_ecc_pub_t** pub = NULL;
   ndn_ecc_prv_t** prv;
-  ndn_ecc_prv_init(prv, value,
-                 32, secp256k1, uint32_t key_id);
+  ndn_ecc_prv_init(prv, value, 32, secp256k1, uint32_t key_id);
   ndn_key_storage_get_empty_ecc_key(pub, prv);
 
   freshness_period = *((uint32_t*)value + 8);
@@ -155,18 +183,46 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   // store it into key_storage
   ndn_ecc_pub_t** pub = NULL;
   ndn_ecc_prv_t** prv;
-  ndn_ecc_prv_init(prv, value,
-                 32, secp256k1, uint32_t key_id);
+  ndn_ecc_prv_init(prv, value, 32, secp256k1, uint32_t key_id);
   ndn_key_storage_get_empty_ecc_key(pub, prv);
 
   freshness_period = *((uint32_t*)value + 8);
 }
 
 void
+register_service_require_ek(uint8_t service)
+{
+  if (!_ac_initialized) {
+    _init_ac_state();
+  }
+}
+
+void
+register_access_request(uint8_t service)
+{
+  if (!_ac_initialized) {
+    _init_ac_state();
+  }
+}
+
+void
 ac_after_bootstrapping(ndn_face_intf_t* face)
 {
+  if (!_ac_initialized) {
+    _init_ac_state();
+  }
   // send /home/AC/EKEY/<the service provided by my self> to the controller
+  for (int i = 0; i < 2; i++) {
+    if (_ac_self_state.self_services[i] != NDN_SD_NONE) {
+      _express_ekey_interest(_ac_self_state.self_services[i]);
+    }
+  }
   // send /home/AC/DKEY/<the services that I need to access> to the controller
+  for (int i = 0; i < 10; i++) {
+    if (_ac_self_state.access_services[i] != NDN_SD_NONE) {
+      _express_dkey_interest(_ac_self_state.access_services[i]);
+    }
+  }
   // e.g. Temp sensor produce under TEMP, access SD
   // 1. send /home/AC/EKEY/TEMP to obtain encryption key
   // 2. send /home/AC/DKEY/SD to obtain decryption key

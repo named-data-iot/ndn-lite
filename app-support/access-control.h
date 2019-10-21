@@ -22,38 +22,41 @@
 // void
 // ac_after_bootstrapping(ndn_face_intf_t* face); // which is to load one’s own produced data prefixes into the state
 
+// void
+// _construct_ekey_interest(uint8_t service)
+// {
+//   // send /home/AC/EKEY/<the service provided by my self> to the controller
+//   // sign
+// }
 
-#endif // NDN_APP_SUPPORT_ACCESS_CONTROL_H
+// void
+// _construct_dkey_interest(uint8_t service)
+// {
+//   // send /home/AC/DKEY/<the services that I need to access> to the controller
+//   // sign
+// }
+
+// void
+// _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
+// {
+//   // parse Data
+//   // get key: decrypt the key
+//   // store it into key_storage
+// }
+
+// void
+// _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
+// {
+//   // parse Data
+//   // get key: decrypt the key
+//   // store it into key_storage
+// }
 
 void
-_construct_ekey_interest(uint8_t service)
-{
-  // send /home/AC/EKEY/<the service provided by my self> to the controller
-  // sign
-}
+register_service_require_ek(uint8_t service);
 
 void
-_construct_dkey_interest(uint8_t service)
-{
-  // send /home/AC/DKEY/<the services that I need to access> to the controller
-  // sign
-}
-
-void
-_on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
-{
-  // parse Data
-  // get key: decrypt the key
-  // store it into key_storage
-}
-
-void
-_on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
-{
-  // parse Data
-  // get key: decrypt the key
-  // store it into key_storage
-}
+register_access_request(uint8_t service);
 
 void
 ac_after_bootstrapping(ndn_face_intf_t* face)
@@ -64,3 +67,5 @@ ac_after_bootstrapping(ndn_face_intf_t* face)
   // 1. send /home/AC/EKEY/TEMP to obtain encryption key
   // 2. send /home/AC/DKEY/SD to obtain decryption key
 }
+
+#endif // NDN_APP_SUPPORT_ACCESS_CONTROL_H
