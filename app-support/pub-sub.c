@@ -23,7 +23,7 @@
 #define MATCH_LONG  0
 
 /*
- * The struct to keep each topic subscribed  
+ * The struct to keep each topic subscribed.
  */
 typedef struct topic {
   /*
@@ -92,6 +92,9 @@ _on_subscription_interest(const uint8_t* raw_interest, uint32_t interest_size, v
 int
 _on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, void* userdata);
 
+/*
+ * Helper funciton to initialize the Topic List
+ */
 void
 _ps_topics_init()
 {
@@ -104,6 +107,9 @@ _ps_topics_init()
   m_has_initialized = true;
 }
 
+/*
+ * Helper funciton to construct a partial Name. Service Code is the last NameComponent.
+ */
 void
 _service_name_construction(ndn_name_t* name, uint8_t service)
 {
@@ -114,6 +120,9 @@ _service_name_construction(ndn_name_t* name, uint8_t service)
   ndn_name_append_bytes_component(name, &service, sizeof(service));
 }
 
+/*
+ * Helper funciton to construct a partial Name. Append the Identifier to the input Name.
+ */
 void
 _identifier_name_construction(ndn_name_t* name, const name_component_t* identifier, uint32_t component_size)
 {
@@ -122,6 +131,9 @@ _identifier_name_construction(ndn_name_t* name, const name_component_t* identifi
       ndn_name_append_component(name, &identifier[i]);
 }
 
+/*
+ * Helper funciton to register the notification prefix. The prefix is in the domain of corresponding Service.
+ */
 _notification_prefix_register(ndn_name_t* name, uint8_t service, topic_t* entry)
 {
   
@@ -131,7 +143,10 @@ _notification_prefix_register(ndn_name_t* name, uint8_t service, topic_t* entry)
   ndn_forwarder_register_name_prefix(name, _on_notification_interest, entry);
 }
 
-
+/*
+ * Helper funciton to construct a Name. register_prefix is an option whether register the coresponding CMD 
+ * or DATA prefix before appending the Identifier.
+ */
 void
 _name_construction(ndn_name_t* name, uint8_t type, uint8_t service,
                    const name_component_t* identifier, uint32_t component_size,
@@ -156,7 +171,11 @@ _name_construction(ndn_name_t* name, uint8_t type, uint8_t service,
 
 }
 
-
+/*
+ * Helper funciton to to perform Topic matching. input_option refers to type of Topic records to match, 
+ * can be SUB or PUB. compare_option indicates the expected returned Topic Name is shorter/longer than 
+ * the input Name.  
+ */
 topic_t*
 _match_topic(const ndn_name_t* name, uint8_t input_option, uint8_t compare_option)
 {
@@ -190,6 +209,9 @@ _match_topic(const ndn_name_t* name, uint8_t input_option, uint8_t compare_optio
   return NULL;
 }
 
+/*
+ * Helper funciton to allocate a Topic slot. Would return nullptr if Topic List is full.
+ */
 topic_t*
 _allocate_topic(ndn_on_published callback, uint8_t service, uint32_t frequency,
                 name_component_t* identifier, uint32_t component_size,
@@ -220,12 +242,18 @@ _allocate_topic(ndn_on_published callback, uint8_t service, uint32_t frequency,
   return NULL;
 }
 
+/*
+ * Helper funciton to indicating a Subscription Interest timout. Simply logging the timeout event.
+ */
 void
 _on_sub_timeout(void* userdata)
 {
   printf("_on_sub_timeout: remove the entry\n");
 }
 
+/*
+ * Helper funciton to handle incoming content.
+ */
 void
 _on_new_content(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 {
@@ -254,7 +282,9 @@ _on_new_content(const uint8_t* raw_data, uint32_t data_size, void* userdata)
                     content, content_size);
 }
 
-
+/*
+ * Helper funciton to express the Subscription Interest.
+ */
 void
 _go_fetching(ndn_name_t* name, topic_t* entry)
 {
@@ -274,6 +304,9 @@ _go_fetching(ndn_name_t* name, topic_t* entry)
   ndn_name_print(name);putchar('\n');
 }
 
+/*
+ * Helper funciton to periodically fetch from the Subsribed Topic.
+ */
 void
 _periodic_data_fetching(void *self, size_t param_length, void *param)
 {
