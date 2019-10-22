@@ -145,8 +145,7 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   decoder_get_raw_buffer_value(&decoder, value, length);
 
   // store it into key_storage
-  ndn_ecc_pub_t** pub = NULL;
-  ndn_ecc_prv_t** prv = NULL;
+  ndn_ecc_pub_t** key = NULL;
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
   uint32_t keyid;
   tc_uECC_generate_random_int(&keyid, 32768, 1);
@@ -156,8 +155,8 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
       _ac_self_state.ekeys[i] = keyid;
     }
   }
-  ndn_key_storage_get_empty_ecc_key(pub, prv);
-  ndn_ecc_pub_init(pub, value, 32, NDN_ECDSA_CURVE_SECP256R1, keyid);
+  ndn_key_storage_get_empty_aes_key(key);
+  ndn_aes_key_init(key, value, 32, keyid);
 
   freshness_period = *((uint32_t*)value + 8);
 }
@@ -185,8 +184,7 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   decoder_get_raw_buffer_value(&decoder, value, length);
 
   // store it into key_storage
-  ndn_ecc_pub_t** pub = NULL;
-  ndn_ecc_prv_t** prv = NULL;
+  ndn_aes_key_t** key = NULL;
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
   uint32_t keyid;
   tc_uECC_generate_random_int(&keyid, 32768, 1);
@@ -196,8 +194,8 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
       _ac_self_state.access_keys[i] = keyid;
     }
   }
-  ndn_key_storage_get_empty_ecc_key(pub, prv);
-  ndn_ecc_prv_init(prv, value, 32, NDN_ECDSA_CURVE_SECP256R1, keyid);
+  ndn_key_storage_get_empty_aes_key(key);
+  ndn_aes_key_init(key, value, 32, keyid);
 
   freshness_period = *((uint32_t*)value + 8);
 }
