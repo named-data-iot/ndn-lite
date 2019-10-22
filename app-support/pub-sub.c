@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2019 Tianyuan Yu
+ * Copyright (C) 2019 Tianyuan Yu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
@@ -22,28 +22,65 @@
 #define MATCH_SHORT 1
 #define MATCH_LONG  0
 
-// the struct to keep each topic subscribed
+/*
+ * The struct to keep each topic subscribed  
+ */
 typedef struct topic {
+  /*
+   * Service Code
+   */
   uint8_t service;
+  /*
+   * Identifier. Should be 0 - 2 NameComponents.
+   */
   name_component_t identifier[NDN_PUBSUB_IDENTIFIER_SIZE];
+  /*
+   * Identifier Size. Should be 0 - 2.
+   */
   uint32_t identifier_size;
+  /*
+   * Interval. Time Interval between two Subscription Interest.
+   */
   uint32_t interval; // the time interval between two Interests
-  uint64_t next_interest; // the time to send next Interest
+  /*
+   * The time to send the next Subscription Interest.
+   */
+  uint64_t next_interest;
+  /*
+   * On DATA/CMD publish callback.
+   */
   ndn_on_published callback;
-  
-
+  /*
+   * The entry is a subscription record or not.
+   */
   uint8_t is_sub;
+  /*
+   * Type of expected Data, can be either CMD or DATA
+   */
   uint8_t type;
-  uint8_t timeout_cnt;
 
-  // cache the lastest published DATA
+  /*
+   * Cache of the lastest published DATA. If the entry is about a subscription record,
+   * cache here will not be used.
+   */
   uint8_t cache[200];
+  /*
+   * Cached Data Size.
+   */
   uint32_t cache_size;
 } topic_t;
 
-// the struct to keep registered topics, including: service, identifer (name_components), frequency, and callback
+/*
+ * The struct to keep registered topics
+ */
 typedef struct sub_topics {
+  /*
+   * Topic List
+   */
   topic_t topics[NDN_PUBSUB_TOPIC_SIZE];
+  /*
+   * Minimal Interval in the Topic List. Currently not used.
+   */
   uint32_t min_interval;
 } sub_topics_t;
 
@@ -62,7 +99,6 @@ _ps_topics_init()
     m_sub_state.topics[i].identifier_size = NDN_FWD_INVALID_NAME_SIZE;
     m_sub_state.topics[i].callback = NULL;
     m_sub_state.topics[i].next_interest = 0;
-    m_sub_state.topics[i].timeout_cnt = 0;
     m_sub_state.topics[i].is_sub = 0;
   }
   m_has_initialized = true;
@@ -187,19 +223,7 @@ _allocate_topic(ndn_on_published callback, uint8_t service, uint32_t frequency,
 void
 _on_sub_timeout(void* userdata)
 {
-  topic_t* entry = (topic_t*)userdata;
-  entry->timeout_cnt++;
-  if (entry->timeout_cnt > NDN_PUBSUB_MAC_TIMEOUT) {
-    // remove the entry and reinitilize it
-    entry->identifier_size = NDN_FWD_INVALID_NAME_SIZE;
-    entry->is_sub = 0;
-    entry->service = 0;
-    entry->timeout_cnt = 0;
-    entry->interval = 0;
-    entry->next_interest = 0;
-    printf("_on_sub_timeout: remove the entry\n");
-    return;
-  }
+  printf("_on_sub_timeout: remove the entry\n");
 }
 
 void
