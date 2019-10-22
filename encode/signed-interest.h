@@ -20,10 +20,8 @@ extern "C" {
 #endif
 
 /**
- * Use Digest (SHA256) to sign the Interest and encode the Signed Interest into wire format.
+ * Use Digest (SHA256) to sign the Interest.
  * This function will automatically set signature info and signature value.
- * @param encoder. Output. The encoder to keep the encoded Signed Interest.
- *        The encoder should be inited to proper output buffer.
  * @param interest. Input. The Interest to be signed and encoded.
  * @return 0 if there is no error.
  */
