@@ -65,12 +65,12 @@ _express_ekey_interest(uint8_t service)
   ret = ndn_name_append_bytes_component(&interest.name, &service, 1);
   if (ret != 0) return ret;
 
-  ndn_encoder_t encoder;
-  encoder_init(&encoder, sd_buf, sizeof(sd_buf));
-
-  // TODO signature signing
+  //signature signing
+  ndn_signed_interest_digest_sign(&interest);
 
   // Express Interest
+  ndn_encoder_t encoder;
+  encoder_init(&encoder, sd_buf, sizeof(sd_buf));
   ret = ndn_interest_tlv_encode(&encoder, &interest);
   if (ret != 0) return ret;
   ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, _on_ekey_data, NULL, NULL);
@@ -102,12 +102,12 @@ _express_dkey_interest(uint8_t service)
   ret = ndn_name_append_bytes_component(&interest.name, &service, 1);
   if (ret != 0) return ret;
 
-  ndn_encoder_t encoder;
-  encoder_init(&encoder, sd_buf, sizeof(sd_buf));
-
-  // TODO signature signing
+  //signature signing
+  ndn_signed_interest_digest_sign(&interest);
 
   // Express Interest
+  ndn_encoder_t encoder;
+  encoder_init(&encoder, sd_buf, sizeof(sd_buf));
   ret = ndn_interest_tlv_encode(&encoder, &interest);
   if (ret != 0) return ret;
   ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, _on_ekey_data, NULL, NULL);
