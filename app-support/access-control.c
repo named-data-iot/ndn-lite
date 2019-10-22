@@ -156,9 +156,9 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     }
   }
   ndn_key_storage_get_empty_aes_key(key);
-  ndn_aes_key_init(key, value, 32, keyid);
+  ndn_aes_key_init(key, value, 16, keyid);
 
-  freshness_period = *((uint32_t*)value + 8);
+  freshness_period = *((uint32_t*)value + 4);
 }
 
 void
@@ -195,9 +195,9 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     }
   }
   ndn_key_storage_get_empty_aes_key(key);
-  ndn_aes_key_init(key, value, 32, keyid);
+  ndn_aes_key_init(key, value, 16, keyid);
 
-  freshness_period = *((uint32_t*)value + 8);
+  freshness_period = *((uint32_t*)value + 4);
 }
 
 void
