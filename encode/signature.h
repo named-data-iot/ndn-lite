@@ -80,10 +80,10 @@ typedef struct ndn_signature {
 } ndn_signature_t;
 
 /**
- * Init a Signature structure. set signature type, signature size,
- * and disable keylocator and validity period by default.
+ * Init a Signature structure.
+ * Disable keylocator and validity period by default.
  * @param signature. Output. The Signature structure to be inited.
- * @param type. Input. The signature type.
+ * @param is_interest. Input. To mark whether the signature is an Interest Signature.
  * @return 0 if there is no error.
  */
 static inline int
@@ -101,6 +101,12 @@ ndn_signature_init(ndn_signature_t* signature, bool is_interest)
   return 0;
 }
 
+/**
+ * Set the Signature type and signature size,
+ * @param signature. Output. The Signature structure to be set.
+ * @param type. Input. The signature type.
+ * @return 0 if there is no error.
+ */
 static inline int
 ndn_signature_set_signature_type(ndn_signature_t* signature, uint8_t type)
 {

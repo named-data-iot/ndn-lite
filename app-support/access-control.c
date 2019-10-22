@@ -71,7 +71,6 @@ _express_ekey_interest(uint8_t service)
   // TODO signature signing
 
   // Express Interest
-  encoder_init(&encoder, sd_buf, sizeof(sd_buf));
   ret = ndn_interest_tlv_encode(&encoder, &interest);
   if (ret != 0) return ret;
   ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, _on_ekey_data, NULL, NULL);
@@ -109,7 +108,6 @@ _express_dkey_interest(uint8_t service)
   // TODO signature signing
 
   // Express Interest
-  encoder_init(&encoder, sd_buf, sizeof(sd_buf));
   ret = ndn_interest_tlv_encode(&encoder, &interest);
   if (ret != 0) return ret;
   ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, _on_ekey_data, NULL, NULL);
