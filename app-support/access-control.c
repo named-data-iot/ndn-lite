@@ -54,7 +54,6 @@ _express_ekey_interest(uint8_t service)
   ndn_interest_t interest;
   ndn_interest_init(&interest);
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
-  // @Guan Yu storage->self_identity.components[0] is the home prefix
   ret = ndn_name_append_component(&interest.name, &storage->self_identity.components[0]);
   if (ret != 0) return ret;
   uint8_t ac = NDN_SD_AC;
@@ -82,8 +81,6 @@ _express_ekey_interest(uint8_t service)
   }
   printf("Send AC Interest packet with name: \n");
   ndn_name_print(&interest.name);
-  // @Guan Yu this is not needed
-  // ndn_msgqueue_post(NULL, _construct_ekey_interest, NULL, NULL);
   return NDN_SUCCESS;
 }
 
@@ -95,7 +92,6 @@ _express_dkey_interest(uint8_t service)
   ndn_interest_t interest;
   ndn_interest_init(&interest);
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
-  // @Guan Yu storage->self_identity.components[0] is the home prefix
   ret = ndn_name_append_component(&interest.name, &storage->self_identity.components[0]);
   if (ret != 0) return ret;
   uint8_t ac = NDN_SD_AC;
@@ -123,7 +119,6 @@ _express_dkey_interest(uint8_t service)
   }
   printf("Send AC Interest packet with name: \n");
   ndn_name_print(&interest.name);
-  // ndn_msgqueue_post(NULL, _construct_ekey_interest, NULL, NULL);
   return NDN_SUCCESS;
 }
 
@@ -151,9 +146,18 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 
   // store it into key_storage
   ndn_ecc_pub_t** pub = NULL;
-  ndn_ecc_prv_t** prv;
-  ndn_ecc_prv_init(prv, value, 32, secp256k1, uint32_t key_id);
+  ndn_ecc_prv_t** prv = NULL;
+  ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+  uint32_t keyid;
+  tc_uECC_generate_random_int(&keyid, 32768, 1);
+  uint8_t service = data.name.components[3].value;
+  for (int i = 0; i < 2; i++) {
+    if (_ac_self_state.self_services[i] == service) {
+      _ac_self_state.ekeys[i] = keyid;
+    }
+  }
   ndn_key_storage_get_empty_ecc_key(pub, prv);
+  ndn_ecc_pub_init(pub, value, 32, NDN_ECDSA_CURVE_SECP256R1, keyid);
 
   freshness_period = *((uint32_t*)value + 8);
 }
@@ -182,9 +186,18 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 
   // store it into key_storage
   ndn_ecc_pub_t** pub = NULL;
-  ndn_ecc_prv_t** prv;
-  ndn_ecc_prv_init(prv, value, 32, secp256k1, uint32_t key_id);
+  ndn_ecc_prv_t** prv = NULL;
+  ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+  uint32_t keyid;
+  tc_uECC_generate_random_int(&keyid, 32768, 1);
+  uint8_t service = data.name.components[3].value;
+  for (int i = 0; i < 10; i++) {
+    if (_ac_self_state.access_services[i] == service) {
+      _ac_self_state.access_keys[i] = keyid;
+    }
+  }
   ndn_key_storage_get_empty_ecc_key(pub, prv);
+  ndn_ecc_prv_init(prv, value, 32, NDN_ECDSA_CURVE_SECP256R1, keyid);
 
   freshness_period = *((uint32_t*)value + 8);
 }
