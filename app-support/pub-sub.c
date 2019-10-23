@@ -12,6 +12,7 @@
 #include "service-discovery.h"
 #include "../encode/key-storage.h"
 #include "../encode/wrapper-api.h"
+#include "../util/logger.h"
 
 #define NDN_PUBSUB_TOPIC_SIZE 10
 #define NDN_PUBSUB_IDENTIFIER_SIZE 2
@@ -41,7 +42,7 @@ typedef struct topic {
   /*
    * Interval. Time Interval between two Subscription Interest.
    */
-  uint32_t interval; // the time interval between two Interests
+  uint32_t interval;
   /*
    * The time to send the next Subscription Interest.
    */
@@ -139,7 +140,8 @@ _notification_prefix_register(ndn_name_t* name, uint8_t service, topic_t* entry)
   
   _service_name_construction(name, service);
   ndn_name_append_string_component(name, "NOTIFY", strlen("NOTIFY"));
-  printf("registered name: ");ndn_name_print(name);putchar('\n');
+  //TODO: how to log with name print?
+  NDN_LOG_INFO("Register Notification Prefix");
   ndn_forwarder_register_name_prefix(name, _on_notification_interest, entry);
 }
 
@@ -162,13 +164,9 @@ _name_construction(ndn_name_t* name, uint8_t type, uint8_t service,
 
   if (register_prefix && type == DATA) {
      ndn_forwarder_register_name_prefix(name, _on_subscription_interest, NULL);
-     printf("registered name: ");ndn_name_print(name);putchar('\n');
   }
 
   _identifier_name_construction(name, identifier, component_size);
-
-  printf("_name_construction: ");ndn_name_print(name);putchar('\n');
-
 }
 
 /*
@@ -179,7 +177,7 @@ _name_construction(ndn_name_t* name, uint8_t type, uint8_t service,
 topic_t*
 _match_topic(const ndn_name_t* name, uint8_t input_option, uint8_t compare_option)
 {
-  printf("_match_topic, in_coming name = ");ndn_name_print(name);putchar('\n');
+  NDN_LOG_DEBUG("Topic Matching: input_option = %d, compare_option = %d", input_option, compare_option);
 
   ndn_name_t prefix;
   for (int i = 0; i < NDN_PUBSUB_TOPIC_SIZE; i++) 
@@ -189,11 +187,7 @@ _match_topic(const ndn_name_t* name, uint8_t input_option, uint8_t compare_optio
     {
       ndn_name_init(&prefix);
       _name_construction(&prefix, entry->type, entry->service, 
-                          entry->identifier, entry->identifier_size, 0);
-      
-      // compare against data_name
-      printf("_match_topic, to compare prefix = ");ndn_name_print(&prefix);putchar('\n');
-       
+                          entry->identifier, entry->identifier_size, 0);   
       int ret = -1;
       if (compare_option)
         ret = ndn_name_is_prefix_of(&prefix, name);
@@ -201,7 +195,7 @@ _match_topic(const ndn_name_t* name, uint8_t input_option, uint8_t compare_optio
         ret = ndn_name_is_prefix_of(name, &prefix);
       
       if (!ret) {
-        printf("_match_topic, prefix matched!\n");
+        NDN_LOG_DEBUG("Topic Matched");
         return entry;
       }
     }
@@ -235,7 +229,7 @@ _allocate_topic(ndn_on_published callback, uint8_t service, uint32_t frequency,
           entry->identifier_size++;
         }
       }
-      printf("_allocate_topic: got one!\n");
+      NDN_LOG_DEBUG("Topic Allocation...Got one");
       return entry;
     }
   }
@@ -248,7 +242,7 @@ _allocate_topic(ndn_on_published callback, uint8_t service, uint32_t frequency,
 void
 _on_sub_timeout(void* userdata)
 {
-  printf("_on_sub_timeout: remove the entry\n");
+  NDN_LOG_INFO("Subscription Interest Timeout");
 }
 
 /*
@@ -257,6 +251,7 @@ _on_sub_timeout(void* userdata)
 void
 _on_new_content(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 {
+  NDN_LOG_INFO("New Published Data Coming...");
   // parse Data name
   ndn_name_t data_name;
   uint8_t* content;
@@ -270,12 +265,9 @@ _on_new_content(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   // match the subscription topic
   topic_t* entry = _match_topic(&data_name, SUB, MATCH_SHORT);
   if (!entry) {
-    printf("_on_new_content: no matching topic, discard\n");
+    NDN_LOG_DEBUG("_on_new_content: No Matched Topic, Discard")
     return;
   } 
-
-  printf("_on_new_content: in coming\n");
-
   // call the on_content callbackclear
   if (entry->callback)
     entry->callback(entry->service, 0, entry->identifier, entry->identifier_size, 
@@ -300,8 +292,7 @@ _go_fetching(ndn_name_t* name, topic_t* entry)
                                            entry->cache_size,
                                            _on_new_content, _on_sub_timeout, entry);
   
-  printf("_go_fetching: ");
-  ndn_name_print(name);putchar('\n');
+  NDN_LOG_INFO("Subscription Interest Sending...");
 }
 
 /*
@@ -336,7 +327,7 @@ int
 _on_subscription_interest(const uint8_t* raw_interest, uint32_t interest_size, void* userdata)
 {
   // parse interest
-  printf("_on_subscription_interest\n");
+  NDN_LOG_INFO("Subscription Interest Incoming...");
   ndn_name_t interest_name;
   tlv_parse_interest(raw_interest, interest_size, 1, 
                      TLV_INTARG_NAME_PTR, &interest_name);
@@ -347,7 +338,7 @@ _on_subscription_interest(const uint8_t* raw_interest, uint32_t interest_size, v
   // reply the latest content
   if (entry)
   {
-    printf("_on_subscription_interest: put data\n");
+    NDN_LOG_INFO("Subscribed Topic Data Publishing...");
     ndn_forwarder_put_data(entry->cache, entry->cache_size);
   }
   return NDN_FWD_STRATEGY_MULTICAST;
@@ -377,14 +368,14 @@ _ps_publish(uint8_t service, uint8_t type, const name_component_t* identifier, u
   if (type == DATA) {
     entry = _match_topic(&name, PUB, MATCH_SHORT);
     if (entry) {
-      printf("_ps_publish with update: data name:\n");ndn_name_print(&name);putchar('\n');
+      NDN_LOG_INFO("Publishing As Topic Data Update...");
       return;
     }
   }
 
   entry = _allocate_topic(NULL, service, 0, identifier, component_size, PUB, type);
   if (!entry) {
-    printf("_ps_publish: no available entry\n");
+    NDN_LOG_DEBUG("_ps_publish: No Avaiable Topic Entry");
     return;
   }
 
@@ -395,7 +386,7 @@ _ps_publish(uint8_t service, uint8_t type, const name_component_t* identifier, u
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
                       TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
-  printf("make data\n");
+  NDN_LOG_DEBUG("_ps_publish: Data Encoding...");
 }
 
 void
@@ -407,7 +398,7 @@ _notify(uint8_t service, const name_component_t* identifier, uint32_t component_
   _service_name_construction(&name, service);
   ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
 
-  printf("_notify: ");ndn_name_print(&name);putchar('\n');
+  NDN_LOG_INFO("Command Interest Notifying...");
 
   uint8_t buffer[100];
   uint32_t buffer_length = 0;
@@ -425,7 +416,7 @@ _notify(uint8_t service, const name_component_t* identifier, uint32_t component_
 int
 _on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, void* userdata)
 {
-  printf("on_notification\n");
+  NDN_LOG_INFO("On Notification...");
   
   // find the /<service>/CMD topic and trigger the one-time fetching
   ndn_name_t name;
@@ -450,14 +441,14 @@ ps_subscribe_to(uint8_t service, uint8_t type, const name_component_t* identifie
   
   topic_t* entry = _match_topic(&name, SUB, MATCH_SHORT);
   if (entry) { 
-    printf("ps_subscribe_to: already sub this one or a bigger topic, reject\n");
+    NDN_LOG_DEBUG("ps_subscribe_to: Already Subscribed on the Same/Father Topic, Reject this Subsription");
     return;
   }
 
   entry = _allocate_topic(callback, service, frequency, identifier, 
                                    component_size, SUB, type);
   if (!entry) { 
-    printf("ps_subscribe_to: no topic entry available\n");
+    NDN_LOG_DEBUG("_ps_publish: No Avaiable Topic Entry");
     return;
   }
   
