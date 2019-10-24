@@ -12,7 +12,7 @@
 #include "../ndn-services.h"
 #include "../encode/key-storage.h"
 #include "../encode/signed-interest.h"
-#incldue "../encode/encrypted-content.h"
+#include "../encode/encrypted-payload.h"
 #include "../forwarder/forwarder.h"
 #include "../security/ndn-lite-aes.h"
 #include "../security/ndn-lite-ecc.h"
@@ -25,7 +25,7 @@ static uint8_t sd_buf[4096];
 
 typedef struct ac_key {
   uint32_t key_id;
-  uint32_t expires_in;
+  uint32_t expires_at;
 } ac_key_t;
 
 typedef struct ndn_access_control {
@@ -53,6 +53,76 @@ _init_ac_state()
 }
 
 void
+_on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
+{
+  // parse Data
+  ndn_data_t data;
+  if (ndn_data_tlv_decode_digest_verify(&data, raw_data, data_size)) {
+    printf("Decoding failed.\n");
+  }
+  printf("Receive EKEY packet with name: \n");
+  ndn_name_print(&data.name);
+
+  // get key: decrypt the key
+  uint32_t expires_in = 0;
+  uint8_t value[36];
+  uint32_t used_size = 0;
+  ndn_parse_encrypted_payload(data.content_value, data.content_size,
+                              value, &used_size, 10002); // SEC_BOOT_AES_KEY_ID = 10002;
+  expires_in = *((uint32_t*)value + 4);
+
+  // store it into key_storage
+  ndn_aes_key_t* key = NULL;
+  ndn_time_ms_t now = ndn_time_now_ms();
+  uint32_t keyid;
+  ndn_rng((uint8_t*)&keyid, 4);
+  uint8_t service = data.name.components[3].value[0];
+  for (int i = 0; i < 2; i++) {
+    if (_ac_self_state.self_services[i] == service) {
+      _ac_self_state.ekeys[i].key_id = keyid;
+      _ac_self_state.ekeys[i].expires_at = expires_in + now;
+    }
+  }
+  ndn_key_storage_get_empty_aes_key(&key);
+  ndn_aes_key_init(key, value, 16, keyid);
+}
+
+void
+_on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
+{
+  // parse Data
+  ndn_data_t data;
+  if (ndn_data_tlv_decode_digest_verify(&data, raw_data, data_size)) {
+    printf("Decoding failed.\n");
+  }
+  printf("Receive EKEY packet with name: \n");
+  ndn_name_print(&data.name);
+
+  // get key: decrypt the key
+  uint32_t expires_in = 0;
+  uint8_t value[36];
+  uint32_t used_size;
+  ndn_parse_encrypted_payload(data.content_value, data.content_size,
+                              value, &used_size, 10002); // SEC_BOOT_AES_KEY_ID = 10002;
+  expires_in = *((uint32_t*)value + 4);
+
+  // store it into key_storage
+  ndn_aes_key_t* key = NULL;
+  ndn_time_ms_t now = ndn_time_now_ms();
+  uint32_t keyid;
+  ndn_rng((uint8_t*)&keyid, 4);
+  uint8_t service = data.name.components[3].value[0];
+  for (int i = 0; i < 10; i++) {
+    if (_ac_self_state.access_services[i] == service) {
+      _ac_self_state.access_keys[i].key_id = keyid;
+      _ac_self_state.access_keys[i].expires_at = expires_in + now;
+    }
+  }
+  ndn_key_storage_get_empty_aes_key(&key);
+  ndn_aes_key_init(key, value, 16, keyid);
+}
+
+int
 _express_ekey_interest(uint8_t service)
 {
   // send /home/AC/EKEY/<the service provided by my self> to the controller
@@ -89,7 +159,7 @@ _express_ekey_interest(uint8_t service)
   return NDN_SUCCESS;
 }
 
-void
+int
 _express_dkey_interest(uint8_t service)
 {
   // send /home/AC/DKEY/<the services that I need to access> to the controller
@@ -127,75 +197,6 @@ _express_dkey_interest(uint8_t service)
 }
 
 void
-_on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
-{
-  // parse Data
-
-  ndn_data_t data;
-  if (ndn_data_tlv_decode_digest_verify(&data, raw_data, data_size)) {
-    printf("Decoding failed.\n");
-  }
-  printf("Receive EKEY packet with name: \n");
-  ndn_name_print(&data.name);
-  ndn_time_ms_t now = ndn_time_now_ms();
-
-  // get key: decrypt the key
-  uint32_t expires_in = 0;
-  uint8_t value[36];
-  ndn_parse_encrypted_payload(data.content_value, data.content_size,
-                              value, 36, 10002); // SEC_BOOT_AES_KEY_ID = 10002;
-  expires_in = *((uint32_t*)value + 4);
-
-  // store it into key_storage
-  ndn_ecc_pub_t** key = NULL;
-  uint32_t keyid;
-  tc_uECC_generate_random_int(&keyid, 32768, 1);
-  uint8_t service = data.name.components[3].value;
-  for (int i = 0; i < 2; i++) {
-    if (_ac_self_state.self_services[i] == service) {
-      _ac_self_state.ekeys[i].key_id = keyid;
-      _ac_self_state.ekeys[i].expires_in = expires_in;
-    }
-  }
-  ndn_key_storage_get_empty_aes_key(key);
-  ndn_aes_key_init(key, value, 16, keyid);
-}
-
-void
-_on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
-{
-  // parse Data
-  ndn_data_t data;
-  if (ndn_data_tlv_decode_digest_verify(&data, raw_data, data_size)) {
-    printf("Decoding failed.\n");
-  }
-  printf("Receive EKEY packet with name: \n");
-  ndn_name_print(&data.name);
-  ndn_time_ms_t now = ndn_time_now_ms();
-
-  // get key: decrypt the key
-  uint32_t expires_in = 0;
-  uint8_t value[36];
-  ndn_parse_encrypted_payload(data.content_value, data.content_size,
-                              value, 36, 10002); // SEC_BOOT_AES_KEY_ID = 10002;
-  expires_in = *((uint32_t*)value + 4);
-
-  // store it into key_storage
-  ndn_aes_key_t** key = NULL;
-  uint32_t keyid;
-  tc_uECC_generate_random_int(&keyid, 32768, 1);
-  uint8_t service = data.name.components[3].value;
-  for (int i = 0; i < 10; i++) {
-    if (_ac_self_state.access_services[i] == service) {
-      _ac_self_state.access_keys[i].key_id = keyid;
-      _ac_self_state.access_keys[i].expires_in = expires_in;
-    }
-  }
-  ndn_key_storage_get_empty_aes_key(key);
-  ndn_aes_key_init(key, value, 16, keyid);
-}
-
-void
 register_service_require_ek(uint8_t service)
 {
   if (!_ac_initialized) {
@@ -222,7 +223,7 @@ register_access_request(uint8_t service)
 }
 
 void
-ac_after_bootstrapping(ndn_face_intf_t* face)
+ac_after_bootstrapping()
 {
   if (!_ac_initialized) {
     _init_ac_state();
