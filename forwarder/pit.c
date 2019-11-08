@@ -8,6 +8,7 @@
 
 #include "pit.h"
 #include "../util/msg-queue.h"
+#include "stdio.h"
 
 static inline void
 ndn_pit_entry_reset(ndn_pit_entry_t* self){
@@ -128,6 +129,7 @@ ndn_pit_find_or_insert(ndn_pit_t* self, uint8_t* name, size_t length){
       return NULL;
     }
   }
+  
   return &self->slots[entry->pit_id];
 }
 
