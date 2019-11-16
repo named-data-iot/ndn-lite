@@ -30,7 +30,7 @@ extern "C" {
   printf("DEBUG:    %s , L%d, __func__, __LINE__"); \
   printf(__VA_ARGS__);printf("\n"); \
 }
-#else 
+#else
 #define NDN_LOG_DEBUG(...)
 #endif
 
@@ -38,7 +38,7 @@ extern "C" {
 #define NDN_LOG_INFO(...) { \
   printf(__VA_ARGS__);printf("\n"); \
 }
-#else 
+#else
 #define NDN_LOG_INFO(...)
 #endif
 

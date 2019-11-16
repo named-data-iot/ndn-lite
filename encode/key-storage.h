@@ -28,7 +28,7 @@ typedef struct ndn_key_storage {
   /**
    * Identity Key.
    */
-  ndn_name_t self_identity;
+  ndn_name_t self_identity; // FORMAT: /home-prefix/room/device-id
   ndn_ecc_prv_t self_identity_key;
   ndn_data_t self_cert;
   /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Tianyuan Yu
+ * Copyright (C) 2019 Tianyuan Yu, Zhiyi Zhang
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
@@ -10,9 +10,12 @@
 
 #include "pub-sub.h"
 #include "service-discovery.h"
+#include "../ndn-constants.h"
+#include "../ndn-services.h"
 #include "../encode/key-storage.h"
 #include "../encode/wrapper-api.h"
 #include "../util/logger.h"
+#include "../forwarder/forwarder.h"
 
 #define NDN_PUBSUB_TOPIC_SIZE 10
 #define NDN_PUBSUB_IDENTIFIER_SIZE 2
@@ -22,222 +25,131 @@
 #define SUB  2
 #define MATCH_SHORT 1
 #define MATCH_LONG  0
+#define DATA 1
+#define CMD 0
 
-/*
- * The struct to keep each topic subscribed.
+/** The struct to keep each topic subscribed.
  */
-typedef struct topic {
-  /*
-   * Service Code
+typedef struct sub_topic {
+  /** Service ID
    */
   uint8_t service;
-  /*
-   * Identifier. Should be 0 - 2 NameComponents.
+  /** Type of expected Data, can be either CMD or DATA
+   */
+  bool is_cmd;
+  /** Identifier. Should be 0 - 2 NameComponents.
    */
   name_component_t identifier[NDN_PUBSUB_IDENTIFIER_SIZE];
-  /*
-   * Identifier Size. Should be 0 - 2.
-   */
-  uint32_t identifier_size;
-  /*
-   * Interval. Time Interval between two Subscription Interest.
+  /** Interval. Time Interval between two Subscription Interest.
    */
   uint32_t interval;
-  /*
-   * The time to send the next Subscription Interest.
+  /** The time to send the next Subscription Interest.
    */
   uint64_t next_interest;
-  /*
-   * On DATA/CMD publish callback.
+  /** On DATA/CMD publish callback.
    */
   ndn_on_published callback;
-  /*
-   * The entry is a subscription record or not.
+  /** User defined data.
    */
-  uint8_t is_sub;
-  /*
-   * Type of expected Data, can be either CMD or DATA
+  void* userdata;
+  /** Decryption Key ID
    */
-  uint8_t type;
+  uint32_t decryption_key;
+} sub_topic_t;
 
-  /*
-   * Cache of the lastest published DATA. If the entry is about a subscription record,
+/** The struct to keep each topic published.
+ */
+typedef struct pub_topic {
+  /** Service ID
+   */
+  uint8_t service;
+  /** Type of expected Data, can be either CMD or DATA
+   */
+  bool is_cmd;
+  /** Cache of the lastest published DATA. If the entry is about a subscription record,
    * cache here will not be used.
    */
   uint8_t cache[200];
-  /*
-   * Cached Data Size.
+  /** Cached Data Size.
    */
   uint32_t cache_size;
-} topic_t;
-
-/*
- * The struct to keep registered topics
- */
-typedef struct sub_topics {
-  /*
-   * Topic List
+  /** The timestamp of last update.
    */
-  topic_t topics[NDN_PUBSUB_TOPIC_SIZE];
-  /*
-   * Minimal Interval in the Topic List. Currently not used.
+  uint64_t last_update_tp;
+  /** Decryption Key ID
+   */
+  uint32_t decryption_key;
+} pub_topic_t;
+
+/** The struct to keep registered topics
+ */
+typedef struct pub_sub_state {
+  /** Topic List
+   */
+  sub_topic_t sub_topics[5];
+  /** Topic List
+   */
+  pub_topic_t pub_topics[5];
+  /** Minimal Interval in the Topic List. Currently not used.
    */
   uint32_t min_interval;
-} sub_topics_t;
+} pub_sub_state_t;
+uint8_t pkt_encoding_buf[300];
 
-static sub_topics_t m_sub_state;
+static pub_sub_state_t m_pub_sub_state;
 static bool m_has_initialized = false;
 
 int
 _on_subscription_interest(const uint8_t* raw_interest, uint32_t interest_size, void* userdata);
-int
-_on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, void* userdata);
 
-/*
- * Helper funciton to initialize the Topic List
+/** Helper function to initialize the topic List
  */
 void
 _ps_topics_init()
 {
-  for (int i = 0; i < NDN_PUBSUB_TOPIC_SIZE; i++) {
-    m_sub_state.topics[i].identifier_size = NDN_FWD_INVALID_NAME_SIZE;
-    m_sub_state.topics[i].callback = NULL;
-    m_sub_state.topics[i].next_interest = 0;
-    m_sub_state.topics[i].is_sub = 0;
+  for (int i = 0; i < 5; i++) {
+    m_pub_sub_state.sub_topics[i].service = NDN_SD_NONE;
+    m_pub_sub_state.sub_topics[i].identifier[0].size = NDN_FWD_INVALID_NAME_COMPONENT_SIZE;
+    m_pub_sub_state.sub_topics[i].identifier[1].size = NDN_FWD_INVALID_NAME_COMPONENT_SIZE;
+    m_pub_sub_state.sub_topics[i].callback = NULL;
+    m_pub_sub_state.sub_topics[i].next_interest = 0;
+
+    m_pub_sub_state.pub_topics[i].service = NDN_SD_NONE;
   }
   m_has_initialized = true;
 }
 
-/*
- * Helper funciton to construct a partial Name. Service Code is the last NameComponent.
+/** Helper function to to perform sub Topic matching.
  */
-void
-_service_name_construction(ndn_name_t* name, uint8_t service)
+sub_topic_t*
+_match_sub_topic(uint8_t service, bool is_cmd, const name_component_t* identifier, uint32_t component_size)
 {
-  ndn_key_storage_t* storage = ndn_key_storage_get_instance();
-  name_component_t* home_prefix = &storage->self_identity.components[0];
-  
-  ndn_name_append_component(name, home_prefix);
-  ndn_name_append_bytes_component(name, &service, sizeof(service));
-}
-
-/*
- * Helper funciton to construct a partial Name. Append the Identifier to the input Name.
- */
-void
-_identifier_name_construction(ndn_name_t* name, const name_component_t* identifier, uint32_t component_size)
-{
-  if(identifier && component_size > 0)
-    for (int i = 0; i < component_size; i++)
-      ndn_name_append_component(name, &identifier[i]);
-}
-
-/*
- * Helper funciton to register the notification prefix. The prefix is in the domain of corresponding Service.
- */
-_notification_prefix_register(ndn_name_t* name, uint8_t service, topic_t* entry)
-{
-  
-  _service_name_construction(name, service);
-  ndn_name_append_string_component(name, "NOTIFY", strlen("NOTIFY"));
-  //TODO: how to log with name print?
-  NDN_LOG_INFO("Register Notification Prefix");
-  ndn_forwarder_register_name_prefix(name, _on_notification_interest, entry);
-}
-
-/*
- * Helper funciton to construct a Name. register_prefix is an option whether register the coresponding CMD 
- * or DATA prefix before appending the Identifier.
- */
-void
-_name_construction(ndn_name_t* name, uint8_t type, uint8_t service,
-                   const name_component_t* identifier, uint32_t component_size,
-                   uint8_t register_prefix)
-{
-  _service_name_construction(name, service);
-  
-  if (type == DATA)
-    ndn_name_append_string_component(name, "DATA", strlen("DATA"));
-  else if (type == CMD)
-    ndn_name_append_string_component(name, "CMD", strlen("CMD"));
-  else return;
-
-  if (register_prefix && type == DATA) {
-     ndn_forwarder_register_name_prefix(name, _on_subscription_interest, NULL);
-  }
-
-  _identifier_name_construction(name, identifier, component_size);
-}
-
-/*
- * Helper funciton to to perform Topic matching. input_option refers to type of Topic records to match, 
- * can be SUB or PUB. compare_option indicates the expected returned Topic Name is shorter/longer than 
- * the input Name.  
- */
-topic_t*
-_match_topic(const ndn_name_t* name, uint8_t input_option, uint8_t compare_option)
-{
-  NDN_LOG_DEBUG("Topic Matching: input_option = %d, compare_option = %d", input_option, compare_option);
-
-  ndn_name_t prefix;
-  for (int i = 0; i < NDN_PUBSUB_TOPIC_SIZE; i++) 
-  {
-    topic_t* entry = &m_sub_state.topics[i];
-    if (entry->next_interest && entry->is_sub == input_option)
-    {
-      ndn_name_init(&prefix);
-      _name_construction(&prefix, entry->type, entry->service, 
-                          entry->identifier, entry->identifier_size, 0);   
-      int ret = -1;
-      if (compare_option)
-        ret = ndn_name_is_prefix_of(&prefix, name);
-      else 
-        ret = ndn_name_is_prefix_of(name, &prefix);
-      
-      if (!ret) {
-        NDN_LOG_DEBUG("Topic Matched");
-        return entry;
-      }
+  // NDN_LOG_DEBUG("Topic Matching: input_option = %d, compare_option = %d", input_option, compare_option);
+  sub_topic_t* entry = NULL;
+  for (int i = 0; i < 5; i++) {
+    if (m_pub_sub_state.sub_topics[i].service == service && m_pub_sub_state.sub_topics[i].is_cmd == is_cmd) {
+      entry = &m_pub_sub_state.sub_topics[i];
     }
   }
-  return NULL;
+  return entry;
 }
 
-/*
- * Helper funciton to allocate a Topic slot. Would return nullptr if Topic List is full.
+/** Helper function to to perform pub Topic matching.
  */
-topic_t*
-_allocate_topic(ndn_on_published callback, uint8_t service, uint32_t frequency,
-                name_component_t* identifier, uint32_t component_size,
-                uint8_t is_sub, uint8_t type)
+pub_topic_t*
+_match_pub_topic(uint8_t service, bool is_cmd)
 {
-  for (int i = 0; i < NDN_PUBSUB_TOPIC_SIZE; i++) {
-    topic_t* entry = &m_sub_state.topics[i];
-    if (entry->is_sub == 0) {
-      entry->callback = callback;
-      entry->interval = frequency;
-      entry->service = service;
-      entry->is_sub = is_sub;
-      entry->type = type;
-      //immediate send
-      entry->next_interest = ndn_time_now_ms();
-      entry->identifier_size = 0;
-      if (identifier && component_size > 0) {
-        for (int j = 0; j < (NDN_PUBSUB_IDENTIFIER_SIZE < component_size ? 
-                             NDN_PUBSUB_IDENTIFIER_SIZE : component_size); j++) {
-          entry->identifier[j] = identifier[j];
-          entry->identifier_size++;
-        }
-      }
-      NDN_LOG_DEBUG("Topic Allocation...Got one");
-      return entry;
+  // NDN_LOG_DEBUG("Topic Matching: input_option = %d, compare_option = %d", input_option, compare_option);
+  pub_topic_t* entry = NULL;
+  for (int i = 0; i < 5; i++) {
+    if (m_pub_sub_state.pub_topics[i].service == service && m_pub_sub_state.pub_topics[i].is_cmd == is_cmd) {
+      entry = &m_pub_sub_state.pub_topics[i];
     }
   }
-  return NULL;
+  return entry;
 }
 
-/*
- * Helper funciton to indicating a Subscription Interest timout. Simply logging the timeout event.
+/** Ontimeout callback to indicating a Subscription Interest timout. Simply logging the timeout event.
  */
 void
 _on_sub_timeout(void* userdata)
@@ -245,144 +157,282 @@ _on_sub_timeout(void* userdata)
   NDN_LOG_INFO("Subscription Interest Timeout");
 }
 
-/*
- * Helper funciton to handle incoming content.
+/** OnData callback function to handle incoming content.
  */
 void
 _on_new_content(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 {
-  NDN_LOG_INFO("New Published Data Coming...");
+  NDN_LOG_INFO("Fetched New Published Data...");
+  sub_topic_t* topic = (sub_topic_t*)userdata;
   // parse Data name
   ndn_name_t data_name;
   uint8_t* content;
   size_t content_size;
 
-  tlv_parse_data(raw_data, data_size, 3, 
+  tlv_parse_data(raw_data, data_size, 3,
                  TLV_DATAARG_NAME_PTR, &data_name,
                  TLV_DATAARG_CONTENT_BUF, &content,
                  TLV_DATAARG_CONTENT_SIZE, &content_size);
-  
-  // match the subscription topic
-  topic_t* entry = _match_topic(&data_name, SUB, MATCH_SHORT);
-  if (!entry) {
-    NDN_LOG_DEBUG("_on_new_content: No Matched Topic, Discard")
-    return;
-  } 
+
   // call the on_content callbackclear
-  if (entry->callback)
-    entry->callback(entry->service, 0, entry->identifier, entry->identifier_size, 
-                    content, content_size);
+  if (topic->callback) {
+    int comp_size = 0;
+    for (int i = 0; i < 2; i++) {
+      if (topic->identifier[i].size != NDN_FWD_INVALID_NAME_COMPONENT_SIZE) {
+        comp_size++;
+      }
+    }
+    // get action if it's a command
+    // command Data FORMAT: /home/service/CMD/NOTIFY/identifier[0,2]/action
+    uint8_t action = 0;
+    if (topic->is_cmd) {
+      action = data_name.components[data_name.components_size - 2].value[0];
+    }
+    topic->callback(topic->service, topic->is_cmd, topic->identifier, comp_size,
+                    action, content, content_size, topic->userdata);
+  }
+}
+
+/** Helper function to construct a name for the Interest to fetch subscribted topic content
+ */
+void
+_construct_sub_interest(ndn_name_t* name, sub_topic_t* topic)
+{
+  ndn_name_init(name);
+  // FORMAT: /home-prefix/service/type/identifier[0,2]
+  // home prefix
+  ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+  ndn_name_append_component(name, &storage->self_identity.components[0]);
+  ndn_name_append_bytes_component(name, &topic->service, sizeof(topic->service));
+  uint8_t type = topic->is_cmd? CMD:DATA;
+  ndn_name_append_bytes_component(name, &type, sizeof(type));
+  for (int i = 0; i < 2; i++) {
+    if (topic->identifier[i].size != NDN_FWD_INVALID_NAME_COMPONENT_SIZE) {
+      ndn_name_append_component(name, &topic->identifier[i]);
+    }
+  }
 }
 
 /*
- * Helper funciton to express the Subscription Interest.
+ * Helper function to periodically fetch from the Subsribed Topic.
  */
 void
-_go_fetching(ndn_name_t* name, topic_t* entry)
+_periodic_sub_content_fetching(void *self, size_t param_length, void *param)
 {
-  _name_construction(name, entry->type, entry->service, entry->identifier,
-                     entry->identifier_size, 0);
-  tlv_make_interest(entry->cache, sizeof(entry->cache), &entry->cache_size, 4,
-                      TLV_INTARG_NAME_PTR, name,
-                      TLV_INTARG_CANBEPREFIX_BOOL, true,
-                      TLV_INTARG_MUSTBEFRESH_BOOL, true,
-                      TLV_INTARG_LIFETIME_U64, (uint64_t)600);
-
-  int ret = ndn_forwarder_express_interest(entry->cache, 
-                                           entry->cache_size,
-                                           _on_new_content, _on_sub_timeout, entry);
-  
-  NDN_LOG_INFO("Subscription Interest Sending...");
-}
-
-/*
- * Helper funciton to periodically fetch from the Subsribed Topic.
- */
-void
-_periodic_data_fetching(void *self, size_t param_length, void *param)
-{
-  (void)self;(void)param_length;(void)param;
+  (void)self;
+  (void)param_length;
+  (void)param;
+  sub_topic_t* topic = NULL;
   ndn_time_ms_t now = ndn_time_now_ms();
   ndn_name_t name;
-  ndn_name_init(&name);
 
   // check the table
-  for (int i = 0; i < NDN_PUBSUB_TOPIC_SIZE; i++) {
-    topic_t* entry = &m_sub_state.topics[i];
-    if (entry->is_sub == SUB && entry->type == DATA)
-    {
-      if (now >= entry->next_interest)
-      {
-        _go_fetching(&name, entry);
-        entry->next_interest = now + entry->interval;
-      }
+  for (int i = 0; i < 5; i++) {
+    topic = &m_pub_sub_state.sub_topics[i];
+    if (topic->is_cmd == false && now >= topic->next_interest) {
+      // send out subscription interest
+      _construct_sub_interest(&name, topic);
+      size_t used_size = 0;
+      tlv_make_interest(pkt_encoding_buf, sizeof(pkt_encoding_buf), &used_size, 4,
+                        TLV_INTARG_NAME_PTR, name,
+                        TLV_INTARG_CANBEPREFIX_BOOL, true,
+                        TLV_INTARG_MUSTBEFRESH_BOOL, true,
+                        TLV_INTARG_LIFETIME_U64, (uint64_t)600);
+      int ret = ndn_forwarder_express_interest(pkt_encoding_buf, used_size, _on_new_content, _on_sub_timeout, topic);
+      NDN_LOG_INFO("Subscription Interest Sending..., return value %d", ret);
+
+      // update next_interest time
+      topic->next_interest = now + topic->interval;
     }
   }
 
   // register the event to the message queue again with the smallest time period
-  ndn_msgqueue_post(NULL, _periodic_data_fetching, 0, NULL);
+  ndn_msgqueue_post(NULL, _periodic_sub_content_fetching, 0, NULL);
 }
 
 int
 _on_subscription_interest(const uint8_t* raw_interest, uint32_t interest_size, void* userdata)
 {
   // parse interest
-  NDN_LOG_INFO("Subscription Interest Incoming...");
-  ndn_name_t interest_name;
-  tlv_parse_interest(raw_interest, interest_size, 1, 
-                     TLV_INTARG_NAME_PTR, &interest_name);
-                     
+  NDN_LOG_INFO("On Subscription Interest...");
+  ndn_interest_t interest;
+  ndn_interest_from_block(&interest, raw_interest, interest_size);
+
   // match topic
-  topic_t* entry = _match_topic(&interest_name, PUB, MATCH_LONG);
+  pub_topic_t* topic = (pub_topic_t*)userdata;
 
   // reply the latest content
-  if (entry)
-  {
-    NDN_LOG_INFO("Subscribed Topic Data Publishing...");
-    ndn_forwarder_put_data(entry->cache, entry->cache_size);
+  NDN_LOG_INFO("Subscribed Topic Data Publishing...");
+  ndn_forwarder_put_data(topic->cache, topic->cache_size);
+  return NDN_FWD_STRATEGY_SUPPRESS;
+}
+
+int
+_on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, void* userdata)
+{
+  // FORMAT: /home/service/CMD/NOTIFY/identifier[0,2]/action
+  NDN_LOG_INFO("On Notification Interest...");
+  ndn_interest_t interest;
+  ndn_interest_from_block(&interest, raw_interest, interest_size);
+
+  // check whether identifiers match
+  sub_topic_t* topic = (sub_topic_t*)userdata;
+  if (topic->identifier[0].size != NDN_FWD_INVALID_NAME_COMPONENT_SIZE
+      && name_component_compare(&topic->identifier[0], &interest.name.components[4]) != NDN_SUCCESS) {
+    // does not match
+    return NDN_FWD_STRATEGY_SUPPRESS;
   }
-  return NDN_FWD_STRATEGY_MULTICAST;
+  if (topic->identifier[1].size != NDN_FWD_INVALID_NAME_COMPONENT_SIZE
+      && name_component_compare(&topic->identifier[1], &interest.name.components[5]) != NDN_SUCCESS) {
+    // does not match
+    return NDN_FWD_STRATEGY_SUPPRESS;
+  }
+
+  // send out
+  ndn_name_t name;
+  ndn_name_init(&name);
+  for (int i = 0; i < interest.name.components_size; i++) {
+    if (i == 3) {
+      continue;
+    }
+    ndn_name_append_component(&name, &interest.name.components[i]);
+  }
+  size_t used_size = 0;
+  tlv_make_interest(pkt_encoding_buf, sizeof(pkt_encoding_buf), &used_size, 4,
+                    TLV_INTARG_NAME_PTR, name,
+                    TLV_INTARG_CANBEPREFIX_BOOL, true,
+                    TLV_INTARG_MUSTBEFRESH_BOOL, true,
+                    TLV_INTARG_LIFETIME_U64, (uint64_t)600);
+  int ret = ndn_forwarder_express_interest(pkt_encoding_buf, used_size, _on_new_content, _on_sub_timeout, topic);
+  NDN_LOG_INFO("Subscription Interest Sending...");
+  return NDN_FWD_STRATEGY_SUPPRESS;
 }
 
 void
-_ps_publish(uint8_t service, uint8_t type, const name_component_t* identifier, uint32_t component_size,
-            uint8_t* info, uint32_t info_len)
+ps_subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier, uint32_t component_size,
+                uint32_t interval, ndn_on_published callback, void* userdata)
 {
   if (!m_has_initialized)
     _ps_topics_init();
-  
-  ndn_key_storage_t* storage = ndn_key_storage_get_instance();
-  name_component_t* home_prefix = &storage->self_identity.components[0];
 
   int ret = 0;
-  ndn_name_t name;
-  ndn_name_init(&name);
-  _name_construction(&name, type, service, identifier, component_size, 1);
-
-  // addtional name construction for command publish
-  if (type == CMD)
-    ndn_name_append_bytes_component(&name, info, info_len);
-
-  // published on this topic before? update the cache
-  topic_t* entry = NULL;
-  if (type == DATA) {
-    entry = _match_topic(&name, PUB, MATCH_SHORT);
-    if (entry) {
-      NDN_LOG_INFO("Publishing As Topic Data Update...");
+  // find whether the topic has been subscribed already
+  sub_topic_t* topic = _match_sub_topic(service, is_cmd, identifier, component_size);
+  if (topic) {
+    NDN_LOG_DEBUG("ps_subscribe_to: Already Subscribed on the Same Topic. Update this Subscription");
+  }
+  else {
+    for (int i = 0; i < 5; i++) {
+      if (m_pub_sub_state.sub_topics[i].service == NDN_SD_NONE) {
+        topic = &m_pub_sub_state.sub_topics[i];
+      }
+    }
+    if (topic == NULL) {
+      NDN_LOG_DEBUG("ps_subscribe_to: No more space for new subscription. Abort.");
       return;
     }
+    topic->service = service;
+    topic->is_cmd = is_cmd;
   }
 
-  entry = _allocate_topic(NULL, service, 0, identifier, component_size, PUB, type);
-  if (!entry) {
-    NDN_LOG_DEBUG("_ps_publish: No Avaiable Topic Entry");
-    return;
+  // update locator
+  for (int i = 0; i < 2; i++) {
+    if (i < component_size) {
+      memcpy(&topic->identifier[i], identifier + i, sizeof(name_component_t));
+    }
+    else {
+      topic->identifier[i].size = NDN_FWD_INVALID_NAME_COMPONENT_SIZE;
+    }
   }
+  // update interval, callback, and other state
+  topic->interval = interval;
+  topic->callback = callback;
+  topic->userdata = userdata;
+  topic->next_interest = ndn_time_now_ms() + topic->interval;
 
-  ret = tlv_make_data(entry->cache, sizeof(entry->cache), &entry->cache_size, 6,
+  // if subscribe to a command topic, register the interest filter to listen to NOTIF for immediate cmd fetch
+  // FORMAT: /home-prefix/service/type/NOTIFY/identifier[0,2]
+  if (is_cmd) {
+    ndn_name_t name;
+    ndn_name_init(&name);
+    ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+    ndn_name_append_component(&name, &storage->self_identity.components[0]);
+    ndn_name_append_bytes_component(&name, &topic->service, sizeof(topic->service));
+    uint8_t type = topic->is_cmd? CMD:DATA;
+    ndn_name_append_bytes_component(&name, &type, sizeof(type));
+    ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
+    ndn_forwarder_register_name_prefix(&name, _on_notification_interest, topic);
+  }
+  return;
+}
+
+void
+ps_after_bootstrapping()
+{
+  if (!m_has_initialized)
+    _ps_topics_init();
+  _periodic_sub_content_fetching(NULL, 0, NULL);
+}
+
+void
+ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len)
+{
+  if (!m_has_initialized)
+    _ps_topics_init();
+
+  int ret = 0;
+
+  // Prefix FORMAT: /home/service/DATA
+  ndn_name_t name;
+  ndn_name_init(&name);
+  ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+  ndn_name_append_component(&name, &storage->self_identity.components[0]);
+  ndn_name_append_bytes_component(&name, &service, sizeof(service));
+  uint8_t type = DATA;
+  ndn_name_append_bytes_component(&name, &type, 1);
+
+  // published on this topic before? update the cache
+  pub_topic_t* topic = NULL;
+  topic = _match_pub_topic(service, false);
+  if (topic) {
+    NDN_LOG_DEBUG("_publish_content: Found a topic published before. Update content.");
+  }
+  else {
+    for (int i = 0; i < 5; i++) {
+      if (m_pub_sub_state.pub_topics[i].service == NDN_SD_NONE) {
+        topic = &m_pub_sub_state.pub_topics[i];
+      }
+    }
+    NDN_LOG_DEBUG("_publish_content: No availble topic, will drop the oldest pub topic.");
+    if (topic == NULL) {
+      uint64_t min_last_tp = m_pub_sub_state.pub_topics[0].last_update_tp;
+      int index = -1;
+      for (int i = 1; i < 5; i++) {
+        if (m_pub_sub_state.pub_topics[i].last_update_tp < min_last_tp) {
+          min_last_tp = m_pub_sub_state.pub_topics[i].last_update_tp;
+          index = i;
+        }
+      }
+      topic = &m_pub_sub_state.pub_topics[index];
+      // TODO: unregister the prefix registered by the old topic
+      // register the new prefix
+      ndn_forwarder_register_name_prefix(&name, _on_subscription_interest, topic);
+    }
+    topic->service = service;
+    topic->is_cmd = false;
+  }
+  topic->last_update_tp = ndn_time_now_ms();
+  // Append the last several component to the Data name
+  // Data name FORMAT: /home/service/DATA/room/device-id/tp
+  ndn_name_append_component(&name, &storage->self_identity.components[1]);
+  ndn_name_append_component(&name, &storage->self_identity.components[2]);
+  // TODO: currently I appended timestamp. Further discussion is needed.
+  ndn_name_append_bytes_component(&name, (uint8_t*)&topic->last_update_tp, sizeof(ndn_time_ms_t));
+  memset(topic->cache, 0, sizeof(topic->cache));
+  ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 6,
                       TLV_DATAARG_NAME_PTR, &name,
-                      TLV_DATAARG_CONTENT_BUF, info,
-                      TLV_DATAARG_CONTENT_SIZE, info_len,
+                      TLV_DATAARG_CONTENT_BUF, payload,
+                      TLV_DATAARG_CONTENT_SIZE, payload_len,
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
                       TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
@@ -390,96 +440,94 @@ _ps_publish(uint8_t service, uint8_t type, const name_component_t* identifier, u
 }
 
 void
-_notify(uint8_t service, const name_component_t* identifier, uint32_t component_size)
+ps_publish_command(uint8_t service, uint8_t action, const name_component_t* identifier, uint32_t component_size,
+                   uint8_t* payload, uint32_t payload_len)
 {
-  // /home/TEMP/NOTIFY/identfier
-  ndn_name_t name;
-  ndn_name_init(&name);
-  _service_name_construction(&name, service);
-  ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
-
-  NDN_LOG_INFO("Command Interest Notifying...");
-
-  uint8_t buffer[100];
-  uint32_t buffer_length = 0;
-  tlv_make_interest(buffer, sizeof(buffer), &buffer_length, 4,
-                           TLV_INTARG_NAME_PTR, &name,
-                           TLV_INTARG_CANBEPREFIX_BOOL, true,
-                           TLV_INTARG_MUSTBEFRESH_BOOL, true,
-                           TLV_INTARG_LIFETIME_U64, (uint64_t)600);
-
-  ndn_forwarder_express_interest(buffer, buffer_length,
-                                 _on_new_content, _on_sub_timeout, NULL);
-}
-
-
-int
-_on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, void* userdata)
-{
-  NDN_LOG_INFO("On Notification...");
-  
-  // find the /<service>/CMD topic and trigger the one-time fetching
-  ndn_name_t name;
-  ndn_name_init(&name);
-  topic_t* entry = (topic_t*)userdata;
-  _go_fetching(&name, entry);
-}
-
-
-void
-ps_subscribe_to(uint8_t service, uint8_t type, const name_component_t* identifier, uint32_t component_size,
-                uint32_t frequency, ndn_on_published callback)
-{
-  if (!m_has_initialized) 
+  if (!m_has_initialized)
     _ps_topics_init();
 
   int ret = 0;
+  // Prefix FORMAT: /home/service/CMD
   ndn_name_t name;
   ndn_name_init(&name);
-  
-  _name_construction(&name, type, service, identifier, component_size, 0);
-  
-  topic_t* entry = _match_topic(&name, SUB, MATCH_SHORT);
-  if (entry) { 
-    NDN_LOG_DEBUG("ps_subscribe_to: Already Subscribed on the Same/Father Topic, Reject this Subsription");
-    return;
+  ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+  ndn_name_append_component(&name, &storage->self_identity.components[0]);
+  ndn_name_append_bytes_component(&name, &service, sizeof(service));
+  uint8_t type = CMD;
+  ndn_name_append_bytes_component(&name, &type, 1);
+
+  // published on this topic before? update the cache
+  pub_topic_t* topic = NULL;
+  topic = _match_pub_topic(service, false);
+  if (topic) {
+    NDN_LOG_DEBUG("_publish_command: Found a topic published before. Update content.");
   }
-
-  entry = _allocate_topic(callback, service, frequency, identifier, 
-                                   component_size, SUB, type);
-  if (!entry) { 
-    NDN_LOG_DEBUG("_ps_publish: No Avaiable Topic Entry");
-    return;
+  else {
+    for (int i = 0; i < 5; i++) {
+      if (m_pub_sub_state.pub_topics[i].service == NDN_SD_NONE) {
+        topic = &m_pub_sub_state.pub_topics[i];
+      }
+    }
+    NDN_LOG_DEBUG("_publish_command: No availble topic, will drop the oldest pub topic.");
+    if (topic == NULL) {
+      uint64_t min_last_tp = m_pub_sub_state.pub_topics[0].last_update_tp;
+      int index = -1;
+      for (int i = 1; i < 5; i++) {
+        if (m_pub_sub_state.pub_topics[i].last_update_tp < min_last_tp) {
+          min_last_tp = m_pub_sub_state.pub_topics[i].last_update_tp;
+          index = i;
+        }
+      }
+      topic = &m_pub_sub_state.pub_topics[index];
+      // TODO: unregister the prefix registered by the old topic
+      // register the new prefix
+      ndn_forwarder_register_name_prefix(&name, _on_subscription_interest, topic);
+    }
+    topic->service = service;
+    topic->is_cmd = false;
   }
-  
-  if (type == CMD) {
-    //re-initialize the name for register use
-    ndn_name_init(&name);
-    _notification_prefix_register(&name, service, entry);
+  topic->last_update_tp = ndn_time_now_ms();
+  memset(topic->cache, 0, sizeof(topic->cache));
+
+  // Append the last several component to the Data name
+  // Data name FORMAT: /home/service/CMD/identifier[0,2]/action
+  for (int i = 0; i < component_size; i++) {
+    ndn_name_append_component(&name, identifier + i);
   }
-
-  _periodic_data_fetching(NULL, 0, NULL);
-  return;
-}
-
-void
-ps_publish_content(uint8_t service, const name_component_t* identifier, uint32_t component_size,
-                   uint8_t* content, uint32_t content_len) {
-  _ps_publish(service, DATA, identifier, component_size, content, content_len);
-}
-
-void
-ps_publish_command(uint8_t service, uint16_t action, const name_component_t* identifier, 
-                   uint32_t component_size) {
-  
-  // I have no clear idea what we put in the command Data packet. 
-  // Solution here is just memcpy the action bytes into content
-  uint8_t act[2] = {0};
-  memcpy(act, &action, sizeof(action));
+  ndn_name_append_bytes_component(&name, &action, sizeof(action));
+  // TODO: currently I appended timestamp. Further discussion is needed.
+  ndn_time_ms_t tp = ndn_time_now_ms();
+  ndn_name_append_bytes_component(&name, (uint8_t*)&tp, sizeof(ndn_time_ms_t));
+  ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 6,
+                      TLV_DATAARG_NAME_PTR, &name,
+                      TLV_DATAARG_CONTENT_BUF, payload,
+                      TLV_DATAARG_CONTENT_SIZE, payload_len,
+                      TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
+                      TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
+                      TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
+  NDN_LOG_DEBUG("_publish_command: Data Encoding...");
 
   // express the /Notify Interest
-  _notify(service, identifier, component_size);
+  // FORMAT: /home/service/CMD/NOTIFY/identifier[0,2]/action
+  ndn_name_init(&name);
+  ndn_name_append_component(&name, &storage->self_identity.components[0]);
+  ndn_name_append_bytes_component(&name, &service, sizeof(service));
+  ndn_name_append_bytes_component(&name, &type, 1);
+  ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
+  for (int i = 0; i < component_size; i++) {
+    ndn_name_append_component(&name, identifier + i);
+  }
+  ndn_name_append_bytes_component(&name, &action, sizeof(action));
+  ndn_name_append_bytes_component(&name, (uint8_t*)&tp, sizeof(ndn_time_ms_t));
 
-  // prepare the Data packet
-  _ps_publish(service, CMD, identifier, component_size, act, sizeof(act));
+  // send out the notification Interest
+  NDN_LOG_INFO("_publish_command: Send notification Interest for new command...");
+  uint8_t buffer[100];
+  uint32_t buffer_length = 0;
+  tlv_make_interest(buffer, sizeof(buffer), &buffer_length, 4,
+                    TLV_INTARG_NAME_PTR, &name,
+                    TLV_INTARG_CANBEPREFIX_BOOL, true,
+                    TLV_INTARG_MUSTBEFRESH_BOOL, true,
+                    TLV_INTARG_LIFETIME_U64, (uint64_t)600);
+  ndn_forwarder_express_interest(buffer, buffer_length, _on_new_content, _on_sub_timeout, NULL);
 }

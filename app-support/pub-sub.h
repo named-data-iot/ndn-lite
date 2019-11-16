@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Tianyuan Yu
+ * Copyright (C) 2019 Tianyuan Yu, Zhiyi Zhang
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
@@ -16,17 +16,14 @@
 extern "C" {
 #endif
 
-
-#define DATA    1
-#define CMD     0
-
 #include <stdbool.h>
 #include <stdint.h>
 #include "../encode/name-component.h"
 
-typedef int (*ndn_on_published)(uint8_t service, uint16_t type_action,
-                                        const name_component_t* identifier, uint32_t component_size,
-                                        const uint8_t* content, uint32_t content_len);
+typedef int (*ndn_on_published)(uint8_t service, bool is_cmd,
+                                const name_component_t* identifier, uint32_t component_size,
+                                uint8_t action, const uint8_t* content, uint32_t content_len,
+                                void* userdata);
 
 /** subscribe
  * This function will register a event that periodically send an Interest to the name prefix and fetch data.
@@ -41,8 +38,11 @@ typedef int (*ndn_on_published)(uint8_t service, uint16_t type_action,
  * each device can subscribe to AC, device's service, EKEY, to obtain the encryption key to encrypt their content published
  */
 void
-ps_subscribe_to(uint8_t service, uint8_t type, const name_component_t* identifier, uint32_t component_size,
-                uint32_t frequency, ndn_on_published callback);
+ps_subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier, uint32_t component_size,
+                uint32_t interval, ndn_on_published callback, void* userdata);
+
+void
+ps_after_bootstrapping();
 
 /** publish
  * This function will publish data to a content repo.
@@ -57,11 +57,11 @@ ps_subscribe_to(uint8_t service, uint8_t type, const name_component_t* identifie
  * controller can publish to: AC, TEMP, EKEY, "fetch from controller for new keys" to distribute new encryption keys
  */
 void
-ps_publish_content(uint8_t service, const name_component_t* identifier, uint32_t component_size,
-                   uint8_t* content, uint32_t content_len);
+ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len);
 
 void
-ps_publish_command(uint8_t service, uint16_t action, const name_component_t* identifier, uint32_t component_size);
+ps_publish_command(uint8_t service, uint8_t action, const name_component_t* identifier, uint32_t component_size,
+                   uint8_t* payload, uint32_t payload_len);
 
 #ifdef __cplusplus
 }
