@@ -202,7 +202,7 @@ ndn_interest_tlv_encode(ndn_encoder_t* encoder, ndn_interest_t* interest)
   }
   // nonce
   if (interest->nonce == 0) {
-    interest->nonce = (uint32_t) ndn_time_now_us();
+    interest->nonce = (uint32_t) ndn_time_now_ms();
   }
   ret_val = encoder_append_type(encoder, TLV_Nonce);
   if (ret_val != NDN_SUCCESS) return ret_val;

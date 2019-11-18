@@ -28,8 +28,8 @@
 #define SUB  2
 #define MATCH_SHORT 1
 #define MATCH_LONG  0
-#define DATA 1
-#define CMD 0
+#define DATA 0
+#define CMD 1
 
 /** The struct to keep each topic subscribed.
  */
@@ -58,6 +58,12 @@ typedef struct sub_topic {
   /** Decryption Key ID
    */
   uint32_t decryption_key;
+  /** Last Received Packet Digest.
+   */
+  uint8_t last_digest[16];
+  /** Has received content or not.
+   */
+  bool received_content;
 } sub_topic_t;
 
 /** The struct to keep each topic published.
@@ -100,13 +106,11 @@ typedef struct pub_sub_state {
    */
   ndn_time_ms_t m_next_send;
 } pub_sub_state_t;
-uint8_t pkt_encoding_buf[300];
 
+static uint8_t pkt_encoding_buf[300];
 static pub_sub_state_t m_pub_sub_state;
 static bool m_has_initialized = false;
-
-int
-_on_subscription_interest(const uint8_t* raw_interest, uint32_t interest_size, void* userdata);
+static bool m_is_my_own_int = false;
 
 /** Helper function to initialize the topic List
  */
@@ -119,11 +123,12 @@ _ps_topics_init()
     m_pub_sub_state.sub_topics[i].identifier[1].size = NDN_FWD_INVALID_NAME_COMPONENT_SIZE;
     m_pub_sub_state.sub_topics[i].callback = NULL;
     m_pub_sub_state.sub_topics[i].next_interest = 0;
+    m_pub_sub_state.sub_topics[i].received_content = false;
 
     m_pub_sub_state.pub_topics[i].service = NDN_SD_NONE;
   }
   m_pub_sub_state.m_next_send = 0;
-  m_pub_sub_state.min_interval = 1000;
+  m_pub_sub_state.min_interval = 1000*60*60;
   m_has_initialized = true;
 }
 
@@ -170,8 +175,17 @@ _on_sub_timeout(void* userdata)
 void
 _on_new_content(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 {
-  NDN_LOG_INFO("Fetched New Published Data...");
   sub_topic_t* topic = (sub_topic_t*)userdata;
+  // check if received before
+  ndn_sha256(raw_data, data_size, pkt_encoding_buf);
+  if (topic->received_content && memcmp(pkt_encoding_buf, topic->last_digest, 16) == 0) {
+    NDN_LOG_INFO("Data has been received before. Drop...");
+    return;
+  }
+  NDN_LOG_INFO("Fetched New Published Data...");
+  topic->received_content = true;
+  memcpy(topic->last_digest, pkt_encoding_buf, 16);
+
   // parse Data name
   ndn_name_t data_name;
   uint8_t* content;
@@ -181,6 +195,7 @@ _on_new_content(const uint8_t* raw_data, uint32_t data_size, void* userdata)
                  TLV_DATAARG_NAME_PTR, &data_name,
                  TLV_DATAARG_CONTENT_BUF, &content,
                  TLV_DATAARG_CONTENT_SIZE, &content_size);
+  ndn_name_print(&data_name);
 
   // call the on_content callbackclear
   if (topic->callback) {
@@ -246,13 +261,15 @@ _periodic_sub_content_fetching(void *self, size_t param_length, void *param)
       // send out subscription interest
       _construct_sub_interest(&name, topic);
       size_t used_size = 0;
-      tlv_make_interest(pkt_encoding_buf, sizeof(pkt_encoding_buf), &used_size, 4,
+      tlv_make_interest(pkt_encoding_buf, sizeof(pkt_encoding_buf), &used_size, 3,
                         TLV_INTARG_NAME_PTR, &name,
                         TLV_INTARG_CANBEPREFIX_BOOL, true,
-                        TLV_INTARG_MUSTBEFRESH_BOOL, true,
-                        TLV_INTARG_LIFETIME_U64, (uint64_t)600);
+                        TLV_INTARG_MUSTBEFRESH_BOOL, true);
+      m_is_my_own_int = true;
       int ret = ndn_forwarder_express_interest(pkt_encoding_buf, used_size, _on_new_content, _on_sub_timeout, topic);
+      m_is_my_own_int = false;
       NDN_LOG_INFO("Subscription Interest Sending..., return value %d", ret);
+      ndn_name_print(&name);
 
       // update next_interest time
       topic->next_interest = now + topic->interval;
@@ -266,16 +283,19 @@ _periodic_sub_content_fetching(void *self, size_t param_length, void *param)
 int
 _on_subscription_interest(const uint8_t* raw_interest, uint32_t interest_size, void* userdata)
 {
+  if (m_is_my_own_int) {
+    return NDN_FWD_STRATEGY_MULTICAST;
+  }
   // parse interest
   NDN_LOG_INFO("On Subscription Interest...");
   ndn_interest_t interest;
   ndn_interest_from_block(&interest, raw_interest, interest_size);
+  ndn_name_print(&interest.name);
 
   // match topic
   pub_topic_t* topic = (pub_topic_t*)userdata;
 
   // reply the latest content
-  NDN_LOG_INFO("Subscribed Topic Data Publishing...");
   ndn_forwarder_put_data(topic->cache, topic->cache_size);
   return NDN_FWD_STRATEGY_SUPPRESS;
 }
@@ -283,10 +303,14 @@ _on_subscription_interest(const uint8_t* raw_interest, uint32_t interest_size, v
 int
 _on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, void* userdata)
 {
+  if (m_is_my_own_int) {
+    return NDN_FWD_STRATEGY_MULTICAST;
+  }
   // FORMAT: /home/service/CMD/NOTIFY/identifier[0,2]/action
   NDN_LOG_INFO("On Notification Interest...");
   ndn_interest_t interest;
   ndn_interest_from_block(&interest, raw_interest, interest_size);
+  ndn_name_print(&interest.name);
 
   // check whether identifiers match
   sub_topic_t* topic = (sub_topic_t*)userdata;
@@ -311,12 +335,13 @@ _on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, v
     ndn_name_append_component(&name, &interest.name.components[i]);
   }
   size_t used_size = 0;
-  tlv_make_interest(pkt_encoding_buf, sizeof(pkt_encoding_buf), &used_size, 4,
+  tlv_make_interest(pkt_encoding_buf, sizeof(pkt_encoding_buf), &used_size, 3,
                     TLV_INTARG_NAME_PTR, name,
                     TLV_INTARG_CANBEPREFIX_BOOL, true,
-                    TLV_INTARG_MUSTBEFRESH_BOOL, true,
-                    TLV_INTARG_LIFETIME_U64, (uint64_t)600);
+                    TLV_INTARG_MUSTBEFRESH_BOOL, true);
+  m_is_my_own_int = true;
   int ret = ndn_forwarder_express_interest(pkt_encoding_buf, used_size, _on_new_content, _on_sub_timeout, topic);
+  m_is_my_own_int = false;
   NDN_LOG_INFO("Subscription Interest Sending...");
   return NDN_FWD_STRATEGY_SUPPRESS;
 }
@@ -417,10 +442,11 @@ ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len)
     for (int i = 0; i < 5; i++) {
       if (m_pub_sub_state.pub_topics[i].service == NDN_SD_NONE) {
         topic = &m_pub_sub_state.pub_topics[i];
+        break;
       }
     }
-    NDN_LOG_DEBUG("_publish_content: No availble topic, will drop the oldest pub topic.");
     if (topic == NULL) {
+      NDN_LOG_DEBUG("_publish_content: No availble topic, will drop the oldest pub topic.");
       uint64_t min_last_tp = m_pub_sub_state.pub_topics[0].last_update_tp;
       int index = -1;
       for (int i = 1; i < 5; i++) {
@@ -431,9 +457,9 @@ ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len)
       }
       topic = &m_pub_sub_state.pub_topics[index];
       // TODO: unregister the prefix registered by the old topic
-      // register the new prefix
-      ndn_forwarder_register_name_prefix(&name, _on_subscription_interest, topic);
     }
+    // register the new prefix
+    ndn_forwarder_register_name_prefix(&name, _on_subscription_interest, topic);
     topic->service = service;
     topic->is_cmd = false;
   }
@@ -453,6 +479,7 @@ ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len)
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
                       TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
   NDN_LOG_DEBUG("_ps_publish: Data Encoding...");
+  ndn_name_print(&name);
 }
 
 void
@@ -540,10 +567,11 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
   NDN_LOG_INFO("_publish_command: Send notification Interest for new command...");
   uint8_t buffer[100];
   uint32_t buffer_length = 0;
-  tlv_make_interest(buffer, sizeof(buffer), &buffer_length, 4,
+  tlv_make_interest(buffer, sizeof(buffer), &buffer_length, 3,
                     TLV_INTARG_NAME_PTR, &name,
                     TLV_INTARG_CANBEPREFIX_BOOL, true,
-                    TLV_INTARG_MUSTBEFRESH_BOOL, true,
-                    TLV_INTARG_LIFETIME_U64, (uint64_t)600);
+                    TLV_INTARG_MUSTBEFRESH_BOOL, true);
+  m_is_my_own_int = true;
   ndn_forwarder_express_interest(buffer, buffer_length, _on_new_content, _on_sub_timeout, NULL);
+  m_is_my_own_int = false;
 }
