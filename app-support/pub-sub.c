@@ -471,10 +471,11 @@ ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len)
   // TODO: currently I appended timestamp. Further discussion is needed.
   ndn_name_append_bytes_component(&name, (uint8_t*)&topic->last_update_tp, sizeof(ndn_time_ms_t));
   memset(topic->cache, 0, sizeof(topic->cache));
-  ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 6,
+  ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 7,
                       TLV_DATAARG_NAME_PTR, &name,
                       TLV_DATAARG_CONTENT_BUF, payload,
                       TLV_DATAARG_CONTENT_SIZE, payload_len,
+                      TLV_DATAARG_FRESHNESSPERIOD_U64, (uint64_t)4000,
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
                       TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);

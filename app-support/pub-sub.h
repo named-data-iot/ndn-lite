@@ -26,41 +26,44 @@ typedef int (*ndn_on_published)(uint8_t service, bool is_cmd,
                                 void* userdata);
 
 /** subscribe
- * This function will register a event that periodically send an Interest to the name prefix and fetch data.
+ * If is not cmd, this function will register a event that periodically send an Interest to the name
+ * prefix and fetch data.
+ * Subscription Interest Format: /home-prefix/service/DATA/identifier[0,2],MustBeFresh,CanBePrefix.
  *
- * @unsolved 1. How to decide the frequency of Interest sending? -- solved
- * @unsolved 2. How to automatically do schematized trust verification? -- solved
- *              A solution is to automatically subscribe to a topic, like /home/trust_schema, and fetch the trust schema
- *              for pkt verification
- * @unsolved 3. How to automatically apply access control, i.e., decrypt the content published -- solved
- *
- * Example: each device can subscribe to CONTROL, device's own prefix, SCHEMA, to obtain the new configuration to verify other's commands
- * each device can subscribe to AC, device's service, EKEY, to obtain the encryption key to encrypt their content published
+ * If is cmd, this function will register a Interest filter /home-prefix/service/CMD and listen to
+ * notification on new CMD content.
+ * Once there is a comming notification and the identifiers is under subscribed identifiers, an
+ * Interest will be sent to fetch the new CMD.
+ * Cmd Notification Interest Format: /home/service/CMD/NOTIFY/identifier[0,2]/action
+ * Cmd fetching Interest Format: /home/service/CMD/identifier[0,2]/action
  */
 void
-ps_subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier, uint32_t component_size,
+ps_subscribe_to(uint8_t service, bool is_cmd,
+                const name_component_t* identifier, uint32_t component_size,
                 uint32_t interval, ndn_on_published callback, void* userdata);
 
 void
 ps_after_bootstrapping();
 
-/** publish
+/** publish data
  * This function will publish data to a content repo.
- * @param name_prefix. The topic to publish.
- * @param content. The content to publish.
- *
- * @unsolved 1. How to cooperate an external repo?
- * @unsolved 2. How to automatically do packet generation? i.e.: Data name, Signing Key -- solved
- * @unsolved 3. How to automatically apply access control, i.e., Encrypt the content using proper key -- solved
- *
- * Example: temp sensor can publish to: TEMP, bedroom, READ, "37.5 c degree" to publish temp data under /home/TEMP/bedroom/READ
- * controller can publish to: AC, TEMP, EKEY, "fetch from controller for new keys" to distribute new encryption keys
+ * Data format: /home-prefix/service/DATA/my-identifiers/timestamp
+ * @TODO: for now I added a timestamp after Data name. Need more discussion, e.g., use nonce? sequence?
+ * @TODO: for now I used a default freshness period of the data. Need more discussion, e.g., user-specified?
  */
 void
 ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len);
 
+/** publish command to the target scope
+ * This function will publish command to a content repo and send out a notification Interest.
+ * Cmd Notification Interest Format: /home-prefix/service/CMD/NOTIFY/identifier[0,2]/action
+ * Data format: /home-prefix/service/CMD/my-identifiers/timestamp
+ * @TODO: for now I added a timestamp after Data name, which need more discussion, e.g., use nonce? sequence?
+ * @TODO: for now I used a default freshness period of the data. Need more discussion, e.g., user-specified?
+ */
 void
-ps_publish_command(uint8_t service, uint8_t action, const name_component_t* identifier, uint32_t component_size,
+ps_publish_command(uint8_t service, uint8_t action,
+                   const name_component_t* identifier, uint32_t component_size,
                    uint8_t* payload, uint32_t payload_len);
 
 #ifdef __cplusplus
