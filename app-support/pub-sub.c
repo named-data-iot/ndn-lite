@@ -14,6 +14,9 @@
 #include "../ndn-services.h"
 #include "../encode/key-storage.h"
 #include "../encode/wrapper-api.h"
+#define ENABLE_NDN_LOG_INFO 1
+#define ENABLE_NDN_LOG_DEBUG 1
+#define ENABLE_NDN_LOG_ERROR 1
 #include "../util/logger.h"
 #include "../forwarder/forwarder.h"
 
@@ -93,6 +96,9 @@ typedef struct pub_sub_state {
   /** Minimal Interval in the Topic List. Currently not used.
    */
   uint32_t min_interval;
+  /** Timepoint for the next fetching
+   */
+  ndn_time_ms_t m_next_send;
 } pub_sub_state_t;
 uint8_t pkt_encoding_buf[300];
 
@@ -116,6 +122,8 @@ _ps_topics_init()
 
     m_pub_sub_state.pub_topics[i].service = NDN_SD_NONE;
   }
+  m_pub_sub_state.m_next_send = 0;
+  m_pub_sub_state.min_interval = 1000;
   m_has_initialized = true;
 }
 
@@ -222,19 +230,24 @@ _periodic_sub_content_fetching(void *self, size_t param_length, void *param)
   (void)self;
   (void)param_length;
   (void)param;
-  sub_topic_t* topic = NULL;
   ndn_time_ms_t now = ndn_time_now_ms();
+  if (now < m_pub_sub_state.m_next_send) {
+    ndn_msgqueue_post(NULL, _periodic_sub_content_fetching, 0, NULL);
+    return;
+  }
+  m_pub_sub_state.m_next_send = now + m_pub_sub_state.min_interval;
+  sub_topic_t* topic = NULL;
   ndn_name_t name;
 
   // check the table
   for (int i = 0; i < 5; i++) {
     topic = &m_pub_sub_state.sub_topics[i];
-    if (topic->is_cmd == false && now >= topic->next_interest) {
+    if (topic->service != NDN_SD_NONE && topic->is_cmd == false && now >= topic->next_interest) {
       // send out subscription interest
       _construct_sub_interest(&name, topic);
       size_t used_size = 0;
       tlv_make_interest(pkt_encoding_buf, sizeof(pkt_encoding_buf), &used_size, 4,
-                        TLV_INTARG_NAME_PTR, name,
+                        TLV_INTARG_NAME_PTR, &name,
                         TLV_INTARG_CANBEPREFIX_BOOL, true,
                         TLV_INTARG_MUSTBEFRESH_BOOL, true,
                         TLV_INTARG_LIFETIME_U64, (uint64_t)600);
@@ -346,6 +359,9 @@ ps_subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier
   }
   // update interval, callback, and other state
   topic->interval = interval;
+  if (topic->interval < m_pub_sub_state.min_interval) {
+    m_pub_sub_state.min_interval = topic->interval;
+  }
   topic->callback = callback;
   topic->userdata = userdata;
   topic->next_interest = ndn_time_now_ms() + topic->interval;

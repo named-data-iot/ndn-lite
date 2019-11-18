@@ -18,7 +18,7 @@ extern "C" {
 
 #ifdef ENABLE_NDN_LOG_ERROR
 #define NDN_LOG_ERROR(...) { \
-  printf("ERROR:    %s , L%d, __func__, __LINE__"); \
+  printf("ERROR: %s, L%d: ", __func__, __LINE__); \
   printf(__VA_ARGS__);printf("\n"); \
 }
 #else
@@ -27,7 +27,7 @@ extern "C" {
 
 #ifdef ENABLE_NDN_LOG_DEBUG
 #define NDN_LOG_DEBUG(...) { \
-  printf("DEBUG:    %s , L%d, __func__, __LINE__"); \
+  printf("DEBUG: %s, L%d: ", __func__, __LINE__); \
   printf(__VA_ARGS__);printf("\n"); \
 }
 #else
