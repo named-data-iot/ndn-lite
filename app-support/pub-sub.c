@@ -287,7 +287,7 @@ _on_subscription_interest(const uint8_t* raw_interest, uint32_t interest_size, v
     return NDN_FWD_STRATEGY_MULTICAST;
   }
   // parse interest
-  NDN_LOG_INFO("On Subscription Interest...");
+  NDN_LOG_INFO("On Subscription Interest:");
   ndn_interest_t interest;
   ndn_interest_from_block(&interest, raw_interest, interest_size);
   ndn_name_print(&interest.name);
@@ -307,7 +307,7 @@ _on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, v
     return NDN_FWD_STRATEGY_MULTICAST;
   }
   // FORMAT: /home/service/CMD/NOTIFY/identifier[0,2]/action
-  NDN_LOG_INFO("On Notification Interest...");
+  NDN_LOG_INFO("On Notification Interest:");
   ndn_interest_t interest;
   ndn_interest_from_block(&interest, raw_interest, interest_size);
   ndn_name_print(&interest.name);
@@ -336,13 +336,14 @@ _on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, v
   }
   size_t used_size = 0;
   tlv_make_interest(pkt_encoding_buf, sizeof(pkt_encoding_buf), &used_size, 3,
-                    TLV_INTARG_NAME_PTR, name,
+                    TLV_INTARG_NAME_PTR, &name,
                     TLV_INTARG_CANBEPREFIX_BOOL, true,
                     TLV_INTARG_MUSTBEFRESH_BOOL, true);
   m_is_my_own_int = true;
   int ret = ndn_forwarder_express_interest(pkt_encoding_buf, used_size, _on_new_content, _on_sub_timeout, topic);
   m_is_my_own_int = false;
   NDN_LOG_INFO("Subscription Interest Sending...");
+  ndn_name_print(&name);
   return NDN_FWD_STRATEGY_SUPPRESS;
 }
 
@@ -498,13 +499,13 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
   ndn_name_append_component(&name, &storage->self_identity.components[0]);
   ndn_name_append_bytes_component(&name, &service, sizeof(service));
   uint8_t type = CMD;
-  ndn_name_append_bytes_component(&name, &type, 1);
+  ndn_name_append_bytes_component(&name, &type, sizeof(type));
 
   // published on this topic before? update the cache
   pub_topic_t* topic = NULL;
-  topic = _match_pub_topic(service, false);
+  topic = _match_pub_topic(service, true);
   if (topic) {
-    NDN_LOG_DEBUG("_publish_command: Found a topic published before. Update content.");
+    NDN_LOG_DEBUG("Found a topic published before. Update content.");
   }
   else {
     for (int i = 0; i < 5; i++) {
@@ -512,8 +513,8 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
         topic = &m_pub_sub_state.pub_topics[i];
       }
     }
-    NDN_LOG_DEBUG("_publish_command: No availble topic, will drop the oldest pub topic.");
     if (topic == NULL) {
+      NDN_LOG_DEBUG("No availble topic, will drop the oldest pub topic.");
       uint64_t min_last_tp = m_pub_sub_state.pub_topics[0].last_update_tp;
       int index = -1;
       for (int i = 1; i < 5; i++) {
@@ -524,11 +525,11 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
       }
       topic = &m_pub_sub_state.pub_topics[index];
       // TODO: unregister the prefix registered by the old topic
-      // register the new prefix
-      ndn_forwarder_register_name_prefix(&name, _on_subscription_interest, topic);
     }
+    // register the new prefix
+    ret = ndn_forwarder_register_name_prefix(&name, _on_subscription_interest, topic);
     topic->service = service;
-    topic->is_cmd = false;
+    topic->is_cmd = true;
   }
   topic->last_update_tp = ndn_time_now_ms();
   memset(topic->cache, 0, sizeof(topic->cache));
@@ -542,14 +543,14 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
   // TODO: currently I appended timestamp. Further discussion is needed.
   ndn_time_ms_t tp = ndn_time_now_ms();
   ndn_name_append_bytes_component(&name, (uint8_t*)&tp, sizeof(ndn_time_ms_t));
-  ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 6,
+  ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 7,
                       TLV_DATAARG_NAME_PTR, &name,
                       TLV_DATAARG_CONTENT_BUF, payload,
                       TLV_DATAARG_CONTENT_SIZE, payload_len,
+                      TLV_DATAARG_FRESHNESSPERIOD_U64, (uint64_t)4000,
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
                       TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
-  NDN_LOG_DEBUG("_publish_command: Data Encoding...");
 
   // express the /Notify Interest
   // FORMAT: /home/service/CMD/NOTIFY/identifier[0,2]/action
@@ -565,14 +566,14 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
   ndn_name_append_bytes_component(&name, (uint8_t*)&tp, sizeof(ndn_time_ms_t));
 
   // send out the notification Interest
-  NDN_LOG_INFO("_publish_command: Send notification Interest for new command...");
-  uint8_t buffer[100];
+  NDN_LOG_INFO("ps_publish_command: Send notification Interest for new command:");
   uint32_t buffer_length = 0;
-  tlv_make_interest(buffer, sizeof(buffer), &buffer_length, 3,
+  tlv_make_interest(pkt_encoding_buf, sizeof(pkt_encoding_buf), &buffer_length, 3,
                     TLV_INTARG_NAME_PTR, &name,
                     TLV_INTARG_CANBEPREFIX_BOOL, true,
                     TLV_INTARG_MUSTBEFRESH_BOOL, true);
   m_is_my_own_int = true;
-  ndn_forwarder_express_interest(buffer, buffer_length, _on_new_content, _on_sub_timeout, NULL);
+  ret = ndn_forwarder_express_interest(pkt_encoding_buf, buffer_length, _on_new_content, _on_sub_timeout, NULL);
   m_is_my_own_int = false;
+  ndn_name_print(&name);
 }
