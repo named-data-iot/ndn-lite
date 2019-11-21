@@ -56,7 +56,7 @@ ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len);
 
 /** publish command to the target scope
  * This function will publish command to a content repo and send out a notification Interest.
- * Cmd Notification Interest Format: /home-prefix/service/CMD/NOTIFY/identifier[0,2]/action
+ * Cmd Notification Interest Format: /home-prefix/service/NOTIFY/CMD/identifier[0,2]/action
  * Data format: /home-prefix/service/CMD/my-identifiers/timestamp
  * @TODO: for now I added a timestamp after Data name, which need more discussion, e.g., use nonce? sequence?
  * @TODO: for now I used a default freshness period of the data. Need more discussion, e.g., user-specified?

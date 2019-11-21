@@ -393,16 +393,16 @@ ps_subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier
   topic->next_interest = ndn_time_now_ms() + topic->interval;
 
   // if subscribe to a command topic, register the interest filter to listen to NOTIF for immediate cmd fetch
-  // FORMAT: /home-prefix/service/type/NOTIFY/identifier[0,2]
+  // FORMAT: /home-prefix/service/NOTIFY/type/identifier[0,2]
   if (is_cmd) {
     ndn_name_t name;
     ndn_name_init(&name);
     ndn_key_storage_t* storage = ndn_key_storage_get_instance();
     ndn_name_append_component(&name, &storage->self_identity.components[0]);
     ndn_name_append_bytes_component(&name, &topic->service, sizeof(topic->service));
+    ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
     uint8_t type = topic->is_cmd? CMD:DATA;
     ndn_name_append_bytes_component(&name, &type, sizeof(type));
-    ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
     ndn_forwarder_register_name_prefix(&name, _on_notification_interest, topic);
   }
   return;
@@ -431,7 +431,7 @@ ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len)
   ndn_name_append_component(&name, &storage->self_identity.components[0]);
   ndn_name_append_bytes_component(&name, &service, sizeof(service));
   uint8_t type = DATA;
-  ndn_name_append_bytes_component(&name, &type, 1);
+  ndn_name_append_bytes_component(&name, &type, sizeof(type));
 
   // published on this topic before? update the cache
   pub_topic_t* topic = NULL;
@@ -553,12 +553,12 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
                       TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
 
   // express the /Notify Interest
-  // FORMAT: /home/service/CMD/NOTIFY/identifier[0,2]/action
+  // FORMAT: /home/service/NOTIFY/CMD/identifier[0,2]/action
   ndn_name_init(&name);
   ndn_name_append_component(&name, &storage->self_identity.components[0]);
   ndn_name_append_bytes_component(&name, &service, sizeof(service));
-  ndn_name_append_bytes_component(&name, &type, 1);
   ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
+  ndn_name_append_bytes_component(&name, &type, 1);
   for (int i = 0; i < component_size; i++) {
     ndn_name_append_component(&name, identifier + i);
   }
