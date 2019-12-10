@@ -272,7 +272,7 @@ sec_boot_send_sign_on_interest()
                              m_sec_boot_state.identifier_size);
   name_component_tlv_encode(&encoder, &device_identifier_comp);
   // append the capabilities
-  encoder_append_type(&encoder, TLV_SEC_BOOT_CAPACITIES);
+  encoder_append_type(&encoder, TLV_SEC_BOOT_CAPABILITIES);
   encoder_append_length(&encoder, m_sec_boot_state.list_size);
   encoder_append_raw_buffer_value(&encoder, m_sec_boot_state.service_list, m_sec_boot_state.list_size);
   // append the ecdh pub key, N1
