@@ -107,14 +107,12 @@ ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
 
   // calculate the TLV_ParametersSha256DigestComponent
   // component is calculated over Name + Parameters + SignatureInfo + SignatureValue
-  name_component_init(&interest->name.components[interest->name.components_size],
-                      TLV_ParametersSha256DigestComponent);
-  result = ndn_sha256_sign(&temp_encoder.output_value[param_block_starting],
-                           temp_encoder.offset - param_block_starting,
-                           interest->name.components[interest->name.components_size].value,
-                           NDN_NAME_COMPONENT_BUFFER_SIZE, &used_bytes);
+  result = ndn_sha256(&temp_encoder.output_value[param_block_starting],
+                      temp_encoder.offset - param_block_starting,
+                      interest->name.components[interest->name.components_size].value);
   if (result < 0) return result;
-  interest->name.components[interest->name.components_size].size = used_bytes;
+  interest->name.components[interest->name.components_size].type = TLV_ParametersSha256DigestComponent;
+  interest->name.components[interest->name.components_size].size = NDN_SEC_SHA256_HASH_SIZE;
   interest->name.components_size++;
   BIT_SET(interest->flags, 7);
   return NDN_SUCCESS;
@@ -172,14 +170,12 @@ ndn_signed_interest_hmac_sign(ndn_interest_t* interest,
 
   // calculate the SignedInterestSha256DigestComponent
   // component is calculated over Name + Parameters + SignatureInfo + SignatureValue
-  name_component_init(&interest->name.components[interest->name.components_size],
-                      TLV_ParametersSha256DigestComponent);
-  result = ndn_sha256_sign(&temp_encoder.output_value[param_block_starting],
-                           temp_encoder.offset - param_block_starting,
-                           interest->name.components[interest->name.components_size].value,
-                           NDN_NAME_COMPONENT_BUFFER_SIZE, &used_bytes);
+  result = ndn_sha256(&temp_encoder.output_value[param_block_starting],
+                      temp_encoder.offset - param_block_starting,
+                      interest->name.components[interest->name.components_size].value);
   if (result < 0) return result;
-  interest->name.components[interest->name.components_size].size = used_bytes;
+  interest->name.components[interest->name.components_size].type = TLV_ParametersSha256DigestComponent;
+  interest->name.components[interest->name.components_size].size = NDN_SEC_SHA256_HASH_SIZE;
   interest->name.components_size++;
   BIT_SET(interest->flags, 7);
   return NDN_SUCCESS;
@@ -238,14 +234,12 @@ ndn_signed_interest_digest_sign(ndn_interest_t* interest)
 
   // calculate the TLV_ParametersSha256DigestComponent
   // component is calculated over Name + Parameters + SignatureInfo + SignatureValue
-  name_component_init(&interest->name.components[interest->name.components_size],
-                      TLV_ParametersSha256DigestComponent);
-  result = ndn_sha256_sign(&temp_encoder.output_value[param_block_starting],
-                           temp_encoder.offset - param_block_starting,
-                           interest->name.components[interest->name.components_size].value,
-                           NDN_NAME_COMPONENT_BUFFER_SIZE, &used_bytes);
+  result = ndn_sha256(&temp_encoder.output_value[param_block_starting],
+                      temp_encoder.offset - param_block_starting,
+                      interest->name.components[interest->name.components_size].value);
   if (result < 0) return result;
-  interest->name.components[interest->name.components_size].size = used_bytes;
+  interest->name.components[interest->name.components_size].type = TLV_ParametersSha256DigestComponent;
+  interest->name.components[interest->name.components_size].size = NDN_SEC_SHA256_HASH_SIZE;
   interest->name.components_size++;
   BIT_SET(interest->flags, 7);
   return NDN_SUCCESS;

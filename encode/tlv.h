@@ -24,6 +24,12 @@ enum {
   TLV_GenericNameComponent = 8,
   TLV_ImplicitSha256DigestComponent = 1,
   TLV_ParametersSha256DigestComponent = 2,
+  TLV_KeywordNameComponent = 32,
+  TLV_SegmentNameComponent = 33,
+  TLV_ByteOffsetNameComponent = 34,
+  TLV_VersionNameComponent = 35,
+  TLV_TimestampNameComponent = 36,
+  TLV_SequenceNumNameComponent = 37,
 
   // Interest packet
   TLV_CanBePrefix = 33,
