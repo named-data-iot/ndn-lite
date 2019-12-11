@@ -14,7 +14,35 @@ void
 ndn_name_print(const ndn_name_t* name)
 {
   for (int i = 0; i < name->components_size; i++) {
-    if (name->components[i].type == TLV_GenericNameComponent) {
+    switch (name->components[i].type)
+    {
+    case TLV_ImplicitSha256DigestComponent:
+      printf("/sha256digiest=0x");
+      for (int j = 0; j < name->components[i].size; j++) {
+        printf("%02x", name->components[i].value[j]);
+      }
+      break;
+
+    case TLV_ParametersSha256DigestComponent:
+      printf("/params-sha256=0x");
+      for (int j = 0; j < name->components[i].size; j++) {
+        printf("%02x", name->components[i].value[j]);
+      }
+      break;
+
+    case TLV_VersionNameComponent:
+      printf("/v=%llu", name_component_to_version(&name->components[i]));
+      break;
+
+    case TLV_TimestampNameComponent:
+      printf("/t=%llu", name_component_to_version(&name->components[i]));
+      break;
+
+    case TLV_SequenceNumNameComponent:
+      printf("/seq=%llu", name_component_to_version(&name->components[i]));
+      break;
+
+    default:
       printf("/");
       for (int j = 0; j < name->components[i].size; j++) {
         if (name->components[i].value[j] >= 33 && name->components[i].value[j] < 126) {
@@ -24,12 +52,7 @@ ndn_name_print(const ndn_name_t* name)
           printf("0x%02x", name->components[i].value[j]);
         }
       }
-    }
-    else {
-      printf("/digest=0x");
-      for (int j = 0; j < name->components[i].size; j++) {
-        printf("%02x", name->components[i].value[j]);
-      }
+      break;
     }
   }
   printf("\n");
