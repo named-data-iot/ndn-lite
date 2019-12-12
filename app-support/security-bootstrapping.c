@@ -15,6 +15,10 @@
 #include "../encode/key-storage.h"
 #include "../ndn-error-code.h"
 #include "../util/uniform-time.h"
+#define ENABLE_NDN_LOG_INFO 1
+#define ENABLE_NDN_LOG_DEBUG 1
+#define ENABLE_NDN_LOG_ERROR 1
+#include "../util/logger.h"
 #include "../security/ndn-lite-aes.h"
 #include "../security/ndn-lite-sha.h"
 
@@ -59,6 +63,8 @@ sec_boot_after_bootstrapping()
 
   // call application-defined after_bootstrapping function
   m_sec_boot_state.after_sec_boot();
+
+  NDN_LOG_INFO("[BOOTSTRAPPING]: Successfully finished NDN security bootstrapping");
 }
 
 void
@@ -66,7 +72,7 @@ on_sec_boot_sign_on_interest_timeout (void* userdata)
 {
   // do nothing for now
   (void)userdata;
-  printf("\nSEC BOOTSTRAPPING sign on interest timeout\n");
+  NDN_LOG_INFO("[BOOTSTRAPPING]: sign on Interest timeout");
   sec_boot_send_sign_on_interest();
 }
 
@@ -75,7 +81,7 @@ on_sec_boot_cert_interest_timeout (void* userdata)
 {
   // do nothing for now
   (void)userdata;
-  printf("\nSEC BOOTSTRAPPING cert timeout\n");
+  NDN_LOG_INFO("[BOOTSTRAPPING]: cert Interest timeout");
   sec_boot_send_cert_interest();
 }
 
@@ -85,10 +91,10 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   // parse received data
   ndn_data_t data;
   if (ndn_data_tlv_decode_hmac_verify(&data, raw_data, data_size, m_sec_boot_state.pre_shared_hmac_key) != NDN_SUCCESS) {
-    printf("Decoding failed.\n");
+    NDN_LOG_INFO("[BOOTSTRAPPING]: Decoding failed.\n");
     return;
   }
-  printf("Receive Sign On Certificate Data packet with name: \n");
+  NDN_LOG_INFO("[BOOTSTRAPPING]: Receive Sign On Certificate Data packet with name");
   ndn_name_print(&data.name);
   // parse content
   // format: self certificate, encrypted key
@@ -176,10 +182,10 @@ sec_boot_send_cert_interest()
   ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
                                        on_cert_data, on_sec_boot_cert_interest_timeout, NULL);
   if (ret != 0) {
-    printf("Fail to send out adv Interest. Error Code: %d\n", ret);
+    NDN_LOG_INFO("[BOOTSTRAPPING]: Fail to send out adv Interest. Error Code: %d", ret);
     return ret;
   }
-  printf("Send SEC BOOT cert Interest packet with name: \n");
+  NDN_LOG_INFO("[BOOTSTRAPPING]: Send SEC BOOT cert Interest packet with name");
   ndn_name_print(&interest.name);
   return NDN_SUCCESS;
 }
@@ -190,10 +196,10 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   // parse received data
   ndn_data_t data;
   if (ndn_data_tlv_decode_hmac_verify(&data, raw_data, data_size, m_sec_boot_state.pre_shared_hmac_key) != NDN_SUCCESS) {
-    printf("Decoding failed.\n");
+    NDN_LOG_INFO("[BOOTSTRAPPING]: Decoding failed.");
     return;
   }
-  printf("Receive Sign On Data packet with name: \n");
+  NDN_LOG_INFO("[BOOTSTRAPPING]: Receive Sign On Data packet with name");
   ndn_name_print(&data.name);
   uint32_t probe = 0;
   // parse content
@@ -294,10 +300,10 @@ sec_boot_send_sign_on_interest()
   ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
                                        on_sign_on_data, on_sec_boot_sign_on_interest_timeout, NULL);
   if (ret != 0) {
-    printf("Fail to send out adv Interest. Error Code: %d\n", ret);
+    NDN_LOG_INFO("[BOOTSTRAPPING]: Fail to send out adv Interest. Error Code: %d", ret);
     return ret;
   }
-  printf("Send SEC BOOT sign on Interest packet with name: \n");
+  NDN_LOG_INFO("[BOOTSTRAPPING]: Send SEC BOOT sign on Interest packet with name");
   ndn_name_print(&interest.name);
   return NDN_SUCCESS;
 }
@@ -336,7 +342,7 @@ ndn_security_bootstrapping(ndn_face_intf_t* face,
   // register route
   int ret = ndn_forwarder_add_route_by_str(face, "/ndn/sign-on", strlen("/ndn/sign-on"));
   if (ret != NDN_SUCCESS) return ret;
-  printf("SEC BOOT: successfully add route.");
+  NDN_LOG_INFO("[BOOTSTRAPPING]: Successfully add route");
 
   // send the first interest out
   sec_boot_send_sign_on_interest();

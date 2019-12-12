@@ -268,7 +268,7 @@ _periodic_sub_content_fetching(void *self, size_t param_length, void *param)
       m_is_my_own_int = true;
       int ret = ndn_forwarder_express_interest(pkt_encoding_buf, used_size, _on_new_content, _on_sub_timeout, topic);
       m_is_my_own_int = false;
-      NDN_LOG_INFO("[PERIODIC_CONTENT_FETCH]: Sent subscription Interest");
+      NDN_LOG_INFO("[PUB/SUB] Sent subscription Interest");
       ndn_name_print(&name);
 
       // update next_interest time
@@ -287,7 +287,7 @@ _on_subscription_interest(const uint8_t* raw_interest, uint32_t interest_size, v
     return NDN_FWD_STRATEGY_MULTICAST;
   }
   // parse interest
-  NDN_LOG_INFO("[SUB INTEREST CALLBACK]: Received Subscription Interest");
+  NDN_LOG_INFO("[PUB/SUB] Received Subscription Interest");
   ndn_interest_t interest;
   ndn_interest_from_block(&interest, raw_interest, interest_size);
   ndn_name_print(&interest.name);
@@ -297,7 +297,7 @@ _on_subscription_interest(const uint8_t* raw_interest, uint32_t interest_size, v
 
   // reply the latest content
   ndn_forwarder_put_data(topic->cache, topic->cache_size);
-  NDN_LOG_INFO("[SUB INTEREST CALLBACK]: Replid cached Data");
+  NDN_LOG_INFO("[PUB/SUB] Replid cached Data");
   return NDN_FWD_STRATEGY_SUPPRESS;
 }
 
@@ -308,7 +308,7 @@ _on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, v
     return NDN_FWD_STRATEGY_MULTICAST;
   }
   // FORMAT: /home/service/CMD/NOTIFY/identifier[0,2]/action
-  NDN_LOG_INFO("[NOTIFICATION INTEREST CALLBACK]: On notification Interest");
+  NDN_LOG_INFO("[PUB/SUB] On notification Interest");
   ndn_interest_t interest;
   ndn_interest_from_block(&interest, raw_interest, interest_size);
   ndn_name_print(&interest.name);
@@ -343,7 +343,7 @@ _on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, v
   m_is_my_own_int = true;
   int ret = ndn_forwarder_express_interest(pkt_encoding_buf, used_size, _on_new_content, _on_sub_timeout, topic);
   m_is_my_own_int = false;
-  NDN_LOG_INFO("[NOTIFICATION INTEREST CALLBACK]: Sent subscription Interest");
+  NDN_LOG_INFO("[PUB/SUB] Sent subscription Interest");
   ndn_name_print(&name);
   return NDN_FWD_STRATEGY_SUPPRESS;
 }
@@ -365,7 +365,7 @@ ps_subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier
       }
     }
     if (topic == NULL) {
-      NDN_LOG_DEBUG("[SUBSCIBE TO]: No more space for new subscription topics. Abort");
+      NDN_LOG_DEBUG("[PUB/SUB] No more space for new subscription topics. Abort");
       return;
     }
     topic->service = service;
@@ -442,7 +442,7 @@ ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len)
       }
     }
     if (topic == NULL) {
-      NDN_LOG_DEBUG("[PUBLISH_CONTENT]: No availble topic, will drop the oldest pub topic.");
+      NDN_LOG_DEBUG("[PUB/SUB] No availble topic, will drop the oldest pub topic.");
       uint64_t min_last_tp = m_pub_sub_state.pub_topics[0].last_update_tp;
       int index = -1;
       for (int i = 1; i < 5; i++) {
@@ -477,7 +477,7 @@ ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len)
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
                       TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
-  NDN_LOG_DEBUG("[PUBLISH_CONTENT]: Content Data has been generated");
+  NDN_LOG_DEBUG("[PUB/SUB] Content Data has been generated");
   ndn_name_print(&name);
 }
 
@@ -508,7 +508,7 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
       }
     }
     if (topic == NULL) {
-      NDN_LOG_DEBUG("[PUBLISH_CMD]: No availble topic, will drop the oldest pub topic.");
+      NDN_LOG_DEBUG("[PUB/SUB] No availble topic, will drop the oldest pub topic.");
       uint64_t min_last_tp = m_pub_sub_state.pub_topics[0].last_update_tp;
       int index = -1;
       for (int i = 1; i < 5; i++) {
@@ -547,7 +547,7 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
                       TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
-  NDN_LOG_DEBUG("[PUBLISH_CMD]: CMD Data has been generated");
+  NDN_LOG_DEBUG("[PUB/SUB] CMD Data has been generated");
   ndn_name_print(&name);
 
   // express the /Notify Interest
@@ -572,6 +572,6 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
   m_is_my_own_int = true;
   ret = ndn_forwarder_express_interest(pkt_encoding_buf, buffer_length, _on_new_content, _on_sub_timeout, NULL);
   m_is_my_own_int = false;
-  NDN_LOG_INFO("[PUBLISH_CMD]: Sent notification Interest for the newly generated cmd");
+  NDN_LOG_INFO("[PUB/SUB] Sent notification Interest for the newly generated cmd");
   ndn_name_print(&name);
 }
