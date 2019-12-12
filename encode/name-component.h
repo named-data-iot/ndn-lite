@@ -141,6 +141,9 @@ name_component_probe_block_size(const name_component_t* component)
 int
 name_component_tlv_encode(ndn_encoder_t* encoder, const name_component_t* component);
 
+void
+name_component_print(const name_component_t* component);
+
 #ifdef __cplusplus
 }
 #endif

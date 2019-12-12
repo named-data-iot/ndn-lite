@@ -268,7 +268,7 @@ _periodic_sub_content_fetching(void *self, size_t param_length, void *param)
       m_is_my_own_int = true;
       int ret = ndn_forwarder_express_interest(pkt_encoding_buf, used_size, _on_new_content, _on_sub_timeout, topic);
       m_is_my_own_int = false;
-      NDN_LOG_INFO("Subscription Interest Sending..., return value %d", ret);
+      NDN_LOG_INFO("[PERIODIC_CONTENT_FETCH]: Sent subscription Interest");
       ndn_name_print(&name);
 
       // update next_interest time
@@ -287,7 +287,7 @@ _on_subscription_interest(const uint8_t* raw_interest, uint32_t interest_size, v
     return NDN_FWD_STRATEGY_MULTICAST;
   }
   // parse interest
-  NDN_LOG_INFO("On Subscription Interest:");
+  NDN_LOG_INFO("[SUB INTEREST CALLBACK]: Received Subscription Interest");
   ndn_interest_t interest;
   ndn_interest_from_block(&interest, raw_interest, interest_size);
   ndn_name_print(&interest.name);
@@ -297,6 +297,7 @@ _on_subscription_interest(const uint8_t* raw_interest, uint32_t interest_size, v
 
   // reply the latest content
   ndn_forwarder_put_data(topic->cache, topic->cache_size);
+  NDN_LOG_INFO("[SUB INTEREST CALLBACK]: Replid cached Data");
   return NDN_FWD_STRATEGY_SUPPRESS;
 }
 
@@ -307,7 +308,7 @@ _on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, v
     return NDN_FWD_STRATEGY_MULTICAST;
   }
   // FORMAT: /home/service/CMD/NOTIFY/identifier[0,2]/action
-  NDN_LOG_INFO("On Notification Interest:");
+  NDN_LOG_INFO("[NOTIFICATION INTEREST CALLBACK]: On notification Interest");
   ndn_interest_t interest;
   ndn_interest_from_block(&interest, raw_interest, interest_size);
   ndn_name_print(&interest.name);
@@ -342,7 +343,7 @@ _on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, v
   m_is_my_own_int = true;
   int ret = ndn_forwarder_express_interest(pkt_encoding_buf, used_size, _on_new_content, _on_sub_timeout, topic);
   m_is_my_own_int = false;
-  NDN_LOG_INFO("Subscription Interest Sending...");
+  NDN_LOG_INFO("[NOTIFICATION INTEREST CALLBACK]: Sent subscription Interest");
   ndn_name_print(&name);
   return NDN_FWD_STRATEGY_SUPPRESS;
 }
@@ -357,17 +358,14 @@ ps_subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier
   int ret = 0;
   // find whether the topic has been subscribed already
   sub_topic_t* topic = _match_sub_topic(service, is_cmd, identifier, component_size);
-  if (topic) {
-    NDN_LOG_DEBUG("ps_subscribe_to: Already Subscribed on the Same Topic. Update this Subscription");
-  }
-  else {
+  if (!topic) {
     for (int i = 0; i < 5; i++) {
       if (m_pub_sub_state.sub_topics[i].service == NDN_SD_NONE) {
         topic = &m_pub_sub_state.sub_topics[i];
       }
     }
     if (topic == NULL) {
-      NDN_LOG_DEBUG("ps_subscribe_to: No more space for new subscription. Abort.");
+      NDN_LOG_DEBUG("[SUBSCIBE TO]: No more space for new subscription topics. Abort");
       return;
     }
     topic->service = service;
@@ -436,10 +434,7 @@ ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len)
   // published on this topic before? update the cache
   pub_topic_t* topic = NULL;
   topic = _match_pub_topic(service, false);
-  if (topic) {
-    NDN_LOG_DEBUG("_publish_content: Found a topic published before. Update content.");
-  }
-  else {
+  if (!topic) {
     for (int i = 0; i < 5; i++) {
       if (m_pub_sub_state.pub_topics[i].service == NDN_SD_NONE) {
         topic = &m_pub_sub_state.pub_topics[i];
@@ -447,7 +442,7 @@ ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len)
       }
     }
     if (topic == NULL) {
-      NDN_LOG_DEBUG("_publish_content: No availble topic, will drop the oldest pub topic.");
+      NDN_LOG_DEBUG("[PUBLISH_CONTENT]: No availble topic, will drop the oldest pub topic.");
       uint64_t min_last_tp = m_pub_sub_state.pub_topics[0].last_update_tp;
       int index = -1;
       for (int i = 1; i < 5; i++) {
@@ -470,7 +465,9 @@ ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len)
   ndn_name_append_component(&name, &storage->self_identity.components[1]);
   ndn_name_append_component(&name, &storage->self_identity.components[2]);
   // TODO: currently I appended timestamp. Further discussion is needed.
-  ndn_name_append_bytes_component(&name, (uint8_t*)&topic->last_update_tp, sizeof(ndn_time_ms_t));
+  name_component_t tp_comp;
+  name_component_from_timestamp(&tp_comp, topic->last_update_tp);
+  ndn_name_append_component(&name, &tp_comp);
   memset(topic->cache, 0, sizeof(topic->cache));
   ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 7,
                       TLV_DATAARG_NAME_PTR, &name,
@@ -480,7 +477,7 @@ ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len)
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
                       TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
-  NDN_LOG_DEBUG("_ps_publish: Data Encoding...");
+  NDN_LOG_DEBUG("[PUBLISH_CONTENT]: Content Data has been generated");
   ndn_name_print(&name);
 }
 
@@ -504,17 +501,14 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
   // published on this topic before? update the cache
   pub_topic_t* topic = NULL;
   topic = _match_pub_topic(service, true);
-  if (topic) {
-    NDN_LOG_DEBUG("Found a topic published before. Update content.");
-  }
-  else {
+  if (!topic) {
     for (int i = 0; i < 5; i++) {
       if (m_pub_sub_state.pub_topics[i].service == NDN_SD_NONE) {
         topic = &m_pub_sub_state.pub_topics[i];
       }
     }
     if (topic == NULL) {
-      NDN_LOG_DEBUG("No availble topic, will drop the oldest pub topic.");
+      NDN_LOG_DEBUG("[PUBLISH_CMD]: No availble topic, will drop the oldest pub topic.");
       uint64_t min_last_tp = m_pub_sub_state.pub_topics[0].last_update_tp;
       int index = -1;
       for (int i = 1; i < 5; i++) {
@@ -542,7 +536,9 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
   ndn_name_append_bytes_component(&name, &action, sizeof(action));
   // TODO: currently I appended timestamp. Further discussion is needed.
   ndn_time_ms_t tp = ndn_time_now_ms();
-  ndn_name_append_bytes_component(&name, (uint8_t*)&tp, sizeof(ndn_time_ms_t));
+  name_component_t tp_comp;
+  name_component_from_timestamp(&tp_comp, tp);
+  ndn_name_append_component(&name, &tp_comp);
   ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 7,
                       TLV_DATAARG_NAME_PTR, &name,
                       TLV_DATAARG_CONTENT_BUF, payload,
@@ -551,6 +547,8 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
                       TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
+  NDN_LOG_DEBUG("[PUBLISH_CMD]: CMD Data has been generated");
+  ndn_name_print(&name);
 
   // express the /Notify Interest
   // FORMAT: /home/service/NOTIFY/CMD/identifier[0,2]/action
@@ -563,10 +561,9 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
     ndn_name_append_component(&name, identifier + i);
   }
   ndn_name_append_bytes_component(&name, &action, sizeof(action));
-  ndn_name_append_bytes_component(&name, (uint8_t*)&tp, sizeof(ndn_time_ms_t));
+  ndn_name_append_component(&name, &tp_comp);
 
   // send out the notification Interest
-  NDN_LOG_INFO("ps_publish_command: Send notification Interest for new command:");
   uint32_t buffer_length = 0;
   tlv_make_interest(pkt_encoding_buf, sizeof(pkt_encoding_buf), &buffer_length, 3,
                     TLV_INTARG_NAME_PTR, &name,
@@ -575,5 +572,6 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
   m_is_my_own_int = true;
   ret = ndn_forwarder_express_interest(pkt_encoding_buf, buffer_length, _on_new_content, _on_sub_timeout, NULL);
   m_is_my_own_int = false;
+  NDN_LOG_INFO("[PUBLISH_CMD]: Sent notification Interest for the newly generated cmd");
   ndn_name_print(&name);
 }

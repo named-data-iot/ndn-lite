@@ -154,3 +154,47 @@ name_component_tlv_encode(ndn_encoder_t* encoder, const name_component_t* compon
   if (ret_val != NDN_SUCCESS) return ret_val;
   return encoder_append_raw_buffer_value(encoder, component->value, component->size);
 }
+
+void
+name_component_print(const name_component_t* component)
+{
+  switch (component->type) {
+    case TLV_ImplicitSha256DigestComponent:
+      printf("/sha256digiest=0x");
+      for (int j = 0; j < component->size; j++) {
+        printf("%02x", component->value[j]);
+      }
+      break;
+
+    case TLV_ParametersSha256DigestComponent:
+      printf("/params-sha256=0x");
+      for (int j = 0; j < component->size; j++) {
+        printf("%02x", component->value[j]);
+      }
+      break;
+
+    case TLV_VersionNameComponent:
+      printf("/v=%llu", name_component_to_version(component));
+      break;
+
+    case TLV_TimestampNameComponent:
+      printf("/t=%llu", name_component_to_timestamp(component));
+      break;
+
+    case TLV_SequenceNumNameComponent:
+      printf("/seq=%llu", name_component_to_sequence_num(component));
+      break;
+
+    default:
+      printf("/");
+      for (int j = 0; j < component->size; j++) {
+        if (component->value[j] >= 33 && component->value[j] < 126) {
+          printf("%c", component->value[j]);
+        }
+        else {
+          printf("0x%02x", component->value[j]);
+        }
+      }
+      break;
+  }
+}

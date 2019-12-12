@@ -36,6 +36,7 @@ extern "C" {
 
 #ifdef ENABLE_NDN_LOG_INFO
 #define NDN_LOG_INFO(...) { \
+  printf("INFO: %s: ", __func__); \
   printf(__VA_ARGS__);printf("\n"); \
 }
 #else
