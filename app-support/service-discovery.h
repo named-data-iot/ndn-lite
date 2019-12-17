@@ -23,11 +23,29 @@ const static uint32_t SD_ADV_INTERVAL = 15000;
 
 /**
  * Service discovery protocol spec:
- *  Advertisement: /[home-prefix]/NDN_SD_SD/NDN_SD_SD_ADV/[locator]
- *  AppParams:
- *    0-4 bytes: freshness period (uint32_t)
- *    4- bytes: byte array, each byte represents a service
- *  
+ *
+ *  Advertisement:
+ *  ==============
+ *    Interest Name: /[home-prefix]/NDN_SD_SD/NDN_SD_SD_ADV/[locator]
+ *    Params: MustBeFresh
+ *    AppParams:
+ *      0-4 bytes: freshness period (uint32_t)
+ *      4- bytes: byte array, each byte represents a service
+ *    Signature by identity key
+ *  ==============
+ *  Adv Interest will be sent periodically based on SD_ADV_INTERVAL ms
+ *
+ *  Service Query from Controller
+ *  ==============
+ *    Interest Name: /[home-prefix]/NDN_SD_SD_CTL/NDN_SD_SD_CTL_META
+ *    Param: MustBeFresh
+ *    AppParams: 0- bytes: byte array, each byte represents an interested service
+ *    Signature by identity key
+ *  ==============
+ *    Replied Data Content: a list of {Name-TLV, uint32_t}
+ *    Signature by controller identity key
+ *  ==============
+ *  Service Query Interest will be sent right after bootstrapping
  *
  */
 
@@ -61,17 +79,6 @@ sd_add_or_update_self_service(uint8_t service_id, bool adv, uint8_t status_code)
  */
 int
 sd_add_interested_service(uint8_t service_id);
-
-/**
- * Query interested services from the system controller.
- * ONLY after ndn_sd_after_bootstrapping.
- * @param service_ids. Input. The service IDs that the device is interested in.
- *   Each uint8_t in the list represents a service type;
- * @param size. Input. The size of the service id list.
- * @return NDN_SUCCESS(0) if there is no error.
- */
-int
-sd_query_sys_services(const uint8_t* service_ids, size_t size);
 
 /**
  * Express an Interest packet to query the SPs for the service.

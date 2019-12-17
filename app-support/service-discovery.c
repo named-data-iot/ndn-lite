@@ -174,8 +174,7 @@ _sd_start_adv_self_services()
   }
   if (service_cnt > 0) {
     ndn_interest_set_Parameters(&interest, sd_buf, encoder.offset);
-    ndn_key_storage_t* keys = ndn_key_storage_get_instance();
-    ret = ndn_signed_interest_ecdsa_sign(&interest, &keys->self_identity, &keys->self_identity_key);
+    ret = ndn_signed_interest_ecdsa_sign(&interest, NULL, NULL);
     if (ret != NDN_SUCCESS) {
       NDN_LOG_ERROR("Cannot sign the advertisement Interest. Error code: %d", ret);
       ndn_msgqueue_post(NULL, _sd_start_adv_self_services, NULL, NULL);
@@ -463,7 +462,7 @@ _on_query_or_sd_meta_data(const uint8_t* raw_data, uint32_t data_size, void* use
 }
 
 int
-sd_query_sys_services(const uint8_t* service_ids, size_t size)
+_sd_query_sys_services(const uint8_t* service_ids, size_t size)
 {
   if (!m_has_initialized || !m_has_bootstrapped) {
     return NDN_STATE_NOT_INITIALIZED;
@@ -482,8 +481,12 @@ sd_query_sys_services(const uint8_t* service_ids, size_t size)
   if (ret != 0) return ret;
   ndn_interest_set_MustBeFresh(&interest, true);
   ndn_interest_set_Parameters(&interest, service_ids, size);
+  ret = ndn_signed_interest_ecdsa_sign(&interest, NULL, NULL);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("Cannot sign the advertisement Interest. Error code: %d", ret);
+    return ret;
+  }
 
-  // TODO signature signing
   // Express Interest
   ndn_encoder_t encoder;
   encoder_init(&encoder, sd_buf, sizeof(sd_buf));
