@@ -35,7 +35,7 @@ typedef struct ndn_sec_boot_state {
   const ndn_ecc_prv_t* pre_installed_ecc_key;
   // TODO: add the hmac key into the keystorage
   const ndn_hmac_key_t* pre_shared_hmac_key;
-  ndn_secruity_bootstrapping_after_bootstrapping after_sec_boot;
+  ndn_security_bootstrapping_after_bootstrapping after_sec_boot;
 } ndn_sec_boot_state_t;
 
 static uint8_t sec_boot_buf[4096];
@@ -120,15 +120,22 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   decoder_get_type(&decoder, &probe);
   if (probe != TLV_AC_ENCRYPTED_PAYLOAD) return;
   decoder_get_length(&decoder, &probe);
-  uint8_t plaintext[1024];
+  uint8_t plaintext[256] = {0};
+  uint8_t input[256] = {0};
+  memcpy(input, aes_iv, NDN_SEC_AES_IV_LENGTH);
+  memcpy(input + NDN_SEC_AES_IV_LENGTH, decoder.input_value + decoder.offset, probe);
   ndn_aes_key_t* sym_aes_key = NULL;
   ndn_key_storage_get_aes_key(SEC_BOOT_AES_KEY_ID, &sym_aes_key);
-  ndn_aes_cbc_decrypt(decoder.input_value + decoder.offset, probe,
-                      plaintext, probe - NDN_AES_BLOCK_SIZE, aes_iv, sym_aes_key);
+  int ret = ndn_aes_cbc_decrypt(input, probe + NDN_SEC_AES_IV_LENGTH,
+                                plaintext, probe, aes_iv, sym_aes_key);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("Cannot decrypt sealed private key, Error code: %d", ret);
+    return;
+  }
   // set key storage
   ndn_ecc_prv_t self_prv;
   uint32_t keyid = *(uint32_t*)&self_cert.name.components[self_cert.name.components_size - 3].value;
-  ndn_ecc_prv_init(&self_prv, plaintext, 64, NDN_ECDSA_CURVE_SECP256R1, keyid);
+  ndn_ecc_prv_init(&self_prv, plaintext, 32, NDN_ECDSA_CURVE_SECP256R1, keyid);
   ndn_key_storage_set_self_identity(&self_cert, &self_prv);
   // finish the bootstrapping process
   sec_boot_after_bootstrapping();
@@ -313,7 +320,7 @@ ndn_security_bootstrapping(ndn_face_intf_t* face,
                            const ndn_ecc_prv_t* pre_installed_prv_key, const ndn_hmac_key_t* pre_shared_hmac_key,
                            const char* device_identifier, size_t identifier_size,
                            const uint8_t* service_list, size_t list_size,
-                           ndn_secruity_bootstrapping_after_bootstrapping after_bootstrapping)
+                           ndn_security_bootstrapping_after_bootstrapping after_bootstrapping)
 {
   // set ECC RNG backend
   ndn_rng_backend_t* rng_backend = ndn_rng_get_backend();

@@ -34,8 +34,8 @@ ndn_signed_interest_digest_sign(ndn_interest_t* interest);
  * @param encoder. Output. The encoder to keep the encoded Signed Interest.
  *        The encoder should be inited to proper output buffer.
  * @param interest. Input. The Interest to be signed and encoded.
- * @param producer_identity. Input. The producer's identity name.
- * @param prv_key. Input. The private ECC key used to generate the signature.
+ * @param identity. Input. The producer's identity name. Can be NULL.
+ * @param prv_key. Input. The private ECC key used to generate the signature. Can be NULL.
  * @return 0 if there is no error.
  */
 int
@@ -49,7 +49,7 @@ ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
  * @param encoder. Output. The encoder to keep the encoded Signed Interest.
  *        The encoder should be inited to proper output buffer.
  * @param interest. Input. The Interest to be signed and encoded.
- * @param producer_identity. Input. The producer's identity name.
+ * @param identity. Input. The producer's identity name.
  * @param prv_key. Input. The private HMAC key used to generate the signature.
  * @return 0 if there is no error.
  */

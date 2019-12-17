@@ -22,6 +22,16 @@ extern "C" {
 const static uint32_t SD_ADV_INTERVAL = 15000;
 
 /**
+ * Service discovery protocol spec:
+ *  Advertisement: /[home-prefix]/NDN_SD_SD/NDN_SD_SD_ADV/[locator]
+ *  AppParams:
+ *    0-4 bytes: freshness period (uint32_t)
+ *    4- bytes: byte array, each byte represents a service
+ *  
+ *
+ */
+
+/**
  * Load a device's meta info into the state.
  * @param face. Input. The network interface to listen to.
  * This function will be called by Bootstrapping module automatically.

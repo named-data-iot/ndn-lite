@@ -9,6 +9,7 @@
  */
 
 #include "signed-interest.h"
+#include "key-storage.h"
 #include "../security/ndn-lite-hmac.h"
 #include "../security/ndn-lite-sha.h"
 #include "../security/ndn-lite-ecc.h"
@@ -20,8 +21,7 @@
 
 static void
 _prepare_signature_info(ndn_interest_t* interest, uint8_t signature_type,
-                        const ndn_name_t* identity, uint32_t key_id,
-                        uint32_t signature_info_nonce, uint64_t timestamp)
+                        const ndn_name_t* identity, uint32_t key_id)
 {
   uint8_t raw_key_id[4] = {0};
   raw_key_id[0] = (key_id >> 24) & 0xFF;
@@ -31,6 +31,7 @@ _prepare_signature_info(ndn_interest_t* interest, uint8_t signature_type,
 
   ndn_signature_init(&interest->signature, true);
   ndn_signature_set_signature_type(&interest->signature, signature_type);
+
   ndn_signature_set_key_locator(&interest->signature, identity);
 
   // append /KEY and /<KEY-ID> in key locator name
@@ -45,9 +46,12 @@ _prepare_signature_info(ndn_interest_t* interest, uint8_t signature_type,
   interest->signature.key_locator_name.components_size++;
 
   // set signature nonce
+  uint32_t signature_info_nonce;
+  ndn_rng(&signature_info_nonce, sizeof(signature_info_nonce));
   ndn_signature_set_signature_nonce(&interest->signature, signature_info_nonce);
 
   // set timestamp
+  uint64_t timestamp;
   ndn_signature_set_timestamp(&interest->signature, timestamp);
 }
 
@@ -64,8 +68,14 @@ ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
     return NDN_OVERSIZE;
 
   // set signature info
-  // TODO added by Zhiyi: replaced with real timestamp and nonce
-  _prepare_signature_info(interest, NDN_SIG_TYPE_ECDSA_SHA256, identity, prv_key->key_id, 0, 0);
+  ndn_key_storage_t* keys = ndn_key_storage_get_instance();
+  if (identity == NULL) {
+    identity = &keys->self_identity;
+  }
+  if (prv_key == NULL) {
+    prv_key = &keys->self_identity_key;
+  }
+  _prepare_signature_info(interest, NDN_SIG_TYPE_ECDSA_SHA256, identity, prv_key->key_id);
 
   // update signature value and append the ending name component
   // prepare temp buffer to calculate signature value and the ending name component
@@ -128,7 +138,7 @@ ndn_signed_interest_hmac_sign(ndn_interest_t* interest,
 
   // set signature info
   // TODO added by Zhiyi: replaced with real timestamp and nonce
-  _prepare_signature_info(interest, NDN_SIG_TYPE_HMAC_SHA256, identity, hmac_key->key_id, 0, 0);
+  _prepare_signature_info(interest, NDN_SIG_TYPE_HMAC_SHA256, identity, hmac_key->key_id);
 
   // update signature value and append the ending name component
   // prepare temp buffer to calculate signature value and the ending name component

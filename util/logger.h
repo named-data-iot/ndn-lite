@@ -39,8 +39,12 @@ extern "C" {
   printf("INFO: %s: ", __func__); \
   printf(__VA_ARGS__);printf("\n"); \
 }
+#define NDN_LOG_INFO_NO_NEWLINE(...) { \
+  printf(__VA_ARGS__); \
+}
 #else
 #define NDN_LOG_INFO(...)
+#define NDN_LOG_INFO_NO_NEWLINE(...)
 #endif
 
 /*@}*/
