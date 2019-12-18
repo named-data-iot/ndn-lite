@@ -31,7 +31,7 @@ const static uint32_t SD_ADV_INTERVAL = 15000;
  *    AppParams:
  *      0-4 bytes: freshness period (uint32_t)
  *      4- bytes: byte array, each byte represents a service
- *    Signature by identity key
+ *    ECDSA Signature by identity key
  *  ==============
  *  Adv Interest will be sent periodically based on SD_ADV_INTERVAL ms
  *
@@ -43,7 +43,7 @@ const static uint32_t SD_ADV_INTERVAL = 15000;
  *    Signature by identity key
  *  ==============
  *    Replied Data Content: a list of {Name-TLV, uint32_t}
- *    Signature by controller identity key
+ *    ECDSA Signature by controller identity key
  *  ==============
  *  Service Query Interest will be sent right after bootstrapping
  *

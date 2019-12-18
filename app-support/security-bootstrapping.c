@@ -182,7 +182,10 @@ sec_boot_send_cert_interest()
   ndn_interest_set_MustBeFresh(&interest,true);
   interest.lifetime = 5000;
   // sign the interest
-  ndn_signed_interest_ecdsa_sign(&interest, &interest.name, m_sec_boot_state.pre_installed_ecc_key);
+  name_component_t key_locator;
+  name_component_from_string(&key_locator, m_sec_boot_state.device_identifier, 
+                             m_sec_boot_state.identifier_size);
+  ndn_signed_interest_ecdsa_sign(&interest, &key_locator, m_sec_boot_state.pre_installed_ecc_key);
   // send it out
   encoder_init(&encoder, sec_boot_buf, sizeof(sec_boot_buf));
   ndn_interest_tlv_encode(&encoder, &interest);
@@ -300,7 +303,10 @@ sec_boot_send_sign_on_interest()
   ndn_interest_set_MustBeFresh(&interest,true);
   interest.lifetime = 5000;
   // sign the interest
-  ndn_signed_interest_ecdsa_sign(&interest, &interest.name, m_sec_boot_state.pre_installed_ecc_key);
+  ndn_name_t key_locator;
+  ndn_name_init(&key_locator);
+  ndn_name_append_component(&key_locator, &device_identifier_comp);
+  ndn_signed_interest_ecdsa_sign(&interest, &key_locator, m_sec_boot_state.pre_installed_ecc_key);
   // send it out
   encoder_init(&encoder, sec_boot_buf, sizeof(sec_boot_buf));
   ndn_interest_tlv_encode(&encoder, &interest);

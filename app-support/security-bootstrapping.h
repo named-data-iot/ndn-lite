@@ -21,6 +21,35 @@ extern "C" {
 typedef void (*ndn_security_bootstrapping_after_bootstrapping) (void);
 
 /**
+ * Bootstrapping protocol spec:
+ *
+ *  Sign on Interest
+ *  ==============
+ *    Interest Name: /ndn/sign-on
+ *    Params: MustBeFresh
+ *    AppParams:
+ *      NameComponent-TLV
+ *      T=TLV_SEC_BOOT_CAPABILITIES L=? V=byte array, each byte represents a service
+ *      T=TLV_SEC_BOOT_N1_ECDH_PUB L=? V=byte array of ECDH public key
+ *    ECDSA Signature by private key paired with pre-shared public key
+ *  ==============
+ *  Adv Interest will be sent periodically based on SD_ADV_INTERVAL ms
+ *
+ *  Service Query from Controller
+ *  ==============
+ *    Interest Name: /[home-prefix]/NDN_SD_SD_CTL/NDN_SD_SD_CTL_META
+ *    Param: MustBeFresh
+ *    AppParams: 0- bytes: byte array, each byte represents an interested service
+ *    Signature by identity key
+ *  ==============
+ *    Replied Data Content: a list of {Name-TLV, uint32_t}
+ *    Signature by controller identity key
+ *  ==============
+ *  Service Query Interest will be sent right after bootstrapping
+ *
+ */
+
+/**
  * Start the security boostrapping process.
  * @param device_identifier. INPUT. A string uniquely represent the device, e.g., a randomness.
  * @param len. INPUT. The len of the string.
