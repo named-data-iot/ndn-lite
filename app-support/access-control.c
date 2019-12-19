@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2019
+ * Copyright (C) 2018-2019 Zhiyi Zhang, Tianyuan Yu, Guan Yu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
@@ -21,23 +21,54 @@
 #include "../util/msg-queue.h"
 #include "../util/uniform-time.h"
 
-static uint8_t sd_buf[4096];
+/* Logging Level: ERROR, DEBUG */
+#define ENABLE_NDN_LOG_ERROR 1
+#define ENABLE_NDN_LOG_DEBUG 1
+#include "../util/logger.h"
 
+/* Encoding buffer for Access Control module */ 
+static uint8_t ac_buf[1024];
+
+/**
+ * The structure of AccessControlKey.
+ */
 typedef struct ac_key {
+  /**
+   * KeyID, should be globally unique in KeyStorage.
+   */
   uint32_t key_id;
+  /**
+   * KeyLifetime, the key expiration time is Now + KeyLifetime.
+   */
   uint32_t expires_at;
 } ac_key_t;
 
+/**
+ * The structure of AccessControlState.
+ */
 typedef struct ndn_access_control {
+  /**
+   * AccessServices for this identity that would use DecryptionKey. 
+   */
   uint8_t access_services[10];
+  /**
+   * DecryptionKeys used for by identity's AccessService.
+   */
   ac_key_t access_keys[10];
+  /**
+   * RegisterServices for this identity that would use EncryptionKey.
+   */
   uint8_t self_services[2];
+  /**
+   * EncryptionKeys used for by identity's RegisterServices.
+   */
   ac_key_t ekeys[2];
 } ndn_access_control_t;
 
 ndn_access_control_t _ac_self_state;
 bool _ac_initialized = false;
 
+/* Initialize the AccessControlState */
 void
 _init_ac_state()
 {
@@ -52,24 +83,44 @@ _init_ac_state()
   _ac_initialized = true;
 }
 
+/**
+ *  Response for EncryptionKey onData.
+ *  This will parse the EncryptionKey Data with KeyID-10002 Key, which is already
+ *  generated from Bootstrapping. The EncryptionKey's expiration time will be calculated.
+ *  Decoded EncryptionKey will be stored at KeyStorage with KeyID filled with a uint32_t random number.
+ */
 void
 _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 {
   // parse Data
   ndn_data_t data;
-  if (ndn_data_tlv_decode_digest_verify(&data, raw_data, data_size)) {
-    printf("Decoding failed.\n");
+  int ret = -1;
+
+  // should verify with TrustAnchor Key
+  ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+  ret = ndn_data_tlv_decode_ecdsa_verify(&data, raw_data, data_size, &storage->trust_anchor_key);
+  if (ret) {
+    NDN_LOG_ERROR("EncryptionKey Data Verification failure, ErrorCode = %d\n", ret);
   }
-  printf("Receive EKEY packet with name: \n");
-  ndn_name_print(&data.name);
+
+  NDN_LOG_DEBUG("Receive EncryptionKey Data with Name: ");
+  NDN_LOG_DEBUG_NAME(&data.name);
 
   // get key: decrypt the key
   uint32_t expires_in = 0;
-  uint8_t value[36];
+  uint8_t value[30] = {0};
   uint32_t used_size = 0;
-  ndn_parse_encrypted_payload(data.content_value, data.content_size,
-                              value, &used_size, 10002); // SEC_BOOT_AES_KEY_ID = 10002;
-  expires_in = *((uint32_t*)value + 4);
+  ret = ndn_parse_encrypted_payload(data.content_value, data.content_size,
+                                        value, &used_size, 10002); // SEC_BOOT_AES_KEY_ID = 10002;
+  if (ret || used_size == 0) {
+    NDN_LOG_ERROR("Parse encrypted payload failure. ErrorCode = %d\n", ret);
+  }
+
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, value + NDN_AES_BLOCK_SIZE, sizeof(expires_in));
+  decoder_get_uint32_value(&decoder, &expires_in);
+
+  NDN_LOG_DEBUG("EncryptionKey KeyLifetime = %u ms\n", expires_in);
 
   // store it into key_storage
   ndn_aes_key_t* key = NULL;
@@ -84,27 +135,48 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     }
   }
   ndn_key_storage_get_empty_aes_key(&key);
-  ndn_aes_key_init(key, value, 16, keyid);
+  ndn_aes_key_init(key, value, NDN_AES_BLOCK_SIZE, keyid);
 }
 
+/**
+ *  Response for DecryptionKey onData.
+ *  This will parse the DecryptionKey Data with KeyID-10002 Key, which is already
+ *  generated from Bootstrapping. The DecryptionKey's expiration time will be calculated.
+ *  Decoded DecryptionKey will be stored at KeyStorage with KeyID filled with a uint32_t random number.
+ */
 void
 _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 {
   // parse Data
   ndn_data_t data;
-  if (ndn_data_tlv_decode_digest_verify(&data, raw_data, data_size)) {
-    printf("Decoding failed.\n");
+  int ret = -1;
+
+  // should verify with TrustAnchor Key
+  ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+  ret = ndn_data_tlv_decode_ecdsa_verify(&data, raw_data, data_size, &storage->trust_anchor_key);
+  if (ret) {
+    NDN_LOG_ERROR("DecryptionKey Data Verification failure, ErrorCode = %d\n", ret);
   }
-  printf("Receive EKEY packet with name: \n");
-  ndn_name_print(&data.name);
+
+  NDN_LOG_DEBUG("Receive DecryptionKey Data with Name: ");
+  NDN_LOG_DEBUG_NAME(&data.name);
 
   // get key: decrypt the key
   uint32_t expires_in = 0;
-  uint8_t value[36];
-  uint32_t used_size;
-  ndn_parse_encrypted_payload(data.content_value, data.content_size,
-                              value, &used_size, 10002); // SEC_BOOT_AES_KEY_ID = 10002;
-  expires_in = *((uint32_t*)value + 4);
+  uint8_t value[30] = {0};
+  uint32_t used_size = 0;
+
+  ret = ndn_parse_encrypted_payload(data.content_value, data.content_size,
+                                        value, &used_size, 10002); // SEC_BOOT_AES_KEY_ID = 10002;
+  if (ret || used_size == 0) {
+    NDN_LOG_ERROR("Parse encrypted payload failure. ErrorCode = %d\n", ret);
+  }
+  
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, value + NDN_AES_BLOCK_SIZE, sizeof(expires_in));
+  decoder_get_uint32_value(&decoder, &expires_in);
+
+  NDN_LOG_DEBUG("DecryptionKey KeyLifetime = %u ms\n", expires_in);
 
   // store it into key_storage
   ndn_aes_key_t* key = NULL;
@@ -122,10 +194,13 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   ndn_aes_key_init(key, value, 16, keyid);
 }
 
+/**
+ *  EncryptionKey Interesing expressing.
+ *  This will express a signed Interest with CanBePrefix flag set.
+ */
 int
 _express_ekey_interest(uint8_t service)
 {
-  // send /home/AC/EKEY/<the service provided by my self> to the controller
   int ret = 0;
   ndn_interest_t interest;
   ndn_interest_init(&interest);
@@ -142,28 +217,32 @@ _express_ekey_interest(uint8_t service)
   if (ret != 0) return ret;
 
   //signature signing
-  ndn_signed_interest_digest_sign(&interest);
+  ndn_signed_interest_ecdsa_sign(&interest, &storage->self_identity, &storage->self_identity_key);
 
   // Express Interest
   ndn_encoder_t encoder;
-  encoder_init(&encoder, sd_buf, sizeof(sd_buf));
+  encoder_init(&encoder, ac_buf, sizeof(ac_buf));
+  ndn_interest_set_CanBePrefix(&interest, 1);
   ret = ndn_interest_tlv_encode(&encoder, &interest);
   if (ret != 0) return ret;
   ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, _on_ekey_data, NULL, NULL);
   if (ret != 0) {
-    printf("Fail to send out adv Interest. Error Code: %d\n", ret);
+    NDN_LOG_ERROR("Fail to send out adv Interest. Error Code: %d\n", ret);
     return ret;
   }
-  printf("Send AC Interest packet with name: \n");
-  ndn_name_print(&interest.name);
+  NDN_LOG_DEBUG("Send EncryptionKey Interest with Name: ");
+  NDN_LOG_DEBUG_NAME(&interest.name);
   return NDN_SUCCESS;
 }
 
+/**
+ *  DecryptionKey Interesing expressing.
+ *  This will express a signed Interest with CanBePrefix flag set.
+ */
 int
 _express_dkey_interest(uint8_t service)
 {
-  // send /home/AC/DKEY/<the services that I need to access> to the controller
-  int ret = 0;
+  int ret = -1;
   ndn_interest_t interest;
   ndn_interest_init(&interest);
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
@@ -178,24 +257,28 @@ _express_dkey_interest(uint8_t service)
   ret = ndn_name_append_bytes_component(&interest.name, &service, 1);
   if (ret != 0) return ret;
 
-  // Signature signing
-  ndn_signed_interest_digest_sign(&interest);
+  // signature signing
+  ndn_signed_interest_ecdsa_sign(&interest, &storage->self_identity, &storage->self_identity_key);
 
   // Express Interest
   ndn_encoder_t encoder;
-  encoder_init(&encoder, sd_buf, sizeof(sd_buf));
+  encoder_init(&encoder, ac_buf, sizeof(ac_buf));
+  ndn_interest_set_CanBePrefix(&interest, 1);
   ret = ndn_interest_tlv_encode(&encoder, &interest);
   if (ret != 0) return ret;
-  ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, _on_ekey_data, NULL, NULL);
+  ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, _on_dkey_data, NULL, NULL);
   if (ret != 0) {
-    printf("Fail to send out adv Interest. Error Code: %d\n", ret);
+    NDN_LOG_ERROR("Fail to send out adv Interest. Error Code: %d\n", ret);
     return ret;
   }
-  printf("Send AC Interest packet with name: \n");
-  ndn_name_print(&interest.name);
+  NDN_LOG_DEBUG("Send DecryptionKey Interest with Name: ");
+  NDN_LOG_DEBUG_NAME(&interest.name);
   return NDN_SUCCESS;
 }
 
+/**
+ *  RegisterServices.
+ */
 void
 ndn_ac_register_service_require_ek(uint8_t service)
 {
@@ -205,10 +288,14 @@ ndn_ac_register_service_require_ek(uint8_t service)
   for (int i = 0; i < 2; i++) {
     if (_ac_self_state.self_services[i] == NDN_SD_NONE) {
       _ac_self_state.self_services[i] = service;
+      return;
     }
   }
 }
 
+/**
+ *  AccessServices.
+ */
 void
 ndn_ac_register_access_request(uint8_t service)
 {
@@ -218,10 +305,14 @@ ndn_ac_register_access_request(uint8_t service)
   for (int i = 0; i < 10; i++) {
     if (_ac_self_state.access_services[i] == NDN_SD_NONE) {
       _ac_self_state.access_services[i] = service;
+      return;
     }
   }
 }
 
+/**
+ *  AccessControl start. Should be called after Bootstrapping.
+ */
 void
 ndn_ac_after_bootstrapping()
 {
