@@ -14,18 +14,52 @@
 #include "../encode/interest.h"
 #include "../encode/data.h"
 
+/**
+ * Access control protocol spec:
+ *
+ *  Get EKEY from the controller:
+ *  ==============
+ *    Interest Name: /[home-prefix]/NDN_SD_AC/NDN_SD_AC_EK/[service-id]
+ *    Params: MustBeFresh
+ *    Sig Info:
+ *      Key locator: /[home-prefix]/[room]/[device-id]
+ *    Sig Value:
+ *      ECDSA Signature by identity key
+ *  ==============
+ *  Repied Data:
+ *    Content:
+ *      T=TLV_AC_AES_IV L=? V=bytes: AES IV
+ *      T=TLV_AC_ENCRYPTED_PAYLOAD L=? V=bytes: AES encrypted payload, which is the EKEY for the service
+ *  ==============
+ *
+ *  Get DKEY from the controller:
+ *  ==============
+ *    Interest Name: /[home-prefix]/NDN_SD_AC/NDN_SD_AC_DK/[service-id]
+ *    Params: MustBeFresh
+ *    Sig Info:
+ *      Key locator: /[home-prefix]/[room]/[device-id]
+ *    Sig Value:
+ *      ECDSA Signature by identity key
+ *  ==============
+ *  Repied Data:
+ *    Content:
+ *      T=TLV_AC_AES_IV L=? V=bytes: AES IV
+ *      T=TLV_AC_ENCRYPTED_PAYLOAD L=? V=bytes: AES encrypted payload
+ *  ==============
+ */
+
 // Basic Design:
 // 1. The access control policy are decided by schema
 // 2. The access control key can be roll overed by existing key (e.g., through one-way function)
 // 3. The access control granularity can be kept in the service type level at the moment
 
 void
-register_service_require_ek(uint8_t service);
+ndn_ac_register_service_require_ek(uint8_t service);
 
 void
-register_access_request(uint8_t service);
+ndn_ac_register_access_request(uint8_t service);
 
 void
-ac_after_bootstrapping();
+ndn_ac_after_bootstrapping();
 
 #endif // NDN_APP_SUPPORT_ACCESS_CONTROL_H

@@ -26,12 +26,15 @@ const static uint32_t SD_ADV_INTERVAL = 15000;
  *
  *  Advertisement:
  *  ==============
- *    Interest Name: /[home-prefix]/NDN_SD_SD/NDN_SD_SD_ADV/[locator]
+ *    Interest Name: /[home-prefix]/NDN_SD_SD/NDN_SD_SD_ADV/[room]/[device-id]
  *    Params: MustBeFresh
  *    AppParams:
- *      0-4 bytes: freshness period (uint32_t)
- *      4- bytes: byte array, each byte represents a service
- *    ECDSA Signature by identity key
+ *      4 bytes: Freshness period (uint32_t)
+ *      bytes: Each byte represents a service
+ *    Sig Info:
+ *      Key locator: /[home-prefix]/[room]/[device-id]
+ *    Sig Value:
+ *      ECDSA Signature by identity key
  *  ==============
  *  Adv Interest will be sent periodically based on SD_ADV_INTERVAL ms
  *
@@ -39,11 +42,15 @@ const static uint32_t SD_ADV_INTERVAL = 15000;
  *  ==============
  *    Interest Name: /[home-prefix]/NDN_SD_SD_CTL/NDN_SD_SD_CTL_META
  *    Param: MustBeFresh
- *    AppParams: 0- bytes: byte array, each byte represents an interested service
- *    Signature by identity key
+ *    AppParams:
+ *      bytes: each byte represents an interested service
+ *    Sig Info:
+ *      Key locator: /[home-prefix]/[room]/[device-id]
+ *    Sig Value:
+ *      ECDSA signature by identity key
  *  ==============
  *    Replied Data Content: a list of {Name-TLV, uint32_t}
- *    ECDSA Signature by controller identity key
+ *    Sig Value: ECDSA Signature by controller identity key
  *  ==============
  *  Service Query Interest will be sent right after bootstrapping
  *

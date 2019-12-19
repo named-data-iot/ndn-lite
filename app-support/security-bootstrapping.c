@@ -55,7 +55,9 @@ sec_boot_after_bootstrapping()
   ndn_sd_after_bootstrapping(m_sec_boot_state.face);
 
   // call access control's after bootstrapping
-  // ac_after_bootstrapping
+  ndn_ac_after_bootstrapping();
+
+  // subscribe to default topics (policies, key information)
 
   // we shouldn't delete the AES key because they may be used in other places
   // ndn_key_storage_delete_aes_key(SEC_BOOT_AES_KEY_ID);
@@ -183,7 +185,7 @@ sec_boot_send_cert_interest()
   interest.lifetime = 5000;
   // sign the interest
   name_component_t key_locator;
-  name_component_from_string(&key_locator, m_sec_boot_state.device_identifier, 
+  name_component_from_string(&key_locator, m_sec_boot_state.device_identifier,
                              m_sec_boot_state.identifier_size);
   ndn_signed_interest_ecdsa_sign(&interest, &key_locator, m_sec_boot_state.pre_installed_ecc_key);
   // send it out

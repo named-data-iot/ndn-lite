@@ -178,7 +178,7 @@ _express_dkey_interest(uint8_t service)
   ret = ndn_name_append_bytes_component(&interest.name, &service, 1);
   if (ret != 0) return ret;
 
-  //signature signing
+  // Signature signing
   ndn_signed_interest_digest_sign(&interest);
 
   // Express Interest
@@ -197,7 +197,7 @@ _express_dkey_interest(uint8_t service)
 }
 
 void
-register_service_require_ek(uint8_t service)
+ndn_ac_register_service_require_ek(uint8_t service)
 {
   if (!_ac_initialized) {
     _init_ac_state();
@@ -210,7 +210,7 @@ register_service_require_ek(uint8_t service)
 }
 
 void
-register_access_request(uint8_t service)
+ndn_ac_register_access_request(uint8_t service)
 {
   if (!_ac_initialized) {
     _init_ac_state();
@@ -223,7 +223,7 @@ register_access_request(uint8_t service)
 }
 
 void
-ac_after_bootstrapping()
+ndn_ac_after_bootstrapping()
 {
   if (!_ac_initialized) {
     _init_ac_state();

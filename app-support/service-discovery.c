@@ -218,6 +218,17 @@ ndn_sd_after_bootstrapping(ndn_face_intf_t *face)
   m_self_state.device_locator = &storage->self_identity.components[storage->self_identity.components_size - 2];
   m_has_bootstrapped = true;
 
+  // send service query to the controller
+  uint8_t services[NDN_SD_SERVICES_SIZE] = {0};
+  int counter = 0;
+  for (int i = 0; i < NDN_SD_SERVICES_SIZE; i++) {
+    if (m_sys_state.interested_services[i] != NDN_SD_NONE) {
+      services[counter] = m_sys_state.interested_services[i];
+      counter++;
+    }
+  }
+  _sd_query_sys_services(services, counter);
+
   // start listening on corresponding prefixes
   _sd_listen(face);
   _sd_start_adv_self_services();
@@ -467,7 +478,7 @@ _sd_query_sys_services(const uint8_t* service_ids, size_t size)
   if (!m_has_initialized || !m_has_bootstrapped) {
     return NDN_STATE_NOT_INITIALIZED;
   }
-  // format: /[home-prefix]/SD-CTL/meta
+  // format: /[home-prefix]/NDN_SD_SD_CTL/NDN_SD_SD_CTL_META
   int ret = 0;
   ndn_interest_t interest;
   ndn_interest_init(&interest);
@@ -499,7 +510,7 @@ _sd_query_sys_services(const uint8_t* service_ids, size_t size)
     NDN_LOG_ERROR("Fail to send out adv Interest. Error Code: %d", ret);
     return ret;
   }
-  NDN_LOG_INFO("Send SD/META Interest packet with name: \n");
+  NDN_LOG_INFO("Send service query Interest to the controller.");
   ndn_name_print(&interest.name);
   return NDN_SUCCESS;
 }

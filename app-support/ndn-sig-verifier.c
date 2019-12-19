@@ -50,10 +50,12 @@ sig_verifier_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata
     if (dataptr->is_interest) {
       on_int_verification_success on_success = (on_int_verification_success)(dataptr->on_success_cbk);
       on_success((ndn_interest_t*)dataptr->original_pkt);
+      // TODO: keep the original key into the keystorage
     }
     else {
       on_data_verification_success on_success = (on_data_verification_success)(dataptr->on_success_cbk);
       on_success((ndn_data_t*)dataptr->original_pkt);
+      // TODO: keep the original key into the keystorage
     }
   }
   else {

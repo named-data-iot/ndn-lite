@@ -28,10 +28,12 @@ typedef void (*ndn_security_bootstrapping_after_bootstrapping) (void);
  *    Interest Name: /ndn/sign-on
  *    Params: MustBeFresh
  *    AppParams:
- *      NameComponent-TLV
- *      T=TLV_SEC_BOOT_CAPABILITIES L=? V=byte array, each byte represents a service
- *      T=TLV_SEC_BOOT_N1_ECDH_PUB L=? V=byte array of ECDH public key
- *    ECDSA Signature by private key paired with pre-shared public key
+ *      NameComponent-TLV: A single name component contains device-identifier
+ *      T=TLV_SEC_BOOT_CAPABILITIES L=? V=bytes: Each byte represents a service
+ *      T=TLV_SEC_BOOT_N1_ECDH_PUB L=? V=bytes: Bytes of ECDH public key
+ *    Sig Info:
+ *      Key locator: /device-identifier
+ *    Sig Value: ECDSA Signature by private key paired with pre-shared public key
  *  ==============
  *  Adv Interest will be sent periodically based on SD_ADV_INTERVAL ms
  *
@@ -39,11 +41,17 @@ typedef void (*ndn_security_bootstrapping_after_bootstrapping) (void);
  *  ==============
  *    Interest Name: /[home-prefix]/NDN_SD_SD_CTL/NDN_SD_SD_CTL_META
  *    Param: MustBeFresh
- *    AppParams: 0- bytes: byte array, each byte represents an interested service
- *    Signature by identity key
+ *    AppParams:
+ *      bytes: Each byte represents an interested service
+ *    Sig Info:
+ *      Key locator: /device-identifier
+ *    Sig Value: ECDSA Signature by identity key
  *  ==============
- *    Replied Data Content: a list of {Name-TLV, uint32_t}
- *    Signature by controller identity key
+ *  Replied Data
+ *  ==============
+ *    Content:
+ *      Repeated {Name-TLV, uint32_t}: Service name and freshness period in ms
+ *    Sig Value: Signature by controller identity key
  *  ==============
  *  Service Query Interest will be sent right after bootstrapping
  *
