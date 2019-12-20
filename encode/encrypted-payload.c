@@ -63,9 +63,10 @@ ndn_gen_encrypted_payload(const uint8_t* input, uint32_t input_size, uint8_t* ou
   // type: ENCRYPTED PAYLOAD
   ret_val = encoder_append_type(&encoder, TLV_AC_ENCRYPTED_PAYLOAD);
   if (ret_val != NDN_SUCCESS) return ret_val;
-  ret_val = encoder_append_length(&encoder, ndn_aes_probe_padding_size(input_size) + NDN_AES_BLOCK_SIZE);
+  ret_val = encoder_append_length(&encoder, ndn_aes_probe_padding_size(input_size));
   if (ret_val != NDN_SUCCESS) return ret_val;
-  ret_val = ndn_aes_cbc_encrypt(input, input_size, encoder.output_value + encoder.offset, encoder.output_max_size - encoder.offset,
+  uint32_t encryption_used_size = 0;
+  ret_val = ndn_aes_cbc_encrypt(input, input_size, encoder.output_value + encoder.offset, &encryption_used_size,
                                 iv_start, key);
   if (ret_val != NDN_SUCCESS) return ret_val;
   return 0;
@@ -111,8 +112,7 @@ ndn_parse_encrypted_payload(const uint8_t* input, uint32_t input_size,
     return NDN_AC_KEY_NOT_FOUND;
   }
   ret_val = ndn_aes_cbc_decrypt(encrypted_payload, encrypted_payload_length,
-                                output, encrypted_payload_length - NDN_AES_BLOCK_SIZE, iv, key);
+                                output, output_size, iv, key);
   if (ret_val != NDN_SUCCESS) return ret_val;
-  *output_size = ndn_aes_parse_unpadding_size(output, encrypted_payload_length - NDN_AES_BLOCK_SIZE);
   return 0;
 }

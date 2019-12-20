@@ -26,7 +26,7 @@
 #define ENABLE_NDN_LOG_DEBUG 1
 #include "../util/logger.h"
 
-/* Encoding buffer for Access Control module */ 
+/* Encoding buffer for Access Control module */
 static uint8_t ac_buf[1024];
 
 /**
@@ -48,7 +48,7 @@ typedef struct ac_key {
  */
 typedef struct ndn_access_control {
   /**
-   * AccessServices for this identity that would use DecryptionKey. 
+   * AccessServices for this identity that would use DecryptionKey.
    */
   uint8_t access_services[10];
   /**
@@ -167,11 +167,11 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   uint32_t used_size = 0;
 
   ret = ndn_parse_encrypted_payload(data.content_value, data.content_size,
-                                        value, &used_size, 10002); // SEC_BOOT_AES_KEY_ID = 10002;
+                                    value, &used_size, 10002); // SEC_BOOT_AES_KEY_ID = 10002;
   if (ret || used_size == 0) {
     NDN_LOG_ERROR("Parse encrypted payload failure. ErrorCode = %d\n", ret);
   }
-  
+
   ndn_decoder_t decoder;
   decoder_init(&decoder, value + NDN_AES_BLOCK_SIZE, sizeof(expires_in));
   decoder_get_uint32_value(&decoder, &expires_in);

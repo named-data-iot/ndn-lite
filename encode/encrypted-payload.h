@@ -26,18 +26,28 @@ extern "C" {
 int
 ndn_probe_encrypted_payload_length(uint32_t input_size);
 
-/**
- * @param input. Output. The buffer to keep the result.
- * @param input_size. Input. The max size of the buffer.
+/** Generate a TLV encoded ciphertext from plaintext.
+ *
+ * @param input. Input. The plaintext buffer.
+ * @param input_size. Input. The size of plaintext buffer.
+ * @param output. Output. The buffer to keep the TLV encoded ciphertext.
+ * @param used_size. Output. The number of bytes used by the two TLV blocks.
  * @param aes_key_id. Input. The key id used to fetch a key from ndn-lite key storage.
- * @param used_size. Output. The bytes used by this function.
- * @param iv. Input. IV. Can be NULL.
+ * @param iv. Input. IV. Can be NULL. When IV is null, the function will randomly generate it.
  * @param iv_size. Input. IV's size. Can be zero.
  */
 int
 ndn_gen_encrypted_payload(const uint8_t* input, uint32_t input_size, uint8_t* output, uint32_t* used_size,
                           uint32_t aes_key_id, const uint8_t* iv, uint32_t iv_size);
 
+/** Decrypt a TLV encoded ciphertext to plaintext.
+ *
+ * @param input. Input. The TLV encoded ciphertext buffer.
+ * @param input_size. Input. The size of TLV encoded ciphertext buffer.
+ * @param output. Output. The buffer to keep the decrypted plaintext
+ * @param output_size. Output. The size of decrypted plaintext.
+ * @param aes_key_id. Input. The key id used to fetch a key from ndn-lite key storage.
+ */
 int
 ndn_parse_encrypted_payload(const uint8_t* input, uint32_t input_size,
                             uint8_t* output, uint32_t* output_size, uint32_t aes_key_id);

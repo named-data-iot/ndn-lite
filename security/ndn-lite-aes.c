@@ -36,8 +36,8 @@ ndn_aes_load_key(ndn_aes_key_t* aes_key,
 }
 
 int
-ndn_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
-                    uint8_t* output_value, uint8_t output_size,
+ndn_aes_cbc_encrypt(const uint8_t* input_value, uint32_t input_size,
+                    uint8_t* output_value, uint32_t* output_size,
                     const uint8_t* aes_iv, const ndn_aes_key_t* aes_key)
 {
   return ndn_aes_backend.cbc_encrypt(input_value, input_size,
@@ -46,8 +46,8 @@ ndn_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
 }
 
 int
-ndn_aes_cbc_decrypt(const uint8_t* input_value, uint8_t input_size,
-                    uint8_t* output_value, uint8_t output_size,
+ndn_aes_cbc_decrypt(const uint8_t* input_value, uint32_t input_size,
+                    uint8_t* output_value, uint32_t* output_size,
                     const uint8_t* aes_iv, const ndn_aes_key_t* aes_key)
 {
   return ndn_aes_backend.cbc_decrypt(input_value, input_size,
