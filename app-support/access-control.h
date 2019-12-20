@@ -26,7 +26,9 @@
  *    Sig Value:
  *      ECDSA Signature by identity key
  *  ==============
+ *  This Interest will be sent right after security bootstrapping.
  *  Repied Data:
+ *  ==============
  *    Content:
  *      T=TLV_AC_AES_IV L=? V=bytes: AES IV
  *      T=TLV_AC_ENCRYPTED_PAYLOAD L=? V=bytes: AES encrypted payload, which is the EKEY for the service
@@ -41,7 +43,9 @@
  *    Sig Value:
  *      ECDSA Signature by identity key
  *  ==============
- *  Repied Data:
+ *  This Interest will be sent right after security bootstrapping.
+ *  Repied Data
+ *  ==============
  *    Content:
  *      T=TLV_AC_AES_IV L=? V=bytes: AES IV
  *      T=TLV_AC_ENCRYPTED_PAYLOAD L=? V=bytes: AES encrypted payload

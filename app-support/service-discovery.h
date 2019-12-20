@@ -38,7 +38,7 @@ const static uint32_t SD_ADV_INTERVAL = 15000;
  *  ==============
  *  Adv Interest will be sent periodically based on SD_ADV_INTERVAL ms
  *
- *  Service Query from Controller
+ *  Service Query to the Controller
  *  ==============
  *    Interest Name: /[home-prefix]/NDN_SD_SD_CTL/NDN_SD_SD_CTL_META
  *    Param: MustBeFresh
@@ -49,7 +49,10 @@ const static uint32_t SD_ADV_INTERVAL = 15000;
  *    Sig Value:
  *      ECDSA signature by identity key
  *  ==============
- *    Replied Data Content: a list of {Name-TLV, uint32_t}
+ *  Replied Data
+ *  ==============
+ *    Content:
+ *      Repeated {Name-TLV, uint32_t}: service name and freshness period
  *    Sig Value: ECDSA Signature by controller identity key
  *  ==============
  *  Service Query Interest will be sent right after bootstrapping
