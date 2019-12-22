@@ -84,10 +84,10 @@ ndn_parse_encrypted_payload(const uint8_t* input, uint32_t input_size,
   uint8_t* encrypted_payload = NULL;
   ndn_decoder_t decoder;
   decoder_init(&decoder, input, input_size);
-  ret_val = decoder_get_type(&decoder, &type);
-  if (ret_val != NDN_SUCCESS) return ret_val;
 
-  while (iv == NULL || encrypted_payload == NULL) {
+  do {
+    ret_val = decoder_get_type(&decoder, &type);
+    if (ret_val != NDN_SUCCESS) return ret_val;
     ret_val = decoder_get_length(&decoder, &length);
     if (ret_val != NDN_SUCCESS) return ret_val;
     if (type == TLV_AC_AES_IV) {
@@ -103,9 +103,9 @@ ndn_parse_encrypted_payload(const uint8_t* input, uint32_t input_size,
     else {
       decoder_move_forward(&decoder, length);
     }
-    ret_val = decoder_get_type(&decoder, &type);
-    if (ret_val != NDN_SUCCESS) return ret_val;
   }
+  while (iv == NULL || encrypted_payload == NULL);
+
   ndn_aes_key_t* key;
   ndn_key_storage_get_aes_key(aes_key_id, &key);
   if (key == NULL) {

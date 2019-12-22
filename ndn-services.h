@@ -35,7 +35,7 @@
 
 // SD service
 #define NDN_SD_SD_ADV false // no advertisement
-#define NDN_SD_SD_ADV 0 // advertisement of self services
+#define NDN_SD_SD_AD 0 // advertisement of self services
 #define NDN_SD_SD_QUERY 1 // query services provided by the system
 
 // SD_CTL service

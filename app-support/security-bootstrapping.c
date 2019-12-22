@@ -122,14 +122,12 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   decoder_get_type(&decoder, &probe);
   if (probe != TLV_AC_ENCRYPTED_PAYLOAD) return;
   decoder_get_length(&decoder, &probe);
-  uint8_t plaintext[256] = {0};
-  uint8_t input[256] = {0};
-  memcpy(input, aes_iv, NDN_SEC_AES_IV_LENGTH);
-  memcpy(input + NDN_SEC_AES_IV_LENGTH, decoder.input_value + decoder.offset, probe);
   ndn_aes_key_t* sym_aes_key = NULL;
   ndn_key_storage_get_aes_key(SEC_BOOT_AES_KEY_ID, &sym_aes_key);
   uint32_t used_size = 0;
-  int ret = ndn_aes_cbc_decrypt(input, probe, plaintext, &used_size, aes_iv, sym_aes_key);
+  uint8_t plaintext[256] = {0};
+  int ret = ndn_aes_cbc_decrypt(decoder.input_value + decoder.offset, probe,
+                                plaintext, &used_size, aes_iv, sym_aes_key);
   if (ret != NDN_SUCCESS) {
     NDN_LOG_ERROR("Cannot decrypt sealed private key, Error code: %d", ret);
     return;

@@ -148,7 +148,7 @@ _sd_start_adv_self_services()
   ret = ndn_name_append_component(&interest.name, m_self_state.home_prefix);
   if (ret != 0) return ret;
   uint8_t sd = NDN_SD_SD;
-  uint8_t sd_adv = NDN_SD_SD_ADV;
+  uint8_t sd_adv = NDN_SD_SD_AD;
   ret = ndn_name_append_bytes_component(&interest.name, &sd, 1);
   if (ret != 0) return ret;
   ret = ndn_name_append_bytes_component(&interest.name, &sd_adv, 1);
@@ -354,7 +354,7 @@ _on_sd_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
   // decoder_init(&decoder, raw_int, raw_int_size);
   ndn_interest_from_block(&interest, raw_int, raw_int_size);
   // TODO signature verification
-  uint8_t sd_adv = NDN_SD_SD_ADV;
+  uint8_t sd_adv = NDN_SD_SD_AD;
   ndn_time_ms_t now = ndn_time_now_ms();
   if (memcmp(interest.name.components[2].value, &sd_adv, 1) == 0) {
     // adv Interest packet

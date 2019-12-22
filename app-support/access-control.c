@@ -111,7 +111,7 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   uint8_t value[30] = {0};
   uint32_t used_size = 0;
   ret = ndn_parse_encrypted_payload(data.content_value, data.content_size,
-                                        value, &used_size, 10002); // SEC_BOOT_AES_KEY_ID = 10002;
+                                    value, &used_size, 10002); // SEC_BOOT_AES_KEY_ID = 10002;
   if (ret || used_size == 0) {
     NDN_LOG_ERROR("Parse encrypted payload failure. ErrorCode = %d\n", ret);
   }

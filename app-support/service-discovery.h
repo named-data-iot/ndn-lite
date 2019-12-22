@@ -26,7 +26,7 @@ const static uint32_t SD_ADV_INTERVAL = 15000;
  *
  *  Advertisement:
  *  ==============
- *    Interest Name: /[home-prefix]/NDN_SD_SD/NDN_SD_SD_ADV/[room]/[device-id]
+ *    Interest Name: /[home-prefix]/NDN_SD_SD/NDN_SD_SD_AD/[room]/[device-id]
  *    Params: MustBeFresh
  *    AppParams:
  *      4 bytes: Freshness period (uint32_t)
