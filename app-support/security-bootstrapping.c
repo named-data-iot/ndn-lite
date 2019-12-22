@@ -128,8 +128,8 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   memcpy(input + NDN_SEC_AES_IV_LENGTH, decoder.input_value + decoder.offset, probe);
   ndn_aes_key_t* sym_aes_key = NULL;
   ndn_key_storage_get_aes_key(SEC_BOOT_AES_KEY_ID, &sym_aes_key);
-  int ret = ndn_aes_cbc_decrypt(input, probe + NDN_SEC_AES_IV_LENGTH,
-                                plaintext, probe, aes_iv, sym_aes_key);
+  uint32_t used_size = 0;
+  int ret = ndn_aes_cbc_decrypt(input, probe, plaintext, &used_size, aes_iv, sym_aes_key);
   if (ret != NDN_SUCCESS) {
     NDN_LOG_ERROR("Cannot decrypt sealed private key, Error code: %d", ret);
     return;
@@ -137,7 +137,7 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   // set key storage
   ndn_ecc_prv_t self_prv;
   uint32_t keyid = *(uint32_t*)&self_cert.name.components[self_cert.name.components_size - 3].value;
-  ndn_ecc_prv_init(&self_prv, plaintext, 32, NDN_ECDSA_CURVE_SECP256R1, keyid);
+  ndn_ecc_prv_init(&self_prv, plaintext, used_size, NDN_ECDSA_CURVE_SECP256R1, keyid);
   ndn_key_storage_set_self_identity(&self_cert, &self_prv);
   // finish the bootstrapping process
   sec_boot_after_bootstrapping();
