@@ -46,13 +46,12 @@ _prepare_signature_info(ndn_interest_t* interest, uint8_t signature_type,
   interest->signature.key_locator_name.components_size++;
 
   // set signature nonce
-  uint32_t signature_info_nonce;
-  ndn_rng(&signature_info_nonce, sizeof(signature_info_nonce));
+  uint32_t signature_info_nonce = 0;
+  ndn_rng((uint8_t*)&signature_info_nonce, sizeof(signature_info_nonce));
   ndn_signature_set_signature_nonce(&interest->signature, signature_info_nonce);
 
   // set timestamp
-  uint64_t timestamp;
-  ndn_signature_set_timestamp(&interest->signature, timestamp);
+  ndn_signature_set_timestamp(&interest->signature, ndn_time_now_ms());
 }
 
 /************************************************************/

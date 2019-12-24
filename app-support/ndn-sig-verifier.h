@@ -14,6 +14,25 @@
 #include "../encode/data.h"
 #include "../forwarder/forwarder.h"
 
+/** Sig Verifier Spec
+ *
+ *  Verifier is to verify Interest/Data packet signature and automatically fetch certificates if needed.
+ *  When verifying a incoming Interest/Data packet:
+ *  if HMAC signature:
+ *  1. find local HMAC key storage using the key_id, if not found, fail.
+ *  2. use the key to verify the signature, if valid, succeed; otherwise, fail.
+ *
+ *  if ECDSA signature:
+ *  1. find local ECC pub key storage using the key_id
+ *    i. if not found, send out an Interest to fetch the certificate => move to step 2
+ *    ii. otherwise, use the key to verify the signature, if valid, succeed; otherwise, fail.
+ *  2. using the trust anchor key to verify the certificate, if invalid, fail; otherwise => move to step 3
+ *  3. load the recevied certificate into trusted keys in local key storage and use the cert to verify the original
+ *    packet. If valid, succeed; otherwise, fail.
+ *
+ * TODO: check validity period when checking receive certificate
+ */
+
 typedef int (*on_int_verification_success)(ndn_interest_t* interest);
 typedef int (*on_int_verification_failure)(ndn_interest_t* interest);
 typedef int (*on_data_verification_success)(ndn_data_t* interest);

@@ -79,6 +79,8 @@ static ndn_time_ms_t m_next_adv;
 int _on_sd_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata);
 void _on_query_or_sd_meta_data(const uint8_t* raw_data, uint32_t data_size, void* userdata);
 
+int _sd_query_sys_services(const uint8_t* service_ids, size_t size);
+
 bool
 _match_locator(const name_component_t* lh, int lh_len, const name_component_t* rh, int rh_len)
 {
@@ -128,36 +130,34 @@ _sd_listen(ndn_face_intf_t *face)
   ndn_forwarder_add_route_by_name(face, &listen_prefix);
 }
 
-int
+void
 _sd_start_adv_self_services()
 {
-  if (!m_has_initialized || !m_has_bootstrapped) {
-    return NDN_STATE_NOT_INITIALIZED;
-  }
   int service_cnt;
   ndn_time_ms_t now = ndn_time_now_ms();
   if (now < m_next_adv) {
-    ndn_msgqueue_post(NULL, _sd_start_adv_self_services, NULL, NULL);
-    return NDN_SUCCESS;
+    ndn_msgqueue_post(NULL, _sd_start_adv_self_services, 0, NULL);
+    return;
   }
   m_next_adv = now + (uint64_t)SD_ADV_INTERVAL;
   // Format: /[home-prefix]/SD/ADV/[locator]
   int ret = 0;
   ndn_interest_t interest;
   ndn_interest_init(&interest);
-  ret = ndn_name_append_component(&interest.name, m_self_state.home_prefix);
-  if (ret != 0) return ret;
+  ret += ndn_name_append_component(&interest.name, m_self_state.home_prefix);
   uint8_t sd = NDN_SD_SD;
   uint8_t sd_adv = NDN_SD_SD_AD;
-  ret = ndn_name_append_bytes_component(&interest.name, &sd, 1);
-  if (ret != 0) return ret;
-  ret = ndn_name_append_bytes_component(&interest.name, &sd_adv, 1);
-  if (ret != 0) return ret;
-  name_component_t* comp = m_self_state.device_locator;
+  ret += ndn_name_append_bytes_component(&interest.name, &sd, 1);
+  ret += ndn_name_append_bytes_component(&interest.name, &sd_adv, 1);
+  const name_component_t* comp = m_self_state.device_locator;
   for (int i = 0; i < 2; i++) {
-    ret = ndn_name_append_component(&interest.name, comp);
-    if (ret != 0) return ret;
+    ret += ndn_name_append_component(&interest.name, comp);
     comp++;
+  }
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("Cannot construct NDN name for SD adv Interest. Error code: %d", ret);
+    ndn_msgqueue_post(NULL, _sd_start_adv_self_services, 0, NULL);
+    return;
   }
   ndn_interest_set_MustBeFresh(&interest, true);
   // Parameter: uint32_t (freshness period), byte array
@@ -177,8 +177,8 @@ _sd_start_adv_self_services()
     ret = ndn_signed_interest_ecdsa_sign(&interest, NULL, NULL);
     if (ret != NDN_SUCCESS) {
       NDN_LOG_ERROR("Cannot sign the advertisement Interest. Error code: %d", ret);
-      ndn_msgqueue_post(NULL, _sd_start_adv_self_services, NULL, NULL);
-      return ret;
+      ndn_msgqueue_post(NULL, _sd_start_adv_self_services, 0, NULL);
+      return;
     }
 
     // Express Interest
@@ -186,8 +186,8 @@ _sd_start_adv_self_services()
     ret = ndn_interest_tlv_encode(&encoder, &interest);
     if (ret != NDN_SUCCESS) {
       NDN_LOG_ERROR("Cannot TLV encode Interest packet. Error code: %d", ret);
-      ndn_msgqueue_post(NULL, _sd_start_adv_self_services, NULL, NULL);
-      return ret;
+      ndn_msgqueue_post(NULL, _sd_start_adv_self_services, 0, NULL);
+      return;
     }
 
     m_is_my_own_sd_int = true;
@@ -195,16 +195,15 @@ _sd_start_adv_self_services()
     m_is_my_own_sd_int = false;
     if (ret != NDN_SUCCESS) {
       NDN_LOG_ERROR("Fail to send out adv Interest. Error Code: %d", ret);
-      ndn_msgqueue_post(NULL, _sd_start_adv_self_services, NULL, NULL);
-      return ret;
+      ndn_msgqueue_post(NULL, _sd_start_adv_self_services, 0, NULL);
+      return;
     }
     else {
       NDN_LOG_INFO("Send adv Interest packet with name:");
       ndn_name_print(&interest.name);
     }
   }
-  ndn_msgqueue_post(NULL, _sd_start_adv_self_services, NULL, NULL);
-  return NDN_SUCCESS;
+  ndn_msgqueue_post(NULL, _sd_start_adv_self_services, 0, NULL);
 }
 
 void
@@ -404,7 +403,7 @@ _on_sd_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
         ndn_name_init(&self_name);
         ndn_name_append_component(&self_name, m_self_state.home_prefix);
         ndn_name_append_bytes_component(&self_name, &interested_service, 1);
-        name_component_t* comp = m_self_state.device_locator;
+        const name_component_t* comp = m_self_state.device_locator;
         for (int i = 0; i < 2; i++) {
           ndn_name_append_component(&self_name, comp);
           comp++;

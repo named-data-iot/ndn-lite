@@ -12,6 +12,7 @@
 #include "ndn-lite-hmac.h"
 #include "ndn-lite-sec-utils.h"
 #include "../ndn-constants.h"
+#include <string.h>
 
 ndn_hmac_backend_t ndn_hmac_backend;
 

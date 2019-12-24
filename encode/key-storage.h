@@ -17,6 +17,23 @@ extern "C" {
 #endif
 
 /**
+ * NDN Key Storage Spec
+ *
+ * key_storage keeps types of keys:
+ *  1. local IoT system trust anchor certificate (trust_anchor) and trust anchor public key (trust_anchor_key)
+ *  2. self's identity name (self_identity), certificate (self_cert), and signing key (self_identity_key)
+ *  3. a number of ECC pub/prv key pairs (ecc_pub_keys, ecc_prv_keys) and hmac keys (hmac_keys) for application
+ *     or application support to use
+ *  4. a number of ECC pub keys as trusted signing keys (trusted_ecc_pub_keys)
+ *  5. a number of AES keys for encryption/decryption use (aes_keys)
+ *
+ * in key_storage, the key_id (a uint32_t) is the identifier of keys. Therefore, applications or application support
+ * protocols should ensure there is no duplicate key_ids stored in each type of key storage.
+ *
+ * TODO: add expires_in check for all the keys
+ */
+
+/**
  * The structure to implement keys storage and management.
  * The self identity key and trust anchor will only be available after security bootstrapping.
  * Once after bootstrapping, ndn_key_storage_after_bootstrapping should be invoked and is_bootstrapping
@@ -83,13 +100,27 @@ ndn_key_storage_get_instance(void);
 
 /**
  * Set trust anchor for the key storage structure. Will do memcpy.
- * @param self_cert. Input. Certificate issued by the system controller.
  * @param trust_anchor. Input. Trust anchor to configure the key storage structure.
- * @param self_prv_key. Input. Self priv key.
  * @return 0 if there is no error.
  */
 int
 ndn_key_storage_set_trust_anchor(const ndn_data_t* trust_anchor);
+
+/**
+ * Add a new trusted certificate into key storage.
+ * This function will load a public key into local public keys.
+ * @param certificate. Input. Trusted certificate to configure the key storage structure.
+ * @return 0 if there is no error.
+ */
+int
+ndn_key_storage_add_trusted_certificate(const ndn_data_t* certificate);
+
+/**
+ * Set self identity for the key storage structure. Will do memcpy.
+ * @param self_cert. Input. Certificate issued by the system controller.
+ * @param self_prv_key. Input. Self priv key.
+ * @return 0 if there is no error.
+ */
 int
 ndn_key_storage_set_self_identity(const ndn_data_t* self_cert, const ndn_ecc_prv_t* self_prv_key);
 

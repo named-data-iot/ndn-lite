@@ -37,36 +37,50 @@ sig_verifier_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata
   ndn_data_tlv_decode_no_verify(&cert, raw_data, data_size, &start, &end);
   printf("Sig Verifier received certificate: \n");
   ndn_name_print(&cert.name);
-  uint32_t keyid = key_id_from_key_name(&cert.signature.key_locator_name);
-  ndn_ecc_pub_t* pub_key;
-  ndn_key_storage_get_ecc_pub_key(keyid, &pub_key);
-  bool is_success = false;
-  if (pub_key != NULL) {
-    int result = ndn_ecdsa_verify(raw_data + start, end - start,
-                                  cert.signature.sig_value, cert.signature.sig_size, pub_key);
-    if (result == NDN_SUCCESS) is_success = true;
-  }
-  if (is_success) {
+  // use trust anchor key to verify
+  ndn_key_storage_t* keys = ndn_key_storage_get_instance();
+  int result = ndn_ecdsa_verify(raw_data + start, end - start,
+                                cert.signature.sig_value, cert.signature.sig_size, &keys->trust_anchor_key);
+  if (result == NDN_SUCCESS) {
+    // add the received certificate to key storage
+    ndn_key_storage_add_trusted_certificate(&cert);
+    ndn_ecc_pub_t* pub_key = NULL;
+    // verify the original interest/data
     if (dataptr->is_interest) {
-      on_int_verification_success on_success = (on_int_verification_success)(dataptr->on_success_cbk);
-      on_success((ndn_interest_t*)dataptr->original_pkt);
-      // TODO: keep the original key into the keystorage
+      ndn_interest_t* original_int = (ndn_interest_t*)dataptr->original_pkt;
+      uint32_t keyid = key_id_from_key_name(&original_int->signature.key_locator_name);
+      ndn_key_storage_get_ecc_pub_key(keyid, &pub_key);
+      result = ndn_signed_interest_ecdsa_verify(original_int, pub_key);
+      if (result == NDN_SUCCESS) {
+        on_int_verification_success on_success = (on_int_verification_success)(dataptr->on_success_cbk);
+        on_success(original_int);
+        return;
+      }
     }
     else {
-      on_data_verification_success on_success = (on_data_verification_success)(dataptr->on_success_cbk);
-      on_success((ndn_data_t*)dataptr->original_pkt);
-      // TODO: keep the original key into the keystorage
+      ndn_data_t* original_dat = (ndn_data_t*)dataptr->original_pkt;
+      uint32_t keyid = key_id_from_key_name(&original_dat->signature.key_locator_name);
+      ndn_key_storage_get_ecc_pub_key(keyid, &pub_key);
+
+      ndn_encoder_t encoder;
+      encoder_init(&encoder, verifier_buf, sizeof(verifier_buf));
+      ndn_data_tlv_encode(&encoder, original_dat);
+      result = ndn_data_tlv_decode_ecdsa_verify(original_dat, verifier_buf, encoder.offset, pub_key);
+      if (result == NDN_SUCCESS) {
+        on_data_verification_success on_success = (on_data_verification_success)(dataptr->on_success_cbk);
+        on_success((ndn_data_t*)dataptr->original_pkt);
+        return;
+      }
     }
   }
-  else {
-    if (dataptr->is_interest) {
+  // otherwise, invoke on_failure callbacks
+  if (dataptr->is_interest) {
     on_int_verification_failure on_failure = (on_int_verification_failure)(dataptr->on_failure_cbk);
     on_failure((ndn_interest_t*)dataptr->original_pkt);
-    }
-    else {
-      on_data_verification_failure on_failure = (on_data_verification_failure)(dataptr->on_failure_cbk);
-      on_failure((ndn_data_t*)dataptr->original_pkt);
-    }
+  }
+  else {
+    on_data_verification_failure on_failure = (on_data_verification_failure)(dataptr->on_failure_cbk);
+    on_failure((ndn_data_t*)dataptr->original_pkt);
   }
 }
 

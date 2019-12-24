@@ -25,6 +25,7 @@ _ndn_key_storage_init(void)
     storage.ecc_pub_keys[i].key_id = NDN_SEC_INVALID_KEY_ID;
     storage.ecc_prv_keys[i].key_id = NDN_SEC_INVALID_KEY_ID;
     storage.hmac_keys[i].key_id = NDN_SEC_INVALID_KEY_ID;
+    storage.trusted_ecc_pub_keys[i].key_id = NDN_SEC_INVALID_KEY_ID;
 
     if (i < NDN_SEC_ENCRYPTION_KEYS_SIZE)
       storage.aes_keys[i].key_id = NDN_SEC_INVALID_KEY_ID;
@@ -50,6 +51,25 @@ ndn_key_storage_set_trust_anchor(const ndn_data_t* trust_anchor)
   int ret = ndn_ecc_pub_init(&storage.trust_anchor_key,
                              trust_anchor->content_value + (trust_anchor->content_size - NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE),
                              NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE, NDN_ECDSA_CURVE_SECP256R1, anchor_keyid);
+  if (ret != NDN_SUCCESS) return ret;
+  return NDN_SUCCESS;
+}
+
+int
+ndn_key_storage_add_trusted_certificate(const ndn_data_t* certificate)
+{
+  uint32_t keyid = key_id_from_cert_name(&certificate->name);
+  // find an empty ECC key
+  ndn_ecc_pub_t* pub_key = NULL;
+  for (uint8_t i = 0; i < NDN_SEC_SIGNING_KEYS_SIZE; i++) {
+    if (storage.trusted_ecc_pub_keys[i].key_id == NDN_SEC_INVALID_KEY_ID) {
+      pub_key = &storage.trusted_ecc_pub_keys[i];
+    }
+  }
+  // load the certificate key into trusted ecc pub keys
+  int ret = ndn_ecc_pub_init(pub_key,
+                             certificate->content_value + (certificate->content_size - NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE),
+                             NDN_SEC_ECC_SECP256R1_PUBLIC_KEY_SIZE, NDN_ECDSA_CURVE_SECP256R1, keyid);
   if (ret != NDN_SUCCESS) return ret;
   return NDN_SUCCESS;
 }

@@ -80,8 +80,8 @@ ndn_parse_encrypted_payload(const uint8_t* input, uint32_t input_size,
   uint32_t type = 0;
   uint32_t length = 0;
   uint32_t encrypted_payload_length = 0;
-  uint8_t* iv = NULL;
-  uint8_t* encrypted_payload = NULL;
+  const uint8_t* iv = NULL;
+  const uint8_t* encrypted_payload = NULL;
   ndn_decoder_t decoder;
   decoder_init(&decoder, input, input_size);
 

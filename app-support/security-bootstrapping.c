@@ -9,6 +9,7 @@
  */
 #include "security-bootstrapping.h"
 #include "service-discovery.h"
+#include "access-control.h"
 #include "../encode/interest.h"
 #include "../encode/signed-interest.h"
 #include "../encode/data.h"
@@ -182,9 +183,8 @@ sec_boot_send_cert_interest()
   ndn_interest_set_MustBeFresh(&interest,true);
   interest.lifetime = 5000;
   // sign the interest
-  name_component_t key_locator;
-  name_component_from_string(&key_locator, m_sec_boot_state.device_identifier,
-                             m_sec_boot_state.identifier_size);
+  ndn_name_t key_locator;
+  ndn_name_from_string(&key_locator, m_sec_boot_state.device_identifier, m_sec_boot_state.identifier_size);
   ndn_signed_interest_ecdsa_sign(&interest, &key_locator, m_sec_boot_state.pre_installed_ecc_key);
   // send it out
   encoder_init(&encoder, sec_boot_buf, sizeof(sec_boot_buf));

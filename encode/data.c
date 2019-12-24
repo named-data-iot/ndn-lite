@@ -437,7 +437,6 @@ ndn_data_parse_encrypted_content(const ndn_data_t* data, uint8_t* payload_value,
   int ret_val = -1;
   ndn_decoder_t decoder;
   decoder_init(&decoder, data->content_value, data->content_size);
-  uint32_t probe = 0;
 
   // type: TLV_NAME
   ret_val = ndn_name_tlv_decode(&decoder, key_name);
