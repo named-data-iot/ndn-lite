@@ -10,6 +10,7 @@
 #include "security-bootstrapping.h"
 #include "service-discovery.h"
 #include "access-control.h"
+#include "ndn-sig-verifier.h"
 #include "../encode/interest.h"
 #include "../encode/signed-interest.h"
 #include "../encode/data.h"
@@ -57,6 +58,9 @@ sec_boot_after_bootstrapping()
 
   // call access control's after bootstrapping
   ndn_ac_after_bootstrapping();
+
+  // init signature verifier
+  ndn_sig_verifier_after_bootstrapping(m_sec_boot_state.face);
 
   // subscribe to default topics (policies, key information)
 

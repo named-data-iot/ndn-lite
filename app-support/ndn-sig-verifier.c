@@ -116,15 +116,14 @@ sig_verifier_on_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* us
   return NDN_FWD_STRATEGY_SUPPRESS;
 }
 
-int
-ndn_sig_verifier_init(ndn_face_intf_t* face)
+void
+ndn_sig_verifier_after_bootstrapping(ndn_face_intf_t* face)
 {
   m_sig_verifier_state.face = face;
   ndn_name_t prefix;
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
   memcpy(&prefix, &storage->self_identity, sizeof(ndn_name_t));
   ndn_forwarder_register_name_prefix(&prefix, sig_verifier_on_interest, NULL);
-  return NDN_SUCCESS;
 }
 
 void

@@ -40,8 +40,8 @@ typedef int (*on_data_verification_failure)(ndn_data_t* interest);
 
 // init the verifier with a face for self prefix-registration and cert interest sending
 // is supposed to be invoked after bootstrapping
-int
-ndn_sig_verifier_init(ndn_face_intf_t* face);
+void
+ndn_sig_verifier_after_bootstrapping(ndn_face_intf_t* face);
 
 // if the needed key is not in the key storage
 // will send interest to fetch certificate to proceed verification
