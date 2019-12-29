@@ -206,10 +206,10 @@ _on_new_content(const uint8_t* raw_data, uint32_t data_size, void* userdata)
       }
     }
     // get action if it's a command
-    // command Data FORMAT: /home/service/CMD/NOTIFY/identifier[0,2]/action
+    // command Data FORMAT: /home/service/CMD/identifier[0,2]/action
     uint8_t action = 0;
     if (topic->is_cmd) {
-      action = data_name.components[data_name.components_size - 2].value[0];
+      action = data_name.components[data_name.components_size - 1].value[0];
     }
     topic->callback(topic->service, topic->is_cmd, topic->identifier, comp_size,
                     action, content, content_size, topic->userdata);
@@ -227,8 +227,12 @@ _construct_sub_interest(ndn_name_t* name, sub_topic_t* topic)
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
   ndn_name_append_component(name, &storage->self_identity.components[0]);
   ndn_name_append_bytes_component(name, &topic->service, sizeof(topic->service));
-  uint8_t type = topic->is_cmd? CMD:DATA;
-  ndn_name_append_bytes_component(name, &type, sizeof(type));
+  if (topic->is_cmd) {
+    ndn_name_append_string_component(name, "CMD", strlen("CMD"));
+  }
+  else {
+    ndn_name_append_string_component(name, "DATA", strlen("DATA"));
+  }
   for (int i = 0; i < 2; i++) {
     if (topic->identifier[i].size != NDN_FWD_INVALID_NAME_COMPONENT_SIZE) {
       ndn_name_append_component(name, &topic->identifier[i]);
@@ -307,7 +311,7 @@ _on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, v
   if (m_is_my_own_int) {
     return NDN_FWD_STRATEGY_MULTICAST;
   }
-  // FORMAT: /home/service/CMD/NOTIFY/identifier[0,2]/action
+  // FORMAT: /home/service/NOTIFY/CMD/identifier[0,2]/action
   NDN_LOG_INFO("[PUB/SUB] On notification Interest");
   ndn_interest_t interest;
   ndn_interest_from_block(&interest, raw_interest, interest_size);
@@ -330,7 +334,7 @@ _on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, v
   ndn_name_t name;
   ndn_name_init(&name);
   for (int i = 0; i < interest.name.components_size; i++) {
-    if (i == 3) {
+    if (i == 2) {
       continue;
     }
     ndn_name_append_component(&name, &interest.name.components[i]);
@@ -391,7 +395,7 @@ ps_subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier
   topic->next_interest = ndn_time_now_ms() + topic->interval;
 
   // if subscribe to a command topic, register the interest filter to listen to NOTIF for immediate cmd fetch
-  // FORMAT: /home-prefix/service/NOTIFY/type/identifier[0,2]
+  // FORMAT: /home-prefix/service/NOTIFY/CMD/identifier[0,2]
   if (is_cmd) {
     ndn_name_t name;
     ndn_name_init(&name);
@@ -399,8 +403,6 @@ ps_subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier
     ndn_name_append_component(&name, &storage->self_identity.components[0]);
     ndn_name_append_bytes_component(&name, &topic->service, sizeof(topic->service));
     ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
-    uint8_t type = topic->is_cmd? CMD:DATA;
-    ndn_name_append_bytes_component(&name, &type, sizeof(type));
     ndn_forwarder_register_name_prefix(&name, _on_notification_interest, topic);
   }
   return;
@@ -428,8 +430,7 @@ ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len)
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
   ndn_name_append_component(&name, &storage->self_identity.components[0]);
   ndn_name_append_bytes_component(&name, &service, sizeof(service));
-  uint8_t type = DATA;
-  ndn_name_append_bytes_component(&name, &type, sizeof(type));
+  ndn_name_append_string_component(&name, "DATA", strlen("DATA"));
 
   // published on this topic before? update the cache
   pub_topic_t* topic = NULL;
@@ -495,8 +496,7 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
   ndn_name_append_component(&name, &storage->self_identity.components[0]);
   ndn_name_append_bytes_component(&name, &service, sizeof(service));
-  uint8_t type = CMD;
-  ndn_name_append_bytes_component(&name, &type, sizeof(type));
+  ndn_name_append_string_component(&name, "CMD", strlen("CMD"));
 
   // published on this topic before? update the cache
   pub_topic_t* topic = NULL;
@@ -556,7 +556,7 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
   ndn_name_append_component(&name, &storage->self_identity.components[0]);
   ndn_name_append_bytes_component(&name, &service, sizeof(service));
   ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
-  ndn_name_append_bytes_component(&name, &type, 1);
+  ndn_name_append_string_component(&name, "CMD", strlen("CMD"));
   for (int i = 0; i < component_size; i++) {
     ndn_name_append_component(&name, identifier + i);
   }
