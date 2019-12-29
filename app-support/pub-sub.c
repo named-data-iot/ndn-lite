@@ -206,13 +206,12 @@ _on_new_content(const uint8_t* raw_data, uint32_t data_size, void* userdata)
       }
     }
     // get action if it's a command
-    // command Data FORMAT: /home/service/CMD/identifier[0,2]/action
-    uint8_t action = 0;
-    if (topic->is_cmd) {
-      action = data_name.components[data_name.components_size - 1].value[0];
-    }
+    // command FORMAT: /home/service/CMD/identifier[0,2]/command
+    // data FORMAT: /home/service/DATA/identifier[0,2]/data-identifier
     topic->callback(topic->service, topic->is_cmd, topic->identifier, comp_size,
-                    action, content, content_size, topic->userdata);
+                    data_name.components[data_name.components_size - 1].value,
+                    data_name.components[data_name.components_size - 1].size,
+                    content, content_size, topic->userdata);
   }
 }
 
@@ -272,14 +271,17 @@ _periodic_sub_content_fetching(void *self, size_t param_length, void *param)
       m_is_my_own_int = true;
       int ret = ndn_forwarder_express_interest(pkt_encoding_buf, used_size, _on_new_content, _on_sub_timeout, topic);
       m_is_my_own_int = false;
-      NDN_LOG_INFO("[PUB/SUB] Sent subscription Interest");
-      ndn_name_print(&name);
-
-      // update next_interest time
-      topic->next_interest = now + topic->interval;
+      if (ret != NDN_SUCCESS) {
+        NDN_LOG_DEBUG("[PUB/SUB] Failed to sent subscription Interest. Error code: %d", ret);
+      }
+      else {
+        NDN_LOG_INFO("[PUB/SUB] Sent subscription Interest");
+        ndn_name_print(&name);
+        // update next_interest time
+        topic->next_interest = now + topic->interval;
+      }
     }
   }
-
   // register the event to the message queue again with the smallest time period
   ndn_msgqueue_post(NULL, _periodic_sub_content_fetching, 0, NULL);
 }
@@ -347,19 +349,23 @@ _on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, v
   m_is_my_own_int = true;
   int ret = ndn_forwarder_express_interest(pkt_encoding_buf, used_size, _on_new_content, _on_sub_timeout, topic);
   m_is_my_own_int = false;
-  NDN_LOG_INFO("[PUB/SUB] Sent subscription Interest");
-  ndn_name_print(&name);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_DEBUG("[PUB/SUB] Failed to sent subscription Interest. Error code: %d", ret);
+  }
+  else {
+    NDN_LOG_INFO("[PUB/SUB] Sent subscription Interest");
+    ndn_name_print(&name);
+  }
   return NDN_FWD_STRATEGY_SUPPRESS;
 }
 
 void
-ps_subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier, uint32_t component_size,
-                uint32_t interval, ndn_on_published callback, void* userdata)
+_subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier, uint32_t component_size,
+              uint32_t interval, ndn_on_published callback, void* userdata)
 {
   if (!m_has_initialized)
     _ps_topics_init();
 
-  int ret = 0;
   // find whether the topic has been subscribed already
   sub_topic_t* topic = _match_sub_topic(service, is_cmd, identifier, component_size);
   if (!topic) {
@@ -386,13 +392,18 @@ ps_subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier
     }
   }
   // update interval, callback, and other state
-  topic->interval = interval;
-  if (topic->interval < m_pub_sub_state.min_interval) {
-    m_pub_sub_state.min_interval = topic->interval;
+  if (!is_cmd) {
+    topic->interval = interval;
+    if (topic->interval < m_pub_sub_state.min_interval) {
+      m_pub_sub_state.min_interval = topic->interval;
+    }
+    topic->next_interest = ndn_time_now_ms() + topic->interval;
+  }
+  else {
+    topic->interval = 0;
   }
   topic->callback = callback;
   topic->userdata = userdata;
-  topic->next_interest = ndn_time_now_ms() + topic->interval;
 
   // if subscribe to a command topic, register the interest filter to listen to NOTIF for immediate cmd fetch
   // FORMAT: /home-prefix/service/NOTIFY/CMD/identifier[0,2]
@@ -405,7 +416,21 @@ ps_subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier
     ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
     ndn_forwarder_register_name_prefix(&name, _on_notification_interest, topic);
   }
-  return;
+}
+
+void
+ps_subscribe_to_content(uint8_t service, const name_component_t* identifiers, uint32_t identifiers_size,
+                        uint32_t interval,
+                        ndn_on_published callback, void* userdata)
+{
+  return _subscribe_to(service, false, identifiers, identifiers_size, interval, callback, userdata);
+}
+
+void
+ps_subscribe_to_command(uint8_t service, const name_component_t* identifiers, uint32_t identifiers_size,
+                        ndn_on_published callback, void* userdata)
+{
+  return _subscribe_to(service, true, identifiers, identifiers_size, 0, callback, userdata);
 }
 
 void
@@ -417,7 +442,8 @@ ps_after_bootstrapping()
 }
 
 void
-ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len)
+ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_id_len,
+                   const uint8_t* payload, uint32_t payload_len)
 {
   if (!m_has_initialized)
     _ps_topics_init();
@@ -462,9 +488,10 @@ ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len)
   }
   topic->last_update_tp = ndn_time_now_ms();
   // Append the last several component to the Data name
-  // Data name FORMAT: /home/service/DATA/room/device-id/tp
-  ndn_name_append_component(&name, &storage->self_identity.components[1]);
-  ndn_name_append_component(&name, &storage->self_identity.components[2]);
+  // Data name FORMAT: /home/service/DATA/room/device-id/content-id/tp
+  ndn_name_append_component(&name, &storage->self_identity.components[storage->self_identity.components_size - 2]);
+  ndn_name_append_component(&name, &storage->self_identity.components[storage->self_identity.components_size - 1]);
+  ndn_name_append_bytes_component(&name, content_id, content_id_len);
   // TODO: currently I appended timestamp. Further discussion is needed.
   name_component_t tp_comp;
   name_component_from_timestamp(&tp_comp, topic->last_update_tp);
@@ -483,8 +510,9 @@ ps_publish_content(uint8_t service, uint8_t* payload, uint32_t payload_len)
 }
 
 void
-ps_publish_command(uint8_t service, uint8_t action, const name_component_t* identifier, uint32_t component_size,
-                   uint8_t* payload, uint32_t payload_len)
+ps_publish_command(uint8_t service, const uint8_t* command_id, uint32_t command_id_len,
+                   const name_component_t* identifiers, uint32_t identifiers_size,
+                   const uint8_t* payload, uint32_t payload_len)
 {
   if (!m_has_initialized)
     _ps_topics_init();
@@ -529,11 +557,11 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
   memset(topic->cache, 0, sizeof(topic->cache));
 
   // Append the last several component to the Data name
-  // Data name FORMAT: /home/service/CMD/identifier[0,2]/action
-  for (int i = 0; i < component_size; i++) {
-    ndn_name_append_component(&name, identifier + i);
+  // Data name FORMAT: /home/service/CMD/identifier[0,2]/command-id
+  for (int i = 0; i < identifiers_size; i++) {
+    ndn_name_append_component(&name, identifiers + i);
   }
-  ndn_name_append_bytes_component(&name, &action, sizeof(action));
+  ndn_name_append_bytes_component(&name, command_id, command_id_len);
   // TODO: currently I appended timestamp. Further discussion is needed.
   ndn_time_ms_t tp = ndn_time_now_ms();
   name_component_t tp_comp;
@@ -557,10 +585,10 @@ ps_publish_command(uint8_t service, uint8_t action, const name_component_t* iden
   ndn_name_append_bytes_component(&name, &service, sizeof(service));
   ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
   ndn_name_append_string_component(&name, "CMD", strlen("CMD"));
-  for (int i = 0; i < component_size; i++) {
-    ndn_name_append_component(&name, identifier + i);
+  for (int i = 0; i < identifiers_size; i++) {
+    ndn_name_append_component(&name, identifiers + i);
   }
-  ndn_name_append_bytes_component(&name, &action, sizeof(action));
+  ndn_name_append_bytes_component(&name, command_id, command_id_len);
   ndn_name_append_component(&name, &tp_comp);
 
   // send out the notification Interest
