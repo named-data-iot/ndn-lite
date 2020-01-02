@@ -33,10 +33,10 @@
  * TODO: check validity period when checking receive certificate
  */
 
-typedef int (*on_int_verification_success)(ndn_interest_t* interest);
-typedef int (*on_int_verification_failure)(ndn_interest_t* interest);
-typedef int (*on_data_verification_success)(ndn_data_t* interest);
-typedef int (*on_data_verification_failure)(ndn_data_t* interest);
+typedef void (*on_int_verification_success)(ndn_interest_t* interest, void* userdata);
+typedef void (*on_int_verification_failure)(ndn_interest_t* interest, void* userdata);
+typedef void (*on_data_verification_success)(ndn_data_t* data, void* userdata);
+typedef void (*on_data_verification_failure)(ndn_data_t* data, void* userdata);
 
 // init the verifier with a face for self prefix-registration and cert interest sending
 // is supposed to be invoked after bootstrapping
@@ -46,13 +46,13 @@ ndn_sig_verifier_after_bootstrapping(ndn_face_intf_t* face);
 // if the needed key is not in the key storage
 // will send interest to fetch certificate to proceed verification
 void
-ndn_sig_verifier_verify_int(const uint8_t* raw_pkt, size_t pkt_size, ndn_interest_t* interest,
-                            on_int_verification_success on_success,
-                            on_int_verification_failure on_failure);
+ndn_sig_verifier_verify_int(const uint8_t* raw_pkt, size_t pkt_size,
+                            on_int_verification_success on_success, void* on_success_userdata,
+                            on_int_verification_failure on_failure, void* on_failure_userdata);
 
 void
-ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size, ndn_data_t* data,
-                             on_data_verification_success on_success,
-                             on_data_verification_failure on_failure);
+ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size,
+                             on_data_verification_success on_success, void* on_success_userdata,
+                             on_data_verification_failure on_failure, void* on_failure_userdata);
 
 #endif // NDN_APP_SUPPORT_SIG_VERIFIER_H

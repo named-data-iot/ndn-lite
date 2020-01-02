@@ -10,6 +10,9 @@
 
 #include "pub-sub.h"
 #include "service-discovery.h"
+#include "ndn-sig-verifier.h"
+#include "access-control.h"
+#include "../encode/encrypted-payload.h"
 #include "../ndn-constants.h"
 #include "../ndn-services.h"
 #include "../encode/key-storage.h"
@@ -107,7 +110,7 @@ typedef struct pub_sub_state {
   ndn_time_ms_t m_next_send;
 } pub_sub_state_t;
 
-static uint8_t pkt_encoding_buf[300];
+static uint8_t pkt_encoding_buf[512];
 static pub_sub_state_t m_pub_sub_state;
 static bool m_has_initialized = false;
 static bool m_is_my_own_int = false;
@@ -170,6 +173,50 @@ _on_sub_timeout(void* userdata)
   NDN_LOG_INFO("Subscription Interest Timeout");
 }
 
+void
+_on_new_content_verify_success(ndn_data_t* data, void* userdata)
+{
+  NDN_LOG_INFO("New published content successfully pass signature verification.");
+  ndn_name_print(&data->name);
+
+  sub_topic_t* topic = (sub_topic_t*)userdata;
+  // call the on_content callbackclear
+  if (topic->callback == NULL) {
+    return;
+  }
+  int comp_size = 0;
+  for (int i = 0; i < 2; i++) {
+    if (topic->identifier[i].size != NDN_FWD_INVALID_NAME_COMPONENT_SIZE) {
+      comp_size++;
+    }
+  }
+
+  ndn_aes_key_t* aes_key = ndn_ac_get_key_for_service(topic->service);
+  uint32_t used_size = 0;
+  memset(pkt_encoding_buf, 0, sizeof(pkt_encoding_buf));
+  int ret = ndn_parse_encrypted_payload(data->content_value, data->content_size,
+                                        pkt_encoding_buf, &used_size, aes_key->key_id);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_INFO("Cannot decrypt the newly published content. Abort...");
+    return;
+  }
+
+  // get action if it's a command
+  // command FORMAT: /home/service/CMD/identifier[0,2]/command
+  // data FORMAT: /home/service/DATA/identifier[0,2]/data-identifier
+  topic->callback(topic->service, topic->is_cmd, topic->identifier, comp_size,
+                  data->name.components[data->name.components_size - 1].value,
+                  data->name.components[data->name.components_size - 1].size,
+                  pkt_encoding_buf, used_size, topic->userdata);
+}
+
+void
+_on_new_content_verify_failure(ndn_data_t* data, void* userdata)
+{
+  NDN_LOG_INFO("New published content cannot pass signature verification. Drop...");
+  ndn_name_print(&data->name);
+}
+
 /** OnData callback function to handle incoming content.
  */
 void
@@ -187,32 +234,9 @@ _on_new_content(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   memcpy(topic->last_digest, pkt_encoding_buf, 16);
 
   // parse Data name
-  ndn_name_t data_name;
-  uint8_t* content;
-  size_t content_size;
-
-  tlv_parse_data(raw_data, data_size, 3,
-                 TLV_DATAARG_NAME_PTR, &data_name,
-                 TLV_DATAARG_CONTENT_BUF, &content,
-                 TLV_DATAARG_CONTENT_SIZE, &content_size);
-  ndn_name_print(&data_name);
-
-  // call the on_content callbackclear
-  if (topic->callback) {
-    int comp_size = 0;
-    for (int i = 0; i < 2; i++) {
-      if (topic->identifier[i].size != NDN_FWD_INVALID_NAME_COMPONENT_SIZE) {
-        comp_size++;
-      }
-    }
-    // get action if it's a command
-    // command FORMAT: /home/service/CMD/identifier[0,2]/command
-    // data FORMAT: /home/service/DATA/identifier[0,2]/data-identifier
-    topic->callback(topic->service, topic->is_cmd, topic->identifier, comp_size,
-                    data_name.components[data_name.components_size - 1].value,
-                    data_name.components[data_name.components_size - 1].size,
-                    content, content_size, topic->userdata);
-  }
+  ndn_sig_verifier_verify_data(raw_data, data_size,
+                               _on_new_content_verify_success, userdata,
+                               _on_new_content_verify_failure, userdata);
 }
 
 /** Helper function to construct a name for the Interest to fetch subscribted topic content
@@ -342,12 +366,15 @@ _on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, v
     ndn_name_append_component(&name, &interest.name.components[i]);
   }
   size_t used_size = 0;
-  tlv_make_interest(pkt_encoding_buf, sizeof(pkt_encoding_buf), &used_size, 3,
-                    TLV_INTARG_NAME_PTR, &name,
-                    TLV_INTARG_CANBEPREFIX_BOOL, true,
-                    TLV_INTARG_MUSTBEFRESH_BOOL, true);
+  int ret = tlv_make_interest(pkt_encoding_buf, sizeof(pkt_encoding_buf), &used_size, 3,
+                              TLV_INTARG_NAME_PTR, &name,
+                              TLV_INTARG_CANBEPREFIX_BOOL, true,
+                              TLV_INTARG_MUSTBEFRESH_BOOL, true);
   m_is_my_own_int = true;
-  int ret = ndn_forwarder_express_interest(pkt_encoding_buf, used_size, _on_new_content, _on_sub_timeout, topic);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_DEBUG("[PUB/SUB] Failed to construct subscription Interest. Error code: %d", ret);
+  }
+  ret = ndn_forwarder_express_interest(pkt_encoding_buf, used_size, _on_new_content, _on_sub_timeout, topic);
   m_is_my_own_int = false;
   if (ret != NDN_SUCCESS) {
     NDN_LOG_DEBUG("[PUB/SUB] Failed to sent subscription Interest. Error code: %d", ret);

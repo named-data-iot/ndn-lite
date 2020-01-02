@@ -69,7 +69,7 @@ int no_wildcard_sequence_match_key_name(const ndn_name_t *n, int nb, int ne, con
   }
   if (j < pe-pb || i < ne-nb)
     return NDN_TRUST_SCHEMA_NAME_DID_NOT_MATCH;
-  
+
   return NDN_SUCCESS;
 }
 
@@ -99,9 +99,9 @@ int _check_data_name_against_pattern(const ndn_trust_schema_pattern_t *pattern, 
   if (pattern->components_size == 0 && name->components_size == 0) {
     return NDN_SUCCESS;
   }
-  
+
   int pb = index_of_pattern_component_type(pattern, NDN_TRUST_SCHEMA_WILDCARD_NAME_COMPONENT_SEQUENCE);
-  
+
   if (pb < 0) {
     return no_wildcard_sequence_match_data_name(name, 0, name->components_size, pattern, 0, pattern->components_size,
 						subpattern_idxs);
@@ -110,7 +110,7 @@ int _check_data_name_against_pattern(const ndn_trust_schema_pattern_t *pattern, 
   int pe = last_index_of_pattern_component_type(pattern, NDN_TRUST_SCHEMA_WILDCARD_NAME_COMPONENT_SEQUENCE)+1;
   int nb = pb;
   int ne = name->components_size-(pattern->components_size-pe);
-  
+
   if (nb > ne)
     return NDN_TRUST_SCHEMA_NAME_DID_NOT_MATCH;
   if (no_wildcard_sequence_match_data_name(name, 0, nb, pattern, 0, pb, subpattern_idxs) != 0 ||
@@ -150,7 +150,7 @@ int _check_data_name_against_pattern(const ndn_trust_schema_pattern_t *pattern, 
     pb = i+1;
   }
   return NDN_SUCCESS;
-  
+
 }
 
 int _check_key_name_against_pattern(const ndn_trust_schema_pattern_t *pattern, const ndn_name_t* name,
@@ -161,9 +161,9 @@ int _check_key_name_against_pattern(const ndn_trust_schema_pattern_t *pattern, c
   if (pattern->components_size == 0 && name->components_size == 0) {
     return NDN_SUCCESS;
   }
-  
+
   int pb = index_of_pattern_component_type(pattern, NDN_TRUST_SCHEMA_WILDCARD_NAME_COMPONENT_SEQUENCE);
-  
+
   if (pb < 0) {
     return no_wildcard_sequence_match_key_name(name, 0, name->components_size, pattern, 0, pattern->components_size,
 					       subpattern_idxs, num_subpattern_captures, subpattern_name);
@@ -172,7 +172,7 @@ int _check_key_name_against_pattern(const ndn_trust_schema_pattern_t *pattern, c
   int pe = last_index_of_pattern_component_type(pattern, NDN_TRUST_SCHEMA_WILDCARD_NAME_COMPONENT_SEQUENCE)+1;
   int nb = pb;
   int ne = name->components_size-(pattern->components_size-pe);
-  
+
   if (nb > ne)
     return NDN_TRUST_SCHEMA_NAME_DID_NOT_MATCH;
   if (no_wildcard_sequence_match_key_name(name, 0, nb, pattern, 0, pb,
@@ -198,7 +198,7 @@ int _check_key_name_against_pattern(const ndn_trust_schema_pattern_t *pattern, c
     pb = i+1;
   }
   return NDN_SUCCESS;
-  
+
 }
 
 int
@@ -227,11 +227,11 @@ ndn_trust_schema_verify_data_name_key_name_pair(const ndn_trust_schema_rule_t* r
     printf("Rule reference not implemented yet.\n");
 
     return NDN_TRUST_SCHEMA_RULE_REFERENCING_NOT_IMPLEMENTED_YET;
-    
+
   }
   else {
     return _check_key_name_against_pattern(&rule->key_pattern, key_name, data_name_subpattern_idxs,
 					   data_name, rule->data_pattern.num_subpattern_captures);
   }
-  
+
 }
