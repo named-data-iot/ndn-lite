@@ -40,8 +40,7 @@ ndn_gen_encrypted_payload(const uint8_t* input, uint32_t input_size, uint8_t* ou
   encoder_init(&encoder, output, *used_size);
 
   // get key
-  ndn_aes_key_t* key;
-  ndn_key_storage_get_aes_key(aes_key_id, &key);
+  ndn_aes_key_t* key = ndn_key_storage_get_aes_key(aes_key_id);
   if (key == NULL) {
     return NDN_AC_KEY_NOT_FOUND;
   }
@@ -106,8 +105,7 @@ ndn_parse_encrypted_payload(const uint8_t* input, uint32_t input_size,
   }
   while (iv == NULL || encrypted_payload == NULL);
 
-  ndn_aes_key_t* key;
-  ndn_key_storage_get_aes_key(aes_key_id, &key);
+  ndn_aes_key_t* key = ndn_key_storage_get_aes_key(aes_key_id);
   if (key == NULL) {
     return NDN_AC_KEY_NOT_FOUND;
   }

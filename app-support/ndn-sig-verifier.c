@@ -49,7 +49,7 @@ sig_verifier_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata
     if (dataptr->is_interest) {
       ndn_interest_t* original_int = (ndn_interest_t*)dataptr->original_pkt;
       uint32_t keyid = key_id_from_key_name(&original_int->signature.key_locator_name);
-      ndn_key_storage_get_ecc_pub_key(keyid, &pub_key);
+      pub_key = ndn_key_storage_get_ecc_pub_key(keyid);
       result = ndn_signed_interest_ecdsa_verify(original_int, pub_key);
       if (result == NDN_SUCCESS) {
         on_int_verification_success on_success = (on_int_verification_success)(dataptr->on_success_cbk);
@@ -60,7 +60,7 @@ sig_verifier_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata
     else {
       ndn_data_t* original_dat = (ndn_data_t*)dataptr->original_pkt;
       uint32_t keyid = key_id_from_key_name(&original_dat->signature.key_locator_name);
-      ndn_key_storage_get_ecc_pub_key(keyid, &pub_key);
+      pub_key = ndn_key_storage_get_ecc_pub_key(keyid);
 
       ndn_encoder_t encoder;
       encoder_init(&encoder, verifier_buf, sizeof(verifier_buf));
@@ -153,8 +153,7 @@ ndn_sig_verifier_verify_int(const uint8_t* raw_pkt, size_t pkt_size, ndn_interes
   uint32_t keyid = key_id_from_key_name(&interest->signature.key_locator_name);
   bool need_interest_out = false;
   if (interest->signature.sig_type == NDN_SIG_TYPE_ECDSA_SHA256) {
-    ndn_ecc_pub_t* pub_key = NULL;
-    ndn_key_storage_get_ecc_pub_key(keyid, &pub_key);
+    ndn_ecc_pub_t* pub_key = ndn_key_storage_get_ecc_pub_key(keyid);
     if (pub_key == NULL) {
       need_interest_out = true;
     }
@@ -166,8 +165,7 @@ ndn_sig_verifier_verify_int(const uint8_t* raw_pkt, size_t pkt_size, ndn_interes
     }
   }
   else if (interest->signature.sig_type == NDN_SIG_TYPE_HMAC_SHA256) {
-    ndn_hmac_key_t* hmac_key = NULL;
-    ndn_key_storage_get_hmac_key(keyid, &hmac_key);
+    ndn_hmac_key_t* hmac_key = ndn_key_storage_get_hmac_key(keyid);
     if (hmac_key == NULL) {
       on_failure(interest);
       return;
@@ -238,8 +236,7 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size, ndn_data_t
   uint32_t keyid = key_id_from_key_name(&data->signature.key_locator_name);
   bool need_interest_out = false;
   if (data->signature.sig_type == NDN_SIG_TYPE_ECDSA_SHA256) {
-    ndn_ecc_pub_t* pub_key = NULL;
-    ndn_key_storage_get_ecc_pub_key(keyid, &pub_key);
+    ndn_ecc_pub_t* pub_key = ndn_key_storage_get_ecc_pub_key(keyid);
     if (pub_key == NULL) {
       need_interest_out = true;
     }
@@ -252,8 +249,7 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size, ndn_data_t
     }
   }
   else if (data->signature.sig_type == NDN_SIG_TYPE_HMAC_SHA256) {
-    ndn_hmac_key_t* hmac_key = NULL;
-    ndn_key_storage_get_hmac_key(keyid, &hmac_key);
+    ndn_hmac_key_t* hmac_key = ndn_key_storage_get_hmac_key(keyid);
     if (hmac_key == NULL) {
       on_failure(data);
       return;

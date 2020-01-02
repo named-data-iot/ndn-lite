@@ -126,10 +126,10 @@ ndn_key_storage_set_self_identity(const ndn_data_t* self_cert, const ndn_ecc_prv
 
 /**
  * Get an empty HMAC key pointer from key storage structure.
- * @param hmac. Output. Pass NULL pointers into the function to get empty HMAC key pointers.
+ * @return NULL if there is no empty HMAC key anymore.
  */
-void
-ndn_key_storage_get_empty_hmac_key(ndn_hmac_key_t** hmac);
+ndn_hmac_key_t*
+ndn_key_storage_get_empty_hmac_key();
 
 /**
  * Get an empty ECC key pointer from key storage structure.
@@ -141,10 +141,10 @@ ndn_key_storage_get_empty_ecc_key(ndn_ecc_pub_t** pub, ndn_ecc_prv_t** prv);
 
 /**
  * Get an empty AES-128 key pointer from key storage structure.
- * @param aes. Output. Pass NULL pointers into the function to get empty ECC key pointers.
+ * @return NULL if there is no more empty AES key.
  */
-void
-ndn_key_storage_get_empty_aes_key(ndn_aes_key_t** aes);
+ndn_aes_key_t*
+ndn_key_storage_get_empty_aes_key();
 
 /**
  * Delete a HMAC key by searching corresponding unique key id.
@@ -170,32 +170,29 @@ ndn_key_storage_delete_aes_key(uint32_t key_id);
 /**
  * Get an existing HMAC key pointer from key storage structure.
  * @param key_id. Input. Key id which indicates the key to fetch.
- * @param hmac. Output. Pass NULL pointers into the function to get output hmac key pointers.
+ * @return NULL if there is no such HMAC key.
  */
-void
-ndn_key_storage_get_hmac_key(uint32_t key_id, ndn_hmac_key_t** hmac);
+ndn_hmac_key_t*
+ndn_key_storage_get_hmac_key(uint32_t key_id);
 
 /**
  * Get an existing ECC key pointer from key storage structure.
  * @param key_id. Input. Key id which indicates the key to fetch.
  * @param hmac. Output. Pass NULL pointers into the function to get output ECC key pointers.
  */
-void
-ndn_key_storage_get_ecc_key(uint32_t key_id, ndn_ecc_pub_t** pub, ndn_ecc_prv_t** prv);
+ndn_ecc_pub_t*
+ndn_key_storage_get_ecc_pub_key(uint32_t key_id);
 
-void
-ndn_key_storage_get_ecc_pub_key(uint32_t key_id, ndn_ecc_pub_t** pub);
-
-void
-ndn_key_storage_get_ecc_prv_key(uint32_t key_id, ndn_ecc_prv_t** pub);
+ndn_ecc_prv_t*
+ndn_key_storage_get_ecc_prv_key(uint32_t key_id);
 
 /**
  * Get an existing AES-128 key pointer from key storage structure.
  * @param key_id. Input. Key id which indicates the key to fetch.
- * @param hmac. Output. Pass NULL pointers into the function to get output AES-128 key pointers.
+ * @return NULL if there is no such AES key.
  */
-void
-ndn_key_storage_get_aes_key(uint32_t key_id, ndn_aes_key_t** aes);
+ndn_aes_key_t*
+ndn_key_storage_get_aes_key(uint32_t key_id);
 
 #ifdef __cplusplus
 }

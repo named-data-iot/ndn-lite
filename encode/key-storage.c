@@ -87,19 +87,17 @@ ndn_key_storage_set_self_identity(const ndn_data_t* self_cert, const ndn_ecc_prv
   return NDN_SUCCESS;
 }
 
-// pass NULL pointers into the function to get empty ecc key pointers
-void
-ndn_key_storage_get_empty_hmac_key(ndn_hmac_key_t** hmac)
+ndn_hmac_key_t*
+ndn_key_storage_get_empty_hmac_key()
 {
   if (!_key_storage_initialized)
     _ndn_key_storage_init();
   for (uint8_t i = 0; i < NDN_SEC_SIGNING_KEYS_SIZE; i++) {
     if (storage.hmac_keys[i].key_id == NDN_SEC_INVALID_KEY_ID) {
-      *hmac = &storage.hmac_keys[i];
-      return;
+      return &storage.hmac_keys[i];
     }
   }
-  hmac = NULL;
+  return NULL;
 }
 
 // pass NULL pointers into the function to get empty ecc key pointers
@@ -119,19 +117,17 @@ ndn_key_storage_get_empty_ecc_key(ndn_ecc_pub_t** pub, ndn_ecc_prv_t** prv)
   *prv = NULL;
 }
 
-// pass NULL pointers into the function to get empty ecc key pointers
-void
-ndn_key_storage_get_empty_aes_key(ndn_aes_key_t** aes)
+ndn_aes_key_t*
+ndn_key_storage_get_empty_aes_key()
 {
   if (!_key_storage_initialized)
     _ndn_key_storage_init();
   for (uint8_t i = 0; i < NDN_SEC_ENCRYPTION_KEYS_SIZE; i++) {
     if (storage.aes_keys[i].key_id == NDN_SEC_INVALID_KEY_ID) {
-      *aes = &storage.aes_keys[i];
-      return;
+      return &storage.aes_keys[i];
     }
   }
-  *aes = NULL;
+  return NULL;
 }
 
 void
@@ -175,86 +171,66 @@ ndn_key_storage_delete_aes_key(uint32_t key_id)
 }
 
 // pass NULL pointers into the function to get empty ecc key pointers
-void
-ndn_key_storage_get_hmac_key(uint32_t key_id, ndn_hmac_key_t** hmac)
+ndn_hmac_key_t*
+ndn_key_storage_get_hmac_key(uint32_t key_id)
 {
   if (!_key_storage_initialized)
     _ndn_key_storage_init();
   for (uint8_t i = 0; i <NDN_SEC_SIGNING_KEYS_SIZE; i++) {
     if (storage.hmac_keys[i].key_id != NDN_SEC_INVALID_KEY_ID) {
       if (key_id == storage.hmac_keys[i].key_id) {
-        *hmac = &storage.hmac_keys[i];
-        return;
+        return &storage.hmac_keys[i];
       }
     }
   }
-  *hmac = NULL;
+  return NULL;
 }
 
-// pass NULL pointers into the function to get empty ecc key pointers
-void
-ndn_key_storage_get_ecc_key(uint32_t key_id, ndn_ecc_pub_t** pub, ndn_ecc_prv_t** prv)
+ndn_ecc_pub_t*
+ndn_key_storage_get_ecc_pub_key(uint32_t key_id)
 {
   if (!_key_storage_initialized)
     _ndn_key_storage_init();
+
   if (storage.trust_anchor_key.key_id == key_id) {
-    *pub = &storage.trust_anchor_key;
-    *prv = NULL;
+    return &storage.trust_anchor_key;
   }
-  for (uint8_t i = 0; i <NDN_SEC_SIGNING_KEYS_SIZE; i++) {
-    if (storage.ecc_pub_keys[i].key_id != NDN_SEC_INVALID_KEY_ID
-        && key_id == storage.ecc_pub_keys[i].key_id) {
-      *pub = &storage.ecc_pub_keys[i];
-      *prv = &storage.ecc_prv_keys[i];
-      return;
+
+  for (uint8_t i = 0; i < NDN_SEC_SIGNING_KEYS_SIZE; i++) {
+    if (key_id == storage.ecc_pub_keys[i].key_id) {
+      return &storage.ecc_pub_keys[i];
     }
-    if (storage.trusted_ecc_pub_keys[i].key_id != NDN_SEC_INVALID_KEY_ID
-        && key_id == storage.trusted_ecc_pub_keys[i].key_id) {
-      *pub = &storage.trusted_ecc_pub_keys[i];
-      *prv = NULL;
-      return;
+    if (key_id == storage.trusted_ecc_pub_keys[i].key_id) {
+      return &storage.trusted_ecc_pub_keys[i];
     }
   }
-  if (storage.trust_anchor_key.key_id == key_id) {
-    *pub = &storage.trust_anchor_key;
-    *prv = NULL;
-    return;
+  return NULL;
+}
+
+ndn_ecc_prv_t*
+ndn_key_storage_get_ecc_prv_key(uint32_t key_id)
+{
+  if (!_key_storage_initialized)
+    _ndn_key_storage_init();
+
+  for (uint8_t i = 0; i < NDN_SEC_SIGNING_KEYS_SIZE; i++) {
+    if (key_id == storage.ecc_prv_keys[i].key_id) {
+      return &storage.ecc_prv_keys[i];
+    }
   }
-  *pub = NULL;
-  *prv = NULL;
+  return NULL;
 }
 
-void
-ndn_key_storage_get_ecc_pub_key(uint32_t key_id, ndn_ecc_pub_t** pub)
+ndn_aes_key_t*
+ndn_key_storage_get_aes_key(uint32_t key_id)
 {
   if (!_key_storage_initialized)
     _ndn_key_storage_init();
-  ndn_ecc_prv_t* prv = NULL;
-  ndn_key_storage_get_ecc_key(key_id, pub, &prv);
-}
 
-void
-ndn_key_storage_get_ecc_prv_key(uint32_t key_id, ndn_ecc_prv_t** prv)
-{
-  if (!_key_storage_initialized)
-    _ndn_key_storage_init();
-  ndn_ecc_pub_t* pub = NULL;
-  ndn_key_storage_get_ecc_key(key_id, &pub, prv);
-}
-
-// pass NULL pointers into the function to get empty ecc key pointers
-void
-ndn_key_storage_get_aes_key(uint32_t key_id, ndn_aes_key_t** aes)
-{
-  if (!_key_storage_initialized)
-    _ndn_key_storage_init();
   for (uint8_t i = 0; i <NDN_SEC_ENCRYPTION_KEYS_SIZE; i++) {
-    if (storage.aes_keys[i].key_id != NDN_SEC_INVALID_KEY_ID) {
-      if (key_id == storage.aes_keys[i].key_id) {
-        *aes = &storage.aes_keys[i];
-        return;
-      }
+    if (key_id == storage.aes_keys[i].key_id) {
+      return &storage.aes_keys[i];
     }
   }
-  *aes = NULL;
+  return NULL;
 }

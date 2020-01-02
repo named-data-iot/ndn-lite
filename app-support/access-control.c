@@ -58,11 +58,11 @@ typedef struct ndn_access_control {
   /**
    * RegisterServices for this identity that would use EncryptionKey.
    */
-  uint8_t self_services[2];
+  uint8_t self_services[10];
   /**
    * EncryptionKeys used for by identity's RegisterServices.
    */
-  ac_key_t ekeys[2];
+  ac_key_t ekeys[10];
 } ndn_access_control_t;
 
 ndn_access_control_t _ac_self_state;
@@ -76,7 +76,7 @@ _init_ac_state()
     _ac_self_state.access_keys[i].key_id = NDN_SEC_INVALID_KEY_ID;
     _ac_self_state.access_services[i] = NDN_SD_NONE;
   }
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 10; i++) {
     _ac_self_state.ekeys[i].key_id = NDN_SEC_INVALID_KEY_ID;
     _ac_self_state.self_services[i] = NDN_SD_NONE;
   }
@@ -123,19 +123,23 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   NDN_LOG_DEBUG("EncryptionKey KeyLifetime = %u ms\n", expires_in);
 
   // store it into key_storage
-  ndn_aes_key_t* key = NULL;
   ndn_time_ms_t now = ndn_time_now_ms();
   uint32_t keyid;
   ndn_rng((uint8_t*)&keyid, 4);
   uint8_t service = data.name.components[3].value[0];
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 10; i++) {
     if (_ac_self_state.self_services[i] == service) {
       _ac_self_state.ekeys[i].key_id = keyid;
       _ac_self_state.ekeys[i].expires_at = expires_in + now;
     }
   }
-  ndn_key_storage_get_empty_aes_key(&key);
-  ndn_aes_key_init(key, value, NDN_AES_BLOCK_SIZE, keyid);
+  ndn_aes_key_t* key = ndn_key_storage_get_empty_aes_key();
+  if (key != NULL) {
+    ndn_aes_key_init(key, value, NDN_AES_BLOCK_SIZE, keyid);
+  }
+  else {
+    NDN_LOG_ERROR("No empty AES key in local key storage.");
+  }
 }
 
 /**
@@ -179,7 +183,6 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   NDN_LOG_DEBUG("DecryptionKey KeyLifetime = %u ms\n", expires_in);
 
   // store it into key_storage
-  ndn_aes_key_t* key = NULL;
   ndn_time_ms_t now = ndn_time_now_ms();
   uint32_t keyid;
   ndn_rng((uint8_t*)&keyid, 4);
@@ -190,8 +193,13 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
       _ac_self_state.access_keys[i].expires_at = expires_in + now;
     }
   }
-  ndn_key_storage_get_empty_aes_key(&key);
-  ndn_aes_key_init(key, value, 16, keyid);
+  ndn_aes_key_t* key = ndn_key_storage_get_empty_aes_key();
+  if (key != NULL) {
+    ndn_aes_key_init(key, value, 16, keyid);
+  }
+  else {
+    NDN_LOG_ERROR("No empty AES key in local key storage.");
+  }
 }
 
 /**
@@ -279,13 +287,30 @@ _express_dkey_interest(uint8_t service)
 /**
  *  RegisterServices.
  */
+ndn_aes_key_t*
+ndn_ac_get_key_for_service(uint8_t service)
+{
+  for (int i = 0; i < 10; i++) {
+    if (_ac_self_state.self_services[i] == service) {
+      return ndn_key_storage_get_aes_key(_ac_self_state.ekeys[i].key_id);
+    }
+    if (_ac_self_state.access_services[i] == service) {
+      return ndn_key_storage_get_aes_key(_ac_self_state.access_keys[i].key_id);
+    }
+  }
+  return NULL;
+}
+
+/**
+ *  RegisterServices.
+ */
 void
 ndn_ac_register_service_require_ek(uint8_t service)
 {
   if (!_ac_initialized) {
     _init_ac_state();
   }
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 10; i++) {
     if (_ac_self_state.self_services[i] == NDN_SD_NONE) {
       _ac_self_state.self_services[i] = service;
       return;
@@ -320,7 +345,7 @@ ndn_ac_after_bootstrapping()
     _init_ac_state();
   }
   // send /home/AC/EKEY/<the service provided by my self> to the controller
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 10; i++) {
     if (_ac_self_state.self_services[i] != NDN_SD_NONE) {
       _express_ekey_interest(_ac_self_state.self_services[i]);
     }

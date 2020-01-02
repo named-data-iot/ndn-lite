@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2019
+ * Copyright (C) 2018-2019 Zhiyi Zhang, Guan Yu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
@@ -56,6 +56,14 @@
 // 1. The access control policy are decided by schema
 // 2. The access control key can be roll overed by existing key (e.g., through one-way function)
 // 3. The access control granularity can be kept in the service type level at the moment
+
+/**
+ *  Get a AES key used for data encryption/decryption for service.
+ *  @param service. The key for which service will be returned.
+ *  @return NULL if there is no such AES key for the service
+ */
+ndn_aes_key_t*
+ndn_ac_get_key_for_service(uint8_t service);
 
 void
 ndn_ac_register_service_require_ek(uint8_t service);

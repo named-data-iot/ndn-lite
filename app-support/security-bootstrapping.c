@@ -127,8 +127,7 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   decoder_get_type(&decoder, &probe);
   if (probe != TLV_AC_ENCRYPTED_PAYLOAD) return;
   decoder_get_length(&decoder, &probe);
-  ndn_aes_key_t* sym_aes_key = NULL;
-  ndn_key_storage_get_aes_key(SEC_BOOT_AES_KEY_ID, &sym_aes_key);
+  ndn_aes_key_t* sym_aes_key = ndn_key_storage_get_aes_key(SEC_BOOT_AES_KEY_ID);
   uint32_t used_size = 0;
   uint8_t plaintext[256] = {0};
   int ret = ndn_aes_cbc_decrypt(decoder.input_value + decoder.offset, probe,
@@ -175,8 +174,7 @@ sec_boot_send_cert_interest()
   encoder_append_length(&encoder, NDN_SEC_SHA256_HASH_SIZE);
   encoder_append_raw_buffer_value(&encoder, m_sec_boot_state.trust_anchor_sha, NDN_SEC_SHA256_HASH_SIZE);
   // append the ecdh pub key, N1
-  ndn_ecc_pub_t* self_dh_pub = NULL;
-  ndn_key_storage_get_ecc_pub_key(SEC_BOOT_DH_KEY_ID, &self_dh_pub);
+  ndn_ecc_pub_t* self_dh_pub = ndn_key_storage_get_ecc_pub_key(SEC_BOOT_DH_KEY_ID);
   encoder_append_type(&encoder, TLV_SEC_BOOT_N1_ECDH_PUB);
   encoder_append_length(&encoder, ndn_ecc_get_pub_key_size(self_dh_pub));
   encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(self_dh_pub),
@@ -241,8 +239,7 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   uint8_t dh_pub_buf[100];
   decoder_get_raw_buffer_value(&decoder, dh_pub_buf, probe);
   ndn_ecc_pub_init(&m_sec_boot_state.controller_dh_pub, dh_pub_buf, probe, NDN_ECDSA_CURVE_SECP256R1, 1);
-  ndn_ecc_prv_t* self_prv_key = NULL;
-  ndn_key_storage_get_ecc_prv_key(SEC_BOOT_DH_KEY_ID, &self_prv_key);
+  ndn_ecc_prv_t* self_prv_key = ndn_key_storage_get_ecc_prv_key(SEC_BOOT_DH_KEY_ID);
   // get shared secret using DH process
   uint8_t shared[32];
   ndn_ecc_dh_shared_secret(&m_sec_boot_state.controller_dh_pub, self_prv_key, shared, sizeof(shared));
@@ -253,8 +250,7 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   uint8_t salt[NDN_APPSUPPORT_AC_SALT_SIZE];
   decoder_get_raw_buffer_value(&decoder, salt, sizeof(salt));
   // generate AES key using HKDF
-  ndn_aes_key_t* sym_aes_key;
-  ndn_key_storage_get_empty_aes_key(&sym_aes_key);
+  ndn_aes_key_t* sym_aes_key = ndn_key_storage_get_empty_aes_key();
   uint8_t symmetric_key[NDN_APPSUPPORT_AC_EDK_SIZE];
   ndn_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key),
            salt, sizeof(salt), NULL, 0);
@@ -296,8 +292,7 @@ sec_boot_send_sign_on_interest()
   encoder_append_length(&encoder, m_sec_boot_state.list_size);
   encoder_append_raw_buffer_value(&encoder, m_sec_boot_state.service_list, m_sec_boot_state.list_size);
   // append the ecdh pub key, N1
-  ndn_ecc_pub_t* dh_pub = NULL;
-  ndn_key_storage_get_ecc_pub_key(SEC_BOOT_DH_KEY_ID, &dh_pub);
+  ndn_ecc_pub_t* dh_pub = ndn_key_storage_get_ecc_pub_key(SEC_BOOT_DH_KEY_ID);
   encoder_append_type(&encoder, TLV_SEC_BOOT_N1_ECDH_PUB);
   encoder_append_length(&encoder, ndn_ecc_get_pub_key_size(dh_pub));
   encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(dh_pub), ndn_ecc_get_pub_key_size(dh_pub));
