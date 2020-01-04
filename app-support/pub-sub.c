@@ -12,6 +12,7 @@
 #include "service-discovery.h"
 #include "ndn-sig-verifier.h"
 #include "access-control.h"
+#include "ndn-trust-schema.h"
 #include "../encode/encrypted-payload.h"
 #include "../ndn-constants.h"
 #include "../ndn-services.h"
@@ -179,6 +180,7 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
   NDN_LOG_INFO("New published content successfully pass signature verification.");
   ndn_name_print(&data->name);
 
+  int ret = NDN_SUCCESS;
   sub_topic_t* topic = (sub_topic_t*)userdata;
   // call the on_content callbackclear
   if (topic->callback == NULL) {
@@ -194,14 +196,33 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
   ndn_aes_key_t* aes_key = ndn_ac_get_key_for_service(topic->service);
   uint32_t used_size = 0;
   memset(pkt_encoding_buf, 0, sizeof(pkt_encoding_buf));
-  int ret = ndn_parse_encrypted_payload(data->content_value, data->content_size,
+  ret = ndn_parse_encrypted_payload(data->content_value, data->content_size,
                                         pkt_encoding_buf, &used_size, aes_key->key_id);
   if (ret != NDN_SUCCESS) {
     NDN_LOG_INFO("Cannot decrypt the newly published content. Abort...");
     return;
   }
 
-  // get action if it's a command
+  ndn_trust_schema_rule_t schema;
+  if (topic->is_cmd) {
+    //TODO: Zhiyi: for now I hardcode controller only rule.
+    ret = ndn_trust_schema_rule_from_strings(&schema, cmd_controller_only_rule_data_name, sizeof(cmd_controller_only_rule_data_name),
+                                             cmd_controller_only_rule_key_name, sizeof(cmd_controller_only_rule_key_name));
+  }
+  else {
+    ret = ndn_trust_schema_rule_from_strings(&schema, content_same_producer_rule_data_name, sizeof(content_same_producer_rule_data_name),
+                                             content_same_producer_rule_key_name, sizeof(content_same_producer_rule_key_name));
+  }
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("Cannot load trust schema rules. Error code: %d", ret);
+    return;
+  }
+  ret = ndn_trust_schema_verify_data_name_key_name_pair(&schema, &data->name, &data->signature.key_locator_name);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("Cannot verify incoming content against trust schemas. Error code: %d", ret);
+    return;
+  }
+
   // command FORMAT: /home/service/CMD/identifier[0,2]/command
   // data FORMAT: /home/service/DATA/identifier[0,2]/data-identifier
   topic->callback(topic->service, topic->is_cmd, topic->identifier, comp_size,
