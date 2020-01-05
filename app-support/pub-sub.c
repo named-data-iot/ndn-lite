@@ -82,7 +82,7 @@ typedef struct pub_topic {
   /** Cache of the lastest published DATA. If the entry is about a subscription record,
    * cache here will not be used.
    */
-  uint8_t cache[200];
+  uint8_t cache[256];
   /** Cached Data Size.
    */
   uint32_t cache_size;
@@ -347,7 +347,11 @@ _on_subscription_interest(const uint8_t* raw_interest, uint32_t interest_size, v
   pub_topic_t* topic = (pub_topic_t*)userdata;
 
   // reply the latest content
-  ndn_forwarder_put_data(topic->cache, topic->cache_size);
+  int ret = ndn_forwarder_put_data(topic->cache, topic->cache_size);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("[PUB/SUB] Cannot reply cached Data. Error code: %d", ret);
+    return NDN_FWD_STRATEGY_SUPPRESS;
+  }
   NDN_LOG_INFO("[PUB/SUB] Replid cached Data");
   return NDN_FWD_STRATEGY_SUPPRESS;
 }
@@ -553,6 +557,10 @@ ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
                       TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_DEBUG("[PUB/SUB] Content Data cannot be generated. Error code: %d", ret);
+    return;
+  }
   NDN_LOG_DEBUG("[PUB/SUB] Content Data has been generated");
   ndn_name_print(&name);
 }
