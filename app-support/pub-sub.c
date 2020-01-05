@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Tianyuan Yu, Zhiyi Zhang
+ * Copyright (C) 2019 Zhiyi Zhang, Tianyuan Yu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
@@ -639,10 +639,20 @@ ps_publish_command(uint8_t service, const uint8_t* command_id, uint32_t command_
   name_component_t tp_comp;
   name_component_from_timestamp(&tp_comp, tp);
   ndn_name_append_component(&name, &tp_comp);
+
+  // Encrypt payload
+  uint32_t used_size = 0;
+  ndn_aes_key_t* service_aes_key = ndn_ac_get_key_for_service(topic->service);
+  ret = ndn_gen_encrypted_payload(payload, payload_len, pkt_encoding_buf, &used_size, service_aes_key->key_id, NULL, 0);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_DEBUG("[PUB/SUB] Cannot encrypt command payload to publish. Error code: %d", ret);
+    return;
+  }
+
   ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 7,
                       TLV_DATAARG_NAME_PTR, &name,
-                      TLV_DATAARG_CONTENT_BUF, payload,
-                      TLV_DATAARG_CONTENT_SIZE, payload_len,
+                      TLV_DATAARG_CONTENT_BUF, pkt_encoding_buf,
+                      TLV_DATAARG_CONTENT_SIZE, used_size,
                       TLV_DATAARG_FRESHNESSPERIOD_U64, (uint64_t)4000,
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
