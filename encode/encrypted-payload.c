@@ -31,8 +31,7 @@ ndn_gen_encrypted_payload(const uint8_t* input, uint32_t input_size, uint8_t* ou
   *used_size = 0;
   // probe the length of result
   *used_size += encoder_probe_block_size(TLV_AC_AES_IV, NDN_AES_BLOCK_SIZE);
-  *used_size += encoder_probe_block_size(TLV_AC_ENCRYPTED_PAYLOAD,
-                                          ndn_aes_probe_padding_size(input_size) + NDN_AES_BLOCK_SIZE);
+  *used_size += encoder_probe_block_size(TLV_AC_ENCRYPTED_PAYLOAD, ndn_aes_probe_padding_size(input_size));
 
   // prepare output block
   memset(output, 0, *used_size);
@@ -56,6 +55,7 @@ ndn_gen_encrypted_payload(const uint8_t* input, uint32_t input_size, uint8_t* ou
   }
   else {
     ret_val = ndn_rng(iv_start, NDN_AES_BLOCK_SIZE);
+    encoder.offset += NDN_AES_BLOCK_SIZE;
   }
   if (ret_val != NDN_SUCCESS) return ret_val;
 

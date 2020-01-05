@@ -66,7 +66,7 @@ ndn_aes_key_t*
 ndn_ac_get_key_for_service(uint8_t service);
 
 void
-ndn_ac_register_service_require_ek(uint8_t service);
+ndn_ac_register_encryption_key_request(uint8_t service);
 
 void
 ndn_ac_register_access_request(uint8_t service);

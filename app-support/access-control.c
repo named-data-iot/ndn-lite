@@ -202,6 +202,25 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   }
 }
 
+int _express_dkey_interest(uint8_t service);
+int _express_ekey_interest(uint8_t service);
+
+void
+_on_ekey_int_timeout(void* userdata)
+{
+  NDN_LOG_DEBUG("[ACCESSCTL] EKEY interest timeout. Resend the Interest.");
+  uint8_t service_id = *(uint8_t*)userdata;
+  _express_ekey_interest(service_id);
+}
+
+void
+_on_dkey_int_timeout(void* userdata)
+{
+  NDN_LOG_DEBUG("[ACCESSCTL] DKEY interest timeout. Resend the Interest.");
+  uint8_t service_id = *(uint8_t*)userdata;
+  _express_dkey_interest(service_id);
+}
+
 /**
  *  EncryptionKey Interesing expressing.
  *  This will express a signed Interest with CanBePrefix flag set.
@@ -233,7 +252,9 @@ _express_ekey_interest(uint8_t service)
   ndn_interest_set_CanBePrefix(&interest, 1);
   ret = ndn_interest_tlv_encode(&encoder, &interest);
   if (ret != 0) return ret;
-  ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, _on_ekey_data, NULL, NULL);
+  static uint8_t service_id = 0;
+  service_id = service;
+  ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, _on_ekey_data, _on_ekey_int_timeout, &service_id);
   if (ret != 0) {
     NDN_LOG_ERROR("Fail to send out adv Interest. Error Code: %d\n", ret);
     return ret;
@@ -274,7 +295,9 @@ _express_dkey_interest(uint8_t service)
   ndn_interest_set_CanBePrefix(&interest, 1);
   ret = ndn_interest_tlv_encode(&encoder, &interest);
   if (ret != 0) return ret;
-  ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, _on_dkey_data, NULL, NULL);
+  static uint8_t service_id = 0;
+  service_id = service;
+  ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, _on_dkey_data, _on_ekey_int_timeout, &service_id);
   if (ret != 0) {
     NDN_LOG_ERROR("Fail to send out adv Interest. Error Code: %d\n", ret);
     return ret;
@@ -305,7 +328,7 @@ ndn_ac_get_key_for_service(uint8_t service)
  *  RegisterServices.
  */
 void
-ndn_ac_register_service_require_ek(uint8_t service)
+ndn_ac_register_encryption_key_request(uint8_t service)
 {
   if (!_ac_initialized) {
     _init_ac_state();

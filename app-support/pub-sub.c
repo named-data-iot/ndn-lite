@@ -534,7 +534,10 @@ ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_
       // TODO: unregister the prefix registered by the old topic
     }
     // register the new prefix
-    ndn_forwarder_register_name_prefix(&name, _on_subscription_interest, topic);
+    ret = ndn_forwarder_register_name_prefix(&name, _on_subscription_interest, topic);
+    if (ret != NDN_SUCCESS) {
+      NDN_LOG_DEBUG("[PUB/SUB] Cannot register prefix for newly published content. Error Code: %d", ret);
+    }
     topic->service = service;
     topic->is_cmd = false;
   }
@@ -548,11 +551,21 @@ ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_
   name_component_t tp_comp;
   name_component_from_timestamp(&tp_comp, topic->last_update_tp);
   ndn_name_append_component(&name, &tp_comp);
+
+  // Encrypt payload
+  uint32_t used_size = 0;
+  ndn_aes_key_t* service_aes_key = ndn_ac_get_key_for_service(topic->service);
+  ret = ndn_gen_encrypted_payload(payload, payload_len, pkt_encoding_buf, &used_size, service_aes_key->key_id, NULL, 0);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_DEBUG("[PUB/SUB] Cannot encrypt content to publish. Error code: %d", ret);
+    return;
+  }
+
   memset(topic->cache, 0, sizeof(topic->cache));
   ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 7,
                       TLV_DATAARG_NAME_PTR, &name,
-                      TLV_DATAARG_CONTENT_BUF, payload,
-                      TLV_DATAARG_CONTENT_SIZE, payload_len,
+                      TLV_DATAARG_CONTENT_BUF, pkt_encoding_buf,
+                      TLV_DATAARG_CONTENT_SIZE, used_size,
                       TLV_DATAARG_FRESHNESSPERIOD_U64, (uint64_t)4000,
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
@@ -606,6 +619,9 @@ ps_publish_command(uint8_t service, const uint8_t* command_id, uint32_t command_
     }
     // register the new prefix
     ret = ndn_forwarder_register_name_prefix(&name, _on_subscription_interest, topic);
+    if (ret != NDN_SUCCESS) {
+      NDN_LOG_DEBUG("[PUB/SUB] Cannot register prefix for newly published command. Error Code: %d", ret);
+    }
     topic->service = service;
     topic->is_cmd = true;
   }

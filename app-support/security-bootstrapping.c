@@ -21,6 +21,7 @@
 #define ENABLE_NDN_LOG_DEBUG 1
 #define ENABLE_NDN_LOG_ERROR 1
 #include "../util/logger.h"
+#include "../util/msg-queue.h"
 #include "../security/ndn-lite-aes.h"
 #include "../security/ndn-lite-sha.h"
 
@@ -44,6 +45,7 @@ static uint8_t sec_boot_buf[4096];
 static ndn_sec_boot_state_t m_sec_boot_state;
 static const uint32_t SEC_BOOT_DH_KEY_ID = 10001;
 static const uint32_t SEC_BOOT_AES_KEY_ID = 10002;
+static ndn_time_ms_t m_callback_after = 0;
 
 // some common rules: 1. keep keys in key_storage 2. delete the key from key storage if its not used any longer
 
@@ -51,7 +53,18 @@ int sec_boot_send_sign_on_interest();
 int sec_boot_send_cert_interest();
 
 void
-sec_boot_after_bootstrapping()
+_sec_boot_call_app_callback()
+{
+  if (ndn_time_now_ms() < m_callback_after) {
+    ndn_msgqueue_post(NULL, _sec_boot_call_app_callback, 0, NULL);
+    return;
+  }
+  // call application-defined after_bootstrapping function
+  m_sec_boot_state.after_sec_boot();
+}
+
+void
+_sec_boot_after_bootstrapping()
 {
   // start running service discovery protocol
   ndn_sd_after_bootstrapping(m_sec_boot_state.face);
@@ -62,16 +75,16 @@ sec_boot_after_bootstrapping()
   // init signature verifier
   ndn_sig_verifier_after_bootstrapping(m_sec_boot_state.face);
 
-  // subscribe to default topics (policies, key information)
+  // TODO: subscribe to default topics (policies, key information)
 
   // we shouldn't delete the AES key because they may be used in other places
   // ndn_key_storage_delete_aes_key(SEC_BOOT_AES_KEY_ID);
   ndn_key_storage_delete_ecc_key(SEC_BOOT_DH_KEY_ID);
 
-  // call application-defined after_bootstrapping function
-  m_sec_boot_state.after_sec_boot();
-
   NDN_LOG_INFO("[BOOTSTRAPPING]: Successfully finished NDN security bootstrapping");
+
+  m_callback_after = ndn_time_now_ms() + 1500;
+  ndn_msgqueue_post(NULL, _sec_boot_call_app_callback, 0, NULL);
 }
 
 void
@@ -142,7 +155,7 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   ndn_ecc_prv_init(&self_prv, plaintext, used_size, NDN_ECDSA_CURVE_SECP256R1, keyid);
   ndn_key_storage_set_self_identity(&self_cert, &self_prv);
   // finish the bootstrapping process
-  sec_boot_after_bootstrapping();
+  _sec_boot_after_bootstrapping();
 }
 
 int
