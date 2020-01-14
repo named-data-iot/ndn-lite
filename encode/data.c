@@ -176,6 +176,9 @@ int
 ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
                                const ndn_name_t* producer_identity, const ndn_ecc_prv_t* prv_key)
 {
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
 
   int ret_val = -1;
 
@@ -204,6 +207,11 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
                               sign_input_ending - sign_input_starting,
                               data->signature.sig_value, data->signature.sig_size,
                               prv_key, &sig_len);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("DATA-PKT-ECDSA-SIGN: %luus\n", m_measure_tp2 - m_measure_tp1);
+#endif
 
   uint32_t data_buffer_size = ndn_name_probe_block_size(&data->name);
   // meta info
@@ -256,6 +264,11 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
   ret_val = ndn_signature_value_tlv_encode(encoder, &data->signature);
   if (ret_val != NDN_SUCCESS) return ret_val;
 
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+  NDN_LOG_DEBUG("DATA-PKT-ENCODING: %luus\n", m_measure_tp1 - m_measure_tp2);
+#endif
+
   return 0;
 }
 
@@ -288,12 +301,22 @@ ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
   if (ret_val != NDN_SUCCESS) return ret_val;
   uint32_t sign_input_ending = encoder->offset;
 
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
   // sign data
   uint32_t used_bytes = 0;
   int result = ndn_hmac_sign(encoder->output_value + sign_input_starting,
                              sign_input_ending - sign_input_starting,
                              data->signature.sig_value, data->signature.sig_size,
                              hmac_key, &used_bytes);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("DATA-PKT-HMAC-SIGN: %luus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
   if (result < 0)
     return result;
 

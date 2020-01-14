@@ -229,7 +229,7 @@ sec_boot_send_cert_interest()
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp1 = ndn_time_now_us();
-  NDN_LOG_DEBUG("BOOTSTRAPPING-INT2-ECDSA: %luus\n", m_measure_tp1 - m_measure_tp2);
+  NDN_LOG_DEBUG("BOOTSTRAPPING-INT2-ECDSA-SIGN: %luus\n", m_measure_tp1 - m_measure_tp2);
 #endif
 
   // send it out
@@ -375,7 +375,7 @@ sec_boot_send_sign_on_interest()
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp1 = ndn_time_now_us();
-  NDN_LOG_DEBUG("BOOTSTRAPPING-INT1-PKT-ECDSA: %luus\n", m_measure_tp1 - m_measure_tp2);
+  NDN_LOG_DEBUG("BOOTSTRAPPING-INT1-PKT-ECDSA-SIGN: %luus\n", m_measure_tp1 - m_measure_tp2);
 #endif
 
   // send it out
