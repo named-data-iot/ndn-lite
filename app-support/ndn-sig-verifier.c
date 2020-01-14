@@ -11,6 +11,11 @@
 #include "ndn-sig-verifier.h"
 #include "../encode/signed-interest.h"
 #include "../encode/key-storage.h"
+#define ENABLE_NDN_LOG_INFO 1
+#define ENABLE_NDN_LOG_DEBUG 1
+#define ENABLE_NDN_LOG_ERROR 1
+#include "../util/logger.h"
+#include "../util/uniform-time.h"
 
 typedef struct ndn_sig_verifier_state {
   ndn_face_intf_t* face;
@@ -27,7 +32,10 @@ typedef struct ndn_sig_verifier_userdata {
 
 static ndn_sig_verifier_userdata_t m_userdata;
 static ndn_sig_verifier_state_t m_sig_verifier_state;
-uint8_t verifier_buf[4096];
+static uint8_t verifier_buf[4096];
+
+static ndn_time_us_t m_measure_tp1 = 0;
+static ndn_time_us_t m_measure_tp2 = 0;
 
 void
 sig_verifier_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
@@ -134,7 +142,18 @@ ndn_sig_verifier_verify_int(const uint8_t* raw_pkt, size_t pkt_size,
                             on_int_verification_failure on_failure, void* on_failure_userdata)
 {
   static ndn_interest_t interest;
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
   ndn_interest_from_block(&interest, raw_pkt, pkt_size);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("DATA-PKT-DECODING: %luus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
   if (!ndn_interest_is_signed(&interest)) {
     on_success(&interest, on_success_userdata);
     return;
@@ -222,7 +241,18 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size,
 {
   static ndn_data_t data;
   uint32_t be_signed_start, be_signed_end;
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
   ndn_data_tlv_decode_no_verify(&data, raw_pkt, pkt_size, &be_signed_start, &be_signed_end);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("DATA-PKT-DECODING: %luus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
   if (data.signature.sig_type < 0 || data.signature.sig_type > 4) {
     on_failure(&data, on_failure_userdata);
     return;
@@ -247,8 +277,19 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size,
       need_interest_out = true;
     }
     else {
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
       result = ndn_ecdsa_verify(raw_pkt + be_signed_start, be_signed_end - be_signed_start,
                                 data.signature.sig_value, data.signature.sig_size, pub_key);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("DATA-PKT-ECDSA-VERIFY: %luus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
       if (result == NDN_SUCCESS) on_success(&data, on_success_userdata);
       else on_failure(&data, on_failure_userdata);
       return;
@@ -261,8 +302,19 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size,
       return;
     }
     else {
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
       result = ndn_hmac_verify(raw_pkt + be_signed_start, be_signed_end - be_signed_start,
                                data.signature.sig_value, data.signature.sig_size, hmac_key);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("DATA-PKT-HMAC-VERIFY: %luus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
       if (result == NDN_SUCCESS) on_success(&data, on_success_userdata);
       else on_failure(&data, on_failure_userdata);
       return;

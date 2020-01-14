@@ -16,11 +16,19 @@
 #include "encrypted-payload.h"
 #include "key-storage.h"
 #include "../ndn-error-code.h"
+#define ENABLE_NDN_LOG_INFO 1
+#define ENABLE_NDN_LOG_DEBUG 1
+#define ENABLE_NDN_LOG_ERROR 1
+#include "../util/logger.h"
+#include "../util/uniform-time.h"
 
 /************************************************************/
 /*  Helper functions for signed interest APIs               */
 /*  Not supposed to be used by library users                */
 /************************************************************/
+
+static ndn_time_us_t m_measure_tp1 = 0;
+static ndn_time_us_t m_measure_tp2 = 0;
 
 // this function should be invoked only after data's signature
 // info has been initialized
@@ -376,10 +384,26 @@ int
 ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size,
                                  const ndn_ecc_pub_t* pub_key)
 {
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
   uint32_t be_signed_start, be_signed_end;
   ndn_data_tlv_decode_no_verify(data, block_value, block_size, &be_signed_start, &be_signed_end);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("DATA-PKT-DECODING: %luus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
   int result = ndn_ecdsa_verify(block_value + be_signed_start, be_signed_end - be_signed_start,
                                 data->signature.sig_value, data->signature.sig_size, pub_key);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+  NDN_LOG_DEBUG("DATA-PKT-ECDSA-VERIFY: %luus\n", m_measure_tp1 - m_measure_tp2);
+#endif
+
   if (result == NDN_SUCCESS)
     return NDN_SUCCESS;
   else
@@ -390,10 +414,26 @@ int
 ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, uint32_t block_size,
                                 const ndn_hmac_key_t* hmac_key)
 {
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
   uint32_t be_signed_start, be_signed_end;
   ndn_data_tlv_decode_no_verify(data, block_value, block_size, &be_signed_start, &be_signed_end);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("DATA-PKT-DECODING: %luus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
   int result = ndn_hmac_verify(block_value + be_signed_start, be_signed_end - be_signed_start,
                                data->signature.sig_value, data->signature.sig_size, hmac_key);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+  NDN_LOG_DEBUG("DATA-PKT-HMAC-VERIFY: %luus\n", m_measure_tp1 - m_measure_tp2);
+#endif
+
   if (result == 0)
     return 0;
   else

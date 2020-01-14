@@ -136,7 +136,6 @@ ndn_signed_interest_hmac_sign(ndn_interest_t* interest,
     return NDN_OVERSIZE;
 
   // set signature info
-  // TODO added by Zhiyi: replaced with real timestamp and nonce
   _prepare_signature_info(interest, NDN_SIG_TYPE_HMAC_SHA256, identity, hmac_key->key_id);
 
   // update signature value and append the ending name component

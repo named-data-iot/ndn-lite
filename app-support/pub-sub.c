@@ -116,6 +116,9 @@ static pub_sub_state_t m_pub_sub_state;
 static bool m_has_initialized = false;
 static bool m_is_my_own_int = false;
 
+static ndn_time_us_t m_measure_tp1 = 0;
+static ndn_time_us_t m_measure_tp2 = 0;
+
 /** Helper function to initialize the topic List
  */
 void
@@ -141,7 +144,6 @@ _ps_topics_init()
 sub_topic_t*
 _match_sub_topic(uint8_t service, bool is_cmd, const name_component_t* identifier, uint32_t component_size)
 {
-  // NDN_LOG_DEBUG("Topic Matching: input_option = %d, compare_option = %d", input_option, compare_option);
   sub_topic_t* entry = NULL;
   for (int i = 0; i < 5; i++) {
     if (m_pub_sub_state.sub_topics[i].service == service && m_pub_sub_state.sub_topics[i].is_cmd == is_cmd) {
@@ -156,7 +158,6 @@ _match_sub_topic(uint8_t service, bool is_cmd, const name_component_t* identifie
 pub_topic_t*
 _match_pub_topic(uint8_t service, bool is_cmd)
 {
-  // NDN_LOG_DEBUG("Topic Matching: input_option = %d, compare_option = %d", input_option, compare_option);
   pub_topic_t* entry = NULL;
   for (int i = 0; i < 5; i++) {
     if (m_pub_sub_state.pub_topics[i].service == service && m_pub_sub_state.pub_topics[i].is_cmd == is_cmd) {
@@ -193,15 +194,29 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
     }
   }
 
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
   ndn_aes_key_t* aes_key = ndn_ac_get_key_for_service(topic->service);
   uint32_t used_size = 0;
   memset(pkt_encoding_buf, 0, sizeof(pkt_encoding_buf));
   ret = ndn_parse_encrypted_payload(data->content_value, data->content_size,
                                         pkt_encoding_buf, &used_size, aes_key->key_id);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("SUB-NEW-DATA-AES-DEC: %luus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
   if (ret != NDN_SUCCESS) {
-    NDN_LOG_INFO("Cannot decrypt the newly published content. Abort...");
+    NDN_LOG_ERROR("Cannot decrypt the newly published content. Abort...");
     return;
   }
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
 
   ndn_trust_schema_rule_t schema;
   if (topic->is_cmd) {
@@ -218,6 +233,12 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
     return;
   }
   ret = ndn_trust_schema_verify_data_name_key_name_pair(&schema, &data->name, &data->signature.key_locator_name);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("SUB-NEW-DATA-SCHEMA-VERIFY: %luus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
   if (ret != NDN_SUCCESS) {
     NDN_LOG_ERROR("Cannot verify incoming content against trust schemas. Error code: %d", ret);
     return;
@@ -317,7 +338,7 @@ _periodic_sub_content_fetching(void *self, size_t param_length, void *param)
       int ret = ndn_forwarder_express_interest(pkt_encoding_buf, used_size, _on_new_content, _on_sub_timeout, topic);
       m_is_my_own_int = false;
       if (ret != NDN_SUCCESS) {
-        NDN_LOG_DEBUG("[PUB/SUB] Failed to sent subscription Interest. Error code: %d", ret);
+        NDN_LOG_ERROR("[PUB/SUB] Failed to sent subscription Interest. Error code: %d", ret);
       }
       else {
         NDN_LOG_INFO("[PUB/SUB] Sent subscription Interest");
@@ -397,12 +418,12 @@ _on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, v
                               TLV_INTARG_MUSTBEFRESH_BOOL, true);
   m_is_my_own_int = true;
   if (ret != NDN_SUCCESS) {
-    NDN_LOG_DEBUG("[PUB/SUB] Failed to construct subscription Interest. Error code: %d", ret);
+    NDN_LOG_ERROR("[PUB/SUB] Failed to construct subscription Interest. Error code: %d", ret);
   }
   ret = ndn_forwarder_express_interest(pkt_encoding_buf, used_size, _on_new_content, _on_sub_timeout, topic);
   m_is_my_own_int = false;
   if (ret != NDN_SUCCESS) {
-    NDN_LOG_DEBUG("[PUB/SUB] Failed to sent subscription Interest. Error code: %d", ret);
+    NDN_LOG_ERROR("[PUB/SUB] Failed to sent subscription Interest. Error code: %d", ret);
   }
   else {
     NDN_LOG_INFO("[PUB/SUB] Sent subscription Interest");
@@ -427,7 +448,7 @@ _subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier, 
       }
     }
     if (topic == NULL) {
-      NDN_LOG_DEBUG("[PUB/SUB] No more space for new subscription topics. Abort");
+      NDN_LOG_ERROR("[PUB/SUB] No more space for new subscription topics. Abort");
       return;
     }
     topic->service = service;
@@ -501,7 +522,6 @@ ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_
     _ps_topics_init();
 
   int ret = 0;
-
   // Prefix FORMAT: /home/service/DATA
   ndn_name_t name;
   ndn_name_init(&name);
@@ -521,7 +541,7 @@ ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_
       }
     }
     if (topic == NULL) {
-      NDN_LOG_DEBUG("[PUB/SUB] No availble topic, will drop the oldest pub topic.");
+      NDN_LOG_INFO("[PUB/SUB] No availble topic, will drop the oldest pub topic.");
       uint64_t min_last_tp = m_pub_sub_state.pub_topics[0].last_update_tp;
       int index = -1;
       for (int i = 1; i < 5; i++) {
@@ -536,7 +556,7 @@ ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_
     // register the new prefix
     ret = ndn_forwarder_register_name_prefix(&name, _on_subscription_interest, topic);
     if (ret != NDN_SUCCESS) {
-      NDN_LOG_DEBUG("[PUB/SUB] Cannot register prefix for newly published content. Error Code: %d", ret);
+      NDN_LOG_ERROR("[PUB/SUB] Cannot register prefix for newly published content. Error Code: %d", ret);
     }
     topic->service = service;
     topic->is_cmd = false;
@@ -552,12 +572,23 @@ ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_
   name_component_from_timestamp(&tp_comp, topic->last_update_tp);
   ndn_name_append_component(&name, &tp_comp);
 
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
   // Encrypt payload
   uint32_t used_size = 0;
   ndn_aes_key_t* service_aes_key = ndn_ac_get_key_for_service(topic->service);
   ret = ndn_gen_encrypted_payload(payload, payload_len, pkt_encoding_buf, &used_size, service_aes_key->key_id, NULL, 0);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("PUB-CONTENT-DATA-AES-ENC: %luus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
+
   if (ret != NDN_SUCCESS) {
-    NDN_LOG_DEBUG("[PUB/SUB] Cannot encrypt content to publish. Error code: %d", ret);
+    NDN_LOG_ERROR("[PUB/SUB] Cannot encrypt content to publish. Error code: %d", ret);
     return;
   }
 
@@ -571,10 +602,10 @@ ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
                       TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
   if (ret != NDN_SUCCESS) {
-    NDN_LOG_DEBUG("[PUB/SUB] Content Data cannot be generated. Error code: %d", ret);
+    NDN_LOG_ERROR("[PUB/SUB] Content Data cannot be generated. Error code: %d", ret);
     return;
   }
-  NDN_LOG_DEBUG("[PUB/SUB] Content Data has been generated");
+  NDN_LOG_INFO("[PUB/SUB] Content Data has been generated");
   ndn_name_print(&name);
 }
 
@@ -605,7 +636,7 @@ ps_publish_command(uint8_t service, const uint8_t* command_id, uint32_t command_
       }
     }
     if (topic == NULL) {
-      NDN_LOG_DEBUG("[PUB/SUB] No availble topic, will drop the oldest pub topic.");
+      NDN_LOG_INFO("[PUB/SUB] No availble topic, will drop the oldest pub topic.");
       uint64_t min_last_tp = m_pub_sub_state.pub_topics[0].last_update_tp;
       int index = -1;
       for (int i = 1; i < 5; i++) {
@@ -620,7 +651,7 @@ ps_publish_command(uint8_t service, const uint8_t* command_id, uint32_t command_
     // register the new prefix
     ret = ndn_forwarder_register_name_prefix(&name, _on_subscription_interest, topic);
     if (ret != NDN_SUCCESS) {
-      NDN_LOG_DEBUG("[PUB/SUB] Cannot register prefix for newly published command. Error Code: %d", ret);
+      NDN_LOG_ERROR("[PUB/SUB] Cannot register prefix for newly published command. Error Code: %d", ret);
     }
     topic->service = service;
     topic->is_cmd = true;
@@ -640,14 +671,23 @@ ps_publish_command(uint8_t service, const uint8_t* command_id, uint32_t command_
   name_component_from_timestamp(&tp_comp, tp);
   ndn_name_append_component(&name, &tp_comp);
 
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
   // Encrypt payload
   uint32_t used_size = 0;
   ndn_aes_key_t* service_aes_key = ndn_ac_get_key_for_service(topic->service);
   ret = ndn_gen_encrypted_payload(payload, payload_len, pkt_encoding_buf, &used_size, service_aes_key->key_id, NULL, 0);
   if (ret != NDN_SUCCESS) {
-    NDN_LOG_DEBUG("[PUB/SUB] Cannot encrypt command payload to publish. Error code: %d", ret);
+    NDN_LOG_ERROR("[PUB/SUB] Cannot encrypt command payload to publish. Error code: %d", ret);
     return;
   }
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("PUB-COMMAND-DATA-AES-ENC: %luus\n", m_measure_tp2 - m_measure_tp1);
+#endif
 
   ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 7,
                       TLV_DATAARG_NAME_PTR, &name,
@@ -657,7 +697,7 @@ ps_publish_command(uint8_t service, const uint8_t* command_id, uint32_t command_
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
                       TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
-  NDN_LOG_DEBUG("[PUB/SUB] CMD Data has been generated");
+  NDN_LOG_INFO("[PUB/SUB] CMD Data has been generated");
   ndn_name_print(&name);
 
   // express the /Notify Interest
