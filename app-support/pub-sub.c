@@ -206,7 +206,7 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("SUB-NEW-DATA-AES-DEC: %luus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("SUB-NEW-DATA-AES-DEC: %lluus\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   if (ret != NDN_SUCCESS) {
@@ -236,7 +236,7 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("SUB-NEW-DATA-SCHEMA-VERIFY: %luus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("SUB-NEW-DATA-SCHEMA-VERIFY: %lluus\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   if (ret != NDN_SUCCESS) {
@@ -583,7 +583,7 @@ ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("PUB-CONTENT-DATA-AES-ENC: %luus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("PUB-CONTENT-DATA-AES-ENC: %lluus\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
 
@@ -686,7 +686,7 @@ ps_publish_command(uint8_t service, const uint8_t* command_id, uint32_t command_
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("PUB-COMMAND-DATA-AES-ENC: %luus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("PUB-COMMAND-DATA-AES-ENC: %lluus\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 7,

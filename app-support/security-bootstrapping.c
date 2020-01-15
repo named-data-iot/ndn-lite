@@ -156,7 +156,7 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("BOOTSTRAPPING-DATA2-PKT-AES-DEC: %luus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("BOOTSTRAPPING-DATA2-PKT-AES-DEC: %lluus\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   if (ret != NDN_SUCCESS) {
@@ -219,7 +219,7 @@ sec_boot_send_cert_interest()
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("BOOTSTRAPPING-INT2-PKT-ENCODING: %luus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("BOOTSTRAPPING-INT2-PKT-ENCODING: %lluus\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   // sign the interest
@@ -229,7 +229,7 @@ sec_boot_send_cert_interest()
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp1 = ndn_time_now_us();
-  NDN_LOG_DEBUG("BOOTSTRAPPING-INT2-ECDSA-SIGN: %luus\n", m_measure_tp1 - m_measure_tp2);
+  NDN_LOG_DEBUG("BOOTSTRAPPING-INT2-ECDSA-SIGN: %lluus\n", m_measure_tp1 - m_measure_tp2);
 #endif
 
   // send it out
@@ -308,7 +308,7 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("BOOTSTRAPPING-DATA1-HKDF: %luus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("BOOTSTRAPPING-DATA1-HKDF: %lluus\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   // prepare for the next interest: register the prefix
@@ -364,7 +364,7 @@ sec_boot_send_sign_on_interest()
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("BOOTSTRAPPING-INT1-PKT-ENCODING: %luus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("BOOTSTRAPPING-INT1-PKT-ENCODING: %lluus\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   // sign the interest
@@ -375,7 +375,7 @@ sec_boot_send_sign_on_interest()
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp1 = ndn_time_now_us();
-  NDN_LOG_DEBUG("BOOTSTRAPPING-INT1-PKT-ECDSA-SIGN: %luus\n", m_measure_tp1 - m_measure_tp2);
+  NDN_LOG_DEBUG("BOOTSTRAPPING-INT1-PKT-ECDSA-SIGN: %lluus\n", m_measure_tp1 - m_measure_tp2);
 #endif
 
   // send it out
@@ -430,7 +430,7 @@ ndn_security_bootstrapping(ndn_face_intf_t* face,
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("BOOTSTRAPPING-INT1-ECDH-KEYGEN: %luus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("BOOTSTRAPPING-INT1-ECDH-KEYGEN: %lluus\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   // register route
