@@ -11,11 +11,8 @@
 #include "ndn-sig-verifier.h"
 #include "../encode/signed-interest.h"
 #include "../encode/key-storage.h"
-#define ENABLE_NDN_LOG_INFO 1
-#define ENABLE_NDN_LOG_DEBUG 1
-#define ENABLE_NDN_LOG_ERROR 1
-#include "../util/logger.h"
 #include "../util/uniform-time.h"
+#include "../util/logger.h"
 
 typedef struct ndn_sig_verifier_state {
   ndn_face_intf_t* face;

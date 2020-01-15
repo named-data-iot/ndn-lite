@@ -9,10 +9,6 @@
  */
 
 #include "service-discovery.h"
-#define ENABLE_NDN_LOG_INFO 1
-#define ENABLE_NDN_LOG_DEBUG 1
-#define ENABLE_NDN_LOG_ERROR 1
-#include "../util/logger.h"
 #include "../encode/wrapper-api.h"
 #include "../encode/signed-interest.h"
 #include "../encode/key-storage.h"
@@ -21,6 +17,7 @@
 #include "../util/bit-operations.h"
 #include "../util/uniform-time.h"
 #include "../util/msg-queue.h"
+#include "../util/logger.h"
 
 /**
  * The structure to represent a NDN service.

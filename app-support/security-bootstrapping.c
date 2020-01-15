@@ -17,13 +17,15 @@
 #include "../encode/key-storage.h"
 #include "../ndn-error-code.h"
 #include "../util/uniform-time.h"
-#define ENABLE_NDN_LOG_INFO 0
-#define ENABLE_NDN_LOG_DEBUG 1
-#define ENABLE_NDN_LOG_ERROR 0
-#include "../util/logger.h"
 #include "../util/msg-queue.h"
 #include "../security/ndn-lite-aes.h"
 #include "../security/ndn-lite-sha.h"
+
+#define ENABLE_NDN_LOG_INFO 0
+#define ENABLE_NDN_LOG_DEBUG 1
+#define ENABLE_NDN_LOG_ERROR 0
+
+#include "../util/logger.h"
 
 typedef struct ndn_sec_boot_state {
   ndn_face_intf_t* face;
@@ -118,7 +120,7 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     return;
   }
   NDN_LOG_INFO("[BOOTSTRAPPING]: Receive Sign On Certificate Data packet with name");
-  ndn_name_print(&data.name);
+  NDN_LOG_INFO_NAME(&data.name);
   // parse content
   // format: self certificate, encrypted key
   ndn_decoder_t decoder;
@@ -242,7 +244,7 @@ sec_boot_send_cert_interest()
     return ret;
   }
   NDN_LOG_INFO("[BOOTSTRAPPING]: Send SEC BOOT cert Interest packet with name");
-  ndn_name_print(&interest.name);
+  NDN_LOG_INFO_NAME(&interest.name);
   return NDN_SUCCESS;
 }
 
@@ -256,7 +258,7 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     return;
   }
   NDN_LOG_INFO("[BOOTSTRAPPING]: Receive Sign On Data packet with name");
-  ndn_name_print(&data.name);
+  NDN_LOG_INFO_NAME(&data.name);
   uint32_t probe = 0;
 
   // parse content
@@ -285,9 +287,20 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   decoder_get_raw_buffer_value(&decoder, dh_pub_buf, probe);
   ndn_ecc_pub_init(&m_sec_boot_state.controller_dh_pub, dh_pub_buf, probe, NDN_ECDSA_CURVE_SECP256R1, 1);
   ndn_ecc_prv_t* self_prv_key = ndn_key_storage_get_ecc_prv_key(SEC_BOOT_DH_KEY_ID);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
   // get shared secret using DH process
   uint8_t shared[32];
   ndn_ecc_dh_shared_secret(&m_sec_boot_state.controller_dh_pub, self_prv_key, shared, sizeof(shared));
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("BOOTSTRAPPING-DATA1-ECDH: %lluus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
   // decode salt from the replied data
   decoder_get_type(&decoder, &probe);
   if (probe != TLV_AC_SALT) return;
@@ -388,7 +401,7 @@ sec_boot_send_sign_on_interest()
     return ret;
   }
   NDN_LOG_INFO("[BOOTSTRAPPING]: Send SEC BOOT sign on Interest packet with name");
-  ndn_name_print(&interest.name);
+  NDN_LOG_INFO_NAME(&interest.name);
   return NDN_SUCCESS;
 }
 
