@@ -119,6 +119,7 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     NDN_LOG_ERROR("[BOOTSTRAPPING]: Decoding failed.\n");
     return;
   }
+  NDN_LOG_DEBUG("BOOTSTRAPPING-DATA2-PKT-SIZE: %u Bytes\n", data_size);
   NDN_LOG_INFO("[BOOTSTRAPPING]: Receive Sign On Certificate Data packet with name");
   NDN_LOG_INFO_NAME(&data.name);
   // parse content
@@ -243,6 +244,7 @@ sec_boot_send_cert_interest()
     NDN_LOG_ERROR("[BOOTSTRAPPING]: Fail to send out adv Interest. Error Code: %d", ret);
     return ret;
   }
+  NDN_LOG_DEBUG("BOOTSTRAPPING-INT2-PKT-SIZE: %u Bytes\n", encoder.offset);
   NDN_LOG_INFO("[BOOTSTRAPPING]: Send SEC BOOT cert Interest packet with name");
   NDN_LOG_INFO_NAME(&interest.name);
   return NDN_SUCCESS;
@@ -257,6 +259,7 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     NDN_LOG_ERROR("[BOOTSTRAPPING]: Decoding failed.");
     return;
   }
+  NDN_LOG_DEBUG("BOOTSTRAPPING-DATA1-PKT-SIZE: %u Bytes\n", data_size);
   NDN_LOG_INFO("[BOOTSTRAPPING]: Receive Sign On Data packet with name");
   NDN_LOG_INFO_NAME(&data.name);
   uint32_t probe = 0;
@@ -400,6 +403,7 @@ sec_boot_send_sign_on_interest()
     NDN_LOG_ERROR("[BOOTSTRAPPING]: Fail to send out adv Interest. Error Code: %d", ret);
     return ret;
   }
+  NDN_LOG_DEBUG("BOOTSTRAPPING-INT1-PKT-SIZE: %u Bytes\n", encoder.offset);
   NDN_LOG_INFO("[BOOTSTRAPPING]: Send SEC BOOT sign on Interest packet with name");
   NDN_LOG_INFO_NAME(&interest.name);
   return NDN_SUCCESS;

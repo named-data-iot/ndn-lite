@@ -22,10 +22,9 @@
 
 #define ENABLE_NDN_LOG_INFO 0
 #define ENABLE_NDN_LOG_DEBUG 1
-#define ENABLE_NDN_LOG_ERROR 0
+#define ENABLE_NDN_LOG_ERROR 1
 
 #include "../util/logger.h"
-
 
 #define NDN_PUBSUB_TOPIC_SIZE 10
 #define NDN_PUBSUB_IDENTIFIER_SIZE 2
@@ -85,7 +84,7 @@ typedef struct pub_topic {
   /** Cache of the lastest published DATA. If the entry is about a subscription record,
    * cache here will not be used.
    */
-  uint8_t cache[256];
+  uint8_t cache[300];
   /** Cached Data Size.
    */
   uint32_t cache_size;
@@ -182,7 +181,7 @@ void
 _on_new_content_verify_success(ndn_data_t* data, void* userdata)
 {
   NDN_LOG_INFO("New published content successfully pass signature verification.");
-  ndn_name_print(&data->name);
+  NDN_LOG_INFO_NAME(&data->name);
 
   int ret = NDN_SUCCESS;
   sub_topic_t* topic = (sub_topic_t*)userdata;
@@ -259,7 +258,7 @@ void
 _on_new_content_verify_failure(ndn_data_t* data, void* userdata)
 {
   NDN_LOG_INFO("New published content cannot pass signature verification. Drop...");
-  ndn_name_print(&data->name);
+  NDN_LOG_INFO_NAME(&data->name);
 }
 
 /** OnData callback function to handle incoming content.
@@ -271,10 +270,11 @@ _on_new_content(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   // check if received before
   ndn_sha256(raw_data, data_size, pkt_encoding_buf);
   if (topic->received_content && memcmp(pkt_encoding_buf, topic->last_digest, 16) == 0) {
-    NDN_LOG_INFO("Data has been received before. Drop...");
+    NDN_LOG_INFO("Received duplicate published content/command. Drop");
     return;
   }
-  NDN_LOG_INFO("Fetched New Published Data...");
+  NDN_LOG_INFO("Received new published content/command");
+  NDN_LOG_DEBUG("SUB-NEW-DATA-PKT-SIZE: %u Bytes\n", data_size);
   topic->received_content = true;
   memcpy(topic->last_digest, pkt_encoding_buf, 16);
 
@@ -345,7 +345,7 @@ _periodic_sub_content_fetching(void *self, size_t param_length, void *param)
       }
       else {
         NDN_LOG_INFO("[PUB/SUB] Sent subscription Interest");
-        ndn_name_print(&name);
+        NDN_LOG_INFO_NAME(&name);
         // update next_interest time
         topic->next_interest = now + topic->interval;
       }
@@ -365,7 +365,7 @@ _on_subscription_interest(const uint8_t* raw_interest, uint32_t interest_size, v
   NDN_LOG_INFO("[PUB/SUB] Received Subscription Interest");
   ndn_interest_t interest;
   ndn_interest_from_block(&interest, raw_interest, interest_size);
-  ndn_name_print(&interest.name);
+  NDN_LOG_INFO_NAME(&interest.name);
 
   // match topic
   pub_topic_t* topic = (pub_topic_t*)userdata;
@@ -390,7 +390,7 @@ _on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, v
   NDN_LOG_INFO("[PUB/SUB] On notification Interest");
   ndn_interest_t interest;
   ndn_interest_from_block(&interest, raw_interest, interest_size);
-  ndn_name_print(&interest.name);
+  NDN_LOG_INFO_NAME(&interest.name);
 
   // check whether identifiers match
   sub_topic_t* topic = (sub_topic_t*)userdata;
@@ -430,7 +430,7 @@ _on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, v
   }
   else {
     NDN_LOG_INFO("[PUB/SUB] Sent subscription Interest");
-    ndn_name_print(&name);
+    NDN_LOG_INFO_NAME(&name);
   }
   return NDN_FWD_STRATEGY_SUPPRESS;
 }
@@ -608,8 +608,9 @@ ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_
     NDN_LOG_ERROR("[PUB/SUB] Content Data cannot be generated. Error code: %d", ret);
     return;
   }
+  NDN_LOG_DEBUG("PUB-CONTENT-PKT-SIZE: %u Bytes\n", topic->cache_size);
   NDN_LOG_INFO("[PUB/SUB] Content Data has been generated");
-  ndn_name_print(&name);
+  NDN_LOG_INFO_NAME(&name);
 }
 
 void
@@ -700,8 +701,9 @@ ps_publish_command(uint8_t service, const uint8_t* command_id, uint32_t command_
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
                       TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
+  NDN_LOG_DEBUG("PUB-CMD-PKT-SIZE: %u Bytes\n", topic->cache_size);
   NDN_LOG_INFO("[PUB/SUB] CMD Data has been generated");
-  ndn_name_print(&name);
+  NDN_LOG_INFO_NAME(&name);
 
   // express the /Notify Interest
   // FORMAT: /home/service/NOTIFY/CMD/identifier[0,2]/action
@@ -726,5 +728,5 @@ ps_publish_command(uint8_t service, const uint8_t* command_id, uint32_t command_
   ret = ndn_forwarder_express_interest(pkt_encoding_buf, buffer_length, _on_new_content, _on_sub_timeout, NULL);
   m_is_my_own_int = false;
   NDN_LOG_INFO("[PUB/SUB] Sent notification Interest for the newly generated cmd");
-  ndn_name_print(&name);
+  NDN_LOG_INFO_NAME(&name);
 }
