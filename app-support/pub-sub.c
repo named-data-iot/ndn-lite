@@ -247,7 +247,7 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
     NDN_LOG_ERROR("Cannot verify incoming content against trust schemas. Error code: %d", ret);
     return;
   }
-
+  NDN_LOG_DEBUG("NEW-DATA-FINSIH-VERIFICATION-TP: %llu ms\n", ndn_time_now_ms());
   // command FORMAT: /home/service/CMD/identifier[0,2]/command
   // data FORMAT: /home/service/DATA/identifier[0,2]/data-identifier
   topic->callback(topic->service, topic->is_cmd, topic->identifier, comp_size,
