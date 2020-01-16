@@ -49,8 +49,11 @@ static const uint32_t SEC_BOOT_DH_KEY_ID = 10001;
 static const uint32_t SEC_BOOT_AES_KEY_ID = 10002;
 static ndn_time_ms_t m_callback_after = 0;
 
+#if ENABLE_NDN_LOG_DEBUG
+static ndn_time_ms_t m_measure_tp0 = 0;
 static ndn_time_us_t m_measure_tp1 = 0;
 static ndn_time_us_t m_measure_tp2 = 0;
+#endif
 
 // some common rules: 1. keep keys in key_storage 2. delete the key from key storage if its not used any longer
 
@@ -71,6 +74,10 @@ _sec_boot_call_app_callback()
 void
 _sec_boot_after_bootstrapping()
 {
+#if ENABLE_NDN_LOG_DEBUG
+  NDN_LOG_DEBUG("BOOTSTRAPPING-TOTAL-TIME: %llums\n", ndn_time_now_ms() - m_measure_tp0);
+#endif
+
   // start running service discovery protocol
   ndn_sd_after_bootstrapping(m_sec_boot_state.face);
 
@@ -454,6 +461,10 @@ ndn_security_bootstrapping(ndn_face_intf_t* face,
   int ret = ndn_forwarder_add_route_by_str(face, "/ndn/sign-on", strlen("/ndn/sign-on"));
   if (ret != NDN_SUCCESS) return ret;
   NDN_LOG_INFO("[BOOTSTRAPPING]: Successfully add route");
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp0 = ndn_time_now_ms();
+#endif
 
   // send the first interest out
   sec_boot_send_sign_on_interest();

@@ -31,8 +31,10 @@ static ndn_sig_verifier_userdata_t m_userdata;
 static ndn_sig_verifier_state_t m_sig_verifier_state;
 static uint8_t verifier_buf[4096];
 
+#if ENABLE_NDN_LOG_DEBUG
 static ndn_time_us_t m_measure_tp1 = 0;
 static ndn_time_us_t m_measure_tp2 = 0;
+#endif
 
 void
 sig_verifier_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)

@@ -118,8 +118,10 @@ static pub_sub_state_t m_pub_sub_state;
 static bool m_has_initialized = false;
 static bool m_is_my_own_int = false;
 
+#if ENABLE_NDN_LOG_DEBUG
 static ndn_time_us_t m_measure_tp1 = 0;
 static ndn_time_us_t m_measure_tp2 = 0;
+#endif
 
 /** Helper function to initialize the topic List
  */
@@ -274,6 +276,7 @@ _on_new_content(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     return;
   }
   NDN_LOG_INFO("Received new published content/command");
+  NDN_LOG_DEBUG("NEW-DATA-ARRIVE-TP: %llu ms\n", ndn_time_now_ms());
   NDN_LOG_DEBUG("SUB-NEW-DATA-PKT-SIZE: %u Bytes\n", data_size);
   topic->received_content = true;
   memcpy(topic->last_digest, pkt_encoding_buf, 16);

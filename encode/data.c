@@ -29,8 +29,10 @@
 /*  Not supposed to be used by library users                */
 /************************************************************/
 
+#if ENABLE_NDN_LOG_DEBUG
 static ndn_time_us_t m_measure_tp1 = 0;
 static ndn_time_us_t m_measure_tp2 = 0;
+#endif
 
 // this function should be invoked only after data's signature
 // info has been initialized
