@@ -25,6 +25,10 @@ static int
 _pkcs7_padding(const uint8_t* input_value, uint8_t input_size,
                uint8_t* output_value, uint8_t output_size)
 {
+  if (input_size % TC_AES_BLOCK_SIZE == 0) {
+    memcpy(output_value, input_value, input_size);
+    return input_size;
+  }
   uint8_t num = TC_AES_BLOCK_SIZE - input_size % TC_AES_BLOCK_SIZE;
   if (output_size < input_size + num)
     return NDN_OVERSIZE;
@@ -62,61 +66,84 @@ ndn_lite_default_aes_load_key(struct abstract_aes_key* aes_key,
 uint32_t
 ndn_lite_default_aes_probe_padding_size(uint32_t plaintext_size)
 {
-  return (plaintext_size / TC_AES_BLOCK_SIZE + 1) * TC_AES_BLOCK_SIZE;
+  if (plaintext_size % TC_AES_BLOCK_SIZE == 0) {
+    return plaintext_size;
+  }
+  else
+    return (plaintext_size / TC_AES_BLOCK_SIZE + 1) * TC_AES_BLOCK_SIZE;
 }
 
 uint32_t
 ndn_lite_default_aes_parse_unpadding_size(uint8_t* plaintext_value, uint32_t plaintext_size)
 {
   for (uint8_t i = 0; i < TC_AES_BLOCK_SIZE; i++)
-    if (*(plaintext_value + plaintext_size - 1) == byte[i])
-      return plaintext_size - i - 1;
-  return 0;
+    if (*(plaintext_value + plaintext_size - 1) == byte[i]) {
+      bool satisfy = true;
+      for (uint8_t j = 0; j < byte[i]; j++) {
+        if (*(plaintext_value + plaintext_size - 1 - i) != byte[i]) {
+          satisfy = false;
+        }
+      }
+      if (satisfy) {
+        return plaintext_size - i - 1;
+      }
+      else {
+        return plaintext_size;
+      }
+    }
+  return plaintext_size;
 }
 
 int
-ndn_lite_default_aes_cbc_encrypt(const uint8_t* input_value, uint8_t input_size,
-                                 uint8_t* output_value, uint8_t output_size,
+ndn_lite_default_aes_cbc_encrypt(const uint8_t* input_value, uint32_t input_size,
+                                 uint8_t* output_value, uint32_t* output_size,
                                  const uint8_t* aes_iv, const struct abstract_aes_key* aes_key)
 {
-  if ((ndn_lite_default_aes_probe_padding_size(input_size) + TC_AES_BLOCK_SIZE > output_size) ||
-      aes_key->key_size < NDN_SEC_AES_MIN_KEY_SIZE){
+  if (aes_key->key_size < NDN_SEC_AES_MIN_KEY_SIZE) {
     return NDN_SEC_WRONG_AES_SIZE;
   }
   // TODO: too much memory usage when encrypt large chunks
-  uint8_t buffer[input_size + TC_AES_BLOCK_SIZE];
-  int err_or_size = _pkcs7_padding(input_value, input_size, buffer, sizeof(buffer));
+  uint8_t final_input[input_size + TC_AES_BLOCK_SIZE];
+  int err_or_size = _pkcs7_padding(input_value, input_size, final_input, sizeof(final_input));
   if (err_or_size < 0)
     return err_or_size;
+  uint8_t output[err_or_size + TC_AES_BLOCK_SIZE];
   struct tc_aes_key_sched_struct schedule;
   if (tc_aes128_set_encrypt_key(&schedule, aes_key->key_value) != TC_CRYPTO_SUCCESS) {
     return NDN_SEC_INIT_FAILURE;
   }
-  if (tc_cbc_mode_encrypt(output_value, err_or_size + TC_AES_BLOCK_SIZE,
-                          buffer, err_or_size, aes_iv, &schedule) != TC_CRYPTO_SUCCESS) {
+  // Tinycrypt will prepend IV to the output
+  if (tc_cbc_mode_encrypt(output, err_or_size + TC_AES_BLOCK_SIZE,
+                          final_input, err_or_size, aes_iv, &schedule) != TC_CRYPTO_SUCCESS) {
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
+  memcpy(output_value, output + TC_AES_BLOCK_SIZE, err_or_size);
+  *output_size = err_or_size;
   return NDN_SUCCESS;
 }
 
 int
-ndn_lite_default_aes_cbc_decrypt(const uint8_t* input_value, uint8_t input_size,
-                                 uint8_t* output_value, uint8_t output_size,
+ndn_lite_default_aes_cbc_decrypt(const uint8_t* input_value, uint32_t input_size,
+                                 uint8_t* output_value, uint32_t* output_size,
                                  const uint8_t* aes_iv, const struct abstract_aes_key* aes_key)
 {
-  if (output_size < input_size - TC_AES_BLOCK_SIZE || aes_key->key_size < NDN_SEC_AES_MIN_KEY_SIZE) {
+  if (aes_key->key_size < NDN_SEC_AES_MIN_KEY_SIZE) {
     return NDN_SEC_WRONG_AES_SIZE;
   }
-  (void)aes_iv;
+  uint8_t final_input[TC_AES_BLOCK_SIZE + input_size];
+  memcpy(final_input, aes_iv, TC_AES_BLOCK_SIZE);
+  memcpy(final_input + TC_AES_BLOCK_SIZE, input_value, input_size);
   struct tc_aes_key_sched_struct schedule;
   if (tc_aes128_set_decrypt_key(&schedule, aes_key->key_value) != TC_CRYPTO_SUCCESS) {
     return NDN_SEC_INIT_FAILURE;
   }
-  if (tc_cbc_mode_decrypt(output_value, input_size - TC_AES_BLOCK_SIZE,
-                          input_value + TC_AES_BLOCK_SIZE, input_size - TC_AES_BLOCK_SIZE,
-                          input_value, &schedule) != TC_CRYPTO_SUCCESS) {
+  // Tinycrypt requires: in == iv + ciphertext, i.e. the iv and the ciphertext are contiguous.
+  if (tc_cbc_mode_decrypt(output_value, sizeof(final_input), // output_value, input_size, //
+                          final_input + TC_AES_BLOCK_SIZE, sizeof(final_input), //input_value, input_size, 
+                          final_input, &schedule) != TC_CRYPTO_SUCCESS) {
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
+  *output_size = ndn_lite_default_aes_parse_unpadding_size(output_value, input_size);
   return NDN_SUCCESS;
 }
 

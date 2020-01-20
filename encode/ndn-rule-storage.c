@@ -1,4 +1,3 @@
-
 #include "ndn-rule-storage.h"
 
 static ndn_rule_storage_t ndn_rule_storage;

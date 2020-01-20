@@ -9,14 +9,23 @@
  */
 #include "security-bootstrapping.h"
 #include "service-discovery.h"
+#include "access-control.h"
+#include "ndn-sig-verifier.h"
 #include "../encode/interest.h"
 #include "../encode/signed-interest.h"
 #include "../encode/data.h"
 #include "../encode/key-storage.h"
 #include "../ndn-error-code.h"
 #include "../util/uniform-time.h"
+#include "../util/msg-queue.h"
 #include "../security/ndn-lite-aes.h"
 #include "../security/ndn-lite-sha.h"
+
+#define ENABLE_NDN_LOG_INFO 0
+#define ENABLE_NDN_LOG_DEBUG 1
+#define ENABLE_NDN_LOG_ERROR 0
+
+#include "../util/logger.h"
 
 typedef struct ndn_sec_boot_state {
   ndn_face_intf_t* face;
@@ -31,13 +40,20 @@ typedef struct ndn_sec_boot_state {
   const ndn_ecc_prv_t* pre_installed_ecc_key;
   // TODO: add the hmac key into the keystorage
   const ndn_hmac_key_t* pre_shared_hmac_key;
-  ndn_secruity_bootstrapping_after_bootstrapping after_sec_boot;
+  ndn_security_bootstrapping_after_bootstrapping after_sec_boot;
 } ndn_sec_boot_state_t;
 
 static uint8_t sec_boot_buf[4096];
 static ndn_sec_boot_state_t m_sec_boot_state;
 static const uint32_t SEC_BOOT_DH_KEY_ID = 10001;
 static const uint32_t SEC_BOOT_AES_KEY_ID = 10002;
+static ndn_time_ms_t m_callback_after = 0;
+
+#if ENABLE_NDN_LOG_DEBUG
+static ndn_time_ms_t m_measure_tp0 = 0;
+static ndn_time_us_t m_measure_tp1 = 0;
+static ndn_time_us_t m_measure_tp2 = 0;
+#endif
 
 // some common rules: 1. keep keys in key_storage 2. delete the key from key storage if its not used any longer
 
@@ -45,16 +61,42 @@ int sec_boot_send_sign_on_interest();
 int sec_boot_send_cert_interest();
 
 void
-sec_boot_after_bootstrapping()
+_sec_boot_call_app_callback()
 {
-  ndn_key_storage_delete_aes_key(SEC_BOOT_AES_KEY_ID);
-  ndn_key_storage_delete_ecc_key(SEC_BOOT_DH_KEY_ID);
+  if (ndn_time_now_ms() < m_callback_after) {
+    ndn_msgqueue_post(NULL, _sec_boot_call_app_callback, 0, NULL);
+    return;
+  }
+  // call application-defined after_bootstrapping function
+  m_sec_boot_state.after_sec_boot();
+}
+
+void
+_sec_boot_after_bootstrapping()
+{
+#if ENABLE_NDN_LOG_DEBUG
+  NDN_LOG_DEBUG("BOOTSTRAPPING-TOTAL-TIME: %llums\n", ndn_time_now_ms() - m_measure_tp0);
+#endif
 
   // start running service discovery protocol
   ndn_sd_after_bootstrapping(m_sec_boot_state.face);
 
-  // call application-defined after_bootstrapping function
-  m_sec_boot_state.after_sec_boot();
+  // call access control's after bootstrapping
+  ndn_ac_after_bootstrapping();
+
+  // init signature verifier
+  ndn_sig_verifier_after_bootstrapping(m_sec_boot_state.face);
+
+  // TODO: subscribe to default topics (policies, key information)
+
+  // we shouldn't delete the AES key because they may be used in other places
+  // ndn_key_storage_delete_aes_key(SEC_BOOT_AES_KEY_ID);
+  ndn_key_storage_delete_ecc_key(SEC_BOOT_DH_KEY_ID);
+
+  NDN_LOG_INFO("[BOOTSTRAPPING]: Successfully finished NDN security bootstrapping");
+
+  m_callback_after = ndn_time_now_ms() + 1500;
+  ndn_msgqueue_post(NULL, _sec_boot_call_app_callback, 0, NULL);
 }
 
 void
@@ -62,7 +104,7 @@ on_sec_boot_sign_on_interest_timeout (void* userdata)
 {
   // do nothing for now
   (void)userdata;
-  printf("\nSEC BOOTSTRAPPING sign on interest timeout\n");
+  NDN_LOG_INFO("[BOOTSTRAPPING]: sign on Interest timeout");
   sec_boot_send_sign_on_interest();
 }
 
@@ -71,7 +113,7 @@ on_sec_boot_cert_interest_timeout (void* userdata)
 {
   // do nothing for now
   (void)userdata;
-  printf("\nSEC BOOTSTRAPPING cert timeout\n");
+  NDN_LOG_INFO("[BOOTSTRAPPING]: cert Interest timeout");
   sec_boot_send_cert_interest();
 }
 
@@ -81,11 +123,12 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   // parse received data
   ndn_data_t data;
   if (ndn_data_tlv_decode_hmac_verify(&data, raw_data, data_size, m_sec_boot_state.pre_shared_hmac_key) != NDN_SUCCESS) {
-    printf("Decoding failed.\n");
+    NDN_LOG_ERROR("[BOOTSTRAPPING]: Decoding failed.\n");
     return;
   }
-  printf("Receive Sign On Certificate Data packet with name: \n");
-  ndn_name_print(&data.name);
+  NDN_LOG_DEBUG("BOOTSTRAPPING-DATA2-PKT-SIZE: %u Bytes\n", data_size);
+  NDN_LOG_INFO("[BOOTSTRAPPING]: Receive Sign On Certificate Data packet with name");
+  NDN_LOG_INFO_NAME(&data.name);
   // parse content
   // format: self certificate, encrypted key
   ndn_decoder_t decoder;
@@ -100,6 +143,11 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   if (ndn_data_tlv_decode_no_verify(&self_cert, data.content_value, encoder_probe_block_size(TLV_Data, probe), NULL, NULL) != NDN_SUCCESS) {
     return;
   }
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
   // iv
   decoder_get_type(&decoder, &probe);
   if (probe != TLV_AC_AES_IV) return;
@@ -110,18 +158,28 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   decoder_get_type(&decoder, &probe);
   if (probe != TLV_AC_ENCRYPTED_PAYLOAD) return;
   decoder_get_length(&decoder, &probe);
-  uint8_t plaintext[1024];
-  ndn_aes_key_t* sym_aes_key = NULL;
-  ndn_key_storage_get_aes_key(SEC_BOOT_AES_KEY_ID, &sym_aes_key);
-  ndn_aes_cbc_decrypt(decoder.input_value + decoder.offset, probe,
-                      plaintext, probe - NDN_AES_BLOCK_SIZE, aes_iv, sym_aes_key);
+  ndn_aes_key_t* sym_aes_key = ndn_key_storage_get_aes_key(SEC_BOOT_AES_KEY_ID);
+  uint32_t used_size = 0;
+  uint8_t plaintext[256] = {0};
+  int ret = ndn_aes_cbc_decrypt(decoder.input_value + decoder.offset, probe,
+                                plaintext, &used_size, aes_iv, sym_aes_key);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("BOOTSTRAPPING-DATA2-PKT-AES-DEC: %lluus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("Cannot decrypt sealed private key, Error code: %d\n", ret);
+    return;
+  }
   // set key storage
   ndn_ecc_prv_t self_prv;
   uint32_t keyid = *(uint32_t*)&self_cert.name.components[self_cert.name.components_size - 3].value;
-  ndn_ecc_prv_init(&self_prv, plaintext, 64, NDN_ECDSA_CURVE_SECP256R1, keyid);
+  ndn_ecc_prv_init(&self_prv, plaintext, used_size, NDN_ECDSA_CURVE_SECP256R1, keyid);
   ndn_key_storage_set_self_identity(&self_cert, &self_prv);
   // finish the bootstrapping process
-  sec_boot_after_bootstrapping();
+  _sec_boot_after_bootstrapping();
 }
 
 int
@@ -132,6 +190,11 @@ sec_boot_send_cert_interest()
   ndn_interest_t interest;
   ndn_interest_init(&interest);
   ndn_key_storage_t* key_storage = ndn_key_storage_get_instance();
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
   ndn_name_append_component(&interest.name, &key_storage->trust_anchor.name.components[0]);
   ndn_name_append_string_component(&interest.name, "cert", strlen("cert"));
   // set params
@@ -153,8 +216,7 @@ sec_boot_send_cert_interest()
   encoder_append_length(&encoder, NDN_SEC_SHA256_HASH_SIZE);
   encoder_append_raw_buffer_value(&encoder, m_sec_boot_state.trust_anchor_sha, NDN_SEC_SHA256_HASH_SIZE);
   // append the ecdh pub key, N1
-  ndn_ecc_pub_t* self_dh_pub = NULL;
-  ndn_key_storage_get_ecc_pub_key(SEC_BOOT_DH_KEY_ID, &self_dh_pub);
+  ndn_ecc_pub_t* self_dh_pub = ndn_key_storage_get_ecc_pub_key(SEC_BOOT_DH_KEY_ID);
   encoder_append_type(&encoder, TLV_SEC_BOOT_N1_ECDH_PUB);
   encoder_append_length(&encoder, ndn_ecc_get_pub_key_size(self_dh_pub));
   encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(self_dh_pub),
@@ -164,19 +226,34 @@ sec_boot_send_cert_interest()
   // set must be fresh
   ndn_interest_set_MustBeFresh(&interest,true);
   interest.lifetime = 5000;
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("BOOTSTRAPPING-INT2-PKT-ENCODING: %lluus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
   // sign the interest
-  ndn_signed_interest_ecdsa_sign(&interest, &interest.name, m_sec_boot_state.pre_installed_ecc_key);
+  ndn_name_t key_locator;
+  ndn_name_from_string(&key_locator, m_sec_boot_state.device_identifier, m_sec_boot_state.identifier_size);
+  ndn_signed_interest_ecdsa_sign(&interest, &key_locator, m_sec_boot_state.pre_installed_ecc_key);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+  NDN_LOG_DEBUG("BOOTSTRAPPING-INT2-ECDSA-SIGN: %lluus\n", m_measure_tp1 - m_measure_tp2);
+#endif
+
   // send it out
   encoder_init(&encoder, sec_boot_buf, sizeof(sec_boot_buf));
   ndn_interest_tlv_encode(&encoder, &interest);
   ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
                                        on_cert_data, on_sec_boot_cert_interest_timeout, NULL);
   if (ret != 0) {
-    printf("Fail to send out adv Interest. Error Code: %d\n", ret);
+    NDN_LOG_ERROR("[BOOTSTRAPPING]: Fail to send out adv Interest. Error Code: %d", ret);
     return ret;
   }
-  printf("Send SEC BOOT cert Interest packet with name: \n");
-  ndn_name_print(&interest.name);
+  NDN_LOG_DEBUG("BOOTSTRAPPING-INT2-PKT-SIZE: %u Bytes\n", encoder.offset);
+  NDN_LOG_INFO("[BOOTSTRAPPING]: Send SEC BOOT cert Interest packet with name");
+  NDN_LOG_INFO_NAME(&interest.name);
   return NDN_SUCCESS;
 }
 
@@ -186,12 +263,14 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   // parse received data
   ndn_data_t data;
   if (ndn_data_tlv_decode_hmac_verify(&data, raw_data, data_size, m_sec_boot_state.pre_shared_hmac_key) != NDN_SUCCESS) {
-    printf("Decoding failed.\n");
+    NDN_LOG_ERROR("[BOOTSTRAPPING]: Decoding failed.");
     return;
   }
-  printf("Receive Sign On Data packet with name: \n");
-  ndn_name_print(&data.name);
+  NDN_LOG_DEBUG("BOOTSTRAPPING-DATA1-PKT-SIZE: %u Bytes\n", data_size);
+  NDN_LOG_INFO("[BOOTSTRAPPING]: Receive Sign On Data packet with name");
+  NDN_LOG_INFO_NAME(&data.name);
   uint32_t probe = 0;
+
   // parse content
   // format: a data packet, ecdh pub, salt
   ndn_decoder_t decoder;
@@ -217,24 +296,44 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   uint8_t dh_pub_buf[100];
   decoder_get_raw_buffer_value(&decoder, dh_pub_buf, probe);
   ndn_ecc_pub_init(&m_sec_boot_state.controller_dh_pub, dh_pub_buf, probe, NDN_ECDSA_CURVE_SECP256R1, 1);
-  ndn_ecc_prv_t* self_prv_key = NULL;
-  ndn_key_storage_get_ecc_prv_key(SEC_BOOT_DH_KEY_ID, &self_prv_key);
+  ndn_ecc_prv_t* self_prv_key = ndn_key_storage_get_ecc_prv_key(SEC_BOOT_DH_KEY_ID);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
   // get shared secret using DH process
   uint8_t shared[32];
   ndn_ecc_dh_shared_secret(&m_sec_boot_state.controller_dh_pub, self_prv_key, shared, sizeof(shared));
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("BOOTSTRAPPING-DATA1-ECDH: %lluus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
   // decode salt from the replied data
   decoder_get_type(&decoder, &probe);
   if (probe != TLV_AC_SALT) return;
   decoder_get_length(&decoder, &probe);
   uint8_t salt[NDN_APPSUPPORT_AC_SALT_SIZE];
   decoder_get_raw_buffer_value(&decoder, salt, sizeof(salt));
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
   // generate AES key using HKDF
-  ndn_aes_key_t* sym_aes_key;
-  ndn_key_storage_get_empty_aes_key(&sym_aes_key);
+  ndn_aes_key_t* sym_aes_key = ndn_key_storage_get_empty_aes_key();
   uint8_t symmetric_key[NDN_APPSUPPORT_AC_EDK_SIZE];
   ndn_hkdf(shared, sizeof(shared), symmetric_key, sizeof(symmetric_key),
            salt, sizeof(salt), NULL, 0);
   ndn_aes_key_init(sym_aes_key, symmetric_key, sizeof(symmetric_key), SEC_BOOT_AES_KEY_ID);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("BOOTSTRAPPING-DATA1-HKDF: %lluus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
   // prepare for the next interest: register the prefix
   ndn_name_t prefix_to_register;
   ndn_name_init(&prefix_to_register);
@@ -251,6 +350,10 @@ on_sign_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 int
 sec_boot_send_sign_on_interest()
 {
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
   int ret = 0;
   // generate the sign on interest  (1st interest)
   // make the Interest packet
@@ -268,12 +371,11 @@ sec_boot_send_sign_on_interest()
                              m_sec_boot_state.identifier_size);
   name_component_tlv_encode(&encoder, &device_identifier_comp);
   // append the capabilities
-  encoder_append_type(&encoder, TLV_SEC_BOOT_CAPACITIES);
+  encoder_append_type(&encoder, TLV_SEC_BOOT_CAPABILITIES);
   encoder_append_length(&encoder, m_sec_boot_state.list_size);
   encoder_append_raw_buffer_value(&encoder, m_sec_boot_state.service_list, m_sec_boot_state.list_size);
   // append the ecdh pub key, N1
-  ndn_ecc_pub_t* dh_pub = NULL;
-  ndn_key_storage_get_ecc_pub_key(SEC_BOOT_DH_KEY_ID, &dh_pub);
+  ndn_ecc_pub_t* dh_pub = ndn_key_storage_get_ecc_pub_key(SEC_BOOT_DH_KEY_ID);
   encoder_append_type(&encoder, TLV_SEC_BOOT_N1_ECDH_PUB);
   encoder_append_length(&encoder, ndn_ecc_get_pub_key_size(dh_pub));
   encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(dh_pub), ndn_ecc_get_pub_key_size(dh_pub));
@@ -282,19 +384,35 @@ sec_boot_send_sign_on_interest()
   // set must be fresh
   ndn_interest_set_MustBeFresh(&interest,true);
   interest.lifetime = 5000;
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("BOOTSTRAPPING-INT1-PKT-ENCODING: %lluus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
   // sign the interest
-  ndn_signed_interest_ecdsa_sign(&interest, &interest.name, m_sec_boot_state.pre_installed_ecc_key);
+  ndn_name_t key_locator;
+  ndn_name_init(&key_locator);
+  ndn_name_append_component(&key_locator, &device_identifier_comp);
+  ndn_signed_interest_ecdsa_sign(&interest, &key_locator, m_sec_boot_state.pre_installed_ecc_key);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+  NDN_LOG_DEBUG("BOOTSTRAPPING-INT1-PKT-ECDSA-SIGN: %lluus\n", m_measure_tp1 - m_measure_tp2);
+#endif
+
   // send it out
   encoder_init(&encoder, sec_boot_buf, sizeof(sec_boot_buf));
   ndn_interest_tlv_encode(&encoder, &interest);
   ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
                                        on_sign_on_data, on_sec_boot_sign_on_interest_timeout, NULL);
   if (ret != 0) {
-    printf("Fail to send out adv Interest. Error Code: %d\n", ret);
+    NDN_LOG_ERROR("[BOOTSTRAPPING]: Fail to send out adv Interest. Error Code: %d", ret);
     return ret;
   }
-  printf("Send SEC BOOT sign on Interest packet with name: \n");
-  ndn_name_print(&interest.name);
+  NDN_LOG_DEBUG("BOOTSTRAPPING-INT1-PKT-SIZE: %u Bytes\n", encoder.offset);
+  NDN_LOG_INFO("[BOOTSTRAPPING]: Send SEC BOOT sign on Interest packet with name");
+  NDN_LOG_INFO_NAME(&interest.name);
   return NDN_SUCCESS;
 }
 
@@ -303,14 +421,11 @@ ndn_security_bootstrapping(ndn_face_intf_t* face,
                            const ndn_ecc_prv_t* pre_installed_prv_key, const ndn_hmac_key_t* pre_shared_hmac_key,
                            const char* device_identifier, size_t identifier_size,
                            const uint8_t* service_list, size_t list_size,
-                           ndn_secruity_bootstrapping_after_bootstrapping after_bootstrapping)
+                           ndn_security_bootstrapping_after_bootstrapping after_bootstrapping)
 {
   // set ECC RNG backend
   ndn_rng_backend_t* rng_backend = ndn_rng_get_backend();
   ndn_ecc_set_rng(rng_backend->rng);
-
-  // init key storage
-  ndn_key_storage_init();
 
   // remember the state for future use
   m_sec_boot_state.face = face;
@@ -328,14 +443,28 @@ ndn_security_bootstrapping(ndn_face_intf_t* face,
   ndn_ecc_pub_t* dh_pub = NULL;
   ndn_ecc_prv_t* dh_prv = NULL;
   ndn_key_storage_get_empty_ecc_key(&dh_pub, &dh_prv);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
   if (ndn_ecc_make_key(dh_pub, dh_prv, NDN_ECDSA_CURVE_SECP256R1, SEC_BOOT_DH_KEY_ID) != NDN_SUCCESS) {
     return NDN_SEC_CRYPTO_ALGO_FAILURE;
   }
 
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("BOOTSTRAPPING-INT1-ECDH-KEYGEN: %lluus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
   // register route
   int ret = ndn_forwarder_add_route_by_str(face, "/ndn/sign-on", strlen("/ndn/sign-on"));
   if (ret != NDN_SUCCESS) return ret;
-  printf("SEC BOOT: successfully add route.");
+  NDN_LOG_INFO("[BOOTSTRAPPING]: Successfully add route");
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp0 = ndn_time_now_ms();
+#endif
 
   // send the first interest out
   sec_boot_send_sign_on_interest();

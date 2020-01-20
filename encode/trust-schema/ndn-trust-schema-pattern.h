@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 2018 - 2020 Edward Lu
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v3.0. See the file LICENSE in the top level
+ * directory for more details.
+ */
 
 #ifndef NDN_TRUST_SCHEMA_PATTERN_H
 #define NDN_TRUST_SCHEMA_PATTERN_H
@@ -46,7 +53,7 @@ ndn_trust_schema_pattern_append_component(ndn_trust_schema_pattern_t *pattern, c
   if (pattern->components_size + 1 <= NDN_NAME_COMPONENTS_SIZE) {
     memcpy(pattern->components + pattern->components_size, component, sizeof(ndn_trust_schema_pattern_component_t));
     pattern->components_size++;
-    
+
     return 0;
   }
   else
@@ -75,7 +82,7 @@ ndn_trust_schema_pattern_copy(const ndn_trust_schema_pattern_t *lhs, ndn_trust_s
 
 
 /**
- * Find the first index in a trust schema pattern of a particular type. 
+ * Find the first index in a trust schema pattern of a particular type.
  * @param pattern. Input. The NDN Trust Schema pattern to be parsed.
  * @param type. Input. The pattern component type to search for.
  * @return Index of first pattern component of given type if successfully found, -1 otherwise.
@@ -84,7 +91,7 @@ int
 index_of_pattern_component_type(const ndn_trust_schema_pattern_t* pattern, uint32_t type);
 
 /**
- * Find the last index in a trust schema pattern of a particular type. 
+ * Find the last index in a trust schema pattern of a particular type.
  * @param pattern. Input. The NDN Trust Schema pattern to be parsed.
  * @param type. Input. The pattern component type to search for.
  * @return Index of last pattern component of given type if successfully found, -1 otherwise.

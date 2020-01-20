@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 2018 - 2020 Edward Lu
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v3.0. See the file LICENSE in the top level
+ * directory for more details.
+ */
 
 #ifndef NDN_TRUST_SCHEMA_COMMON_H
 #define NDN_TRUST_SCHEMA_COMMON_H

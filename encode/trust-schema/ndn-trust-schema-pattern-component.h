@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 2018 - 2020 Edward Lu
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v3.0. See the file LICENSE in the top level
+ * directory for more details.
+ */
 
 #ifndef NDN_TRUST_SCHEMA_PATTERN_COMPONENT_H
 #define NDN_TRUST_SCHEMA_PATTERN_COMPONENT_H
@@ -29,8 +36,8 @@ typedef struct ndn_trust_schema_pattern_component {
    */
   uint8_t value[NDN_TRUST_SCHEMA_PATTERN_COMPONENT_BUFFER_SIZE];
   /**
-   * A bit field for storing information regarding subpattern indexing information. 
-   * The first two bits interpreted as an unsigned integer store whether this component 
+   * A bit field for storing information regarding subpattern indexing information.
+   * The first two bits interpreted as an unsigned integer store whether this component
    *   is the beginning of a subpattern, the end of a subpattern, both, or neither.
    *   The actual values can be found in ndn-constants.h.
    * The next three bits interpreted as an unsigned integer store the index x of the subpattern
@@ -70,12 +77,12 @@ ndn_trust_schema_pattern_component_from_buffer(ndn_trust_schema_pattern_componen
  * Probes a string to get its trust schema pattern component type.
  * @param string. Input. String variable which will be probed for trust schema pattern component type.
  * @param size. Input. Size of input string.
- * @return Returns the trust schema pattern component type if there is no error and 
+ * @return Returns the trust schema pattern component type if there is no error and
  *         the probing found a valid NDN trust schema pattern component type.
  */
 static inline uint32_t
 _probe_trust_schema_pattern_component_type(const char* string)
-{  
+{
   if (re_match(_multiple_wildcard_rgxp, string) != TINY_REGEX_C_FAIL) {
     return NDN_TRUST_SCHEMA_WILDCARD_NAME_COMPONENT_SEQUENCE;
   }

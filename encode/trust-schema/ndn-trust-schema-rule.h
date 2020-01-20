@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 2018 - 2020 Edward Lu
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v3.0. See the file LICENSE in the top level
+ * directory for more details.
+ */
 
 #ifndef NDN_TRUST_SCHEMA_RULE_H
 #define NDN_TRUST_SCHEMA_RULE_H
@@ -35,8 +42,8 @@ typedef struct ndn_trust_schema_rule {
  */
 int
 ndn_trust_schema_rule_from_strings(ndn_trust_schema_rule_t* rule,
-				     const char* data_name_pattern_string, uint32_t data_name_pattern_string_size,
-				     const char* key_name_pattern_string, uint32_t key_name_pattern_string_size);
+				                           const char* data_name_pattern_string, uint32_t data_name_pattern_string_size,
+				                           const char* key_name_pattern_string, uint32_t key_name_pattern_string_size);
 /**
  * Copy the lhs rule to the rhs rule.
  * @param lhs. Input. The rule to be inited.

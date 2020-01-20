@@ -15,8 +15,6 @@
 #include "../encode/tlv.h"
 #include "../encode/name.h"
 
-#include "stdio.h"
-
 #define NDN_FORWARDER_RESERVE_SIZE(nametree_size, facetab_size, fib_size, pit_size) \
   (NDN_NAMETREE_RESERVE_SIZE(nametree_size) + \
    NDN_FACE_TABLE_RESERVE_SIZE(facetab_size) + \
@@ -159,9 +157,7 @@ ndn_forwarder_add_route(ndn_face_intf_t* face, uint8_t* prefix, size_t length){
   fib_entry = ndn_fib_find_or_insert(forwarder.fib, prefix, length);
   if (fib_entry == NULL)
     return NDN_FWD_FIB_FULL;
-
   fib_entry->nexthop = bitset_set(fib_entry->nexthop, face->face_id);
-
   return NDN_SUCCESS;
 }
 
@@ -190,7 +186,7 @@ ndn_forwarder_remove_route(ndn_face_intf_t* face, uint8_t* prefix, size_t length
 {
   int ret;
 
-  if(face == NULL) 
+  if(face == NULL)
     return NDN_INVALID_POINTER;
   if(face->face_id >= forwarder.facetab->capacity)
     return NDN_FWD_INVALID_FACE;
@@ -295,6 +291,7 @@ ndn_forwarder_express_interest(uint8_t* interest, size_t length,
   pit_entry->userdata = userdata;
 
   pit_entry->last_time = pit_entry->express_time = ndn_time_now_ms();
+
   return fwd_on_outgoing_interest(interest, length, name, name_len, pit_entry, NDN_INVALID_ID);
 }
 

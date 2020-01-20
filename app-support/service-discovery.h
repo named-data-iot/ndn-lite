@@ -19,52 +19,45 @@
 extern "C" {
 #endif
 
-/**
- * The structure to represent a NDN service.
- */
-typedef struct ndn_service {
-  /**
-   * a bit vector:
-   * index 7 (leftmost) bit. whether initialized. 0: uninitialized 1: initialized
-   * index 6 bit. whether to advertise. 0: no adv, 1: adv.
-   * index 0-5 bits. The state of the service.
-   */
-  uint8_t status;
-  /**
-   * The NDN service ID.
-   */
-  uint8_t service_id;
-} ndn_service_t;
-
-/**
- * The structure to keep the state of one's own services
- */
-typedef struct sd_self_state {
-  /**
-   * The home prefix component
-   */
-  const name_component_t* home_prefix;
-  /**
-   * The locator name components of the device
-   */
-  const name_component_t* device_locator;
-  uint8_t device_locator_size;
-  /**
-   * Device IDs
-   */
-  ndn_service_t services[NDN_SD_SERVICES_SIZE];
-} sd_self_state_t;
-
-/**
- * The structure to keep the cached service information in the system
- */
-typedef struct sd_sys_state {
-  uint8_t interested_services[NDN_SD_SERVICES_SIZE];
-  ndn_name_t cached_services[NDN_SD_SERVICES_SIZE];
-  ndn_time_ms_t expire_tps[NDN_SD_SERVICES_SIZE];
-} sd_sys_state_t;
-
 const static uint32_t SD_ADV_INTERVAL = 15000;
+
+/**
+ * Service discovery protocol spec:
+ *
+ *  Advertisement:
+ *  ==============
+ *    Interest Name: /[home-prefix]/NDN_SD_SD/NDN_SD_SD_AD/[room]/[device-id]
+ *    Params: MustBeFresh
+ *    AppParams:
+ *      4 bytes: Freshness period (uint32_t)
+ *      bytes: Each byte represents a service
+ *    Sig Info:
+ *      Key locator: /[home-prefix]/[room]/[device-id]
+ *    Sig Value:
+ *      ECDSA Signature by identity key
+ *  ==============
+ *  Adv Interest will be sent periodically based on SD_ADV_INTERVAL ms
+ *
+ *  Service Query to the Controller
+ *  ==============
+ *    Interest Name: /[home-prefix]/NDN_SD_SD_CTL/NDN_SD_SD_CTL_META
+ *    Param: MustBeFresh
+ *    AppParams:
+ *      bytes: each byte represents an interested service
+ *    Sig Info:
+ *      Key locator: /[home-prefix]/[room]/[device-id]
+ *    Sig Value:
+ *      ECDSA signature by identity key
+ *  ==============
+ *  Replied Data
+ *  ==============
+ *    Content:
+ *      Repeated {Name-TLV, uint32_t}: service name and freshness period
+ *    Sig Value: ECDSA Signature by controller identity key
+ *  ==============
+ *  Service Query Interest will be sent right after bootstrapping
+ *
+ */
 
 /**
  * Load a device's meta info into the state.
@@ -96,17 +89,6 @@ sd_add_or_update_self_service(uint8_t service_id, bool adv, uint8_t status_code)
  */
 int
 sd_add_interested_service(uint8_t service_id);
-
-/**
- * Query interested services from the system controller.
- * ONLY after ndn_sd_after_bootstrapping.
- * @param service_ids. Input. The service IDs that the device is interested in.
- *   Each uint8_t in the list represents a service type;
- * @param size. Input. The size of the service id list.
- * @return NDN_SUCCESS(0) if there is no error.
- */
-int
-sd_query_sys_services(const uint8_t* service_ids, size_t size);
 
 /**
  * Express an Interest packet to query the SPs for the service.

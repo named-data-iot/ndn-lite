@@ -1,4 +1,3 @@
-
 #ifndef NDN_RULE_STORAGE_H
 #define NDN_RULE_STORAGE_H
 
@@ -52,5 +51,5 @@ ndn_rule_storage_add_rule(const char* rule_name, const ndn_trust_schema_rule_t *
  */
 int
 ndn_rule_storage_remove_rule(const char* rule_name);
-			  
+
 #endif // NDN_RULE_STORAGE_H

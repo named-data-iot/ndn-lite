@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2019
+ * Copyright (C) 2019 Zhiyi Zhang, Tianyuan Yu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
@@ -9,76 +9,727 @@
  */
 
 #include "pub-sub.h"
-#include "../encode/name.h"
+#include "service-discovery.h"
+#include "ndn-sig-verifier.h"
+#include "access-control.h"
+#include "ndn-trust-schema.h"
+#include "../encode/encrypted-payload.h"
+#include "../ndn-constants.h"
+#include "../ndn-services.h"
+#include "../encode/key-storage.h"
+#include "../encode/wrapper-api.h"
+#include "../forwarder/forwarder.h"
 
-// the struct to keep each topic subscribed
-typedef struct topic {
+#define ENABLE_NDN_LOG_INFO 1
+#define ENABLE_NDN_LOG_DEBUG 1
+#define ENABLE_NDN_LOG_ERROR 1
+
+#include "../util/logger.h"
+
+#define NDN_PUBSUB_TOPIC_SIZE 10
+#define NDN_PUBSUB_IDENTIFIER_SIZE 2
+#define NDN_PUBSUB_MAC_TIMEOUT 2
+
+#define PUB  1
+#define SUB  2
+#define MATCH_SHORT 1
+#define MATCH_LONG  0
+#define DATA 0
+#define CMD 1
+
+/** The struct to keep each topic subscribed.
+ */
+typedef struct sub_topic {
+  /** Service ID
+   */
   uint8_t service;
-  name_component_t identifier[2];
-  uint32_t interval; // the time interval between two Interests
-  uint32_t next_interest; // the time to send next Interest
-  ndn_on_content_published callback;
-} topic_t;
+  /** Type of expected Data, can be either CMD or DATA
+   */
+  bool is_cmd;
+  /** Identifier. Should be 0 - 2 NameComponents.
+   */
+  name_component_t identifier[NDN_PUBSUB_IDENTIFIER_SIZE];
+  /** Interval. Time Interval between two Subscription Interest.
+   */
+  uint32_t interval;
+  /** The time to send the next Subscription Interest.
+   */
+  uint64_t next_interest;
+  /** On DATA/CMD publish callback.
+   */
+  ndn_on_published callback;
+  /** User defined data.
+   */
+  void* userdata;
+  /** Decryption Key ID
+   */
+  uint32_t decryption_key;
+  /** Last Received Packet Digest.
+   */
+  uint8_t last_digest[16];
+  /** Has received content or not.
+   */
+  bool received_content;
+} sub_topic_t;
 
-// the struct to keep registered topics, including: service, identifer (name_components), frequency, and callback
-typedef struct sub_topics {
-  topic_t topics[10];
+/** The struct to keep each topic published.
+ */
+typedef struct pub_topic {
+  /** Service ID
+   */
+  uint8_t service;
+  /** Type of expected Data, can be either CMD or DATA
+   */
+  bool is_cmd;
+  /** Cache of the lastest published DATA. If the entry is about a subscription record,
+   * cache here will not be used.
+   */
+  uint8_t cache[300];
+  /** Cached Data Size.
+   */
+  uint32_t cache_size;
+  /** The timestamp of last update.
+   */
+  uint64_t last_update_tp;
+  /** Decryption Key ID
+   */
+  uint32_t decryption_key;
+} pub_topic_t;
+
+/** The struct to keep registered topics
+ */
+typedef struct pub_sub_state {
+  /** Topic List
+   */
+  sub_topic_t sub_topics[5];
+  /** Topic List
+   */
+  pub_topic_t pub_topics[5];
+  /** Minimal Interval in the Topic List. Currently not used.
+   */
   uint32_t min_interval;
-} sub_topics_t;
+  /** Timepoint for the next fetching
+   */
+  ndn_time_ms_t m_next_send;
+} pub_sub_state_t;
 
+static uint8_t pkt_encoding_buf[512];
+static pub_sub_state_t m_pub_sub_state;
+static bool m_has_initialized = false;
+static bool m_is_my_own_int = false;
+
+#if ENABLE_NDN_LOG_DEBUG
+static ndn_time_us_t m_measure_tp1 = 0;
+static ndn_time_us_t m_measure_tp2 = 0;
+#endif
+
+/** Helper function to initialize the topic List
+ */
 void
-_match_topic(const ndn_name_t* data_name, topic_t* topic)
+_ps_topics_init()
 {
-  // match the topics and load the matched topic into the topic
+  for (int i = 0; i < 5; i++) {
+    m_pub_sub_state.sub_topics[i].service = NDN_SD_NONE;
+    m_pub_sub_state.sub_topics[i].identifier[0].size = NDN_FWD_INVALID_NAME_COMPONENT_SIZE;
+    m_pub_sub_state.sub_topics[i].identifier[1].size = NDN_FWD_INVALID_NAME_COMPONENT_SIZE;
+    m_pub_sub_state.sub_topics[i].callback = NULL;
+    m_pub_sub_state.sub_topics[i].next_interest = 0;
+    m_pub_sub_state.sub_topics[i].received_content = false;
+
+    m_pub_sub_state.pub_topics[i].service = NDN_SD_NONE;
+  }
+  m_pub_sub_state.m_next_send = 0;
+  m_pub_sub_state.min_interval = 1000*60*60;
+  m_has_initialized = true;
 }
 
+/** Helper function to to perform sub Topic matching.
+ */
+sub_topic_t*
+_match_sub_topic(uint8_t service, bool is_cmd, const name_component_t* identifier, uint32_t component_size)
+{
+  sub_topic_t* entry = NULL;
+  for (int i = 0; i < 5; i++) {
+    if (m_pub_sub_state.sub_topics[i].service == service && m_pub_sub_state.sub_topics[i].is_cmd == is_cmd) {
+      entry = &m_pub_sub_state.sub_topics[i];
+    }
+  }
+  return entry;
+}
+
+/** Helper function to to perform pub Topic matching.
+ */
+pub_topic_t*
+_match_pub_topic(uint8_t service, bool is_cmd)
+{
+  pub_topic_t* entry = NULL;
+  for (int i = 0; i < 5; i++) {
+    if (m_pub_sub_state.pub_topics[i].service == service && m_pub_sub_state.pub_topics[i].is_cmd == is_cmd) {
+      entry = &m_pub_sub_state.pub_topics[i];
+    }
+  }
+  return entry;
+}
+
+/** Ontimeout callback to indicating a Subscription Interest timout. Simply logging the timeout event.
+ */
+void
+_on_sub_timeout(void* userdata)
+{
+  NDN_LOG_INFO("Subscription Interest Timeout");
+}
+
+void
+_on_new_content_verify_success(ndn_data_t* data, void* userdata)
+{
+  NDN_LOG_INFO("New published content successfully pass signature verification.");
+  NDN_LOG_INFO_NAME(&data->name);
+
+  int ret = NDN_SUCCESS;
+  sub_topic_t* topic = (sub_topic_t*)userdata;
+  // call the on_content callbackclear
+  if (topic->callback == NULL) {
+    return;
+  }
+  int comp_size = 0;
+  for (int i = 0; i < 2; i++) {
+    if (topic->identifier[i].size != NDN_FWD_INVALID_NAME_COMPONENT_SIZE) {
+      comp_size++;
+    }
+  }
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
+  ndn_aes_key_t* aes_key = ndn_ac_get_key_for_service(topic->service);
+  uint32_t used_size = 0;
+  memset(pkt_encoding_buf, 0, sizeof(pkt_encoding_buf));
+  ret = ndn_parse_encrypted_payload(data->content_value, data->content_size,
+                                        pkt_encoding_buf, &used_size, aes_key->key_id);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("SUB-NEW-DATA-AES-DEC: %lluus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("Cannot decrypt the newly published content. Abort...");
+    return;
+  }
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
+  ndn_trust_schema_rule_t schema;
+  if (topic->is_cmd) {
+    //TODO: Zhiyi: for now I hardcode controller only rule.
+    ret = ndn_trust_schema_rule_from_strings(&schema, cmd_controller_only_rule_data_name, sizeof(cmd_controller_only_rule_data_name),
+                                             cmd_controller_only_rule_key_name, sizeof(cmd_controller_only_rule_key_name));
+  }
+  else {
+    ret = ndn_trust_schema_rule_from_strings(&schema, content_same_producer_rule_data_name, sizeof(content_same_producer_rule_data_name),
+                                             content_same_producer_rule_key_name, sizeof(content_same_producer_rule_key_name));
+  }
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("Cannot load trust schema rules. Error code: %d", ret);
+    return;
+  }
+  ret = ndn_trust_schema_verify_data_name_key_name_pair(&schema, &data->name, &data->signature.key_locator_name);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("SUB-NEW-DATA-SCHEMA-VERIFY: %lluus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("Cannot verify incoming content against trust schemas. Error code: %d", ret);
+    return;
+  }
+  NDN_LOG_DEBUG("NEW-DATA-FINSIH-VERIFICATION-TP: %llu ms\n", ndn_time_now_ms());
+  // command FORMAT: /home/service/CMD/identifier[0,2]/command
+  // data FORMAT: /home/service/DATA/identifier[0,2]/data-identifier
+  topic->callback(topic->service, topic->is_cmd, topic->identifier, comp_size,
+                  data->name.components[data->name.components_size - 1].value,
+                  data->name.components[data->name.components_size - 1].size,
+                  pkt_encoding_buf, used_size, topic->userdata);
+}
+
+void
+_on_new_content_verify_failure(ndn_data_t* data, void* userdata)
+{
+  NDN_LOG_INFO("New published content cannot pass signature verification. Drop...");
+  NDN_LOG_INFO_NAME(&data->name);
+}
+
+/** OnData callback function to handle incoming content.
+ */
 void
 _on_new_content(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 {
+  sub_topic_t* topic = (sub_topic_t*)userdata;
+  // check if received before
+  ndn_sha256(raw_data, data_size, pkt_encoding_buf);
+  if (topic->received_content && memcmp(pkt_encoding_buf, topic->last_digest, 16) == 0) {
+    NDN_LOG_INFO("Received duplicate published content/command. Drop");
+    return;
+  }
+  NDN_LOG_INFO("Received new published content/command");
+  NDN_LOG_DEBUG("NEW-DATA-ARRIVE-TP: %llu ms\n", ndn_time_now_ms());
+  NDN_LOG_DEBUG("SUB-NEW-DATA-PKT-SIZE: %u Bytes\n", data_size);
+  topic->received_content = true;
+  memcpy(topic->last_digest, pkt_encoding_buf, 16);
+
   // parse Data name
-  // match the subscription topic
-  // call the on_content callback
+  ndn_sig_verifier_verify_data(raw_data, data_size,
+                               _on_new_content_verify_success, userdata,
+                               _on_new_content_verify_failure, userdata);
 }
 
+/** Helper function to construct a name for the Interest to fetch subscribted topic content
+ */
 void
-_periodic_data_fetching(void *self, size_t param_length, void *param)
+_construct_sub_interest(ndn_name_t* name, sub_topic_t* topic)
 {
-  // perodically send Interest packet
+  ndn_name_init(name);
+  // FORMAT: /home-prefix/service/type/identifier[0,2]
+  // home prefix
+  ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+  ndn_name_append_component(name, &storage->self_identity.components[0]);
+  ndn_name_append_bytes_component(name, &topic->service, sizeof(topic->service));
+  if (topic->is_cmd) {
+    ndn_name_append_string_component(name, "CMD", strlen("CMD"));
+  }
+  else {
+    ndn_name_append_string_component(name, "DATA", strlen("DATA"));
+  }
+  for (int i = 0; i < 2; i++) {
+    if (topic->identifier[i].size != NDN_FWD_INVALID_NAME_COMPONENT_SIZE) {
+      ndn_name_append_component(name, &topic->identifier[i]);
+    }
+  }
+}
+
+/*
+ * Helper function to periodically fetch from the Subsribed Topic.
+ */
+void
+_periodic_sub_content_fetching(void *self, size_t param_length, void *param)
+{
+  (void)self;
+  (void)param_length;
+  (void)param;
+  ndn_time_ms_t now = ndn_time_now_ms();
+  if (now < m_pub_sub_state.m_next_send) {
+    ndn_msgqueue_post(NULL, _periodic_sub_content_fetching, 0, NULL);
+    return;
+  }
+  m_pub_sub_state.m_next_send = now + m_pub_sub_state.min_interval;
+  sub_topic_t* topic = NULL;
+  ndn_name_t name;
+
+  // check the table
+  for (int i = 0; i < 5; i++) {
+    topic = &m_pub_sub_state.sub_topics[i];
+    if (topic->service != NDN_SD_NONE && topic->is_cmd == false && now >= topic->next_interest) {
+      // send out subscription interest
+      _construct_sub_interest(&name, topic);
+      size_t used_size = 0;
+      tlv_make_interest(pkt_encoding_buf, sizeof(pkt_encoding_buf), &used_size, 3,
+                        TLV_INTARG_NAME_PTR, &name,
+                        TLV_INTARG_CANBEPREFIX_BOOL, true,
+                        TLV_INTARG_MUSTBEFRESH_BOOL, true);
+      m_is_my_own_int = true;
+      int ret = ndn_forwarder_express_interest(pkt_encoding_buf, used_size, _on_new_content, _on_sub_timeout, topic);
+      m_is_my_own_int = false;
+      if (ret != NDN_SUCCESS) {
+        NDN_LOG_ERROR("[PUB/SUB] Failed to sent subscription Interest. Error code: %d", ret);
+      }
+      else {
+        NDN_LOG_INFO("[PUB/SUB] Sent subscription Interest");
+        NDN_LOG_INFO_NAME(&name);
+        // update next_interest time
+        topic->next_interest = now + topic->interval;
+      }
+    }
+  }
   // register the event to the message queue again with the smallest time period
+  ndn_msgqueue_post(NULL, _periodic_sub_content_fetching, 0, NULL);
 }
 
-void
-_on_notification_interest()
+int
+_on_subscription_interest(const uint8_t* raw_interest, uint32_t interest_size, void* userdata)
 {
-  // parse notification interest
-  // match the topic
-  // send the Interest to fetch new content
-}
-
-void
-_on_subscription_interest()
-{
+  if (m_is_my_own_int) {
+    return NDN_FWD_STRATEGY_MULTICAST;
+  }
   // parse interest
+  NDN_LOG_INFO("[PUB/SUB] Received Subscription Interest");
+  ndn_interest_t interest;
+  ndn_interest_from_block(&interest, raw_interest, interest_size);
+  NDN_LOG_INFO_NAME(&interest.name);
+
   // match topic
+  pub_topic_t* topic = (pub_topic_t*)userdata;
+
   // reply the latest content
+  int ret = ndn_forwarder_put_data(topic->cache, topic->cache_size);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("[PUB/SUB] Cannot reply cached Data. Error code: %d", ret);
+    return NDN_FWD_STRATEGY_SUPPRESS;
+  }
+  NDN_LOG_INFO("[PUB/SUB] Replid cached Data");
+  return NDN_FWD_STRATEGY_SUPPRESS;
 }
 
-
-/* 
-E.g., LED => /home/LED
-E.g., TEMP, bedroom => /home/TEMP/bedroom
-*/
-void
-ps_subscribe_to(uint8_t service, char* identifier, uint32_t identifier_len,
-                uint32_t frequency, ndn_on_content_published callback)
+int
+_on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, void* userdata)
 {
+  if (m_is_my_own_int) {
+    return NDN_FWD_STRATEGY_MULTICAST;
+  }
+  // FORMAT: /home/service/NOTIFY/CMD/identifier[0,2]/action
+  NDN_LOG_INFO("[PUB/SUB] On notification Interest");
+  ndn_interest_t interest;
+  ndn_interest_from_block(&interest, raw_interest, interest_size);
+  NDN_LOG_INFO_NAME(&interest.name);
 
+  // check whether identifiers match
+  sub_topic_t* topic = (sub_topic_t*)userdata;
+  if (topic->identifier[0].size != NDN_FWD_INVALID_NAME_COMPONENT_SIZE
+      && name_component_compare(&topic->identifier[0], &interest.name.components[4]) != NDN_SUCCESS) {
+    // does not match
+    return NDN_FWD_STRATEGY_SUPPRESS;
+  }
+  if (topic->identifier[1].size != NDN_FWD_INVALID_NAME_COMPONENT_SIZE
+      && name_component_compare(&topic->identifier[1], &interest.name.components[5]) != NDN_SUCCESS) {
+    // does not match
+    return NDN_FWD_STRATEGY_SUPPRESS;
+  }
+
+  // send out
+  ndn_name_t name;
+  ndn_name_init(&name);
+  for (int i = 0; i < interest.name.components_size; i++) {
+    if (i == 2) {
+      continue;
+    }
+    ndn_name_append_component(&name, &interest.name.components[i]);
+  }
+  size_t used_size = 0;
+  int ret = tlv_make_interest(pkt_encoding_buf, sizeof(pkt_encoding_buf), &used_size, 3,
+                              TLV_INTARG_NAME_PTR, &name,
+                              TLV_INTARG_CANBEPREFIX_BOOL, true,
+                              TLV_INTARG_MUSTBEFRESH_BOOL, true);
+  m_is_my_own_int = true;
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("[PUB/SUB] Failed to construct subscription Interest. Error code: %d", ret);
+  }
+  ret = ndn_forwarder_express_interest(pkt_encoding_buf, used_size, _on_new_content, _on_sub_timeout, topic);
+  m_is_my_own_int = false;
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("[PUB/SUB] Failed to sent subscription Interest. Error code: %d", ret);
+  }
+  else {
+    NDN_LOG_INFO("[PUB/SUB] Sent subscription Interest");
+    NDN_LOG_INFO_NAME(&name);
+  }
+  return NDN_FWD_STRATEGY_SUPPRESS;
 }
 
 void
-ps_publish_content(uint8_t service, uint16_t datatype, uint32_t datatype_len,
-                   uint8_t* content, uint32_t content_len);
+_subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier, uint32_t component_size,
+              uint32_t interval, ndn_on_published callback, void* userdata)
+{
+  if (!m_has_initialized)
+    _ps_topics_init();
+
+  // find whether the topic has been subscribed already
+  sub_topic_t* topic = _match_sub_topic(service, is_cmd, identifier, component_size);
+  if (!topic) {
+    for (int i = 0; i < 5; i++) {
+      if (m_pub_sub_state.sub_topics[i].service == NDN_SD_NONE) {
+        topic = &m_pub_sub_state.sub_topics[i];
+      }
+    }
+    if (topic == NULL) {
+      NDN_LOG_ERROR("[PUB/SUB] No more space for new subscription topics. Abort");
+      return;
+    }
+    topic->service = service;
+    topic->is_cmd = is_cmd;
+  }
+
+  // update locator
+  for (int i = 0; i < 2; i++) {
+    if (i < component_size) {
+      memcpy(&topic->identifier[i], identifier + i, sizeof(name_component_t));
+    }
+    else {
+      topic->identifier[i].size = NDN_FWD_INVALID_NAME_COMPONENT_SIZE;
+    }
+  }
+  // update interval, callback, and other state
+  if (!is_cmd) {
+    topic->interval = interval;
+    if (topic->interval < m_pub_sub_state.min_interval) {
+      m_pub_sub_state.min_interval = topic->interval;
+    }
+    topic->next_interest = ndn_time_now_ms() + topic->interval;
+  }
+  else {
+    topic->interval = 0;
+  }
+  topic->callback = callback;
+  topic->userdata = userdata;
+
+  // if subscribe to a command topic, register the interest filter to listen to NOTIF for immediate cmd fetch
+  // FORMAT: /home-prefix/service/NOTIFY/CMD/identifier[0,2]
+  if (is_cmd) {
+    ndn_name_t name;
+    ndn_name_init(&name);
+    ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+    ndn_name_append_component(&name, &storage->self_identity.components[0]);
+    ndn_name_append_bytes_component(&name, &topic->service, sizeof(topic->service));
+    ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
+    ndn_forwarder_register_name_prefix(&name, _on_notification_interest, topic);
+  }
+}
 
 void
-ps_publish_command(uint8_t service, uint16_t action, char* identifier, uint32_t identifier_len,
-                   uint8_t* content, uint32_t content_len);
+ps_subscribe_to_content(uint8_t service, const name_component_t* identifiers, uint32_t identifiers_size,
+                        uint32_t interval,
+                        ndn_on_published callback, void* userdata)
+{
+  return _subscribe_to(service, false, identifiers, identifiers_size, interval, callback, userdata);
+}
+
+void
+ps_subscribe_to_command(uint8_t service, const name_component_t* identifiers, uint32_t identifiers_size,
+                        ndn_on_published callback, void* userdata)
+{
+  return _subscribe_to(service, true, identifiers, identifiers_size, 0, callback, userdata);
+}
+
+void
+ps_after_bootstrapping()
+{
+  if (!m_has_initialized)
+    _ps_topics_init();
+  _periodic_sub_content_fetching(NULL, 0, NULL);
+}
+
+void
+ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_id_len,
+                   const uint8_t* payload, uint32_t payload_len)
+{
+  if (!m_has_initialized)
+    _ps_topics_init();
+
+  int ret = 0;
+  // Prefix FORMAT: /home/service/DATA
+  ndn_name_t name;
+  ndn_name_init(&name);
+  ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+  ndn_name_append_component(&name, &storage->self_identity.components[0]);
+  ndn_name_append_bytes_component(&name, &service, sizeof(service));
+  ndn_name_append_string_component(&name, "DATA", strlen("DATA"));
+
+  // published on this topic before? update the cache
+  pub_topic_t* topic = NULL;
+  topic = _match_pub_topic(service, false);
+  if (!topic) {
+    for (int i = 0; i < 5; i++) {
+      if (m_pub_sub_state.pub_topics[i].service == NDN_SD_NONE) {
+        topic = &m_pub_sub_state.pub_topics[i];
+        break;
+      }
+    }
+    if (topic == NULL) {
+      NDN_LOG_INFO("[PUB/SUB] No availble topic, will drop the oldest pub topic.");
+      uint64_t min_last_tp = m_pub_sub_state.pub_topics[0].last_update_tp;
+      int index = -1;
+      for (int i = 1; i < 5; i++) {
+        if (m_pub_sub_state.pub_topics[i].last_update_tp < min_last_tp) {
+          min_last_tp = m_pub_sub_state.pub_topics[i].last_update_tp;
+          index = i;
+        }
+      }
+      topic = &m_pub_sub_state.pub_topics[index];
+      // TODO: unregister the prefix registered by the old topic
+    }
+    // register the new prefix
+    ret = ndn_forwarder_register_name_prefix(&name, _on_subscription_interest, topic);
+    if (ret != NDN_SUCCESS) {
+      NDN_LOG_ERROR("[PUB/SUB] Cannot register prefix for newly published content. Error Code: %d", ret);
+    }
+    topic->service = service;
+    topic->is_cmd = false;
+  }
+  topic->last_update_tp = ndn_time_now_ms();
+  // Append the last several component to the Data name
+  // Data name FORMAT: /home/service/DATA/room/device-id/content-id/tp
+  ndn_name_append_component(&name, &storage->self_identity.components[storage->self_identity.components_size - 2]);
+  ndn_name_append_component(&name, &storage->self_identity.components[storage->self_identity.components_size - 1]);
+  ndn_name_append_bytes_component(&name, content_id, content_id_len);
+  // TODO: currently I appended timestamp. Further discussion is needed.
+  name_component_t tp_comp;
+  name_component_from_timestamp(&tp_comp, topic->last_update_tp);
+  ndn_name_append_component(&name, &tp_comp);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
+  // Encrypt payload
+  uint32_t used_size = 0;
+  ndn_aes_key_t* service_aes_key = ndn_ac_get_key_for_service(topic->service);
+  ret = ndn_gen_encrypted_payload(payload, payload_len, pkt_encoding_buf, &used_size, service_aes_key->key_id, NULL, 0);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("PUB-CONTENT-DATA-AES-ENC: %lluus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
+
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("[PUB/SUB] Cannot encrypt content to publish. Error code: %d", ret);
+    return;
+  }
+
+  memset(topic->cache, 0, sizeof(topic->cache));
+  ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 7,
+                      TLV_DATAARG_NAME_PTR, &name,
+                      TLV_DATAARG_CONTENT_BUF, pkt_encoding_buf,
+                      TLV_DATAARG_CONTENT_SIZE, used_size,
+                      TLV_DATAARG_FRESHNESSPERIOD_U64, (uint64_t)4000,
+                      TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
+                      TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
+                      TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("[PUB/SUB] Content Data cannot be generated. Error code: %d", ret);
+    return;
+  }
+  NDN_LOG_DEBUG("PUB-CONTENT-PKT-SIZE: %u Bytes\n", topic->cache_size);
+  NDN_LOG_INFO("[PUB/SUB] Content Data has been generated");
+  NDN_LOG_INFO_NAME(&name);
+}
+
+void
+ps_publish_command(uint8_t service, const uint8_t* command_id, uint32_t command_id_len,
+                   const name_component_t* identifiers, uint32_t identifiers_size,
+                   const uint8_t* payload, uint32_t payload_len)
+{
+  if (!m_has_initialized)
+    _ps_topics_init();
+
+  int ret = 0;
+  // Prefix FORMAT: /home/service/CMD
+  ndn_name_t name;
+  ndn_name_init(&name);
+  ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+  ndn_name_append_component(&name, &storage->self_identity.components[0]);
+  ndn_name_append_bytes_component(&name, &service, sizeof(service));
+  ndn_name_append_string_component(&name, "CMD", strlen("CMD"));
+
+  // published on this topic before? update the cache
+  pub_topic_t* topic = NULL;
+  topic = _match_pub_topic(service, true);
+  if (!topic) {
+    for (int i = 0; i < 5; i++) {
+      if (m_pub_sub_state.pub_topics[i].service == NDN_SD_NONE) {
+        topic = &m_pub_sub_state.pub_topics[i];
+      }
+    }
+    if (topic == NULL) {
+      NDN_LOG_INFO("[PUB/SUB] No availble topic, will drop the oldest pub topic.");
+      uint64_t min_last_tp = m_pub_sub_state.pub_topics[0].last_update_tp;
+      int index = -1;
+      for (int i = 1; i < 5; i++) {
+        if (m_pub_sub_state.pub_topics[i].last_update_tp < min_last_tp) {
+          min_last_tp = m_pub_sub_state.pub_topics[i].last_update_tp;
+          index = i;
+        }
+      }
+      topic = &m_pub_sub_state.pub_topics[index];
+      // TODO: unregister the prefix registered by the old topic
+    }
+    // register the new prefix
+    ret = ndn_forwarder_register_name_prefix(&name, _on_subscription_interest, topic);
+    if (ret != NDN_SUCCESS) {
+      NDN_LOG_ERROR("[PUB/SUB] Cannot register prefix for newly published command. Error Code: %d", ret);
+    }
+    topic->service = service;
+    topic->is_cmd = true;
+  }
+  topic->last_update_tp = ndn_time_now_ms();
+  memset(topic->cache, 0, sizeof(topic->cache));
+
+  // Append the last several component to the Data name
+  // Data name FORMAT: /home/service/CMD/identifier[0,2]/command-id
+  for (int i = 0; i < identifiers_size; i++) {
+    ndn_name_append_component(&name, identifiers + i);
+  }
+  ndn_name_append_bytes_component(&name, command_id, command_id_len);
+  // TODO: currently I appended timestamp. Further discussion is needed.
+  ndn_time_ms_t tp = ndn_time_now_ms();
+  name_component_t tp_comp;
+  name_component_from_timestamp(&tp_comp, tp);
+  ndn_name_append_component(&name, &tp_comp);
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
+
+  // Encrypt payload
+  uint32_t used_size = 0;
+  ndn_aes_key_t* service_aes_key = ndn_ac_get_key_for_service(topic->service);
+  ret = ndn_gen_encrypted_payload(payload, payload_len, pkt_encoding_buf, &used_size, service_aes_key->key_id, NULL, 0);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("[PUB/SUB] Cannot encrypt command payload to publish. Error code: %d", ret);
+    return;
+  }
+
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("PUB-COMMAND-DATA-AES-ENC: %lluus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
+  ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 7,
+                      TLV_DATAARG_NAME_PTR, &name,
+                      TLV_DATAARG_CONTENT_BUF, pkt_encoding_buf,
+                      TLV_DATAARG_CONTENT_SIZE, used_size,
+                      TLV_DATAARG_FRESHNESSPERIOD_U64, (uint64_t)4000,
+                      TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
+                      TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
+                      TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
+  NDN_LOG_DEBUG("PUB-CMD-PKT-SIZE: %u Bytes\n", topic->cache_size);
+  NDN_LOG_INFO("[PUB/SUB] CMD Data has been generated");
+  NDN_LOG_INFO_NAME(&name);
+
+  // express the /Notify Interest
+  // FORMAT: /home/service/NOTIFY/CMD/identifier[0,2]/action
+  ndn_name_init(&name);
+  ndn_name_append_component(&name, &storage->self_identity.components[0]);
+  ndn_name_append_bytes_component(&name, &service, sizeof(service));
+  ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
+  ndn_name_append_string_component(&name, "CMD", strlen("CMD"));
+  for (int i = 0; i < identifiers_size; i++) {
+    ndn_name_append_component(&name, identifiers + i);
+  }
+  ndn_name_append_bytes_component(&name, command_id, command_id_len);
+  ndn_name_append_component(&name, &tp_comp);
+
+  // send out the notification Interest
+  uint32_t buffer_length = 0;
+  tlv_make_interest(pkt_encoding_buf, sizeof(pkt_encoding_buf), &buffer_length, 3,
+                    TLV_INTARG_NAME_PTR, &name,
+                    TLV_INTARG_CANBEPREFIX_BOOL, true,
+                    TLV_INTARG_MUSTBEFRESH_BOOL, true);
+  m_is_my_own_int = true;
+  ret = ndn_forwarder_express_interest(pkt_encoding_buf, buffer_length, _on_new_content, _on_sub_timeout, NULL);
+  m_is_my_own_int = false;
+  NDN_LOG_INFO("[PUB/SUB] Sent notification Interest for the newly generated cmd");
+  NDN_LOG_INFO_NAME(&name);
+}

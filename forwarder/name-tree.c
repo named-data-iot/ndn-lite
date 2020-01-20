@@ -8,7 +8,6 @@
 
 #include "name-tree.h"
 #include <string.h>
-#include <stdio.h>
 
 #define minof2(a, b) ((a) < (b) ? (a) : (b))
 

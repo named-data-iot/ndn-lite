@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2019
+ * Copyright (C) 2018-2019 Zhiyi Zhang, Guan Yu
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
@@ -14,88 +14,103 @@
 #include "../encode/interest.h"
 #include "../encode/data.h"
 
-// const static uint32_t KEY_ROLLOVER_AHEAD_TIME = 86400000;
+/**
+ * The structure of AccessControlKey.
+ */
+typedef struct ac_key {
+  /**
+   * KeyID, should be globally unique in KeyStorage.
+   */
+  uint32_t key_id;
+  /**
+   * KeyLifetime, the key expiration time is Now + KeyLifetime.
+   */
+  uint32_t expires_at;
+} ac_key_t;
+
+/**
+ * The structure of AccessControlState.
+ */
+typedef struct ndn_access_control {
+  /**
+   * AccessServices for this identity that would use DecryptionKey.
+   */
+  uint8_t access_services[10];
+  /**
+   * DecryptionKeys used for by identity's AccessService.
+   */
+  ac_key_t access_keys[10];
+  /**
+   * RegisterServices for this identity that would use EncryptionKey.
+   */
+  uint8_t self_services[10];
+  /**
+   * EncryptionKeys used for by identity's RegisterServices.
+   */
+  ac_key_t ekeys[10];
+} ndn_access_control_t;
+
+/**
+ * Access control protocol spec:
+ *
+ *  Get EKEY from the controller:
+ *  ==============
+ *    Interest Name: /[home-prefix]/NDN_SD_AC/NDN_SD_AC_EK/[service-id]
+ *    Params: MustBeFresh
+ *    Sig Info:
+ *      Key locator: /[home-prefix]/[room]/[device-id]
+ *    Sig Value:
+ *      ECDSA Signature by identity key
+ *  ==============
+ *  This Interest will be sent right after security bootstrapping.
+ *  Repied Data:
+ *  ==============
+ *    Content:
+ *      T=TLV_AC_AES_IV L=? V=bytes: AES IV
+ *      T=TLV_AC_ENCRYPTED_PAYLOAD L=? V=bytes: AES encrypted payload, which is the EKEY for the service
+ *  ==============
+ *
+ *  Get DKEY from the controller:
+ *  ==============
+ *    Interest Name: /[home-prefix]/NDN_SD_AC/NDN_SD_AC_DK/[service-id]
+ *    Params: MustBeFresh
+ *    Sig Info:
+ *      Key locator: /[home-prefix]/[room]/[device-id]
+ *    Sig Value:
+ *      ECDSA Signature by identity key
+ *  ==============
+ *  This Interest will be sent right after security bootstrapping.
+ *  Repied Data
+ *  ==============
+ *    Content:
+ *      T=TLV_AC_AES_IV L=? V=bytes: AES IV
+ *      T=TLV_AC_ENCRYPTED_PAYLOAD L=? V=bytes: AES encrypted payload
+ *  ==============
+ */
 
 // Basic Design:
 // 1. The access control policy are decided by schema
 // 2. The access control key can be roll overed by existing key (e.g., through one-way function)
 // 3. The access control granularity can be kept in the service type level at the moment
 
-// void
-// ac_after_bootstrapping(ndn_face_intf_t* face); // which is to load one’s own produced data prefixes into the state
+/**
+ *  Get a AES key used for data encryption/decryption for service.
+ *  @param service. The key for which service will be returned.
+ *  @return NULL if there is no such AES key for the service
+ */
+ndn_aes_key_t*
+ndn_ac_get_key_for_service(uint8_t service);
 
+void
+ndn_ac_register_encryption_key_request(uint8_t service);
 
+void
+ndn_ac_register_access_request(uint8_t service);
 
+void
+ndn_ac_after_bootstrapping();
 
-// /**
-//  * Init a Access Control State structure.
-//  * @param self_identity. Input. Local state manager identity.
-//  * @param self_pub_key. Input. The identity ECC public key.
-//  * @param self_prv_key. Input. The identity ECC private key.
-//  */
-// void
-// ndn_ac_state_init(const ndn_name_t* self_identity, const ndn_ecc_pub_t* self_pub_key,
-//                   const ndn_ecc_prv_t* self_prv_key);
-
-// /**
-//  * Prepare a Key Request to send. This function will automatically sign and encode the interest.
-//  * @param encoder. Output. The encoder to keep the encoded Key Request.
-//  *        The encoder should be inited to proper output buffer.
-//  * @param home_prefix. Input. The network home prefix to configure the state manager.
-//  * @param self_identity. Input. The local state manager identity.
-//  * @param prv_key. Input. The ECC private key used to sign the interest.
-//  * @param is_ek. Input. Determine whether to encode a Encryption Request or Decryption Request.
-//  * @return 0 if there is no error.
-//  */
-// int
-// ndn_ac_prepare_key_request_interest(ndn_encoder_t* encoder,
-//                                     const ndn_name_t* home_prefix,
-//                                     const name_component_t* self_identity,
-//                                     uint32_t ac_key_id, const ndn_ecc_prv_t* prv_key,
-//                                     uint8_t is_ek);
-
-// /**
-//  * Process Encryption Request's Response. This function will automatically set and
-//  * update Access Control State.
-//  * @param data. Input. Decoded and signature verified Encryption Request's Response Packet.
-//  * @return 0 if there is no error.
-//  */
-// int
-// ndn_ac_on_ek_response_process(const ndn_data_t* data);
-
-// /**
-//  * Process Deryption Request's Response. This function will automatically set and
-//  * update Access Control State.
-//  * @param data. Input. Decoded and signature verified Decryption Request's Response Packet.
-//  * @return 0 if there is no error.
-//  */
-// int
-// ndn_ac_on_dk_response_process(const ndn_data_t* data);
-
-// /*************************/
-// /*  APIs for Controller  */
-// /*************************/
-
-// /**
-//  * Process Access Control Request. This function will automatically set and
-//  * update Access Control State on the access controller side.
-//  * @param response. Output. Prepared Response.
-//  * @param interest. Input. Decoded and signature verified signed interest.
-//  * @return 0 if there is no error.
-//  */
-// int
-// ndn_ac_on_interest_process(ndn_data_t* response, const ndn_interest_t* interest);
-
-// /*************************************/
-// /*  Helper Functions for Controller  */
-// /*************************************/
-// int
-// ndn_ac_prepare_ek_response(ndn_decoder_t* decoder, const ndn_interest_t* interest,
-//                            ndn_data_t* response);
-
-// int
-// ndn_ac_prepare_dk_response(ndn_decoder_t* decoder, const ndn_interest_t* interest,
-//                            ndn_data_t* response);
-
+ndn_access_control_t*
+ndn_ac_get_state();
 
 #endif // NDN_APP_SUPPORT_ACCESS_CONTROL_H
