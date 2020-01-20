@@ -11,35 +11,53 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "../encode/name.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef ENABLE_NDN_LOG_ERROR
+#if ENABLE_NDN_LOG_ERROR
 #define NDN_LOG_ERROR(...) { \
   printf("ERROR: %s, L%d: ", __func__, __LINE__); \
-  printf(__VA_ARGS__);printf("\n"); \
+  printf(__VA_ARGS__); \
+}
+#define NDN_LOG_ERROR_NAME(name) { \
+  ndn_name_print(name);\
 }
 #else
 #define NDN_LOG_ERROR(...)
+#define NDN_LOG_ERROR_NAME(name)
 #endif
 
-#ifdef ENABLE_NDN_LOG_DEBUG
+#if ENABLE_NDN_LOG_DEBUG
 #define NDN_LOG_DEBUG(...) { \
   printf("DEBUG: %s, L%d: ", __func__, __LINE__); \
-  printf(__VA_ARGS__);printf("\n"); \
+  printf(__VA_ARGS__); \
+}
+#define NDN_LOG_DEBUG_NAME(name) { \
+  ndn_name_print(name);\
 }
 #else
 #define NDN_LOG_DEBUG(...)
+#define NDN_LOG_DEBUG_NAME(name)
 #endif
 
-#ifdef ENABLE_NDN_LOG_INFO
+#if ENABLE_NDN_LOG_INFO
 #define NDN_LOG_INFO(...) { \
+  printf("INFO: %s: ", __func__); \
   printf(__VA_ARGS__);printf("\n"); \
+}
+#define NDN_LOG_INFO_NAME(name) { \
+  ndn_name_print(name);\
+}
+#define NDN_LOG_INFO_NO_NEWLINE(...) { \
+  printf(__VA_ARGS__); \
 }
 #else
 #define NDN_LOG_INFO(...)
+#define NDN_LOG_INFO_NAME(name)
+#define NDN_LOG_INFO_NO_NEWLINE(...)
 #endif
 
 /*@}*/
