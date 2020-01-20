@@ -15,6 +15,42 @@
 #include "../encode/data.h"
 
 /**
+ * The structure of AccessControlKey.
+ */
+typedef struct ac_key {
+  /**
+   * KeyID, should be globally unique in KeyStorage.
+   */
+  uint32_t key_id;
+  /**
+   * KeyLifetime, the key expiration time is Now + KeyLifetime.
+   */
+  uint32_t expires_at;
+} ac_key_t;
+
+/**
+ * The structure of AccessControlState.
+ */
+typedef struct ndn_access_control {
+  /**
+   * AccessServices for this identity that would use DecryptionKey.
+   */
+  uint8_t access_services[10];
+  /**
+   * DecryptionKeys used for by identity's AccessService.
+   */
+  ac_key_t access_keys[10];
+  /**
+   * RegisterServices for this identity that would use EncryptionKey.
+   */
+  uint8_t self_services[10];
+  /**
+   * EncryptionKeys used for by identity's RegisterServices.
+   */
+  ac_key_t ekeys[10];
+} ndn_access_control_t;
+
+/**
  * Access control protocol spec:
  *
  *  Get EKEY from the controller:
@@ -73,5 +109,8 @@ ndn_ac_register_access_request(uint8_t service);
 
 void
 ndn_ac_after_bootstrapping();
+
+ndn_access_control_t*
+ndn_ac_get_state();
 
 #endif // NDN_APP_SUPPORT_ACCESS_CONTROL_H

@@ -29,42 +29,6 @@
 /* Encoding buffer for Access Control module */
 static uint8_t ac_buf[1024];
 
-/**
- * The structure of AccessControlKey.
- */
-typedef struct ac_key {
-  /**
-   * KeyID, should be globally unique in KeyStorage.
-   */
-  uint32_t key_id;
-  /**
-   * KeyLifetime, the key expiration time is Now + KeyLifetime.
-   */
-  uint32_t expires_at;
-} ac_key_t;
-
-/**
- * The structure of AccessControlState.
- */
-typedef struct ndn_access_control {
-  /**
-   * AccessServices for this identity that would use DecryptionKey.
-   */
-  uint8_t access_services[10];
-  /**
-   * DecryptionKeys used for by identity's AccessService.
-   */
-  ac_key_t access_keys[10];
-  /**
-   * RegisterServices for this identity that would use EncryptionKey.
-   */
-  uint8_t self_services[10];
-  /**
-   * EncryptionKeys used for by identity's RegisterServices.
-   */
-  ac_key_t ekeys[10];
-} ndn_access_control_t;
-
 ndn_access_control_t _ac_self_state;
 bool _ac_initialized = false;
 
@@ -382,4 +346,14 @@ ndn_ac_after_bootstrapping()
   // e.g. Temp sensor produce under TEMP, access SD
   // 1. send /home/AC/EKEY/TEMP to obtain encryption key
   // 2. send /home/AC/DKEY/SD to obtain decryption key
+}
+
+
+ndn_access_control_t*
+ndn_ac_get_state()
+{
+  if (!_ac_initialized) {
+    _init_ac_state();
+  }
+  return &_ac_self_state;
 }

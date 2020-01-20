@@ -20,7 +20,7 @@
 #include "../encode/wrapper-api.h"
 #include "../forwarder/forwarder.h"
 
-#define ENABLE_NDN_LOG_INFO 0
+#define ENABLE_NDN_LOG_INFO 1
 #define ENABLE_NDN_LOG_DEBUG 1
 #define ENABLE_NDN_LOG_ERROR 1
 
