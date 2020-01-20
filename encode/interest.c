@@ -7,6 +7,7 @@
  */
 
 #include "interest.h"
+#include "../ndn-constants.h"
 #include "../security/ndn-lite-sha.h"
 #include "../util/uniform-time.h"
 
@@ -158,7 +159,6 @@ ndn_interest_tlv_encode(ndn_encoder_t* encoder, ndn_interest_t* interest)
     if (interest->name.components_size + 1 > NDN_NAME_COMPONENTS_SIZE) {
       return NDN_OVERSIZE;
     }
-    name_component_init(&interest->name.components[interest->name.components_size], TLV_ParametersSha256DigestComponent);
     uint8_t be_hashed[NDN_INTEREST_PARAMS_BLOCK_SIZE] = {0};
     ndn_encoder_t temp_encoder;
     encoder_init(&temp_encoder, be_hashed, NDN_INTEREST_PARAMS_BLOCK_SIZE);
@@ -170,6 +170,8 @@ ndn_interest_tlv_encode(ndn_encoder_t* encoder, ndn_interest_t* interest)
     if (ret_val != NDN_SUCCESS) return ret_val;
     ret_val = ndn_sha256(temp_encoder.output_value, temp_encoder.offset,
                          interest->name.components[interest->name.components_size].value);
+    interest->name.components[interest->name.components_size].type = TLV_ParametersSha256DigestComponent;
+    interest->name.components[interest->name.components_size].size = NDN_SEC_SHA256_HASH_SIZE;
     interest->name.components_size += 1;
   }
 
@@ -202,7 +204,7 @@ ndn_interest_tlv_encode(ndn_encoder_t* encoder, ndn_interest_t* interest)
   }
   // nonce
   if (interest->nonce == 0) {
-    interest->nonce = (uint32_t) ndn_time_now_us();
+    interest->nonce = (uint32_t) ndn_time_now_ms();
   }
   ret_val = encoder_append_type(encoder, TLV_Nonce);
   if (ret_val != NDN_SUCCESS) return ret_val;

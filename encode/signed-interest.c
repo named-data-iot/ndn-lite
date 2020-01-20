@@ -9,6 +9,7 @@
  */
 
 #include "signed-interest.h"
+#include "key-storage.h"
 #include "../security/ndn-lite-hmac.h"
 #include "../security/ndn-lite-sha.h"
 #include "../security/ndn-lite-ecc.h"
@@ -20,8 +21,7 @@
 
 static void
 _prepare_signature_info(ndn_interest_t* interest, uint8_t signature_type,
-                        const ndn_name_t* identity, uint32_t key_id,
-                        uint32_t signature_info_nonce, uint64_t timestamp)
+                        const ndn_name_t* identity, uint32_t key_id)
 {
   uint8_t raw_key_id[4] = {0};
   raw_key_id[0] = (key_id >> 24) & 0xFF;
@@ -31,6 +31,7 @@ _prepare_signature_info(ndn_interest_t* interest, uint8_t signature_type,
 
   ndn_signature_init(&interest->signature, true);
   ndn_signature_set_signature_type(&interest->signature, signature_type);
+
   ndn_signature_set_key_locator(&interest->signature, identity);
 
   // append /KEY and /<KEY-ID> in key locator name
@@ -45,10 +46,12 @@ _prepare_signature_info(ndn_interest_t* interest, uint8_t signature_type,
   interest->signature.key_locator_name.components_size++;
 
   // set signature nonce
+  uint32_t signature_info_nonce = 0;
+  ndn_rng((uint8_t*)&signature_info_nonce, sizeof(signature_info_nonce));
   ndn_signature_set_signature_nonce(&interest->signature, signature_info_nonce);
 
   // set timestamp
-  ndn_signature_set_timestamp(&interest->signature, timestamp);
+  ndn_signature_set_timestamp(&interest->signature, ndn_time_now_ms());
 }
 
 /************************************************************/
@@ -64,8 +67,14 @@ ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
     return NDN_OVERSIZE;
 
   // set signature info
-  // TODO added by Zhiyi: replaced with real timestamp and nonce
-  _prepare_signature_info(interest, NDN_SIG_TYPE_ECDSA_SHA256, identity, prv_key->key_id, 0, 0);
+  ndn_key_storage_t* keys = ndn_key_storage_get_instance();
+  if (identity == NULL) {
+    identity = &keys->self_identity;
+  }
+  if (prv_key == NULL) {
+    prv_key = &keys->self_identity_key;
+  }
+  _prepare_signature_info(interest, NDN_SIG_TYPE_ECDSA_SHA256, identity, prv_key->key_id);
 
   // update signature value and append the ending name component
   // prepare temp buffer to calculate signature value and the ending name component
@@ -107,14 +116,12 @@ ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
 
   // calculate the TLV_ParametersSha256DigestComponent
   // component is calculated over Name + Parameters + SignatureInfo + SignatureValue
-  name_component_init(&interest->name.components[interest->name.components_size],
-                      TLV_ParametersSha256DigestComponent);
-  result = ndn_sha256_sign(&temp_encoder.output_value[param_block_starting],
-                           temp_encoder.offset - param_block_starting,
-                           interest->name.components[interest->name.components_size].value,
-                           NDN_NAME_COMPONENT_BUFFER_SIZE, &used_bytes);
+  result = ndn_sha256(&temp_encoder.output_value[param_block_starting],
+                      temp_encoder.offset - param_block_starting,
+                      interest->name.components[interest->name.components_size].value);
   if (result < 0) return result;
-  interest->name.components[interest->name.components_size].size = used_bytes;
+  interest->name.components[interest->name.components_size].type = TLV_ParametersSha256DigestComponent;
+  interest->name.components[interest->name.components_size].size = NDN_SEC_SHA256_HASH_SIZE;
   interest->name.components_size++;
   BIT_SET(interest->flags, 7);
   return NDN_SUCCESS;
@@ -129,8 +136,7 @@ ndn_signed_interest_hmac_sign(ndn_interest_t* interest,
     return NDN_OVERSIZE;
 
   // set signature info
-  // TODO added by Zhiyi: replaced with real timestamp and nonce
-  _prepare_signature_info(interest, NDN_SIG_TYPE_HMAC_SHA256, identity, hmac_key->key_id, 0, 0);
+  _prepare_signature_info(interest, NDN_SIG_TYPE_HMAC_SHA256, identity, hmac_key->key_id);
 
   // update signature value and append the ending name component
   // prepare temp buffer to calculate signature value and the ending name component
@@ -172,14 +178,12 @@ ndn_signed_interest_hmac_sign(ndn_interest_t* interest,
 
   // calculate the SignedInterestSha256DigestComponent
   // component is calculated over Name + Parameters + SignatureInfo + SignatureValue
-  name_component_init(&interest->name.components[interest->name.components_size],
-                      TLV_ParametersSha256DigestComponent);
-  result = ndn_sha256_sign(&temp_encoder.output_value[param_block_starting],
-                           temp_encoder.offset - param_block_starting,
-                           interest->name.components[interest->name.components_size].value,
-                           NDN_NAME_COMPONENT_BUFFER_SIZE, &used_bytes);
+  result = ndn_sha256(&temp_encoder.output_value[param_block_starting],
+                      temp_encoder.offset - param_block_starting,
+                      interest->name.components[interest->name.components_size].value);
   if (result < 0) return result;
-  interest->name.components[interest->name.components_size].size = used_bytes;
+  interest->name.components[interest->name.components_size].type = TLV_ParametersSha256DigestComponent;
+  interest->name.components[interest->name.components_size].size = NDN_SEC_SHA256_HASH_SIZE;
   interest->name.components_size++;
   BIT_SET(interest->flags, 7);
   return NDN_SUCCESS;
@@ -238,14 +242,12 @@ ndn_signed_interest_digest_sign(ndn_interest_t* interest)
 
   // calculate the TLV_ParametersSha256DigestComponent
   // component is calculated over Name + Parameters + SignatureInfo + SignatureValue
-  name_component_init(&interest->name.components[interest->name.components_size],
-                      TLV_ParametersSha256DigestComponent);
-  result = ndn_sha256_sign(&temp_encoder.output_value[param_block_starting],
-                           temp_encoder.offset - param_block_starting,
-                           interest->name.components[interest->name.components_size].value,
-                           NDN_NAME_COMPONENT_BUFFER_SIZE, &used_bytes);
+  result = ndn_sha256(&temp_encoder.output_value[param_block_starting],
+                      temp_encoder.offset - param_block_starting,
+                      interest->name.components[interest->name.components_size].value);
   if (result < 0) return result;
-  interest->name.components[interest->name.components_size].size = used_bytes;
+  interest->name.components[interest->name.components_size].type = TLV_ParametersSha256DigestComponent;
+  interest->name.components[interest->name.components_size].size = NDN_SEC_SHA256_HASH_SIZE;
   interest->name.components_size++;
   BIT_SET(interest->flags, 7);
   return NDN_SUCCESS;

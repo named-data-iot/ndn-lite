@@ -15,7 +15,6 @@
 #include "data.h"
 #include "interest.h"
 #include "signed-interest.h"
-#include "stdio.h"
 
 size_t
 tlv_get_tlvar(uint8_t* buf, size_t buflen, uint32_t* var){
@@ -150,14 +149,10 @@ tlv_interest_get_header(uint8_t* interest,
       options->hop_limit = *ptr;
     }
     else if (real_type == TLV_Nonce && real_len == sizeof(options->nonce)) {
-     ndn_decoder_t decoder;
-     decoder_init(&decoder, ptr, sizeof(options->nonce));
-     decoder_get_uint32_value(&decoder, &options->nonce);
+      memcpy(&options->nonce, ptr, sizeof(options->nonce));
     }
     else if (real_type == TLV_InterestLifetime) {
-     ndn_decoder_t decoder;
-     decoder_init(&decoder, ptr, sizeof(options->lifetime));
-     decoder_get_uint_value(&decoder, real_len, &options->lifetime);
+      options->lifetime = tlv_get_uint(ptr, real_len);
     }
     ptr += real_len;
   }

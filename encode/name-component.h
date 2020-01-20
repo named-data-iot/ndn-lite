@@ -13,6 +13,7 @@
 
 #include "tlv.h"
 #include "decoder.h"
+#include "../util/uniform-time.h"
 #include <string.h>
 
 #ifdef __cplusplus
@@ -36,34 +37,6 @@ typedef struct name_component {
    */
   uint8_t size;
 } name_component_t;
-
-/**
- * The structure to represent the wire format name component block.
- */
-typedef struct name_component_block {
-  /**
-   * Name component TLV block.
-   */
-  uint8_t value[NDN_NAME_COMPONENT_BLOCK_SIZE];
-  /**
-   * The size of block.
-   */
-  uint8_t size;
-} name_component_block_t;
-
-/**
- * Init a Name Component structure.
- * @param component. Output. The Name Component structure to be inited.
- * @param type. Input. Name Component Type to be set with.
- */
-static inline void
-name_component_init(name_component_t* component, uint32_t type)
-{
-  component->type = type;
-  if (type == TLV_ImplicitSha256DigestComponent || type == TLV_ParametersSha256DigestComponent) {
-    component->size = 32;
-  }
-}
 
 /**
  * Init a Name Component structure from caller supplied memory block.
@@ -93,19 +66,32 @@ name_component_from_buffer(name_component_t* component, uint32_t type,
  * @param size. Input. Size of input string.
  * @return 0 if there is no error.
  */
-static inline int
-name_component_from_string(name_component_t* component, const char* string, uint32_t size)
-{
-  int starting = 0;
-  int length = size;
-  if (string[starting] == '/') {
-    starting = 1;
-  }
-  if (string[length - 1] == '\0') {
-    length -= 1;
-  }
-  return name_component_from_buffer(component, TLV_GenericNameComponent, (const uint8_t*)string + starting, length);
-}
+int
+name_component_from_string(name_component_t* component, const char* string, uint32_t size);
+
+int
+name_component_from_timestamp(name_component_t* component, ndn_time_us_t timestamp);
+
+ndn_time_us_t
+name_component_to_timestamp(const name_component_t* component);
+
+int
+name_component_from_version(name_component_t* component, uint64_t version);
+
+uint64_t
+name_component_to_version(const name_component_t* component);
+
+int
+name_component_from_segment_num(name_component_t* component, uint64_t segment_num);
+
+uint64_t
+name_component_to_segment_num(const name_component_t* component);
+
+int
+name_component_from_sequence_num(name_component_t* component, uint64_t sequence);
+
+uint64_t
+name_component_to_sequence_num(const name_component_t* component);
 
 /**
  * Decode the Name Component from wire format (TLV block).
@@ -123,7 +109,7 @@ name_component_tlv_decode(ndn_decoder_t* decoder, name_component_t* component);
  * @return 0 if decoding is successful.
  */
 int
-name_component_from_block(name_component_t* component, const name_component_block_t* block);
+name_component_from_block(name_component_t* component, const uint8_t* value, uint32_t size);
 
 /**
  * Compare two name components.
@@ -154,6 +140,9 @@ name_component_probe_block_size(const name_component_t* component)
  */
 int
 name_component_tlv_encode(ndn_encoder_t* encoder, const name_component_t* component);
+
+void
+name_component_print(const name_component_t* component);
 
 #ifdef __cplusplus
 }
