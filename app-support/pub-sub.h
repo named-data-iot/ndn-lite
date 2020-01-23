@@ -45,7 +45,6 @@ extern "C" {
  *  E.g., /alice-home/NDN_SD_AC/CMD/set-temp/1577579642303, "72F", Sig
  */
 
-
 /** on new data/command callback
  * @param service. The service where data/command is published under
  * @param is_cmd. Whether what is newly published is a command
@@ -55,20 +54,22 @@ extern "C" {
  *    E.g., a data with identifier /bedroom/device-1 is a piece of content published by this device.
  * @param identifiers_size. The number of identifier components.
  *    Can be zero when is_cmd = true.
- * @param suffix. The suffix of the name. Usually keep the exact command or data content id.
- *    E.g., when is_cmd = true, suffix can be a string like "SET-TEMP" or bytes defined by app protocols.
- *    E.g., when is_cmd = false, suffix can be a string like "CUR-TEMP" or bytes defined by app protocols.
- * @param suffix_len. The size of suffix.
- * @param content. The content of newly published data/command.
+ * @param cmd_or_content_id. cmd_or_content_id is either a command id or a data content id.
+ *    When is_cmd = true, cmd_or_content_id is command id.
+ *    E.g., a string like "SET-TEMP", "TURN-ON" or bytes defined by app protocols.
+ *    When is_cmd = false, cmd_or_content_id is content id.
+ *    E.g., a string like "BATTERY", "STATE", or bytes defined by app protocols.
+ * @param cmd_or_content_id_len. The size of cmd_or_content_id.
+ * @param payload. The content of newly published data/command.
  *    E.g., content can keep the data payload or command parameters
- * @param content_len. The size of content.
+ * @param payload_len. The size of content.
  * @param userdata. The userdata that the developer want to pass to the callback function.
  */
 typedef void (*ndn_on_published)(uint8_t service, bool is_cmd,
-                                const name_component_t* identifiers, uint32_t identifiers_size,
-                                const uint8_t* suffix, uint32_t suffix_len,
-                                const uint8_t* content, uint32_t content_len,
-                                void* userdata);
+                                 const name_component_t* identifiers, uint32_t identifiers_size,
+                                 const uint8_t* cmd_or_content_id, uint32_t cmd_or_content_id_len,
+                                 const uint8_t* payload, uint32_t payload_len,
+                                 void* userdata);
 
 void
 ps_after_bootstrapping();
@@ -87,8 +88,7 @@ ps_after_bootstrapping();
  */
 void
 ps_subscribe_to_content(uint8_t service, const name_component_t* identifiers, uint32_t identifiers_size,
-                        uint32_t interval,
-                        ndn_on_published callback, void* userdata);
+                        uint32_t interval, ndn_on_published callback, void* userdata);
 
 void
 ps_subscribe_to_command(uint8_t service, const name_component_t* identifiers, uint32_t identifiers_size,
