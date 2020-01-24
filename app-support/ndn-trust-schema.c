@@ -9,9 +9,18 @@
 #include "ndn-trust-schema.h"
 #include <stdbool.h>
 #include <stdio.h>
+#include "../forwarder/forwarder.h"
+#include "../encode/signed-interest.h"
 #include "../encode/ndn-rule-storage.h"
+#include "../encode/key-storage.h"
 #include "../ndn-constants.h"
 #include "../ndn-error-code.h"
+
+#define ENABLE_NDN_LOG_INFO 1
+#define ENABLE_NDN_LOG_DEBUG 1
+#define ENABLE_NDN_LOG_ERROR 1
+
+#include "../util/logger.h"
 
 typedef struct {
   // the subpattern's associated name end index
@@ -19,6 +28,79 @@ typedef struct {
   // the subpattern's associated name begin index
   int SPB_ni;
 } subpattern_idx;
+
+int
+_ndn_trust_schema_on_new_schema(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
+{
+  NDN_LOG_INFO("Trust Schema received new schema Interest:");
+  ndn_interest_t interest;
+  int ret = ndn_interest_from_block(&interest, raw_int, raw_int_size);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("Interest cannot be recognized. Error code: %d\n", ret);
+    return NDN_FWD_STRATEGY_SUPPRESS;
+  }
+  NDN_LOG_INFO_NAME(&interest.name);
+  ndn_key_storage_t* keys = ndn_key_storage_get_instance();
+  ret = ndn_signed_interest_ecdsa_verify(&interest, &keys->trust_anchor_key);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("Schema Interest cannot be verified. Drop it. Error code: %d\n", ret);
+    return NDN_FWD_STRATEGY_SUPPRESS;
+  }
+  char rule_name[32] = "";
+  memcpy(&interest.name.components[interest.name.components_size - 2].value, rule_name,
+         interest.name.components[interest.name.components_size - 2].size);
+  rule_name[interest.name.components[interest.name.components_size - 2].size] = '\0';
+
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, interest.parameters.value, interest.parameters.size);
+  uint32_t probe, data_str_len, key_str_len;
+  decoder_get_type(&decoder, &probe);
+  decoder_get_length(&decoder, &data_str_len);
+  const uint8_t* data_str_start = decoder.input_value + decoder.offset;
+  decoder_move_forward(&decoder, data_str_len);
+  decoder_get_type(&decoder, &probe);
+  decoder_get_length(&decoder, &key_str_len);
+  const uint8_t* key_str_start = decoder.input_value + decoder.offset;
+
+  ndn_trust_schema_rule_t schema;
+  ret = ndn_trust_schema_rule_from_strings(&schema, (const char*)data_str_start, data_str_len, (const char*)key_str_start, key_str_len);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("Schema cannot be recognized. Drop it. Error code: %d\n", ret);
+    return NDN_FWD_STRATEGY_SUPPRESS;
+  }
+  ret = ndn_rule_storage_add_rule(rule_name, &schema);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("Schema cannot be recognized. Drop it. Error code: %d\n", ret);
+    return NDN_FWD_STRATEGY_SUPPRESS;
+  }
+  NDN_LOG_INFO("Schema has been added successfully.");
+  return NDN_FWD_STRATEGY_SUPPRESS;
+}
+
+void
+ndn_trust_schema_after_bootstrapping()
+{
+  // adding existing rules to rule storage
+  ndn_trust_schema_rule_t schema;
+  ndn_trust_schema_rule_from_strings(&schema, cmd_controller_only_rule_data_name, strlen(cmd_controller_only_rule_data_name),
+                                     cmd_controller_only_rule_key_name, strlen(cmd_controller_only_rule_key_name));
+  ndn_rule_storage_add_rule("controller-only", &schema);
+
+  // register prefix /<home>/POLICY/<room>/<device>/rule-name
+  ndn_name_t prefix_name;
+  ndn_name_init(&prefix_name);
+  ndn_key_storage_t* keys = ndn_key_storage_get_instance();
+  ndn_name_append_component(&prefix_name, &keys->self_identity.components[0]);
+  ndn_name_append_string_component(&prefix_name, "POLICY", strlen("POLICY"));
+  ndn_name_append_component(&prefix_name, &keys->self_identity.components[1]);
+  ndn_name_append_component(&prefix_name, &keys->self_identity.components[2]);
+  NDN_LOG_INFO("About to register the prefix for policy update.")
+  NDN_LOG_INFO_NAME(&prefix_name);
+  int ret = ndn_forwarder_register_name_prefix(&prefix_name, _ndn_trust_schema_on_new_schema, NULL);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("Cannot register prefix to add new policies. Error code: %d\n", ret);
+  }
+}
 
 int
 no_wildcard_sequence_match_data_name(const ndn_name_t *n, int nb, int ne, const ndn_trust_schema_pattern_t *p,

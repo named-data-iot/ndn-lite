@@ -18,7 +18,7 @@ typedef struct {
  *          call ndn_rule_storage_init first.
  */
 ndn_rule_storage_t*
-get_ndn_rule_storage_instance(void);
+ndn_rule_storage_get_instance(void);
 
 /**
  * Init the rule storage singleton. This function will clear the rule storage.
@@ -47,7 +47,7 @@ ndn_rule_storage_add_rule(const char* rule_name, const ndn_trust_schema_rule_t *
 /**
  * Remove a rule from the rule storage.
  * @param rule_name. Input. The name of the rule to remove.
- * @return 0 if the rule corresponding to rule_name is successfully removed.
+ * @return NDN_SUCCESS if the rule corresponding to rule_name is successfully removed or there is no rule found
  */
 int
 ndn_rule_storage_remove_rule(const char* rule_name);

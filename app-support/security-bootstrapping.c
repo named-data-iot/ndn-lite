@@ -11,6 +11,7 @@
 #include "service-discovery.h"
 #include "access-control.h"
 #include "ndn-sig-verifier.h"
+#include "ndn-trust-schema.h"
 #include "../encode/interest.h"
 #include "../encode/signed-interest.h"
 #include "../encode/data.h"
@@ -88,6 +89,7 @@ _sec_boot_after_bootstrapping()
   ndn_sig_verifier_after_bootstrapping(m_sec_boot_state.face);
 
   // TODO: subscribe to default topics (policies, key information)
+  ndn_trust_schema_after_bootstrapping();
 
   // we shouldn't delete the AES key because they may be used in other places
   // ndn_key_storage_delete_aes_key(SEC_BOOT_AES_KEY_ID);

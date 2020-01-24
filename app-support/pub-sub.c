@@ -225,12 +225,12 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
   ndn_trust_schema_rule_t schema;
   if (topic->is_cmd) {
     //TODO: Zhiyi: for now I hardcode controller only rule.
-    ret = ndn_trust_schema_rule_from_strings(&schema, cmd_controller_only_rule_data_name, sizeof(cmd_controller_only_rule_data_name),
-                                             cmd_controller_only_rule_key_name, sizeof(cmd_controller_only_rule_key_name));
+    ret = ndn_trust_schema_rule_from_strings(&schema, cmd_controller_only_rule_data_name, strlen(cmd_controller_only_rule_data_name),
+                                             cmd_controller_only_rule_key_name, strlen(cmd_controller_only_rule_key_name));
   }
   else {
-    ret = ndn_trust_schema_rule_from_strings(&schema, content_same_producer_rule_data_name, sizeof(content_same_producer_rule_data_name),
-                                             content_same_producer_rule_key_name, sizeof(content_same_producer_rule_key_name));
+    ret = ndn_trust_schema_rule_from_strings(&schema, content_same_producer_rule_data_name, strlen(content_same_producer_rule_data_name),
+                                             content_same_producer_rule_key_name, strlen(content_same_producer_rule_key_name));
   }
   if (ret != NDN_SUCCESS) {
     NDN_LOG_ERROR("Cannot load trust schema rules. Error code: %d", ret);
