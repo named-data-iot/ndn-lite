@@ -10,7 +10,6 @@
 #include "../forwarder/forwarder.h"
 #include "../encode/wrapper-api.h"
 #include "../encode/signed-interest.h"
-#include "../encode/ndn-rule-storage.h"
 #include "../encode/key-storage.h"
 #include "../ndn-constants.h"
 #include "../ndn-error-code.h"

@@ -222,21 +222,32 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
   m_measure_tp1 = ndn_time_now_us();
 #endif
 
-  ndn_trust_schema_rule_t schema;
+  bool pass_schema_check = false;
   if (topic->is_cmd) {
-    //TODO: Zhiyi: for now I hardcode controller only rule.
-    ret = ndn_trust_schema_rule_from_strings(&schema, cmd_controller_only_rule_data_name, strlen(cmd_controller_only_rule_data_name),
-                                             cmd_controller_only_rule_key_name, strlen(cmd_controller_only_rule_key_name));
+    ndn_rule_storage_t* rules = ndn_rule_storage_get_instance();
+    for (int i = 0; i < NDN_TRUST_SCHEMA_MAX_SUBPATTERN_MATCHES; i++) {
+      if (rules->rule_names[i].name[0] != '\0') {
+        ret = ndn_trust_schema_verify_data_name_key_name_pair(&rules->rule_objects[i],
+                                                              &data->name, &data->signature.key_locator_name);
+        if (ret == NDN_SUCCESS) {
+          pass_schema_check = true;
+          break;
+        }
+      }
+    }
   }
   else {
+    ndn_trust_schema_rule_t schema;
     ret = ndn_trust_schema_rule_from_strings(&schema, content_same_producer_rule_data_name, strlen(content_same_producer_rule_data_name),
                                              content_same_producer_rule_key_name, strlen(content_same_producer_rule_key_name));
+    if (ret == NDN_SUCCESS) {
+      pass_schema_check = true;
+    }
   }
-  if (ret != NDN_SUCCESS) {
-    NDN_LOG_ERROR("Cannot load trust schema rules. Error code: %d", ret);
+  if (!pass_schema_check) {
+    NDN_LOG_ERROR("Cannot load trust schema rules. Drop.");
     return;
   }
-  ret = ndn_trust_schema_verify_data_name_key_name_pair(&schema, &data->name, &data->signature.key_locator_name);
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();

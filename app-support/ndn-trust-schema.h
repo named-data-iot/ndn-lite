@@ -14,6 +14,7 @@
 #include "../encode/name.h"
 #include "../util/re.h"
 #include "../encode/trust-schema/ndn-trust-schema-rule.h"
+#include "../encode/ndn-rule-storage.h"
 #include <string.h>
 
 /** Controller Only Command Policy
