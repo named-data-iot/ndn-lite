@@ -36,15 +36,12 @@ ndn_rule_storage_get_rule(const char *rule_name) {
 }
 
 int
-ndn_rule_storage_add_rule(const char* rule_name, const ndn_trust_schema_rule_t *rule) {
+ndn_rule_storage_add_rule(const char* rule_name, const ndn_trust_schema_rule_t *rule)
+{
   int ret_val = -1;
   int empty_index = -1;
-
+  ndn_rule_storage_remove_rule(rule_name);
   for (int i = 0; i < NDN_TRUST_SCHEMA_MAX_SUBPATTERN_MATCHES; i++) {
-    if (strcmp((const char *)&ndn_rule_storage.rule_names[i].name, rule_name) == 0 
-        && strlen((const char *)&ndn_rule_storage.rule_names[i].name) == strlen(rule_name)) {
-      return NDN_TRUST_SCHEMA_DUPLICATE_RULE_NAME;
-    }
     if (_check_buffer_all_zeros((uint8_t *) &ndn_rule_storage.rule_objects[i], sizeof(ndn_trust_schema_rule_t)) == 0) {
       empty_index = i;
     }

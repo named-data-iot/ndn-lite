@@ -7,14 +7,15 @@
  */
 
 #include "ndn-trust-schema.h"
-#include <stdbool.h>
-#include <stdio.h>
 #include "../forwarder/forwarder.h"
+#include "../encode/wrapper-api.h"
 #include "../encode/signed-interest.h"
 #include "../encode/ndn-rule-storage.h"
 #include "../encode/key-storage.h"
 #include "../ndn-constants.h"
 #include "../ndn-error-code.h"
+#include <stdbool.h>
+#include <stdio.h>
 
 #define ENABLE_NDN_LOG_INFO 1
 #define ENABLE_NDN_LOG_DEBUG 1
@@ -28,6 +29,8 @@ typedef struct {
   // the subpattern's associated name begin index
   int SPB_ni;
 } subpattern_idx;
+
+static uint8_t _pkt_buffer[256];
 
 int
 _ndn_trust_schema_on_new_schema(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
@@ -47,7 +50,7 @@ _ndn_trust_schema_on_new_schema(const uint8_t* raw_int, uint32_t raw_int_size, v
     return NDN_FWD_STRATEGY_SUPPRESS;
   }
   char rule_name[32] = "";
-  memcpy(&interest.name.components[interest.name.components_size - 2].value, rule_name,
+  memcpy(rule_name, interest.name.components[interest.name.components_size - 2].value,
          interest.name.components[interest.name.components_size - 2].size);
   rule_name[interest.name.components[interest.name.components_size - 2].size] = '\0';
 
@@ -70,10 +73,29 @@ _ndn_trust_schema_on_new_schema(const uint8_t* raw_int, uint32_t raw_int_size, v
   }
   ret = ndn_rule_storage_add_rule(rule_name, &schema);
   if (ret != NDN_SUCCESS) {
-    NDN_LOG_ERROR("Schema cannot be recognized. Drop it. Error code: %d\n", ret);
+    NDN_LOG_ERROR("Schema cannot be added to the storage. Drop it. Error code: %d\n", ret);
     return NDN_FWD_STRATEGY_SUPPRESS;
   }
   NDN_LOG_INFO("Schema has been added successfully.");
+  size_t used_size = 0;
+  ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+  ret = tlv_make_data(_pkt_buffer, sizeof(_pkt_buffer), &used_size, 7,
+                      TLV_DATAARG_NAME_PTR, &interest.name,
+                      TLV_DATAARG_CONTENT_BUF, "200 OK",
+                      TLV_DATAARG_CONTENT_SIZE, strlen("200 OK"),
+                      TLV_DATAARG_FRESHNESSPERIOD_U64, (uint64_t)4000,
+                      TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
+                      TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
+                      TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("Schema update ack cannot be generated. Error code: %d\n", ret);
+    return NDN_FWD_STRATEGY_SUPPRESS;
+  }
+  ret = ndn_forwarder_put_data(_pkt_buffer, used_size);
+  if (ret != NDN_SUCCESS) {
+    NDN_LOG_ERROR("Schema update ack cannot be sent. Error code: %d\n", ret);
+    return NDN_FWD_STRATEGY_SUPPRESS;
+  }
   return NDN_FWD_STRATEGY_SUPPRESS;
 }
 
