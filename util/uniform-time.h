@@ -26,10 +26,10 @@ extern "C" {
  */
 
 /** Time count in milli-seconds */
-typedef uint64_t ndn_time_ms_t;
+typedef uint32_t ndn_time_ms_t;
 
 /** Time count in micro-seconds */
-typedef uint64_t ndn_time_us_t;
+typedef uint32_t ndn_time_us_t;
 
 /** Get current time count in ms.
  * @return Time count. The absolute value is meaningless.

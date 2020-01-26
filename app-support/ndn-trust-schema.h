@@ -19,17 +19,22 @@
 /** Controller Only Command Policy
  */
 #define cmd_controller_only_rule_data_name "(<>)<><CMD><>*"
-#define cmd_controller_only_rule_key_name "\\0<KEY><>"
+#define cmd_controller_only_rule_key_name "\\0<KEY><>*"
 
 /** Same Room Only Command Policy
  */
 #define cmd_same_room_rule_data_name "(<>)<><CMD>(<>)<>*"
-#define cmd_same_room_rule_key_name "\\0<>\\1<><KEY><>"
+#define cmd_same_room_rule_key_name "\\0<>\\1<><KEY><>*"
+
+/** Same Service Command Policy
+ */
+#define cmd_same_service_rule_data_name "(<>*)<CMD><>*"
+#define cmd_same_service_rule_key_name "\\0<>*<KEY><>*"
 
 /** Same Producer Content Policy
  */
-#define content_same_producer_rule_data_name "(<>)(<>)<DATA>(<>)(<>)<>*"
-#define content_same_producer_rule_key_name "\\0\\1\\2\\3<KEY><>"
+#define content_same_producer_rule_data_name "(<>*)<DATA><>(<>)<>*"
+#define content_same_producer_rule_key_name "\\0<>*\\1<KEY><>*"
 
 /**
  * Verify that a key name matches a data name based on a trust schema pattern.

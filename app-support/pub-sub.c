@@ -210,7 +210,7 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("SUB-NEW-DATA-AES-DEC: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("SUB-NEW-DATA-AES-DEC: %" PRIu32 "us\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   if (ret != NDN_SUCCESS) {
@@ -225,8 +225,11 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
   ndn_trust_schema_rule_t schema;
   if (topic->is_cmd) {
     //TODO: Zhiyi: for now I hardcode controller only rule.
-    ret = ndn_trust_schema_rule_from_strings(&schema, cmd_controller_only_rule_data_name, sizeof(cmd_controller_only_rule_data_name),
+    int ret_1 = ndn_trust_schema_rule_from_strings(&schema, cmd_controller_only_rule_data_name, sizeof(cmd_controller_only_rule_data_name),
                                              cmd_controller_only_rule_key_name, sizeof(cmd_controller_only_rule_key_name));
+    int ret_2 = ndn_trust_schema_rule_from_strings(&schema, cmd_same_service_rule_data_name, sizeof(cmd_same_service_rule_data_name),
+                                             cmd_same_service_rule_key_name, sizeof(cmd_same_service_rule_key_name));
+    ret = ret_1 + ret_2;
   }
   else {
     ret = ndn_trust_schema_rule_from_strings(&schema, content_same_producer_rule_data_name, sizeof(content_same_producer_rule_data_name),
@@ -236,18 +239,19 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
     NDN_LOG_ERROR("Cannot load trust schema rules. Error code: %d", ret);
     return;
   }
+  NDN_LOG_DEBUG("key locator is ");NDN_LOG_DEBUG_NAME(&data->signature.key_locator_name);
   ret = ndn_trust_schema_verify_data_name_key_name_pair(&schema, &data->name, &data->signature.key_locator_name);
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("SUB-NEW-DATA-SCHEMA-VERIFY: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("SUB-NEW-DATA-SCHEMA-VERIFY: %" PRIu32 "us\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   if (ret != NDN_SUCCESS) {
-    NDN_LOG_ERROR("Cannot verify incoming content against trust schemas. Error code: %d", ret);
+    NDN_LOG_ERROR("Cannot verify incoming content against trust schemas. Error code: %d\n", ret);
     return;
   }
-  NDN_LOG_DEBUG("NEW-DATA-FINSIH-VERIFICATION-TP: %llu ms\n", ndn_time_now_ms());
+  NDN_LOG_DEBUG("NEW-DATA-FINSIH-VERIFICATION-TP: %" PRIu32 " ms\n", ndn_time_now_ms());
   // command FORMAT: /home/service/CMD/identifier[0,2]/command
   // data FORMAT: /home/service/DATA/identifier[0,2]/data-identifier
   topic->callback(topic->service, topic->is_cmd, topic->identifier, comp_size,
@@ -276,7 +280,7 @@ _on_new_content(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     return;
   }
   NDN_LOG_INFO("Received new published content/command");
-  NDN_LOG_DEBUG("NEW-DATA-ARRIVE-TP: %llu ms\n", ndn_time_now_ms());
+  NDN_LOG_DEBUG("NEW-DATA-ARRIVE-TP: %" PRIu32 " us\n", ndn_time_now_us());
   NDN_LOG_DEBUG("SUB-NEW-DATA-PKT-SIZE: %u Bytes\n", data_size);
   topic->received_content = true;
   memcpy(topic->last_digest, pkt_encoding_buf, 16);
@@ -589,7 +593,7 @@ ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("PUB-CONTENT-DATA-AES-ENC: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("PUB-CONTENT-DATA-AES-ENC: %" PRIu32 "us\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
 
@@ -693,7 +697,7 @@ ps_publish_command(uint8_t service, const uint8_t* command_id, uint32_t command_
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("PUB-COMMAND-DATA-AES-ENC: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("PUB-COMMAND-DATA-AES-ENC: %" PRIu32 "us\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 7,

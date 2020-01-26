@@ -18,6 +18,8 @@
 #include "../ndn-error-code.h"
 #include "../util/uniform-time.h"
 
+#include <inttypes.h>
+
 #define ENABLE_NDN_LOG_INFO 0
 #define ENABLE_NDN_LOG_DEBUG 1
 #define ENABLE_NDN_LOG_ERROR 0
@@ -64,10 +66,13 @@ _prepare_signature_info(ndn_data_t* data, uint8_t signature_type,
                         const ndn_name_t* producer_identity, uint32_t key_id)
 {
   uint8_t raw_key_id[4] = {0};
-  raw_key_id[0] = (key_id >> 24) & 0xFF;
-  raw_key_id[1] = (key_id >> 16) & 0xFF;
-  raw_key_id[2] = (key_id >> 8) & 0xFF;
-  raw_key_id[3] = key_id & 0xFF;
+  ndn_encoder_t encoder;
+  encoder_init(&encoder, raw_key_id, sizeof(raw_key_id));
+  encoder_append_uint32_value(&encoder, key_id);
+  // raw_key_id[0] = (key_id >> 24) & 0xFF;
+  // raw_key_id[1] = (key_id >> 16) & 0xFF;
+  // raw_key_id[2] = (key_id >> 8) & 0xFF;
+  // raw_key_id[3] = key_id & 0xFF;
 
   ndn_signature_init(&data->signature, false);
   ndn_signature_set_signature_type(&data->signature, signature_type);
@@ -214,7 +219,7 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("DATA-PKT-ECDSA-SIGN: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("DATA-PKT-ECDSA-SIGN: %" PRIu32 "us\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   uint32_t data_buffer_size = ndn_name_probe_block_size(&data->name);
@@ -270,7 +275,7 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp1 = ndn_time_now_us();
-  NDN_LOG_DEBUG("DATA-PKT-ENCODING: %lluus\n", m_measure_tp1 - m_measure_tp2);
+  NDN_LOG_DEBUG("DATA-PKT-ENCODING: %" PRIu32 "us\n", m_measure_tp1 - m_measure_tp2);
 #endif
 
   return 0;
@@ -318,7 +323,7 @@ ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("DATA-PKT-HMAC-SIGN: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("DATA-PKT-HMAC-SIGN: %" PRIu32 "us\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   if (result < 0)
@@ -420,7 +425,7 @@ ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, u
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("DATA-PKT-DECODING: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("DATA-PKT-DECODING: %" PRIu32 "us\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   int result = ndn_ecdsa_verify(block_value + be_signed_start, be_signed_end - be_signed_start,
@@ -428,7 +433,7 @@ ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, u
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp1 = ndn_time_now_us();
-  NDN_LOG_DEBUG("DATA-PKT-ECDSA-VERIFY: %lluus\n", m_measure_tp1 - m_measure_tp2);
+  NDN_LOG_DEBUG("DATA-PKT-ECDSA-VERIFY: %" PRIu32 "us\n", m_measure_tp1 - m_measure_tp2);
 #endif
 
   if (result == NDN_SUCCESS)
@@ -450,7 +455,7 @@ ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, ui
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("DATA-PKT-DECODING: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("DATA-PKT-DECODING: %" PRIu32 "us\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   int result = ndn_hmac_verify(block_value + be_signed_start, be_signed_end - be_signed_start,
@@ -458,7 +463,7 @@ ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, ui
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp1 = ndn_time_now_us();
-  NDN_LOG_DEBUG("DATA-PKT-HMAC-VERIFY: %lluus\n", m_measure_tp1 - m_measure_tp2);
+  NDN_LOG_DEBUG("DATA-PKT-HMAC-VERIFY: %" PRIu32 "us\n", m_measure_tp1 - m_measure_tp2);
 #endif
 
   if (result == 0)
