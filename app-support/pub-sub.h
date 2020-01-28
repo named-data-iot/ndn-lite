@@ -45,6 +45,20 @@ extern "C" {
  *  E.g., /alice-home/NDN_SD_AC/CMD/set-temp/1577579642303, "72F", Sig
  */
 
+#define NDN_PUBSUB_IDENTIFIER_SIZE 2
+
+typedef struct ps_identifier {
+  name_component_t identifiers[NDN_PUBSUB_IDENTIFIER_SIZE];
+  uint32_t identifiers_size;
+} ps_identifier_t;
+
+typedef struct ps_content {
+  const uint8_t* content_id;
+  uint32_t content_id_len;
+  const uint8_t* payload;
+  uint32_t payload_len;
+} ps_content_t;
+
 /** on new data/command callback
  * @param service. The service where data/command is published under
  * @param is_cmd. Whether what is newly published is a command
@@ -66,9 +80,8 @@ extern "C" {
  * @param userdata. The userdata that the developer want to pass to the callback function.
  */
 typedef void (*ndn_on_published)(uint8_t service, bool is_cmd,
-                                 const name_component_t* identifiers, uint32_t identifiers_size,
-                                 const uint8_t* cmd_or_content_id, uint32_t cmd_or_content_id_len,
-                                 const uint8_t* payload, uint32_t payload_len,
+                                 const ps_identifier_t* identifier,
+                                 ps_content_t content,
                                  void* userdata);
 
 void
@@ -87,11 +100,11 @@ ps_after_bootstrapping();
  * Cmd fetching Interest Format: /home/service/CMD/identifier[0,2]/action
  */
 void
-ps_subscribe_to_content(uint8_t service, const name_component_t* identifiers, uint32_t identifiers_size,
+ps_subscribe_to_content(uint8_t service, const ps_identifier_t* identifier,
                         uint32_t interval, ndn_on_published callback, void* userdata);
 
 void
-ps_subscribe_to_command(uint8_t service, const name_component_t* identifiers, uint32_t identifiers_size,
+ps_subscribe_to_command(uint8_t service, const ps_identifier_t* identifier,
                         ndn_on_published callback, void* userdata);
 
 /** publish data
@@ -101,8 +114,7 @@ ps_subscribe_to_command(uint8_t service, const name_component_t* identifiers, ui
  * @TODO: for now I used a default freshness period of the data. Need more discussion, e.g., user-specified?
  */
 void
-ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_id_len,
-                   const uint8_t* payload, uint32_t payload_len);
+ps_publish_content(uint8_t service, ps_content_t content);
 
 /** publish command to the target scope
  * This function will publish command to a content repo and send out a notification Interest.
@@ -112,9 +124,8 @@ ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_
  * @TODO: for now I used a default freshness period of the data. Need more discussion, e.g., user-specified?
  */
 void
-ps_publish_command(uint8_t service, const uint8_t* command_id, uint32_t command_id_len,
-                   const name_component_t* identifiers, uint32_t identifiers_size,
-                   const uint8_t* payload, uint32_t payload_len);
+ps_publish_command(uint8_t service, const ps_identifier_t* identifier,
+                   ps_content_t content);
 
 #ifdef __cplusplus
 }

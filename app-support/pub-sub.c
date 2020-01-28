@@ -27,7 +27,6 @@
 #include "../util/logger.h"
 
 #define NDN_PUBSUB_TOPIC_SIZE 10
-#define NDN_PUBSUB_IDENTIFIER_SIZE 2
 #define NDN_PUBSUB_MAC_TIMEOUT 2
 
 #define PUB  1
@@ -261,10 +260,16 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
   NDN_LOG_DEBUG("NEW-DATA-FINSIH-VERIFICATION-TP: %llu ms\n", ndn_time_now_ms());
   // command FORMAT: /home/service/CMD/identifier[0,2]/command
   // data FORMAT: /home/service/DATA/identifier[0,2]/data-identifier
-  topic->callback(topic->service, topic->is_cmd, topic->identifier, comp_size,
-                  data->name.components[data->name.components_size - 1].value,
-                  data->name.components[data->name.components_size - 1].size,
-                  pkt_encoding_buf, used_size, topic->userdata);
+
+  ps_identifier_t identifier;
+  memcpy(identifier.identifiers, topic->identifier, comp_size * sizeof(topic->identifier));
+  ps_content_t content = {
+    .content_id = data->name.components[data->name.components_size - 1].value,
+    .content_id_len = data->name.components[data->name.components_size - 1].size,
+    .payload = pkt_encoding_buf,
+    .payload_len = used_size
+  };
+  topic->callback(topic->service, topic->is_cmd, &identifier, content, topic->userdata);
 }
 
 void
@@ -509,18 +514,29 @@ _subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier, 
 }
 
 void
-ps_subscribe_to_content(uint8_t service, const name_component_t* identifiers, uint32_t identifiers_size,
-                        uint32_t interval,
-                        ndn_on_published callback, void* userdata)
+ps_subscribe_to_content(uint8_t service, const ps_identifier_t* identifier,
+                        uint32_t interval, ndn_on_published callback, void* userdata)
 {
-  return _subscribe_to(service, false, identifiers, identifiers_size, interval, callback, userdata);
+  const name_component_t* idf = NULL;
+  uint32_t comp_size = 0;
+  if(identifier){
+    idf = identifier->identifiers;
+    comp_size = identifier->identifiers_size;
+  }
+  return _subscribe_to(service, false, idf, comp_size, interval, callback, userdata);
 }
 
 void
-ps_subscribe_to_command(uint8_t service, const name_component_t* identifiers, uint32_t identifiers_size,
+ps_subscribe_to_command(uint8_t service, const ps_identifier_t* identifier,
                         ndn_on_published callback, void* userdata)
 {
-  return _subscribe_to(service, true, identifiers, identifiers_size, 0, callback, userdata);
+  const name_component_t* idf = NULL;
+  uint32_t comp_size = 0;
+  if(identifier){
+    idf = identifier->identifiers;
+    comp_size = identifier->identifiers_size;
+  }
+  return _subscribe_to(service, true, idf, comp_size, 0, callback, userdata);
 }
 
 void
@@ -532,8 +548,7 @@ ps_after_bootstrapping()
 }
 
 void
-ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_id_len,
-                   const uint8_t* payload, uint32_t payload_len)
+ps_publish_content(uint8_t service, ps_content_t content)
 {
   if (!m_has_initialized)
     _ps_topics_init();
@@ -583,7 +598,7 @@ ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_
   // Data name FORMAT: /home/service/DATA/room/device-id/content-id/tp
   ndn_name_append_component(&name, &storage->self_identity.components[storage->self_identity.components_size - 2]);
   ndn_name_append_component(&name, &storage->self_identity.components[storage->self_identity.components_size - 1]);
-  ndn_name_append_bytes_component(&name, content_id, content_id_len);
+  ndn_name_append_bytes_component(&name, content.content_id, content.content_id_len);
   // TODO: currently I appended timestamp. Further discussion is needed.
   name_component_t tp_comp;
   name_component_from_timestamp(&tp_comp, topic->last_update_tp);
@@ -596,7 +611,8 @@ ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_
   // Encrypt payload
   uint32_t used_size = 0;
   ndn_aes_key_t* service_aes_key = ndn_ac_get_key_for_service(topic->service);
-  ret = ndn_gen_encrypted_payload(payload, payload_len, pkt_encoding_buf, &used_size, service_aes_key->key_id, NULL, 0);
+  ret = ndn_gen_encrypted_payload(content.payload, content.payload_len, pkt_encoding_buf, &used_size,
+                                  service_aes_key->key_id, NULL, 0);
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
@@ -628,9 +644,7 @@ ps_publish_content(uint8_t service, const uint8_t* content_id, uint32_t content_
 }
 
 void
-ps_publish_command(uint8_t service, const uint8_t* command_id, uint32_t command_id_len,
-                   const name_component_t* identifiers, uint32_t identifiers_size,
-                   const uint8_t* payload, uint32_t payload_len)
+ps_publish_command(uint8_t service, const ps_identifier_t* identifier, ps_content_t content)
 {
   if (!m_has_initialized)
     _ps_topics_init();
@@ -679,10 +693,12 @@ ps_publish_command(uint8_t service, const uint8_t* command_id, uint32_t command_
 
   // Append the last several component to the Data name
   // Data name FORMAT: /home/service/CMD/identifier[0,2]/command-id
-  for (int i = 0; i < identifiers_size; i++) {
-    ndn_name_append_component(&name, identifiers + i);
+  if(identifier){
+    for (int i = 0; i < identifier->identifiers_size; i++) {
+      ndn_name_append_component(&name, identifier->identifiers + i);
+    }
   }
-  ndn_name_append_bytes_component(&name, command_id, command_id_len);
+  ndn_name_append_bytes_component(&name, content.content_id, content.content_id_len);
   // TODO: currently I appended timestamp. Further discussion is needed.
   ndn_time_ms_t tp = ndn_time_now_ms();
   name_component_t tp_comp;
@@ -696,7 +712,8 @@ ps_publish_command(uint8_t service, const uint8_t* command_id, uint32_t command_
   // Encrypt payload
   uint32_t used_size = 0;
   ndn_aes_key_t* service_aes_key = ndn_ac_get_key_for_service(topic->service);
-  ret = ndn_gen_encrypted_payload(payload, payload_len, pkt_encoding_buf, &used_size, service_aes_key->key_id, NULL, 0);
+  ret = ndn_gen_encrypted_payload(content.payload, content.payload_len, pkt_encoding_buf, &used_size,
+                                  service_aes_key->key_id, NULL, 0);
   if (ret != NDN_SUCCESS) {
     NDN_LOG_ERROR("[PUB/SUB] Cannot encrypt command payload to publish. Error code: %d", ret);
     return;
@@ -726,10 +743,12 @@ ps_publish_command(uint8_t service, const uint8_t* command_id, uint32_t command_
   ndn_name_append_bytes_component(&name, &service, sizeof(service));
   ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
   ndn_name_append_string_component(&name, "CMD", strlen("CMD"));
-  for (int i = 0; i < identifiers_size; i++) {
-    ndn_name_append_component(&name, identifiers + i);
+  if(identifier){
+    for (int i = 0; i < identifier->identifiers_size; i++) {
+      ndn_name_append_component(&name, identifier->identifiers + i);
+    }
   }
-  ndn_name_append_bytes_component(&name, command_id, command_id_len);
+  ndn_name_append_bytes_component(&name, content.content_id, content.content_id_len);
   ndn_name_append_component(&name, &tp_comp);
 
   // send out the notification Interest
