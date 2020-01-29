@@ -47,22 +47,23 @@ extern "C" {
 
 #define NDN_PUBSUB_IDENTIFIER_SIZE 2
 
-typedef struct ps_identifier {
-  name_component_t identifiers[NDN_PUBSUB_IDENTIFIER_SIZE];
-  uint32_t identifiers_size;
-} ps_identifier_t;
+typedef struct ps_event_context {
+  uint8_t service;
+  bool is_cmd;
+  char scope[50];
+} ps_event_context_t;
 
-typedef struct ps_content {
-  const uint8_t* content_id;
-  uint32_t content_id_len;
+typedef struct ps_event {
+  const uint8_t* data_id;
+  uint32_t data_id_len;
   const uint8_t* payload;
   uint32_t payload_len;
-} ps_content_t;
+} ps_event_t;
 
 /** on new data/command callback
  * @param service. The service where data/command is published under
  * @param is_cmd. Whether what is newly published is a command
- * @param identifiers. The name components that indicate the content publisher or command effect scope.
+ * @param scope. The name components that indicate the content publisher or command effect scope.
  *    E.g., a command with identifier /bedroom is to command devices under /bedroom.
  *    E.g., a command with no identifiers is to command all devices in the local IoT system.
  *    E.g., a data with identifier /bedroom/device-1 is a piece of content published by this device.
@@ -79,10 +80,7 @@ typedef struct ps_content {
  * @param payload_len. The size of content.
  * @param userdata. The userdata that the developer want to pass to the callback function.
  */
-typedef void (*ndn_on_published)(uint8_t service, bool is_cmd,
-                                 const ps_identifier_t* identifier,
-                                 ps_content_t content,
-                                 void* userdata);
+typedef void (*ps_on_published)(ps_event_context_t* context, ps_event_t* content, void* userdata);
 
 void
 ps_after_bootstrapping();
@@ -100,12 +98,11 @@ ps_after_bootstrapping();
  * Cmd fetching Interest Format: /home/service/CMD/identifier[0,2]/action
  */
 void
-ps_subscribe_to_content(uint8_t service, const ps_identifier_t* identifier,
-                        uint32_t interval, ndn_on_published callback, void* userdata);
+ps_subscribe_to_content(uint8_t service, const char* scope,
+                        uint32_t interval, ps_on_published callback, void* userdata);
 
 void
-ps_subscribe_to_command(uint8_t service, const ps_identifier_t* identifier,
-                        ndn_on_published callback, void* userdata);
+ps_subscribe_to_command(uint8_t service, const char* scope, ps_on_published callback, void* userdata);
 
 /** publish data
  * This function will publish data to a content repo.
@@ -114,7 +111,7 @@ ps_subscribe_to_command(uint8_t service, const ps_identifier_t* identifier,
  * @TODO: for now I used a default freshness period of the data. Need more discussion, e.g., user-specified?
  */
 void
-ps_publish_content(uint8_t service, ps_content_t content);
+ps_publish_content(uint8_t service, ps_event_t event);
 
 /** publish command to the target scope
  * This function will publish command to a content repo and send out a notification Interest.
@@ -124,8 +121,7 @@ ps_publish_content(uint8_t service, ps_content_t content);
  * @TODO: for now I used a default freshness period of the data. Need more discussion, e.g., user-specified?
  */
 void
-ps_publish_command(uint8_t service, const ps_identifier_t* identifier,
-                   ps_content_t content);
+ps_publish_command(uint8_t service, const char* scope, ps_event_t event);
 
 #ifdef __cplusplus
 }

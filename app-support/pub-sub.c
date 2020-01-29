@@ -56,7 +56,7 @@ typedef struct sub_topic {
   uint64_t next_interest;
   /** On DATA/CMD publish callback.
    */
-  ndn_on_published callback;
+  ps_on_published callback;
   /** User defined data.
    */
   void* userdata;
@@ -145,7 +145,7 @@ _ps_topics_init()
 /** Helper function to to perform sub Topic matching.
  */
 sub_topic_t*
-_match_sub_topic(uint8_t service, bool is_cmd, const name_component_t* identifier, uint32_t component_size)
+_match_sub_topic(uint8_t service, bool is_cmd)
 {
   sub_topic_t* entry = NULL;
   for (int i = 0; i < 5; i++) {
@@ -261,15 +261,32 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
   // command FORMAT: /home/service/CMD/identifier[0,2]/command
   // data FORMAT: /home/service/DATA/identifier[0,2]/data-identifier
 
-  ps_identifier_t identifier;
-  memcpy(identifier.identifiers, topic->identifier, comp_size * sizeof(topic->identifier));
-  ps_content_t content = {
-    .content_id = data->name.components[data->name.components_size - 1].value,
-    .content_id_len = data->name.components[data->name.components_size - 1].size,
+  ps_event_context_t context = {
+    .service = topic->service,
+    .is_cmd = topic->is_cmd,
+  };
+  int scope_len = 0;
+  context.scope[scope_len] = '/';
+  scope_len++;
+  for (int i = 0; i < NDN_PUBSUB_IDENTIFIER_SIZE; i++) {
+    if (topic->identifier[i].size != NDN_FWD_INVALID_NAME_COMPONENT_SIZE) {
+      memcpy(&context.scope[scope_len], topic->identifier[i].value, topic->identifier[i].size);
+      scope_len += topic->identifier[i].size;
+    }
+    context.scope[scope_len] = '/';
+    scope_len++;
+  }
+  if (scope_len > 1) {
+    context.scope[scope_len - 1] = '\0';
+  }
+
+  ps_event_t event = {
+    .data_id = data->name.components[data->name.components_size - 1].value,
+    .data_id_len = data->name.components[data->name.components_size - 1].size,
     .payload = pkt_encoding_buf,
     .payload_len = used_size
   };
-  topic->callback(topic->service, topic->is_cmd, &identifier, content, topic->userdata);
+  topic->callback(&context, &event, topic->userdata);
 }
 
 void
@@ -455,14 +472,14 @@ _on_notification_interest(const uint8_t* raw_interest, uint32_t interest_size, v
 }
 
 void
-_subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier, uint32_t component_size,
-              uint32_t interval, ndn_on_published callback, void* userdata)
+_subscribe_to(uint8_t service, bool is_cmd, const char* scope,
+              uint32_t interval, ps_on_published callback, void* userdata)
 {
   if (!m_has_initialized)
     _ps_topics_init();
 
   // find whether the topic has been subscribed already
-  sub_topic_t* topic = _match_sub_topic(service, is_cmd, identifier, component_size);
+  sub_topic_t* topic = _match_sub_topic(service, is_cmd);
   if (!topic) {
     for (int i = 0; i < 5; i++) {
       if (m_pub_sub_state.sub_topics[i].service == NDN_SD_NONE) {
@@ -478,9 +495,14 @@ _subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier, 
   }
 
   // update locator
+  ndn_name_t locator;
+  ndn_name_init(&locator);
+  if (strlen(scope) > 0) {
+    ndn_name_from_string(&locator, scope, strlen(scope));
+  }
   for (int i = 0; i < 2; i++) {
-    if (i < component_size) {
-      memcpy(&topic->identifier[i], identifier + i, sizeof(name_component_t));
+    if (i < locator.components_size) {
+      memcpy(&topic->identifier[i], &locator.components[i], sizeof(name_component_t));
     }
     else {
       topic->identifier[i].size = NDN_FWD_INVALID_NAME_COMPONENT_SIZE;
@@ -514,29 +536,16 @@ _subscribe_to(uint8_t service, bool is_cmd, const name_component_t* identifier, 
 }
 
 void
-ps_subscribe_to_content(uint8_t service, const ps_identifier_t* identifier,
-                        uint32_t interval, ndn_on_published callback, void* userdata)
+ps_subscribe_to_content(uint8_t service, const char* scope,
+                        uint32_t interval, ps_on_published callback, void* userdata)
 {
-  const name_component_t* idf = NULL;
-  uint32_t comp_size = 0;
-  if(identifier){
-    idf = identifier->identifiers;
-    comp_size = identifier->identifiers_size;
-  }
-  return _subscribe_to(service, false, idf, comp_size, interval, callback, userdata);
+  return _subscribe_to(service, false, scope, interval, callback, userdata);
 }
 
 void
-ps_subscribe_to_command(uint8_t service, const ps_identifier_t* identifier,
-                        ndn_on_published callback, void* userdata)
+ps_subscribe_to_command(uint8_t service, const char* scope, ps_on_published callback, void* userdata)
 {
-  const name_component_t* idf = NULL;
-  uint32_t comp_size = 0;
-  if(identifier){
-    idf = identifier->identifiers;
-    comp_size = identifier->identifiers_size;
-  }
-  return _subscribe_to(service, true, idf, comp_size, 0, callback, userdata);
+  return _subscribe_to(service, true, scope, 0, callback, userdata);
 }
 
 void
@@ -548,7 +557,7 @@ ps_after_bootstrapping()
 }
 
 void
-ps_publish_content(uint8_t service, ps_content_t content)
+ps_publish_content(uint8_t service, ps_event_t event)
 {
   if (!m_has_initialized)
     _ps_topics_init();
@@ -598,7 +607,7 @@ ps_publish_content(uint8_t service, ps_content_t content)
   // Data name FORMAT: /home/service/DATA/room/device-id/content-id/tp
   ndn_name_append_component(&name, &storage->self_identity.components[storage->self_identity.components_size - 2]);
   ndn_name_append_component(&name, &storage->self_identity.components[storage->self_identity.components_size - 1]);
-  ndn_name_append_bytes_component(&name, content.content_id, content.content_id_len);
+  ndn_name_append_bytes_component(&name, event.data_id, event.data_id_len);
   // TODO: currently I appended timestamp. Further discussion is needed.
   name_component_t tp_comp;
   name_component_from_timestamp(&tp_comp, topic->last_update_tp);
@@ -611,7 +620,7 @@ ps_publish_content(uint8_t service, ps_content_t content)
   // Encrypt payload
   uint32_t used_size = 0;
   ndn_aes_key_t* service_aes_key = ndn_ac_get_key_for_service(topic->service);
-  ret = ndn_gen_encrypted_payload(content.payload, content.payload_len, pkt_encoding_buf, &used_size,
+  ret = ndn_gen_encrypted_payload(event.payload, event.payload_len, pkt_encoding_buf, &used_size,
                                   service_aes_key->key_id, NULL, 0);
 
 #if ENABLE_NDN_LOG_DEBUG
@@ -644,7 +653,7 @@ ps_publish_content(uint8_t service, ps_content_t content)
 }
 
 void
-ps_publish_command(uint8_t service, const ps_identifier_t* identifier, ps_content_t content)
+ps_publish_command(uint8_t service, const char* scope, ps_event_t event)
 {
   if (!m_has_initialized)
     _ps_topics_init();
@@ -693,12 +702,14 @@ ps_publish_command(uint8_t service, const ps_identifier_t* identifier, ps_conten
 
   // Append the last several component to the Data name
   // Data name FORMAT: /home/service/CMD/identifier[0,2]/command-id
-  if(identifier){
-    for (int i = 0; i < identifier->identifiers_size; i++) {
-      ndn_name_append_component(&name, identifier->identifiers + i);
+  ndn_name_t scope_name;
+  if (strlen(scope) > 0) {
+    ndn_name_from_string(&scope_name, scope, strlen(scope));
+    for (int i = 0; i < scope_name.components_size; i++) {
+      ndn_name_append_component(&name, &scope_name.components[i]);
     }
   }
-  ndn_name_append_bytes_component(&name, content.content_id, content.content_id_len);
+  ndn_name_append_bytes_component(&name, event.data_id, event.data_id_len);
   // TODO: currently I appended timestamp. Further discussion is needed.
   ndn_time_ms_t tp = ndn_time_now_ms();
   name_component_t tp_comp;
@@ -712,7 +723,7 @@ ps_publish_command(uint8_t service, const ps_identifier_t* identifier, ps_conten
   // Encrypt payload
   uint32_t used_size = 0;
   ndn_aes_key_t* service_aes_key = ndn_ac_get_key_for_service(topic->service);
-  ret = ndn_gen_encrypted_payload(content.payload, content.payload_len, pkt_encoding_buf, &used_size,
+  ret = ndn_gen_encrypted_payload(event.payload, event.payload_len, pkt_encoding_buf, &used_size,
                                   service_aes_key->key_id, NULL, 0);
   if (ret != NDN_SUCCESS) {
     NDN_LOG_ERROR("[PUB/SUB] Cannot encrypt command payload to publish. Error code: %d", ret);
@@ -743,12 +754,12 @@ ps_publish_command(uint8_t service, const ps_identifier_t* identifier, ps_conten
   ndn_name_append_bytes_component(&name, &service, sizeof(service));
   ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
   ndn_name_append_string_component(&name, "CMD", strlen("CMD"));
-  if(identifier){
-    for (int i = 0; i < identifier->identifiers_size; i++) {
-      ndn_name_append_component(&name, identifier->identifiers + i);
+  if (strlen(scope) > 0) {
+    for (int i = 0; i < scope_name.components_size; i++) {
+      ndn_name_append_component(&name, &scope_name.components[i]);
     }
   }
-  ndn_name_append_bytes_component(&name, content.content_id, content.content_id_len);
+  ndn_name_append_bytes_component(&name, event.data_id, event.data_id_len);
   ndn_name_append_component(&name, &tp_comp);
 
   // send out the notification Interest
