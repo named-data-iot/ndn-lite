@@ -9,6 +9,7 @@
  */
 
 #include "access-control.h"
+#include "security-bootstrapping.h"
 #include "../ndn-services.h"
 #include "../encode/key-storage.h"
 #include "../encode/signed-interest.h"
@@ -85,7 +86,7 @@ _init_ac_state()
 
 /**
  *  Response for EncryptionKey onData.
- *  This will parse the EncryptionKey Data with KeyID-10002 Key, which is already
+ *  This will parse the EncryptionKey Data with KeyID SEC_BOOT_AES_KEY_ID Key, which is already
  *  generated from Bootstrapping. The EncryptionKey's expiration time will be calculated.
  *  Decoded EncryptionKey will be stored at KeyStorage with KeyID filled with a uint32_t random number.
  */
@@ -111,7 +112,7 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   uint8_t value[30] = {0};
   uint32_t used_size = 0;
   ret = ndn_parse_encrypted_payload(data.content_value, data.content_size,
-                                    value, &used_size, 10002); // SEC_BOOT_AES_KEY_ID = 10002;
+                                    value, &used_size, SEC_BOOT_AES_KEY_ID);
   if (ret || used_size == 0) {
     NDN_LOG_ERROR("Parse encrypted payload failure. ErrorCode = %d\n", ret);
   }
@@ -144,7 +145,7 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 
 /**
  *  Response for DecryptionKey onData.
- *  This will parse the DecryptionKey Data with KeyID-10002 Key, which is already
+ *  This will parse the DecryptionKey Data with KeyID SEC_BOOT_AES_KEY_ID Key, which is already
  *  generated from Bootstrapping. The DecryptionKey's expiration time will be calculated.
  *  Decoded DecryptionKey will be stored at KeyStorage with KeyID filled with a uint32_t random number.
  */
@@ -171,7 +172,7 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   uint32_t used_size = 0;
 
   ret = ndn_parse_encrypted_payload(data.content_value, data.content_size,
-                                    value, &used_size, 10002); // SEC_BOOT_AES_KEY_ID = 10002;
+                                    value, &used_size, SEC_BOOT_AES_KEY_ID);
   if (ret || used_size == 0) {
     NDN_LOG_ERROR("Parse encrypted payload failure. ErrorCode = %d\n", ret);
   }

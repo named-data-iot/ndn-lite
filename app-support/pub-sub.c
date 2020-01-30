@@ -20,7 +20,7 @@
 #include "../encode/wrapper-api.h"
 #include "../forwarder/forwarder.h"
 
-#define ENABLE_NDN_LOG_INFO 0
+#define ENABLE_NDN_LOG_INFO 1
 #define ENABLE_NDN_LOG_DEBUG 1
 #define ENABLE_NDN_LOG_ERROR 1
 
@@ -205,7 +205,7 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
   uint32_t used_size = 0;
   memset(pkt_encoding_buf, 0, sizeof(pkt_encoding_buf));
   ret = ndn_parse_encrypted_payload(data->content_value, data->content_size,
-                                        pkt_encoding_buf, &used_size, aes_key->key_id);
+                                    pkt_encoding_buf, &used_size, aes_key->key_id);
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
@@ -263,7 +263,6 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
 
   ps_event_context_t context = {
     .service = topic->service,
-    .is_cmd = topic->is_cmd,
   };
   int scope_len = 0;
   context.scope[scope_len] = '/';
@@ -537,13 +536,13 @@ _subscribe_to(uint8_t service, bool is_cmd, const char* scope,
 
 void
 ps_subscribe_to_content(uint8_t service, const char* scope,
-                        uint32_t interval, ps_on_published callback, void* userdata)
+                        uint32_t interval, ps_on_content_published callback, void* userdata)
 {
   return _subscribe_to(service, false, scope, interval, callback, userdata);
 }
 
 void
-ps_subscribe_to_command(uint8_t service, const char* scope, ps_on_published callback, void* userdata)
+ps_subscribe_to_command(uint8_t service, const char* scope, ps_on_command_published callback, void* userdata)
 {
   return _subscribe_to(service, true, scope, 0, callback, userdata);
 }
@@ -557,7 +556,7 @@ ps_after_bootstrapping()
 }
 
 void
-ps_publish_content(uint8_t service, ps_event_t event)
+ps_publish_content(uint8_t service, const ps_event_t* event)
 {
   if (!m_has_initialized)
     _ps_topics_init();
@@ -607,8 +606,7 @@ ps_publish_content(uint8_t service, ps_event_t event)
   // Data name FORMAT: /home/service/DATA/room/device-id/content-id/tp
   ndn_name_append_component(&name, &storage->self_identity.components[storage->self_identity.components_size - 2]);
   ndn_name_append_component(&name, &storage->self_identity.components[storage->self_identity.components_size - 1]);
-  ndn_name_append_bytes_component(&name, event.data_id, event.data_id_len);
-  // TODO: currently I appended timestamp. Further discussion is needed.
+  ndn_name_append_bytes_component(&name, event->data_id, event->data_id_len);
   name_component_t tp_comp;
   name_component_from_timestamp(&tp_comp, topic->last_update_tp);
   ndn_name_append_component(&name, &tp_comp);
@@ -620,7 +618,7 @@ ps_publish_content(uint8_t service, ps_event_t event)
   // Encrypt payload
   uint32_t used_size = 0;
   ndn_aes_key_t* service_aes_key = ndn_ac_get_key_for_service(topic->service);
-  ret = ndn_gen_encrypted_payload(event.payload, event.payload_len, pkt_encoding_buf, &used_size,
+  ret = ndn_gen_encrypted_payload(event->payload, event->payload_len, pkt_encoding_buf, &used_size,
                                   service_aes_key->key_id, NULL, 0);
 
 #if ENABLE_NDN_LOG_DEBUG
@@ -653,7 +651,7 @@ ps_publish_content(uint8_t service, ps_event_t event)
 }
 
 void
-ps_publish_command(uint8_t service, const char* scope, ps_event_t event)
+ps_publish_command(uint8_t service, const char* scope, const ps_event_t* event)
 {
   if (!m_has_initialized)
     _ps_topics_init();
@@ -709,7 +707,7 @@ ps_publish_command(uint8_t service, const char* scope, ps_event_t event)
       ndn_name_append_component(&name, &scope_name.components[i]);
     }
   }
-  ndn_name_append_bytes_component(&name, event.data_id, event.data_id_len);
+  ndn_name_append_bytes_component(&name, event->data_id, event->data_id_len);
   // TODO: currently I appended timestamp. Further discussion is needed.
   ndn_time_ms_t tp = ndn_time_now_ms();
   name_component_t tp_comp;
@@ -723,7 +721,7 @@ ps_publish_command(uint8_t service, const char* scope, ps_event_t event)
   // Encrypt payload
   uint32_t used_size = 0;
   ndn_aes_key_t* service_aes_key = ndn_ac_get_key_for_service(topic->service);
-  ret = ndn_gen_encrypted_payload(event.payload, event.payload_len, pkt_encoding_buf, &used_size,
+  ret = ndn_gen_encrypted_payload(event->payload, event->payload_len, pkt_encoding_buf, &used_size,
                                   service_aes_key->key_id, NULL, 0);
   if (ret != NDN_SUCCESS) {
     NDN_LOG_ERROR("[PUB/SUB] Cannot encrypt command payload to publish. Error code: %d", ret);
@@ -759,7 +757,7 @@ ps_publish_command(uint8_t service, const char* scope, ps_event_t event)
       ndn_name_append_component(&name, &scope_name.components[i]);
     }
   }
-  ndn_name_append_bytes_component(&name, event.data_id, event.data_id_len);
+  ndn_name_append_bytes_component(&name, event->data_id, event->data_id_len);
   ndn_name_append_component(&name, &tp_comp);
 
   // send out the notification Interest

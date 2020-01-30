@@ -18,6 +18,27 @@
 extern "C" {
 #endif
 
+#define SEC_BOOT_PRE_ECC_PRV_KEY_SIZE 32
+#define SEC_BOOT_PRE_ECC_PUB_KEY_SIZE 64
+#define SEC_BOOT_PRE_HMAC_KEY_SIZE 16
+
+static const uint32_t SEC_BOOT_PRE_ECC_KEY_ID = 10000;
+static const uint32_t SEC_BOOT_PRE_HMAC_KEY_ID = 10001;
+static const uint32_t SEC_BOOT_DH_KEY_ID = 10002;
+static const uint32_t SEC_BOOT_AES_KEY_ID = 10003;
+
+typedef struct ndn_bootstrapping_info {
+  uint8_t* pre_installed_prv_key_bytes;
+  uint8_t* pre_installed_pub_key_bytes;
+  uint8_t* pre_shared_hmac_key_bytes;
+} ndn_bootstrapping_info_t;
+
+typedef struct ndn_device_info {
+  char* device_identifier;
+  const uint8_t* service_list;
+  size_t service_list_size;
+} ndn_device_info_t;
+
 typedef void (*ndn_security_bootstrapping_after_bootstrapping) (void);
 
 /**
@@ -76,9 +97,8 @@ typedef void (*ndn_security_bootstrapping_after_bootstrapping) (void);
  */
 int
 ndn_security_bootstrapping(ndn_face_intf_t* face,
-                           const ndn_ecc_prv_t* pre_installed_prv_key, const ndn_hmac_key_t* pre_shared_hmac_key,
-                           const char* device_identifier, size_t len,
-                           const uint8_t* service_list, size_t list_size,
+                           const ndn_bootstrapping_info_t* bootstrapping_info,
+                           const ndn_device_info_t* device_info,
                            ndn_security_bootstrapping_after_bootstrapping after_bootstrapping);
 
 #ifdef __cplusplus

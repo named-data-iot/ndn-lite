@@ -30,24 +30,16 @@
 
 typedef struct ndn_sec_boot_state {
   ndn_face_intf_t* face;
-  const uint8_t* service_list;
-  size_t list_size;
-  const char* device_identifier;
-  size_t identifier_size;
+  const ndn_device_info_t* device_info;
   uint8_t trust_anchor_sha[NDN_SEC_SHA256_HASH_SIZE];
-  // TODO: add the dh Pub key into the keystorage
   ndn_ecc_pub_t controller_dh_pub;
-  // TODO: add the hmac key into the keystorage
-  const ndn_ecc_prv_t* pre_installed_ecc_key;
-  // TODO: add the hmac key into the keystorage
-  const ndn_hmac_key_t* pre_shared_hmac_key;
+  ndn_ecc_prv_t* pre_installed_ecc_key;
+  ndn_hmac_key_t* pre_shared_hmac_key;
   ndn_security_bootstrapping_after_bootstrapping after_sec_boot;
 } ndn_sec_boot_state_t;
 
 static uint8_t sec_boot_buf[4096];
 static ndn_sec_boot_state_t m_sec_boot_state;
-static const uint32_t SEC_BOOT_DH_KEY_ID = 10001;
-static const uint32_t SEC_BOOT_AES_KEY_ID = 10002;
 static ndn_time_ms_t m_callback_after = 0;
 
 #if ENABLE_NDN_LOG_DEBUG
@@ -204,14 +196,14 @@ sec_boot_send_cert_interest()
   ndn_encoder_t encoder;
   encoder_init(&encoder, sec_boot_buf, sizeof(sec_boot_buf));
   // identifier name component
-  name_component_t device_identifier_comp;
-  name_component_from_string(&device_identifier_comp, m_sec_boot_state.device_identifier,
-                             m_sec_boot_state.identifier_size);
-  name_component_tlv_encode(&encoder, &device_identifier_comp);
+  ndn_name_t device_identifier_comp;
+  ndn_name_from_string(&device_identifier_comp, m_sec_boot_state.device_info->device_identifier,
+                       strlen(m_sec_boot_state.device_info->device_identifier));
+  name_component_tlv_encode(&encoder, &device_identifier_comp.components[0]);
   // append the ecdh pub key, N2
   encoder_append_type(&encoder, TLV_SEC_BOOT_N2_ECDH_PUB);
   encoder_append_length(&encoder, ndn_ecc_get_pub_key_size(&m_sec_boot_state.controller_dh_pub));
-  encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(&m_sec_boot_state.controller_dh_pub), 
+  encoder_append_raw_buffer_value(&encoder, ndn_ecc_get_pub_key_value(&m_sec_boot_state.controller_dh_pub),
                                   ndn_ecc_get_pub_key_size(&m_sec_boot_state.controller_dh_pub));
   // append sha256 of the trust anchor
   encoder_append_type(&encoder, TLV_SEC_BOOT_ANCHOR_DIGEST);
@@ -235,9 +227,7 @@ sec_boot_send_cert_interest()
 #endif
 
   // sign the interest
-  ndn_name_t key_locator;
-  ndn_name_from_string(&key_locator, m_sec_boot_state.device_identifier, m_sec_boot_state.identifier_size);
-  ndn_signed_interest_ecdsa_sign(&interest, &key_locator, m_sec_boot_state.pre_installed_ecc_key);
+  ndn_signed_interest_ecdsa_sign(&interest, &device_identifier_comp, m_sec_boot_state.pre_installed_ecc_key);
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp1 = ndn_time_now_us();
@@ -369,13 +359,14 @@ sec_boot_send_sign_on_interest()
   encoder_init(&encoder, sec_boot_buf, sizeof(sec_boot_buf));
   // append the identifier name component
   name_component_t device_identifier_comp;
-  name_component_from_string(&device_identifier_comp, m_sec_boot_state.device_identifier,
-                             m_sec_boot_state.identifier_size);
+  name_component_from_string(&device_identifier_comp, m_sec_boot_state.device_info->device_identifier,
+                             strlen(m_sec_boot_state.device_info->device_identifier));
   name_component_tlv_encode(&encoder, &device_identifier_comp);
   // append the capabilities
   encoder_append_type(&encoder, TLV_SEC_BOOT_CAPABILITIES);
-  encoder_append_length(&encoder, m_sec_boot_state.list_size);
-  encoder_append_raw_buffer_value(&encoder, m_sec_boot_state.service_list, m_sec_boot_state.list_size);
+  encoder_append_length(&encoder, m_sec_boot_state.device_info->service_list_size);
+  encoder_append_raw_buffer_value(&encoder, m_sec_boot_state.device_info->service_list,
+                                  m_sec_boot_state.device_info->service_list_size);
   // append the ecdh pub key, N1
   ndn_ecc_pub_t* dh_pub = ndn_key_storage_get_ecc_pub_key(SEC_BOOT_DH_KEY_ID);
   encoder_append_type(&encoder, TLV_SEC_BOOT_N1_ECDH_PUB);
@@ -420,25 +411,35 @@ sec_boot_send_sign_on_interest()
 
 int
 ndn_security_bootstrapping(ndn_face_intf_t* face,
-                           const ndn_ecc_prv_t* pre_installed_prv_key, const ndn_hmac_key_t* pre_shared_hmac_key,
-                           const char* device_identifier, size_t identifier_size,
-                           const uint8_t* service_list, size_t list_size,
+                           const ndn_bootstrapping_info_t* bootstrapping_info,
+                           const ndn_device_info_t* device_info,
                            ndn_security_bootstrapping_after_bootstrapping after_bootstrapping)
 {
   // set ECC RNG backend
   ndn_rng_backend_t* rng_backend = ndn_rng_get_backend();
-  ndn_ecc_set_rng(rng_backend->rng);
+  int ret = ndn_ecc_set_rng(rng_backend->rng);
+  if (ret != NDN_SUCCESS) return ret;
+
+  // load pre-installed keys
+  ndn_ecc_prv_t* ecc_secp256r1_prv_key;
+  ndn_ecc_pub_t* ecc_secp256r1_pub_key;
+  ndn_key_storage_get_empty_ecc_key(&ecc_secp256r1_pub_key, &ecc_secp256r1_prv_key);
+  ret = ndn_ecc_prv_init(ecc_secp256r1_prv_key, bootstrapping_info->pre_installed_prv_key_bytes,
+                         SEC_BOOT_PRE_ECC_PRV_KEY_SIZE, NDN_ECDSA_CURVE_SECP256R1, SEC_BOOT_PRE_ECC_KEY_ID);
+  if (ret != NDN_SUCCESS) return ret;
+  ret = ndn_ecc_pub_init(ecc_secp256r1_pub_key, bootstrapping_info->pre_installed_pub_key_bytes,
+                         SEC_BOOT_PRE_ECC_PUB_KEY_SIZE, NDN_ECDSA_CURVE_SECP256R1, SEC_BOOT_PRE_ECC_KEY_ID);
+  if (ret != NDN_SUCCESS) return ret;
+  ndn_hmac_key_t* hmac_key = ndn_key_storage_get_empty_hmac_key();
+  ret = ndn_hmac_key_init(hmac_key, bootstrapping_info->pre_shared_hmac_key_bytes,
+                          SEC_BOOT_PRE_HMAC_KEY_SIZE, SEC_BOOT_PRE_HMAC_KEY_ID);
+  if (ret != NDN_SUCCESS) return ret;
+  m_sec_boot_state.pre_installed_ecc_key = ecc_secp256r1_prv_key;
+  m_sec_boot_state.pre_shared_hmac_key = hmac_key;
 
   // remember the state for future use
   m_sec_boot_state.face = face;
-  // TODO: add the pre-installed key into the key storage
-  m_sec_boot_state.pre_installed_ecc_key = pre_installed_prv_key;
-  // TODO: add the hmac key into the key storage
-  m_sec_boot_state.pre_shared_hmac_key = pre_shared_hmac_key;
-  m_sec_boot_state.service_list = service_list;
-  m_sec_boot_state.list_size = list_size;
-  m_sec_boot_state.device_identifier = device_identifier;
-  m_sec_boot_state.identifier_size = identifier_size;
+  m_sec_boot_state.device_info = device_info;
   m_sec_boot_state.after_sec_boot = after_bootstrapping;
 
   // preparation
@@ -450,9 +451,8 @@ ndn_security_bootstrapping(ndn_face_intf_t* face,
   m_measure_tp1 = ndn_time_now_us();
 #endif
 
-  if (ndn_ecc_make_key(dh_pub, dh_prv, NDN_ECDSA_CURVE_SECP256R1, SEC_BOOT_DH_KEY_ID) != NDN_SUCCESS) {
-    return NDN_SEC_CRYPTO_ALGO_FAILURE;
-  }
+  ret = ndn_ecc_make_key(dh_pub, dh_prv, NDN_ECDSA_CURVE_SECP256R1, SEC_BOOT_DH_KEY_ID);
+  if (ret != NDN_SUCCESS) return ret;
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
@@ -460,7 +460,7 @@ ndn_security_bootstrapping(ndn_face_intf_t* face,
 #endif
 
   // register route
-  int ret = ndn_forwarder_add_route_by_str(face, "/ndn/sign-on", strlen("/ndn/sign-on"));
+  ret = ndn_forwarder_add_route_by_str(face, "/ndn/sign-on", strlen("/ndn/sign-on"));
   if (ret != NDN_SUCCESS) return ret;
   NDN_LOG_INFO("[BOOTSTRAPPING]: Successfully add route");
 

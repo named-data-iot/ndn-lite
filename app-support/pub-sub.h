@@ -49,7 +49,6 @@ extern "C" {
 
 typedef struct ps_event_context {
   uint8_t service;
-  bool is_cmd;
   char scope[50];
 } ps_event_context_t;
 
@@ -80,7 +79,9 @@ typedef struct ps_event {
  * @param payload_len. The size of content.
  * @param userdata. The userdata that the developer want to pass to the callback function.
  */
-typedef void (*ps_on_published)(ps_event_context_t* context, ps_event_t* content, void* userdata);
+typedef void (*ps_on_published)(const ps_event_context_t* context, const ps_event_t* event, void* userdata);
+typedef ps_on_published ps_on_content_published;
+typedef ps_on_published ps_on_command_published;
 
 void
 ps_after_bootstrapping();
@@ -99,10 +100,10 @@ ps_after_bootstrapping();
  */
 void
 ps_subscribe_to_content(uint8_t service, const char* scope,
-                        uint32_t interval, ps_on_published callback, void* userdata);
+                        uint32_t interval, ps_on_content_published callback, void* userdata);
 
 void
-ps_subscribe_to_command(uint8_t service, const char* scope, ps_on_published callback, void* userdata);
+ps_subscribe_to_command(uint8_t service, const char* scope, ps_on_command_published callback, void* userdata);
 
 /** publish data
  * This function will publish data to a content repo.
@@ -111,7 +112,7 @@ ps_subscribe_to_command(uint8_t service, const char* scope, ps_on_published call
  * @TODO: for now I used a default freshness period of the data. Need more discussion, e.g., user-specified?
  */
 void
-ps_publish_content(uint8_t service, ps_event_t event);
+ps_publish_content(uint8_t service, const ps_event_t* event);
 
 /** publish command to the target scope
  * This function will publish command to a content repo and send out a notification Interest.
@@ -121,7 +122,7 @@ ps_publish_content(uint8_t service, ps_event_t event);
  * @TODO: for now I used a default freshness period of the data. Need more discussion, e.g., user-specified?
  */
 void
-ps_publish_command(uint8_t service, const char* scope, ps_event_t event);
+ps_publish_command(uint8_t service, const char* scope, const ps_event_t* event);
 
 #ifdef __cplusplus
 }
