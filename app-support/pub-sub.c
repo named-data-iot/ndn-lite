@@ -271,17 +271,15 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
     if (topic->identifier[i].size != NDN_FWD_INVALID_NAME_COMPONENT_SIZE) {
       memcpy(&context.scope[scope_len], topic->identifier[i].value, topic->identifier[i].size);
       scope_len += topic->identifier[i].size;
+      context.scope[scope_len] = '/';
+      scope_len++;
     }
-    context.scope[scope_len] = '/';
-    scope_len++;
   }
-  if (scope_len > 1) {
-    context.scope[scope_len - 1] = '\0';
-  }
+  context.scope[scope_len - 1] = '\0';
 
   ps_event_t event = {
-    .data_id = data->name.components[data->name.components_size - 1].value,
-    .data_id_len = data->name.components[data->name.components_size - 1].size,
+    .data_id = data->name.components[data->name.components_size - 2].value,
+    .data_id_len = data->name.components[data->name.components_size - 2].size,
     .payload = pkt_encoding_buf,
     .payload_len = used_size
   };
