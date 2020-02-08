@@ -1,23 +1,18 @@
-
-/* // Edward Lu - I just commented this code out because the compilation of RIOT used the pedantic option, */
-/* // and it was complaining about the assignment / comparison of function pointers with void pointers. */
-
-/* // just a dummy typedef to pass the RIOT compilation */
-/* typedef int make_iso_compilation_pass; */
-
 /*
- * Copyright (C) 2019 Xinyu Ma
+ * Copyright (C) 2018-2020
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
  * directory for more details.
+ *
+ * See AUTHORS.md for complete list of NDN-LITE authors and contributors.
  */
 
 #include "msg-queue.h"
 #include <string.h>
 
 /** Padding message
- * 
+ *
  * This will only occur at the end of the queue.
  * When the last message's @c func is NDN_MSG_PADDING, it means the next message is at
  * the begining of the queue and has a size larger than this padding one.

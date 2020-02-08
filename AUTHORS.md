@@ -1,5 +1,5 @@
-NDN IoT Package authors
-=======================
+NDN-LITE authors
+================
 
 This list includes the authors for NDN-Lite library and NDN-Lite based packages for different platforms.
 

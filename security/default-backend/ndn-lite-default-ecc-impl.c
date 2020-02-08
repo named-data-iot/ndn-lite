@@ -1,9 +1,11 @@
 /*
- * Copyright (C) 2018-2019 Zhiyi Zhang, Tianyuan Yu, Edward Lu
+ * Copyright (C) 2018-2020
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v3.0. See the file LICENSE in the top level
  * directory for more details.
+ *
+ * See AUTHORS.md for complete list of NDN-LITE authors and contributors.
  */
 
 #include "ndn-lite-default-ecc-impl.h"
@@ -23,14 +25,14 @@ typedef struct uECC_SHA256_HashContext {
 } uECC_SHA256_HashContext;
 
 static void
-_init_sha256(const uECC_HashContext *base)
+_init_sha256(uECC_HashContext *base)
 {
   uECC_SHA256_HashContext *context = (uECC_SHA256_HashContext*)base;
   tc_sha256_init(&context->ctx);
 }
 
 static void
-_update_sha256(const uECC_HashContext *base,
+_update_sha256(uECC_HashContext *base,
                const uint8_t *message,
                unsigned message_size)
 {
@@ -39,7 +41,7 @@ _update_sha256(const uECC_HashContext *base,
 }
 
 static void
-_finish_sha256(const uECC_HashContext *base, uint8_t *hash_result)
+_finish_sha256(uECC_HashContext *base, uint8_t *hash_result)
 {
   uECC_SHA256_HashContext *context = (uECC_SHA256_HashContext*)base;
   tc_sha256_final(hash_result, &context->ctx);
