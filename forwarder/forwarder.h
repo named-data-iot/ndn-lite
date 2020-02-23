@@ -21,6 +21,8 @@
 extern "C" {
 #endif
 
+// TODO: Add support of content store and make it a modular component: can be realized with RAM, ROM, etc. the size is configurable.
+
 /**@defgroup NDNFwd Forwarder
  * @brief A lite forwarder.
  */
