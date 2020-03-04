@@ -2,20 +2,27 @@
 Unit tests for NDN-lite using CUnit framework
 
 # Getting Started
-To get started, you need CUnit library installed in your system. You may ignore this guide and install it your self, See CUnit (http://cunit.sourceforge.net/).
+To get started, you need CUnit and CMake library installed in your system. 
+You may ignore this guide and install it your self, See CUnit (http://cunit.sourceforge.net/).
 
 ## Ubuntu
-1. Get the CUnit source code tar ball from CUnit website and extract the content.
-2. Install CUnit
+`libcunit` and `cmake` is required for running the unit tests on Ubuntu.
+You can install by running:
 ```
-cd CUnit-2.1-3
-./bootstrap
-./configure
+sudo apt install -y libcunit1 cmake
+```
+
+# Compile
+In project directory, run:
+```
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Debug ..
 make
-make install
 ```
-3. To run this test suite, LD_LIBRARY_PATH must be set:
+
+# Run Unit Tests
+In project directory, run:
 ```
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
-export LD_LIBRARY_PATH
+./build/unittest
 ```
