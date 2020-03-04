@@ -1,0 +1,5 @@
+INCLUDES += -I$(PKGDIRBASE)
+USEMODULE += asn-encode-decode-tests
+USEMODULE += hmac-sign-verify-tests
+USEMODULE += sha256-sign-verify-tests
+USEMODULE += ecdsa-sign-verify-tests
