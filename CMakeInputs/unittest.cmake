@@ -14,15 +14,15 @@ set(LIST_TESTS
   # "access-control"
   "data"
   "encoder-decoder"
-  # "forwarder"
-  # "fragmentation-support"
-  # "interest"
-  # "metainfo"
-  # "name-encode-decode"
-  # "random"
+  "forwarder"
+  "fragmentation-support"
+  "interest"
+  "metainfo"
+  "name-encode-decode"
+  "random"
   # "service-discovery"
-  # "signature"
-  # "util"
+  "signature"
+  "util"
 )
 foreach(TESTNAME IN LISTS LIST_TESTS)
   target_sources(unittest PRIVATE
@@ -64,8 +64,8 @@ target_sources(unittest PRIVATE
 )
 
 target_sources(unittest PRIVATE
-  # "${DIR_UNITTESTS}/schematized-trust/trust-schema-tests.h"
-  # "${DIR_UNITTESTS}/schematized-trust/trust-schema-tests.c"
-  # "${DIR_UNITTESTS}/schematized-trust/trust-schema-tests-def.h"
-  # "${DIR_UNITTESTS}/schematized-trust/trust-schema-tests-def.c"
+  "${DIR_UNITTESTS}/schematized-trust/trust-schema-tests.h"
+  "${DIR_UNITTESTS}/schematized-trust/trust-schema-tests.c"
+  "${DIR_UNITTESTS}/schematized-trust/trust-schema-tests-def.h"
+  "${DIR_UNITTESTS}/schematized-trust/trust-schema-tests-def.c"
 )
