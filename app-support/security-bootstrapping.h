@@ -87,6 +87,18 @@ typedef void (*ndn_security_bootstrapping_after_bootstrapping) (void);
  *    Sig Value: Signature by controller identity key
  *  ==============
  *  Service Query Interest will be sent right after bootstrapping
+ *
+ * Bootstrapping protocol results:
+ *
+ *  Device will obtain following material
+ *  1. Controller's ECDSA public key: will initialize
+ *      a. ndn_key_storage.trust_anchor
+ *      b. ndn_key_storage.trust_anchor_key
+ *  2. Device's ECDSA public key certificate issued by the Controller: will initialize
+ *      a. ndn_key_storage.self_identity
+ *      b. ndn_key_storage.self_cert
+ *  3. Device's ECDSA private key: will initialize
+ *      a. ndn_key_storage.self_identity_key
  */
 
 /**
