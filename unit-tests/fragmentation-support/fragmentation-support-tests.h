@@ -13,6 +13,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define FRAGMENTATION_SUPPORT_TEST_PAYLOAD_SIZE 104
+#define FRAGMENTATION_SUPPORT_NUM_TESTS 1
+
 // returns true if all tests passed, false otherwise
 bool run_fragmentation_support_tests(void);
 

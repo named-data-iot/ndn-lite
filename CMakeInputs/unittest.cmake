@@ -15,7 +15,7 @@ set(LIST_TESTS
   "data"
   "encoder-decoder"
   "forwarder"
-  "fragmentation-support"
+  # "fragmentation-support"
   "interest"
   "metainfo"
   "name-encode-decode"
@@ -69,3 +69,14 @@ target_sources(unittest PRIVATE
   "${DIR_UNITTESTS}/schematized-trust/trust-schema-tests-def.h"
   "${DIR_UNITTESTS}/schematized-trust/trust-schema-tests-def.c"
 )
+
+set(LIST_TESTS
+  "fragmentation-support"
+)
+foreach(TESTNAME IN LISTS LIST_TESTS)
+  target_sources(unittest PRIVATE
+    "${DIR_UNITTESTS}/${TESTNAME}/${TESTNAME}-tests.h"
+    "${DIR_UNITTESTS}/${TESTNAME}/${TESTNAME}-tests.c"
+  )
+endforeach()
+unset(LIST_TESTS)
