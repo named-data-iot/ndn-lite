@@ -210,6 +210,8 @@ void _run_forwarder_test(forwarder_test_t *test)
   }
 
   // express Interest
+  ret_val = ndn_forwarder_express_interest(NULL, 0, NULL, on_interest_timeout_callback, NULL);
+  CU_ASSERT_EQUAL(ret_val, NDN_INVALID_POINTER);
   //printf("\n***Express Interest /aaa/bbb/ccc/ddd***\n");
   ret_val = ndn_forwarder_express_interest(
       interest_block,
@@ -297,35 +299,39 @@ void _run_forwarder_test(forwarder_test_t *test)
   ndn_metainfo_set_content_type(&data.metainfo, NDN_CONTENT_TYPE_BLOB);
 
   // sign the packet
-  ndn_ecc_prv_t prv_key;
-  ndn_ecc_prv_init(&prv_key, test->prv_key_raw_val, test->prv_key_raw_len, test->ndn_ecdsa_curve, 1234);
-  char id_string[] = "/ndn/zhiyi";
-  ndn_name_t identity;
-  ret_val = ndn_name_from_string(&identity, id_string, sizeof(id_string));
-  CU_ASSERT_EQUAL(ret_val, 0);
-  if (ret_val != 0)
-  {
-    _current_forwarder_test_all_calls_succeeded = false;
-    print_error(_current_test_name, "_run_forwarder_test", "ndn_name_from_string", ret_val);
-  }
   encoder_init(&encoder, block_value, 1024);
-  ret_val = ndn_data_tlv_encode_ecdsa_sign(&encoder, &data, &identity, &prv_key);
+  ret_val = test_sign_data("ndn/zhiyi", strlen("ndn/zhiyi"), &encoder, &data);
   CU_ASSERT_EQUAL(ret_val, 0);
-  if (ret_val != 0)
-  {
-    _current_forwarder_test_all_calls_succeeded = false;
-    print_error(_current_test_name, "_run_forwarder_test", "ndn_data_tlv_encode_ecdsa_sign", ret_val);
-  }
 
   // receive the Data packet
   //printf("\n***Dummy Face receives an Data /aaa/bbb/ccc/ddd***\n");
   ret_val = ndn_forwarder_receive(&dummy_face->intf, block_value, encoder.offset);
+  // ret_val = ndn_forwarder_put_data(block_value, encoder.offset);
   CU_ASSERT_EQUAL(ret_val, 0);
   if (ret_val != 0)
   {
     _current_forwarder_test_all_calls_succeeded = false;
     print_error(_current_test_name, "_run_forwarder_test", "ndn_forwarder_receive", ret_val);
   }
+
+  // test remove route /aaa
+  encoder_init(&tmp_name_encoder, tmp_name_buf, 256);
+  ndn_name_tlv_encode(&tmp_name_encoder, &prefix);
+  ret_val = ndn_forwarder_remove_route(&dummy_face->intf, tmp_name_buf, tmp_name_encoder.offset);
+  CU_ASSERT_EQUAL(ret_val, 0);
+  // test remove all route /aaa, expect NDN_FWD_NO_EFFECT
+  ret_val = ndn_forwarder_remove_all_routes(tmp_name_buf, tmp_name_encoder.offset);
+  CU_ASSERT_EQUAL(ret_val, NDN_FWD_NO_EFFECT);
+
+  // test unregister face
+  ret_val = ndn_forwarder_unregister_face(&dummy_face->intf);
+  CU_ASSERT_EQUAL(ret_val, 0);
+
+  // test unregister prefix /ndn
+  encoder_init(&tmp_name_encoder, tmp_name_buf, 256);
+  ndn_name_tlv_encode(&tmp_name_encoder, &prefix2);
+  ret_val = ndn_forwarder_unregister_prefix(tmp_name_buf, tmp_name_encoder.offset);
+  CU_ASSERT_EQUAL(ret_val, 0);
 
   // spin until current_forwarder_test is equal to NULL (which means that
   // the current forwarder test has finished) OR until test has passed the
@@ -363,6 +369,108 @@ void _run_forwarder_test(forwarder_test_t *test)
   }
 }
 
+static bool forwarder_put_data_received = false;
+
+void on_data_callback2(const uint8_t *data, uint32_t data_size, void *userdata)
+{
+  ndn_data_t data_check;
+  ndn_ecc_pub_t pub_key;
+  int result = ndn_ecc_pub_init(&pub_key, _forwarder_test_raw_pub_key_arr, _forwarder_test_raw_pub_key_arr_len,
+                                NDN_ECDSA_CURVE_SECP256R1, 1234);
+  CU_ASSERT_EQUAL(result, 0);
+  result = ndn_data_tlv_decode_ecdsa_verify(&data_check, data, data_size, &pub_key);
+  CU_ASSERT_EQUAL(result, 0);
+  forwarder_put_data_received = true;
+}
+
+/*
+   *  +----+       +---------+     +------------+
+   *  |app /ndn -- |forwarder| -- /aaa dummyface|
+   *  +----+       +---------+     +------------+
+   *
+   *        -----I: /test2/name1 --->
+   *        <----D: /test2/name1 ----
+   */
+void forwarder_put_data_test()
+{
+  ndn_forwarder_init();
+  
+  // prepare dummy face
+  ndn_dummy_face_t *dummy_face;
+  dummy_face = ndn_dummy_face_construct();
+  
+  // add route
+  int ret_val = ndn_forwarder_add_route_by_str(&dummy_face->intf, "/test2", strlen("/test2"));
+  CU_ASSERT_EQUAL(ret_val, 0);
+  
+  // create interest
+  ndn_interest_t interest;
+  ndn_interest_init(&interest);
+  char name_string[] = "/test2/name1";
+  ret_val = ndn_name_from_string(&interest.name, name_string, sizeof(name_string));
+  CU_ASSERT_EQUAL(ret_val, 0);
+  uint8_t interest_block[256] = {0};
+  ndn_encoder_t encoder;
+  encoder_init(&encoder, interest_block, 256);
+  ret_val = ndn_interest_tlv_encode(&encoder, &interest);
+  CU_ASSERT_EQUAL(ret_val, 0);
+  
+  // express interest
+  ret_val = ndn_forwarder_express_interest(interest_block,
+                                           encoder.offset,
+                                           on_data_callback2,
+                                           on_interest_timeout_callback,
+                                           NULL);
+  CU_ASSERT_EQUAL(ret_val, 0);
+
+  // prepare data content
+  uint8_t buf[10] = {0, 1, 3, -6, 3, -10, 18, 42, 189, 32};
+  uint8_t block_value[1024];
+  ndn_data_t data;
+  ret_val = ndn_data_set_content(&data, buf, sizeof(buf));
+  CU_ASSERT_EQUAL(ret_val, 0);
+
+  // set data name, metainfo
+  char data_name_string[] = "/test2/name1";
+  ret_val = ndn_name_from_string(&data.name, data_name_string, sizeof(data_name_string));
+  CU_ASSERT_EQUAL(ret_val, 0);
+  ndn_metainfo_init(&data.metainfo);
+  ndn_metainfo_set_content_type(&data.metainfo, NDN_CONTENT_TYPE_BLOB);
+
+  // sign data
+  encoder_init(&encoder, block_value, 1024);
+  ret_val = test_sign_data("ndn/zhiyi", strlen("ndn/zhiyi"), &encoder, &data);
+  CU_ASSERT_EQUAL(ret_val, 0);
+
+  // put data to forwarder
+  ret_val = ndn_forwarder_put_data(block_value, encoder.offset);
+  CU_ASSERT_EQUAL(ret_val, 0);
+
+  while (!forwarder_put_data_received) {}
+  CU_ASSERT_TRUE(forwarder_put_data_received);
+}
+
+int test_sign_data(const char* id, uint32_t id_len, ndn_encoder_t* encoder, ndn_data_t* data) {
+  ndn_ecc_prv_t prv_key;
+  ndn_ecc_prv_init(&prv_key, test_ecc_secp256r1_private_raw_1, sizeof(test_ecc_secp256r1_private_raw_1), NDN_ECDSA_CURVE_SECP256R1, 1234);
+  ndn_name_t identity;
+  int ret_val = ndn_name_from_string(&identity, id, id_len);
+  CU_ASSERT_EQUAL(ret_val, 0);
+  if (ret_val != 0)
+  {
+    _current_forwarder_test_all_calls_succeeded = false;
+    print_error(_current_test_name, "_run_forwarder_test", "ndn_name_from_string", ret_val);
+  }
+  ret_val = ndn_data_tlv_encode_ecdsa_sign(encoder, data, &identity, &prv_key);
+  CU_ASSERT_EQUAL(ret_val, 0);
+  if (ret_val != 0)
+  {
+    _current_forwarder_test_all_calls_succeeded = false;
+    print_error(_current_test_name, "_run_forwarder_test", "ndn_data_tlv_encode_ecdsa_sign", ret_val);
+  }
+  return 0;
+}
+
 void add_forwarder_test_suite()
 {
   CU_pSuite pSuite = NULL;
@@ -374,7 +482,8 @@ void add_forwarder_test_suite()
     CU_cleanup_registry();
     return CU_get_error();
   }
-  if (NULL == CU_add_test(pSuite, "forwarder_tests", run_forwarder_tests))
+  if (NULL == CU_add_test(pSuite, "forwarder_tests", run_forwarder_tests) ||
+      NULL == CU_add_test(pSuite, "forwarder_put_data_test", forwarder_put_data_test))
   {
     CU_cleanup_registry();
     return CU_get_error();
