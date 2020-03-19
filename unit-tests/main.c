@@ -16,7 +16,9 @@
 #include "data/data-tests.h"
 #include "encoder-decoder/encoder-decoder-tests.h"
 #include "forwarder/forwarder-tests.h"
+#include "fib/fib-tests.h"
 #include "fragmentation-support/fragmentation-support-tests.h"
+#include "forwarder-with-fragmentation-support/forwarder-fragmentation-tests.h"
 #include "interest/interest-tests.h"
 #include "hmac/hmac-tests.h"
 #include "metainfo/metainfo-tests.h"
@@ -36,14 +38,15 @@ int main() {
     add_aes_test_suite();
     add_data_test_suite();
     add_encoder_decoder_test_suite();
+    add_fib_test_suite();
     add_forwarder_test_suite();
     add_fragmentation_support_test_suite();
+    add_forwarder_fragmentation_test_suite();
     add_interest_test_suite();
     add_hmac_test_suite();
     add_metainfo_test_suite();
     add_name_encode_decode_test_suite();
     add_random_test_suite();
-    // add_service_discovery_test_suite();
     add_sign_verify_test_suite();
     add_signature_test_suite();
     add_util_test_suite();

@@ -80,3 +80,15 @@ foreach(TESTNAME IN LISTS LIST_TESTS)
   )
 endforeach()
 unset(LIST_TESTS)
+
+target_sources(unittest PRIVATE
+  "${DIR_UNITTESTS}/fib/fib-tests.h"
+  "${DIR_UNITTESTS}/fib/fib-tests.c"
+)
+
+target_sources(unittest PRIVATE
+  "${DIR_UNITTESTS}/forwarder-with-fragmentation-support/dummy-face-with-mtu.h"
+  "${DIR_UNITTESTS}/forwarder-with-fragmentation-support/dummy-face-with-mtu.c"
+  "${DIR_UNITTESTS}/forwarder-with-fragmentation-support/forwarder-fragmentation-tests.h"
+  "${DIR_UNITTESTS}/forwarder-with-fragmentation-support/forwarder-fragmentation-tests.c"
+)
