@@ -64,12 +64,12 @@ void ff_on_data_callback(const uint8_t *data, uint32_t data_size, void *userdata
 }
 
 /*
-   *  +----+       +---------+     +------------+
-   *  |app /ndn -- |forwarder| -- /aaa dummyface|
-   *  +----+       +---------+     +------------+
+   *  +----+       +---------+  -- FRAGMENTATION -->   +------------+
+   *  |app /ndn -- |forwarder|                         /aaa dummyface|
+   *  +----+       +---------+    <-- ASSEMBLY --      +------------+
    *
    *        -----I: /test2/name1 --->
-   *        <----D: /test2/name1 ----
+   *        <----D: /test2/name1 ---- (OVERSIZED)
    */
 void ff_forwarder_with_fragmentation_test()
 {
