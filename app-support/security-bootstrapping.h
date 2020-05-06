@@ -43,9 +43,9 @@ typedef struct ndn_device_info {
 typedef void (*ndn_security_bootstrapping_after_bootstrapping) (void);
 
 /**
- * Bootstrapping protocol spec:
+ * 1. Bootstrapping protocol spec:
  *
- *  Sign on Interest
+ *  1.1 Sign on Interest
  *  ==============
  *    Interest Name: /ndn/sign-on
  *    Params: MustBeFresh
@@ -67,7 +67,7 @@ typedef void (*ndn_security_bootstrapping_after_bootstrapping) (void);
  *  ==============
  *  Adv Interest will be sent periodically based on SD_ADV_INTERVAL ms
  *
- *  Cert Request Interest
+ *  1.2 Cert Request Interest
  *  ==============
  *    Interest Name: /[home-prefix]/cert
  *    Param: MustBeFresh
@@ -87,6 +87,18 @@ typedef void (*ndn_security_bootstrapping_after_bootstrapping) (void);
  *    Sig Value: Signature by controller identity key
  *  ==============
  *  Service Query Interest will be sent right after bootstrapping
+ *
+ * 2. Bootstrapping protocol results:
+ *
+ *  Device will obtain following material
+ *  1. Controller's ECDSA public key: will initialize
+ *      a. ndn_key_storage.trust_anchor
+ *      b. ndn_key_storage.trust_anchor_key
+ *  2. Device's ECDSA public key certificate issued by the Controller: will initialize
+ *      a. ndn_key_storage.self_identity
+ *      b. ndn_key_storage.self_cert
+ *  3. Device's ECDSA private key: will initialize
+ *      a. ndn_key_storage.self_identity_key
  */
 
 /**

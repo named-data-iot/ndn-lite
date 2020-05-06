@@ -23,9 +23,9 @@ extern "C" {
 const static uint32_t SD_ADV_INTERVAL = 15000;
 
 /**
- * Service discovery protocol spec:
+ * 1. Service Discovery protocol spec:
  *
- *  Advertisement:
+ *  1.1 Advertisement:
  *  ==============
  *    Interest Name: /[home-prefix]/NDN_SD_SD/NDN_SD_SD_AD/[room]/[device-id]
  *    Params: MustBeFresh
@@ -39,7 +39,7 @@ const static uint32_t SD_ADV_INTERVAL = 15000;
  *  ==============
  *  Adv Interest will be sent periodically based on SD_ADV_INTERVAL ms
  *
- *  Service Query to the Controller
+ *  1.2 Service Query to the Controller
  *  ==============
  *    Interest Name: /[home-prefix]/NDN_SD_SD_CTL/NDN_SD_SD_CTL_META
  *    Param: MustBeFresh
@@ -56,8 +56,25 @@ const static uint32_t SD_ADV_INTERVAL = 15000;
  *      Repeated {Name-TLV, uint32_t}: service name and freshness period
  *    Sig Value: ECDSA Signature by controller identity key
  *  ==============
- *  Service Query Interest will be sent right after bootstrapping
+ *  Service Query Interest will be sent right after bootstrapping automatically
  *
+ *  1.3 Service Query to the local system
+ *  ==============
+ *    Interest Name: /[home-prefix]/NDN_SD_SD/[service-id]/[granularity]/[descriptor: ANY, ALL]
+ *    Param: MustBeFresh
+ *    No Signature
+ *  ==============
+ *  Replied Data
+ *  ==============
+ *    Content:
+ *      Repeated {Name-TLV, uint32_t}: service name and freshness period
+ *    Sig Value: ECDSA Signature by controller identity key
+ *  ==============
+ *  Service Query Interest will be triggered by sd_query_service
+ *
+ * 2. Service Discovery results:
+ *
+ *  A list of names of service providers who provide services interested by the device.
  */
 
 /**
@@ -78,6 +95,9 @@ ndn_sd_after_bootstrapping(ndn_face_intf_t *face);
  * @param adv. Input. Whether to advertise.
  * @param status_code. Input. The status of the service.
  * @return NDN_SUCCESS if there is no error.
+ * @todo This function should be automatically called by ndn_sd_after_bootstrapping, because in boostarpping, the app has already
+ * tell us what serviec they have.
+ * @todo The status code now is useless.
  */
 int
 sd_add_or_update_self_service(uint8_t service_id, bool adv, uint8_t status_code);
@@ -87,6 +107,8 @@ sd_add_or_update_self_service(uint8_t service_id, bool adv, uint8_t status_code)
  * Use before or after ndn_sd_after_bootstrapping.
  * @param service_id. Input. Service ID.
  * @return NDN_SUCCESS if there is no error.
+ * @todo This function should be automatically called by ndn_sd_after_bootstrapping, because in access control, the app has already
+ * tell us what services they are interested.
  */
 int
 sd_add_interested_service(uint8_t service_id);
@@ -101,6 +123,10 @@ sd_add_interested_service(uint8_t service_id);
  */
 int
 sd_query_service(uint8_t service_id, const ndn_name_t* granularity, bool is_any);
+
+/**
+ * @todo Provide app the interface to get cached services
+ */
 
 #ifdef __cplusplus
 }

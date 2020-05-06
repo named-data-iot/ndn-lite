@@ -19,6 +19,8 @@
 #include "../encode/ndn-rule-storage.h"
 #include <string.h>
 
+// @todo: Update the implementation of policy distribution to pub/sub in ndn_trust_schema_after_bootstrapping()
+
 /** Controller Only Command Policy
  */
 #define cmd_controller_only_rule_data_name "(<>)<><CMD><>*"

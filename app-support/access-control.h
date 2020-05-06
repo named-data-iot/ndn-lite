@@ -15,9 +15,9 @@
 #include "../encode/data.h"
 
 /**
- * Access control protocol spec:
+ * 1. Access control protocol spec:
  *
- *  Get EKEY from the controller:
+ *  1.1 Get EKEY from the controller:
  *  ==============
  *    Interest Name: /[home-prefix]/NDN_SD_AC/NDN_SD_AC_EK/[service-id]
  *    Params: MustBeFresh
@@ -34,7 +34,7 @@
  *      T=TLV_AC_ENCRYPTED_PAYLOAD L=? V=bytes: AES encrypted payload, which is the EKEY for the service
  *  ==============
  *
- *  Get DKEY from the controller:
+ *  1.2 Get DKEY from the controller:
  *  ==============
  *    Interest Name: /[home-prefix]/NDN_SD_AC/NDN_SD_AC_DK/[service-id]
  *    Params: MustBeFresh
@@ -50,6 +50,13 @@
  *      T=TLV_AC_AES_IV L=? V=bytes: AES IV
  *      T=TLV_AC_ENCRYPTED_PAYLOAD L=? V=bytes: AES encrypted payload
  *  ==============
+ *
+ * 2. Access Control results
+ *
+ *  1. per service AES encryption keys: keys will be kept in
+ *      a. ndn_key_storage.aes_keys
+ *  2. per service AES decryption keys: keys will be kept in
+ *      a. ndn_key_storage.aes_keys
  */
 
 // Basic Design:
