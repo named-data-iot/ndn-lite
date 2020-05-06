@@ -635,7 +635,7 @@ ps_publish_content(uint8_t service, const ps_event_t* event)
                       TLV_DATAARG_NAME_PTR, &name,
                       TLV_DATAARG_CONTENT_BUF, pkt_encoding_buf,
                       TLV_DATAARG_CONTENT_SIZE, used_size,
-                      TLV_DATAARG_FRESHNESSPERIOD_U64, (uint64_t)4000,
+                      TLV_DATAARG_FRESHNESSPERIOD_U64, (uint64_t)8000,
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
                       TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
@@ -735,7 +735,7 @@ ps_publish_command(uint8_t service, const char* scope, const ps_event_t* event)
                       TLV_DATAARG_NAME_PTR, &name,
                       TLV_DATAARG_CONTENT_BUF, pkt_encoding_buf,
                       TLV_DATAARG_CONTENT_SIZE, used_size,
-                      TLV_DATAARG_FRESHNESSPERIOD_U64, (uint64_t)4000,
+                      TLV_DATAARG_FRESHNESSPERIOD_U64, (uint64_t)8000,
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
                       TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
