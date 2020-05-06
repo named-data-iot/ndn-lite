@@ -41,7 +41,7 @@ ndn_rule_storage_init(void);
  * @param rule_name. Input. The string representing the name of the rule to get from storage.
  * @return A pointer to the rule if it is found in storage. NULL otherwise.
  */
-const ndn_trust_schema_rule_t *
+ndn_trust_schema_rule_t*
 ndn_rule_storage_get_rule(const char *rule_name);
 
 /**

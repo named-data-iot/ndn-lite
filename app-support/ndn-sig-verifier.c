@@ -7,7 +7,8 @@
  *
  * See AUTHORS.md for complete list of NDN-LITE authors and contributors.
  */
-
+#define ENABLE_NDN_LOG_DEBUG 1
+#define ENABLE_NDN_LOG_ERROR 1
 #include "ndn-sig-verifier.h"
 #include "../encode/signed-interest.h"
 #include "../encode/key-storage.h"
@@ -44,8 +45,8 @@ sig_verifier_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata
   ndn_data_t cert;
   uint32_t start, end;
   ndn_data_tlv_decode_no_verify(&cert, raw_data, data_size, &start, &end);
-  printf("Sig Verifier received certificate: \n");
-  ndn_name_print(&cert.name);
+  NDN_LOG_DEBUG("Sig Verifier received certificate: \n");
+  NDN_LOG_DEBUG_NAME(&cert.name);
   // use trust anchor key to verify
   ndn_key_storage_t* keys = ndn_key_storage_get_instance();
   int result = ndn_ecdsa_verify(raw_data + start, end - start,
@@ -53,12 +54,16 @@ sig_verifier_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata
   if (result == NDN_SUCCESS) {
     // add the received certificate to key storage
     ndn_key_storage_add_trusted_certificate(&cert);
+    uint32_t keyid_from_cert = key_id_from_cert_name(&cert.name);
     ndn_ecc_pub_t* pub_key = NULL;
     // verify the original interest/data
     if (dataptr->is_interest) {
       ndn_interest_t* original_int = (ndn_interest_t*)dataptr->original_pkt;
       uint32_t keyid = key_id_from_key_name(&original_int->signature.key_locator_name);
       pub_key = ndn_key_storage_get_ecc_pub_key(keyid);
+      if (!pub_key) {
+        NDN_LOG_ERROR("Still cannot get public key from local key storage");
+      }
       result = ndn_signed_interest_ecdsa_verify(original_int, pub_key);
       if (result == NDN_SUCCESS) {
         on_int_verification_success on_success = (on_int_verification_success)(dataptr->on_success_cbk);
@@ -74,6 +79,9 @@ sig_verifier_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata
       ndn_encoder_t encoder;
       encoder_init(&encoder, verifier_buf, sizeof(verifier_buf));
       ndn_data_tlv_encode(&encoder, original_dat);
+      if (!pub_key) {
+          NDN_LOG_ERROR("Still cannot get public key from local key storage");
+      }
       result = ndn_data_tlv_decode_ecdsa_verify(original_dat, verifier_buf, encoder.offset, pub_key);
       if (result == NDN_SUCCESS) {
         on_data_verification_success on_success = (on_data_verification_success)(dataptr->on_success_cbk);
@@ -96,7 +104,7 @@ sig_verifier_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata
 void
 sig_verifier_on_timeout(void* userdata)
 {
-  printf("\nSign Verifier cert fetch interest timeout\n");
+  NDN_LOG_DEBUG("\nSign Verifier cert fetch interest timeout\n");
   ndn_sig_verifier_userdata_t* dataptr = (ndn_sig_verifier_userdata_t*)userdata;
   if (dataptr->is_interest) {
     on_int_verification_failure on_failure = (on_int_verification_failure)(dataptr->on_failure_cbk);
@@ -113,14 +121,19 @@ sig_verifier_on_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* us
 {
   ndn_interest_t interest;
   ndn_interest_from_block(&interest, raw_int, raw_int_size);
-  printf("Sig Verifier received certificate fetching Interest: \n");
+  NDN_LOG_DEBUG("Sig Verifier received certificate fetching Interest: \n");
   ndn_name_print(&interest.name);
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
   if (ndn_name_is_prefix_of(&interest.name, &storage->self_cert.name) == NDN_SUCCESS) {
     ndn_encoder_t encoder;
     encoder_init(&encoder, verifier_buf, sizeof(verifier_buf));
     ndn_data_tlv_encode(&encoder, &storage->self_cert);
-    ndn_forwarder_put_data(encoder.output_value, encoder.offset);
+    NDN_LOG_DEBUG("Giving back self certificate: \n");
+    NDN_LOG_DEBUG_NAME(&storage->self_cert.name);
+    int ret = ndn_forwarder_put_data(encoder.output_value, encoder.offset);
+    if (ret) {
+      NDN_LOG_ERROR("Error code is %d", ret);
+    }
   }
   return NDN_FWD_STRATEGY_SUPPRESS;
 }
@@ -221,12 +234,12 @@ ndn_sig_verifier_verify_int(const uint8_t* raw_pkt, size_t pkt_size,
                                            sig_verifier_on_data, sig_verifier_on_timeout, &m_userdata);
     }
     if (ret != 0) {
-      printf("Fail to send out cert fetch Interest. Error Code: %d\n", ret);
+      NDN_LOG_DEBUG("Fail to send out cert fetch Interest. Error Code: %d\n", ret);
       on_failure(&interest, on_failure_userdata);
       return;
     }
-    printf("Send SD/META Interest packet with name: \n");
-    ndn_name_print(&cert_interest.name);
+    NDN_LOG_DEBUG("Send SD/META Interest packet with name: \n");
+    NDN_LOG_DEBUG_NAME(&cert_interest.name);
     return;
   }
   on_failure(&interest, on_failure_userdata);
@@ -321,9 +334,11 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size,
   }
   if (need_interest_out) {
     ndn_interest_t cert_interest;
+    ndn_interest_init(&cert_interest);
     memcpy(&cert_interest.name, &data.signature.key_locator_name, sizeof(ndn_name_t));
     ndn_interest_set_CanBePrefix(&cert_interest, true);
-    ndn_interest_set_MustBeFresh(&cert_interest, true);
+    ndn_interest_set_MustBeFresh(&cert_interest, false);
+    cert_interest.lifetime = 8000;
     ndn_encoder_t encoder;
     encoder_init(&encoder, verifier_buf, sizeof(verifier_buf));
     ndn_interest_tlv_encode(&encoder, &cert_interest);
@@ -331,6 +346,7 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size,
     m_userdata.original_pkt = (void*)&data;
     m_userdata.on_success_cbk = on_success;
     m_userdata.on_failure_cbk = on_failure;
+    m_userdata.on_success_userdata = on_success_userdata;
     ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
                                    sig_verifier_on_data, sig_verifier_on_timeout, &m_userdata);
     return;

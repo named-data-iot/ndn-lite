@@ -250,7 +250,8 @@ _express_ekey_interest(uint8_t service)
   // Express Interest
   ndn_encoder_t encoder;
   encoder_init(&encoder, ac_buf, sizeof(ac_buf));
-  ndn_interest_set_CanBePrefix(&interest, 1);
+  ndn_interest_set_CanBePrefix(&interest, true);
+  ndn_interest_set_MustBeFresh(&interest, true);
   ret = ndn_interest_tlv_encode(&encoder, &interest);
   if (ret != 0) return ret;
   static uint8_t service_id = 0;
@@ -293,7 +294,8 @@ _express_dkey_interest(uint8_t service)
   // Express Interest
   ndn_encoder_t encoder;
   encoder_init(&encoder, ac_buf, sizeof(ac_buf));
-  ndn_interest_set_CanBePrefix(&interest, 1);
+  ndn_interest_set_CanBePrefix(&interest, true);
+  ndn_interest_set_MustBeFresh(&interest, true);
   ret = ndn_interest_tlv_encode(&encoder, &interest);
   if (ret != 0) return ret;
   static uint8_t service_id = 0;

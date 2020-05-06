@@ -170,7 +170,7 @@ on_cert_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   }
   // set key storage
   ndn_ecc_prv_t self_prv;
-  uint32_t keyid = *(uint32_t*)&self_cert.name.components[self_cert.name.components_size - 3].value;
+  uint32_t keyid = key_id_from_cert_name(&self_cert.name);
   ndn_ecc_prv_init(&self_prv, plaintext, used_size, NDN_ECDSA_CURVE_SECP256R1, keyid);
   ndn_key_storage_set_self_identity(&self_cert, &self_prv);
   // finish the bootstrapping process

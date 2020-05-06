@@ -19,6 +19,7 @@
 #define NDN_SD_SD 1 // service discovery service, (ideally) run by ALL devices
 #define NDN_SD_SD_CTL 2 // service discovery control service, run by authorized devices ONLY
 #define NDN_SD_AC 3 // access control service, run by authorized devices ONLY
+#define NDN_SD_POLICY 4 // policy service
 
 // service types: >10, <255 application services
 #define NDN_SD_LED 11 // LED service
@@ -47,5 +48,6 @@
 #define NDN_SD_AC_ADV false // no advertisement
 #define NDN_SD_AC_EK 0 // query an encryption key from the SP
 #define NDN_SD_AC_DK 1 // query a decryption key from the SP
+
 
 #endif // NDN_SERVICES_H

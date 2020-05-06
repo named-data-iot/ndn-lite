@@ -64,10 +64,9 @@ _prepare_signature_info(ndn_data_t* data, uint8_t signature_type,
                         const ndn_name_t* producer_identity, uint32_t key_id)
 {
   uint8_t raw_key_id[4] = {0};
-  raw_key_id[0] = (key_id >> 24) & 0xFF;
-  raw_key_id[1] = (key_id >> 16) & 0xFF;
-  raw_key_id[2] = (key_id >> 8) & 0xFF;
-  raw_key_id[3] = key_id & 0xFF;
+  ndn_encoder_t encoder;
+  encoder_init(&encoder, raw_key_id, sizeof(raw_key_id));
+  encoder_append_uint32_value(&encoder, key_id);
 
   ndn_signature_init(&data->signature, false);
   ndn_signature_set_signature_type(&data->signature, signature_type);
@@ -80,9 +79,29 @@ _prepare_signature_info(ndn_data_t* data, uint8_t signature_type,
                              key_comp_string, sizeof(key_comp_string));
   data->signature.key_locator_name.components_size++;
   pos = data->signature.key_locator_name.components_size;
-  name_component_from_buffer(&data->signature.key_locator_name.components[pos],
-                             TLV_GenericNameComponent, raw_key_id, 4);
+  
+  /*
+   * Using uint64_t as local KeyID index is inpratical due to various constraints.
+   * Thus issued certificate includes a uint64_t KeyID, but decoded as uint32_t.
+   * Thus when using identity key to sign, directly append original KeyID from 
+   * certificate instead from local KeyID storage.
+   */
+  ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+  ndn_name_t* self_cert_name = &storage->self_cert.name;
+  uint32_t cert_id = key_id_from_cert_name(&storage->self_cert.name);
+  if (key_id == cert_id) {
+    NDN_LOG_DEBUG("using self cert to sign\n");
+    name_component_from_buffer(&data->signature.key_locator_name.components[pos],
+                                TLV_GenericNameComponent, 
+                                self_cert_name->components[self_cert_name->components_size - 3].value,
+                                self_cert_name->components[self_cert_name->components_size - 3].size);
+  }
+  else {
+    name_component_from_buffer(&data->signature.key_locator_name.components[pos],
+                              TLV_GenericNameComponent, raw_key_id, 4);
+  }
   data->signature.key_locator_name.components_size++;
+  ndn_name_print(&data->signature.key_locator_name);
 }
 
 /************************************************************/

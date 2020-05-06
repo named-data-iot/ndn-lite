@@ -64,6 +64,7 @@ ndn_key_storage_add_trusted_certificate(const ndn_data_t* certificate)
   for (uint8_t i = 0; i < NDN_SEC_SIGNING_KEYS_SIZE; i++) {
     if (storage.trusted_ecc_pub_keys[i].key_id == NDN_SEC_INVALID_KEY_ID) {
       pub_key = &storage.trusted_ecc_pub_keys[i];
+      break;
     }
   }
   // load the certificate key into trusted ecc pub keys

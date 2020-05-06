@@ -34,7 +34,7 @@ ndn_rule_storage_init(void) {
   }
 }
 
-const ndn_trust_schema_rule_t *
+ndn_trust_schema_rule_t*
 ndn_rule_storage_get_rule(const char *rule_name) {
   for (int i = 0; i < NDN_TRUST_SCHEMA_MAX_SUBPATTERN_MATCHES; i++) {
     if (strcmp((const char *)&ndn_rule_storage.rule_names[i].name, rule_name) == 0 &&
