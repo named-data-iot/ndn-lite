@@ -56,6 +56,7 @@ typedef struct ps_event {
   uint32_t data_id_len;
   const uint8_t* payload;
   uint32_t payload_len;
+  uint32_t freshness_period;
 } ps_event_t;
 
 /** on new data/command callback

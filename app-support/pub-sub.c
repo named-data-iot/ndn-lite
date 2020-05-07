@@ -631,11 +631,19 @@ ps_publish_content(uint8_t service, const ps_event_t* event)
   }
 
   memset(topic->cache, 0, sizeof(topic->cache));
+  uint32_t default_freshness_period = 0;
+  if (!event->freshness_period) {
+    // this user does not define the freshness period, it will pick 8000ms as default
+    default_freshness_period = 8000;
+  }
+  else {
+    default_freshness_period = event->freshness_period;
+  }
   ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 7,
                       TLV_DATAARG_NAME_PTR, &name,
                       TLV_DATAARG_CONTENT_BUF, pkt_encoding_buf,
                       TLV_DATAARG_CONTENT_SIZE, used_size,
-                      TLV_DATAARG_FRESHNESSPERIOD_U64, (uint64_t)8000,
+                      TLV_DATAARG_FRESHNESSPERIOD_U64, (uint64_t)default_freshness_period,
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
                       TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
@@ -731,11 +739,19 @@ ps_publish_command(uint8_t service, const char* scope, const ps_event_t* event)
   NDN_LOG_DEBUG("PUB-COMMAND-DATA-AES-ENC: %lluus\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
+  uint32_t default_freshness_period = 0;
+  if (!event->freshness_period) {
+    // this user does not define the freshness period, it will pick 8000ms as default
+    default_freshness_period = 8000;
+  }
+  else {
+    default_freshness_period = event->freshness_period;
+  }
   ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 7,
                       TLV_DATAARG_NAME_PTR, &name,
                       TLV_DATAARG_CONTENT_BUF, pkt_encoding_buf,
                       TLV_DATAARG_CONTENT_SIZE, used_size,
-                      TLV_DATAARG_FRESHNESSPERIOD_U64, (uint64_t)8000,
+                      TLV_DATAARG_FRESHNESSPERIOD_U64, (uint64_t)default_freshness_period,
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
                       TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
                       TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
