@@ -13,6 +13,7 @@
 #include "../security/ndn-lite-hmac.h"
 #include "../security/ndn-lite-sha.h"
 #include "../security/ndn-lite-ecc.h"
+#include "../util/logger.h"
 
 /************************************************************/
 /*  Helper functions for Signed Interest APIs               */
