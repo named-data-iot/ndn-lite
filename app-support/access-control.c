@@ -101,10 +101,10 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
   ret = ndn_data_tlv_decode_ecdsa_verify(&data, raw_data, data_size, &storage->trust_anchor_key);
   if (ret) {
-    NDN_LOG_ERROR("EncryptionKey Data Verification failure, ErrorCode = %d\n", ret);
+    NDN_LOG_ERROR("[ACCESSCTL] EncryptionKey Data Verification failure, ErrorCode = %d\n", ret);
   }
 
-  NDN_LOG_DEBUG("Receive EncryptionKey Data with Name: ");
+  NDN_LOG_DEBUG("[ACCESSCTL] Receive EncryptionKey Data with Name: ");
   NDN_LOG_DEBUG_NAME(&data.name);
 
   // get key: decrypt the key
@@ -114,14 +114,14 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   ret = ndn_parse_encrypted_payload(data.content_value, data.content_size,
                                     value, &used_size, SEC_BOOT_AES_KEY_ID);
   if (ret || used_size == 0) {
-    NDN_LOG_ERROR("Parse encrypted payload failure. ErrorCode = %d\n", ret);
+    NDN_LOG_ERROR("[ACCESSCTL] Parse encrypted payload failure. ErrorCode = %d\n", ret);
   }
 
   ndn_decoder_t decoder;
   decoder_init(&decoder, value + NDN_AES_BLOCK_SIZE, sizeof(expires_in));
   decoder_get_uint32_value(&decoder, &expires_in);
 
-  NDN_LOG_DEBUG("EncryptionKey KeyLifetime = %u ms\n", expires_in);
+  NDN_LOG_DEBUG("[ACCESSCTL] EncryptionKey KeyLifetime = %u ms\n", expires_in);
 
   // store it into key_storage
   ndn_time_ms_t now = ndn_time_now_ms();
@@ -139,7 +139,7 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     ndn_aes_key_init(key, value, NDN_AES_BLOCK_SIZE, keyid);
   }
   else {
-    NDN_LOG_ERROR("No empty AES key in local key storage.");
+    NDN_LOG_ERROR("[ACCESSCTL] No empty AES key in local key storage.");
   }
 }
 
@@ -160,10 +160,10 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
   ret = ndn_data_tlv_decode_ecdsa_verify(&data, raw_data, data_size, &storage->trust_anchor_key);
   if (ret) {
-    NDN_LOG_ERROR("DecryptionKey Data Verification failure, ErrorCode = %d\n", ret);
+    NDN_LOG_ERROR("[ACCESSCTL] DecryptionKey Data Verification failure, ErrorCode = %d\n", ret);
   }
 
-  NDN_LOG_DEBUG("Receive DecryptionKey Data with Name: ");
+  NDN_LOG_DEBUG("[ACCESSCTL] Receive DecryptionKey Data with Name: ");
   NDN_LOG_DEBUG_NAME(&data.name);
 
   // get key: decrypt the key
@@ -174,14 +174,14 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   ret = ndn_parse_encrypted_payload(data.content_value, data.content_size,
                                     value, &used_size, SEC_BOOT_AES_KEY_ID);
   if (ret || used_size == 0) {
-    NDN_LOG_ERROR("Parse encrypted payload failure. ErrorCode = %d\n", ret);
+    NDN_LOG_ERROR("[ACCESSCTL] Parse encrypted payload failure. ErrorCode = %d\n", ret);
   }
 
   ndn_decoder_t decoder;
   decoder_init(&decoder, value + NDN_AES_BLOCK_SIZE, sizeof(expires_in));
   decoder_get_uint32_value(&decoder, &expires_in);
 
-  NDN_LOG_DEBUG("DecryptionKey KeyLifetime = %u ms\n", expires_in);
+  NDN_LOG_DEBUG("[ACCESSCTL] DecryptionKey KeyLifetime = %u ms\n", expires_in);
 
   // store it into key_storage
   ndn_time_ms_t now = ndn_time_now_ms();
@@ -199,7 +199,7 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     ndn_aes_key_init(key, value, 16, keyid);
   }
   else {
-    NDN_LOG_ERROR("No empty AES key in local key storage.");
+    NDN_LOG_ERROR("[ACCESSCTL] No empty AES key in local key storage.");
   }
 }
 
@@ -233,7 +233,7 @@ _express_ekey_interest(uint8_t service)
   ndn_interest_t interest;
   ndn_interest_init(&interest);
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
-  ret = ndn_name_append_component(&interest.name, &storage->self_identity.components[0]);
+  ret = ndn_name_append_component(&interest.name, &storage->self_identity[0].components[0]);
   if (ret != 0) return ret;
   uint8_t ac = NDN_SD_AC;
   ret = ndn_name_append_bytes_component(&interest.name, &ac, 1);
@@ -244,8 +244,14 @@ _express_ekey_interest(uint8_t service)
   ret = ndn_name_append_bytes_component(&interest.name, &service, 1);
   if (ret != 0) return ret;
 
-  //signature signing
-  ndn_signed_interest_ecdsa_sign(&interest, &storage->self_identity, &storage->self_identity_key);
+  // signature signing
+  ndn_name_t* self_identity = ndn_key_storage_get_self_identity(service);
+  ndn_name_t* self_identity_key = ndn_key_storage_get_self_identity_key(service);
+  if (self_identity == NULL || self_identity_key == NULL) {
+    NDN_LOG_ERROR("[ACCESSCTL] Cannot find proper identity to sign");
+    return NDN_AC_KEY_NOT_FOUND;
+  }
+  ndn_signed_interest_ecdsa_sign(&interest, self_identity, self_identity_key);
 
   // Express Interest
   ndn_encoder_t encoder;
@@ -258,10 +264,10 @@ _express_ekey_interest(uint8_t service)
   service_id = service;
   ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, _on_ekey_data, _on_ekey_int_timeout, &service_id);
   if (ret != 0) {
-    NDN_LOG_ERROR("Fail to send out adv Interest. Error Code: %d\n", ret);
+    NDN_LOG_ERROR("[ACCESSCTL] Fail to send out adv Interest. Error Code: %d\n", ret);
     return ret;
   }
-  NDN_LOG_DEBUG("Send EncryptionKey Interest with Name: ");
+  NDN_LOG_DEBUG("[ACCESSCTL] Send EncryptionKey Interest with Name: ");
   NDN_LOG_DEBUG_NAME(&interest.name);
   return NDN_SUCCESS;
 }
@@ -277,7 +283,7 @@ _express_dkey_interest(uint8_t service)
   ndn_interest_t interest;
   ndn_interest_init(&interest);
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
-  ret = ndn_name_append_component(&interest.name, &storage->self_identity.components[0]);
+  ret = ndn_name_append_component(&interest.name, &storage->self_identity[0].components[0]);
   if (ret != 0) return ret;
   uint8_t ac = NDN_SD_AC;
   ret = ndn_name_append_bytes_component(&interest.name, &ac, 1);
@@ -288,8 +294,8 @@ _express_dkey_interest(uint8_t service)
   ret = ndn_name_append_bytes_component(&interest.name, &service, 1);
   if (ret != 0) return ret;
 
-  // signature signing
-  ndn_signed_interest_ecdsa_sign(&interest, &storage->self_identity, &storage->self_identity_key);
+  // TODO: figure out a better way to sign instead of using the first cert
+  ndn_signed_interest_ecdsa_sign(&interest, &storage->self_identity[0], &storage->self_identity_key[0]);
 
   // Express Interest
   ndn_encoder_t encoder;
@@ -302,10 +308,10 @@ _express_dkey_interest(uint8_t service)
   service_id = service;
   ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, _on_dkey_data, _on_ekey_int_timeout, &service_id);
   if (ret != 0) {
-    NDN_LOG_ERROR("Fail to send out adv Interest. Error Code: %d\n", ret);
+    NDN_LOG_ERROR("[ACCESSCTL] Fail to send out adv Interest. Error Code: %d\n", ret);
     return ret;
   }
-  NDN_LOG_DEBUG("Send DecryptionKey Interest with Name: ");
+  NDN_LOG_DEBUG("[ACCESSCTL] Send DecryptionKey Interest with Name: ");
   NDN_LOG_DEBUG_NAME(&interest.name);
   return NDN_SUCCESS;
 }

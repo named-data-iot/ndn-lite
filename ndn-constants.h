@@ -107,6 +107,7 @@ NDN_ASN1_ECDSA_ENCODING_MAX_EXTRA_BYTES)
                                              NDN_ASN1_ECDSA_ENCODING_MAX_EXTRA_BYTES)
 
 // security
+#define NDN_SEC_CERT_SIZE 3
 #define NDN_SEC_SIGNING_KEYS_SIZE 10
 #define NDN_SEC_ENCRYPTION_KEYS_SIZE 5
 #define NDN_SEC_INVALID_KEY_SIZE ((uint32_t)(-1))

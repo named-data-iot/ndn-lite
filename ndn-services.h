@@ -21,9 +21,10 @@
 #define NDN_SD_AC 3 // access control service, run by authorized devices ONLY
 #define NDN_SD_POLICY 4 // policy service
 
-// service types: >10, <255 application services
-#define NDN_SD_LED 11 // LED service
-#define NDN_SD_TEMP 12 // temperature service
+// service types: > 48, < 255 application services
+// ndncert only accepts printable ascii so should begin with 49
+#define NDN_SD_LED 49 // LED service
+#define NDN_SD_TEMP 50 // temperature service
 
 // per-service command types
 // DEV_CTL service

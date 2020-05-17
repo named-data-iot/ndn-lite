@@ -40,8 +40,8 @@
  * Register a prefix to listen to /<home>/POLICY/<room>/<device>/rule-name
  * If new content and can be verified, add it to the rule storage
  */
-void
-ndn_trust_schema_after_bootstrapping();
+//void
+//ndn_trust_schema_after_bootstrapping();
 
 /**
  * Verify that a key name matches a data name based on a trust schema pattern.

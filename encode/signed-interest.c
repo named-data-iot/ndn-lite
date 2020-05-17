@@ -47,15 +47,23 @@ _prepare_signature_info(ndn_interest_t* interest, uint8_t signature_type,
    * Thus when using identity key to sign, directly append original KeyID from 
    * certificate instead from local KeyID storage.
    */
+  bool cert_signing = false;
+  ndn_name_t* signing_cert_name = NULL;
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
-  ndn_name_t* self_cert_name = &storage->self_cert.name;
-  uint32_t cert_id = key_id_from_cert_name(&storage->self_cert.name);
-  if (key_id == cert_id) {
-    NDN_LOG_DEBUG("using self cert to sign\n");
+  for (int i = 0; i < NDN_SEC_CERT_SIZE; i++) {
+    ndn_name_t* cert_name = &storage->self_cert[i].name;
+    uint32_t cert_id = key_id_from_cert_name(&storage->self_cert[i].name);
+    if (key_id == cert_id) {
+      cert_signing = true;
+      signing_cert_name = cert_name;
+      break;
+    }
+  }
+  if (cert_signing) {
     name_component_from_buffer(&interest->signature.key_locator_name.components[pos],
                                 TLV_GenericNameComponent, 
-                                self_cert_name->components[self_cert_name->components_size - 3].value,
-                                self_cert_name->components[self_cert_name->components_size - 3].size);
+                                signing_cert_name->components[signing_cert_name->components_size - 3].value,
+                                signing_cert_name->components[signing_cert_name->components_size - 3].size);
   }
   else {
     name_component_from_buffer(&interest->signature.key_locator_name.components[pos],
@@ -88,10 +96,11 @@ ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
   // set signature info
   ndn_key_storage_t* keys = ndn_key_storage_get_instance();
   if (identity == NULL) {
-    identity = &keys->self_identity;
+    identity = &keys->self_identity[0];
   }
+  
   if (prv_key == NULL) {
-    prv_key = &keys->self_identity_key;
+    prv_key = &keys->self_identity_key[0];
   }
   _prepare_signature_info(interest, NDN_SIG_TYPE_ECDSA_SHA256, identity, prv_key->key_id);
 

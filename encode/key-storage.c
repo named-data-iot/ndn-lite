@@ -16,11 +16,15 @@ bool _key_storage_initialized = false;
 void
 _ndn_key_storage_init(void)
 {
-  ndn_name_init(&storage.self_identity);
-  ndn_data_init(&storage.self_cert);
-  ndn_data_init(&storage.trust_anchor);
-  storage.self_identity_key.key_id = NDN_SEC_INVALID_KEY_ID;
+  // initialize self identity and cert
+  for (int i = 0; i < NDN_SEC_CERT_SIZE; i++) {
+    ndn_name_init(&storage.self_identity[i]);
+    ndn_data_init(&storage.self_cert[i]);
+    storage.self_identity_key[i].key_id = NDN_SEC_INVALID_KEY_ID;
+  }
+  // initialize trust anchor
   storage.trust_anchor_key.key_id = NDN_SEC_INVALID_KEY_ID;
+  ndn_data_init(&storage.trust_anchor);
   for (uint8_t i = 0; i < NDN_SEC_SIGNING_KEYS_SIZE; i++) {
     storage.ecc_pub_keys[i].key_id = NDN_SEC_INVALID_KEY_ID;
     storage.ecc_prv_keys[i].key_id = NDN_SEC_INVALID_KEY_ID;
@@ -80,12 +84,42 @@ ndn_key_storage_set_self_identity(const ndn_data_t* self_cert, const ndn_ecc_prv
 {
   if (!_key_storage_initialized)
     _ndn_key_storage_init();
-  memcpy(&storage.self_cert, self_cert, sizeof(ndn_data_t));
-  memcpy(&storage.self_identity_key, self_prv_key, sizeof(ndn_ecc_prv_t));
-  for (int i = 0; i < self_cert->name.components_size - 4; i++) {
-    ndn_name_append_component(&storage.self_identity, &self_cert->name.components[i]);
+  for (int i = 0; i < NDN_SEC_CERT_SIZE; i++) {
+    if (storage.self_identity_key[i].key_id == NDN_SEC_INVALID_KEY_ID) {
+      memcpy(&storage.self_cert[i], self_cert, sizeof(ndn_data_t));
+      memcpy(&storage.self_identity_key[i], self_prv_key, sizeof(ndn_ecc_prv_t));
+      for (int j = 0; j < self_cert->name.components_size - 4; j++) {
+        ndn_name_append_component(&storage.self_identity[i], &self_cert->name.components[j]);
+      }
+      ndn_name_print(&storage.self_identity[i]);
+      return NDN_SUCCESS;
+    }
   }
-  return NDN_SUCCESS;
+  return NDN_OVERSIZE;
+}
+
+ndn_name_t*
+ndn_key_storage_get_self_identity(const uint8_t service)
+{
+  for (int i = 0; i < NDN_SEC_CERT_SIZE; i++) {
+    int ret = memcmp(storage.self_identity[i].components[1].value, &service, sizeof(service));
+    if (ret == 0) {
+      return &storage.self_identity[i];
+    }
+  }
+  return NULL;
+}
+
+ndn_ecc_prv_t*
+ndn_key_storage_get_self_identity_key(const uint8_t service)
+{
+  for (int i = 0; i < NDN_SEC_CERT_SIZE; i++) {
+    int ret = memcmp(storage.self_identity[i].components[1].value, &service, sizeof(service));
+    if (ret == 0) {
+      return &storage.self_identity_key[i];
+    }
+  }
+  return NULL;
 }
 
 ndn_hmac_key_t*

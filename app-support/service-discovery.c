@@ -8,6 +8,10 @@
  * See AUTHORS.md for complete list of NDN-LITE authors and contributors.
  */
 
+#define ENABLE_NDN_LOG_INFO 1
+#define ENABLE_NDN_LOG_DEBUG 1
+#define ENABLE_NDN_LOG_ERROR 1
+
 #include "service-discovery.h"
 #include "../encode/wrapper-api.h"
 #include "../encode/signed-interest.h"
@@ -177,7 +181,6 @@ _sd_start_adv_self_services()
       ndn_msgqueue_post(NULL, _sd_start_adv_self_services, 0, NULL);
       return;
     }
-
     // Express Interest
     encoder_init(&encoder, sd_buf, sizeof(sd_buf));
     ret = ndn_interest_tlv_encode(&encoder, &interest);
@@ -209,9 +212,12 @@ ndn_sd_after_bootstrapping(ndn_face_intf_t *face)
   if (!m_has_initialized) {
     _ndn_sd_init();
   }
+  /* TODO: Here I used the first identity
+   *       since I have no clear idea what is the proper identity to use
+   */
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
-  m_self_state.home_prefix = &storage->self_identity.components[0];
-  m_self_state.device_locator = &storage->self_identity.components[storage->self_identity.components_size - 2];
+  m_self_state.home_prefix = &storage->self_identity[0].components[0];
+  m_self_state.device_locator = &storage->self_identity[0].components[storage->self_identity[0].components_size - 2];
   m_has_bootstrapped = true;
 
   // send service query to the controller
@@ -223,7 +229,9 @@ ndn_sd_after_bootstrapping(ndn_face_intf_t *face)
       counter++;
     }
   }
-  _sd_query_sys_services(services, counter);
+
+  if (counter > 0)
+    _sd_query_sys_services(services, counter);
 
   // start listening on corresponding prefixes
   _sd_listen(face);
@@ -424,13 +432,16 @@ _on_sd_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
       size_t data_length = 0;
       uint8_t data_buf[4096];
       ndn_key_storage_t* keys = ndn_key_storage_get_instance();
+      /* TODO: Here I used the first identity
+      *       since I have no clear idea what is the proper identity to use
+      */
       int ret = tlv_make_data(data_buf, sizeof(data_buf), &data_length, 6,
                               TLV_DATAARG_NAME_PTR, &interest.name,
                               TLV_DATAARG_CONTENT_BUF, sd_buf,
                               TLV_DATAARG_CONTENT_SIZE, encoder.offset,
                               TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
-                              TLV_DATAARG_IDENTITYNAME_PTR, &keys->self_identity,
-                              TLV_DATAARG_SIGKEY_PTR, &keys->self_identity_key);
+                              TLV_DATAARG_IDENTITYNAME_PTR, &keys->self_identity[0],
+                              TLV_DATAARG_SIGKEY_PTR, &keys->self_identity_key[0]);
       if (ret != NDN_SUCCESS) {
         NDN_LOG_ERROR("Cannot create Data to reply SD query. Error Code: %d", ret);
       }
@@ -488,6 +499,7 @@ _sd_query_sys_services(const uint8_t* service_ids, size_t size)
   if (ret != 0) return ret;
   ndn_interest_set_MustBeFresh(&interest, true);
   ndn_interest_set_Parameters(&interest, service_ids, size);
+  // TODO: why using signed interest without signing identity?
   ret = ndn_signed_interest_ecdsa_sign(&interest, NULL, NULL);
   if (ret != NDN_SUCCESS) {
     NDN_LOG_ERROR("Cannot sign the advertisement Interest. Error code: %d", ret);

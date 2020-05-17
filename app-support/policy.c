@@ -105,5 +105,5 @@ ndn_policy_after_bootstrapping(uint32_t interval)
                                      cmd_controller_only_rule_key_name, strlen(cmd_controller_only_rule_key_name));
   ndn_rule_storage_add_rule("controller-only", &schema);
   NDN_LOG_INFO("subscribe to policy update\n");
-  ps_subscribe_to_content(NDN_SD_LED, "", interval, _on_new_policy, NULL); 
+  ps_subscribe_to_content(NDN_SD_POLICY, "", interval, _on_new_policy, NULL); 
 }

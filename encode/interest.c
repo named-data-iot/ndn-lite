@@ -13,6 +13,11 @@
 #include "../security/ndn-lite-sha.h"
 #include "../util/uniform-time.h"
 
+#define ENABLE_NDN_LOG_INFO 0
+#define ENABLE_NDN_LOG_DEBUG 1
+#define ENABLE_NDN_LOG_ERROR 0
+#include "../util/logger.h"
+
 /************************************************************/
 /*  Definition of helper functions                          */
 /************************************************************/

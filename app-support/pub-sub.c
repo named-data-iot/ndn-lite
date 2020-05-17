@@ -175,13 +175,13 @@ _match_pub_topic(uint8_t service, bool is_cmd)
 void
 _on_sub_timeout(void* userdata)
 {
-  NDN_LOG_INFO("Subscription Interest Timeout");
+  NDN_LOG_INFO("[PUB/SUB] Subscription Interest Timeout");
 }
 
 void
 _on_new_content_verify_success(ndn_data_t* data, void* userdata)
 {
-  NDN_LOG_INFO("New published content successfully pass signature verification.");
+  NDN_LOG_INFO("[PUB/SUB] New published content successfully pass signature verification.");
   NDN_LOG_INFO_NAME(&data->name);
 
   int ret = NDN_SUCCESS;
@@ -209,11 +209,11 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("SUB-NEW-DATA-AES-DEC: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("[PUB/SUB] SUB-NEW-DATA-AES-DEC: %lluus\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   if (ret != NDN_SUCCESS) {
-    NDN_LOG_ERROR("Cannot decrypt the newly published content. Abort...");
+    NDN_LOG_ERROR("[PUB/SUB] Cannot decrypt the newly published content. Abort...");
     return;
   }
 
@@ -244,20 +244,20 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
     }
   }
   if (!pass_schema_check) {
-    NDN_LOG_ERROR("Cannot load trust schema rules. Drop.");
+    NDN_LOG_ERROR("[PUB/SUB] Cannot load trust schema rules. Drop.");
     return;
   }
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("SUB-NEW-DATA-SCHEMA-VERIFY: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("[PUB/SUB] SUB-NEW-DATA-SCHEMA-VERIFY: %lluus\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   if (ret != NDN_SUCCESS) {
-    NDN_LOG_ERROR("Cannot verify incoming content against trust schemas. Error code: %d", ret);
+    NDN_LOG_ERROR("[PUB/SUB] Cannot verify incoming content against trust schemas. Error code: %d", ret);
     return;
   }
-  NDN_LOG_DEBUG("NEW-DATA-FINSIH-VERIFICATION-TP: %llu ms\n", ndn_time_now_ms());
+  NDN_LOG_DEBUG("[PUB/SUB] NEW-DATA-FINSIH-VERIFICATION-TP: %llu ms\n", ndn_time_now_ms());
   // command FORMAT: /home/service/CMD/identifier[0,2]/command
   // data FORMAT: /home/service/DATA/identifier[0,2]/data-identifier
 
@@ -289,7 +289,7 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
 void
 _on_new_content_verify_failure(ndn_data_t* data, void* userdata)
 {
-  NDN_LOG_INFO("New published content cannot pass signature verification. Drop...");
+  NDN_LOG_INFO("[PUB/SUB] New published content cannot pass signature verification. Drop...");
   NDN_LOG_INFO_NAME(&data->name);
 }
 
@@ -302,12 +302,12 @@ _on_new_content(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   // check if received before
   ndn_sha256(raw_data, data_size, pkt_encoding_buf);
   if (topic->received_content && memcmp(pkt_encoding_buf, topic->last_digest, 16) == 0) {
-    NDN_LOG_INFO("Received duplicate published content/command. Drop");
+    NDN_LOG_INFO("[PUB/SUB] Received duplicate published content/command. Drop");
     return;
   }
-  NDN_LOG_INFO("Received new published content/command");
-  NDN_LOG_DEBUG("NEW-DATA-ARRIVE-TP: %llu ms\n", ndn_time_now_ms());
-  NDN_LOG_DEBUG("SUB-NEW-DATA-PKT-SIZE: %u Bytes\n", data_size);
+  NDN_LOG_INFO("[PUB/SUB] Received new published content/command");
+  NDN_LOG_DEBUG("[PUB/SUB] NEW-DATA-ARRIVE-TP: %llu ms\n", ndn_time_now_ms());
+  NDN_LOG_DEBUG("[PUB/SUB] SUB-NEW-DATA-PKT-SIZE: %u Bytes\n", data_size);
   topic->received_content = true;
   memcpy(topic->last_digest, pkt_encoding_buf, 16);
 
@@ -326,7 +326,8 @@ _construct_sub_interest(ndn_name_t* name, sub_topic_t* topic)
   // FORMAT: /home-prefix/service/type/identifier[0,2]
   // home prefix
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
-  ndn_name_append_component(name, &storage->self_identity.components[0]);
+  /* given that all self_identity have the same home prefix, this is fine */
+  ndn_name_append_component(name, &storage->self_identity[0].components[0]);
   ndn_name_append_bytes_component(name, &topic->service, sizeof(topic->service));
   if (topic->is_cmd) {
     ndn_name_append_string_component(name, "CMD", strlen("CMD"));
@@ -525,7 +526,7 @@ _subscribe_to(uint8_t service, bool is_cmd, const char* scope,
     ndn_name_t name;
     ndn_name_init(&name);
     ndn_key_storage_t* storage = ndn_key_storage_get_instance();
-    ndn_name_append_component(&name, &storage->self_identity.components[0]);
+    ndn_name_append_component(&name, &storage->self_identity[0].components[0]);
     ndn_name_append_bytes_component(&name, &topic->service, sizeof(topic->service));
     ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
     ndn_forwarder_register_name_prefix(&name, _on_notification_interest, topic);
@@ -564,7 +565,7 @@ ps_publish_content(uint8_t service, const ps_event_t* event)
   ndn_name_t name;
   ndn_name_init(&name);
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
-  ndn_name_append_component(&name, &storage->self_identity.components[0]);
+  ndn_name_append_component(&name, &storage->self_identity[0].components[0]);
   ndn_name_append_bytes_component(&name, &service, sizeof(service));
   ndn_name_append_string_component(&name, "DATA", strlen("DATA"));
 
@@ -602,8 +603,9 @@ ps_publish_content(uint8_t service, const ps_event_t* event)
   topic->last_update_tp = ndn_time_now_ms();
   // Append the last several component to the Data name
   // Data name FORMAT: /home/service/DATA/room/device-id/content-id/tp
-  ndn_name_append_component(&name, &storage->self_identity.components[storage->self_identity.components_size - 2]);
-  ndn_name_append_component(&name, &storage->self_identity.components[storage->self_identity.components_size - 1]);
+  /* given that all self_identity have same <room> and <device-id>, this is fine */
+  ndn_name_append_component(&name, &storage->self_identity[0].components[storage->self_identity[0].components_size - 2]);
+  ndn_name_append_component(&name, &storage->self_identity[0].components[storage->self_identity[0].components_size - 1]);
   ndn_name_append_bytes_component(&name, event->data_id, event->data_id_len);
   name_component_t tp_comp;
   name_component_from_timestamp(&tp_comp, topic->last_update_tp);
@@ -621,7 +623,7 @@ ps_publish_content(uint8_t service, const ps_event_t* event)
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("PUB-CONTENT-DATA-AES-ENC: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("[PUB/SUB] PUB-CONTENT-DATA-AES-ENC: %lluus\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
 
@@ -639,19 +641,26 @@ ps_publish_content(uint8_t service, const ps_event_t* event)
   else {
     default_freshness_period = event->freshness_period;
   }
+  // select identity key
+  ndn_name_t* signing_identity = ndn_key_storage_get_self_identity(service);
+  ndn_name_t* signing_identity_key = ndn_key_storage_get_self_identity_key(service);
+  if (signing_identity == NULL || signing_identity_key == NULL) {
+    NDN_LOG_ERROR("[PUB/SUB] Cannot find proper identity to sign");
+    return;
+  }
   ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 7,
                       TLV_DATAARG_NAME_PTR, &name,
                       TLV_DATAARG_CONTENT_BUF, pkt_encoding_buf,
                       TLV_DATAARG_CONTENT_SIZE, used_size,
                       TLV_DATAARG_FRESHNESSPERIOD_U64, (uint64_t)default_freshness_period,
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
-                      TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
-                      TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
+                      TLV_DATAARG_IDENTITYNAME_PTR, signing_identity,
+                      TLV_DATAARG_SIGKEY_PTR, signing_identity_key);
   if (ret != NDN_SUCCESS) {
     NDN_LOG_ERROR("[PUB/SUB] Content Data cannot be generated. Error code: %d", ret);
     return;
   }
-  NDN_LOG_DEBUG("PUB-CONTENT-PKT-SIZE: %u Bytes\n", topic->cache_size);
+  NDN_LOG_DEBUG("[PUB/SUB] PUB-CONTENT-PKT-SIZE: %u Bytes\n", topic->cache_size);
   NDN_LOG_INFO("[PUB/SUB] Content Data has been generated");
   NDN_LOG_INFO_NAME(&name);
 }
@@ -667,7 +676,7 @@ ps_publish_command(uint8_t service, const char* scope, const ps_event_t* event)
   ndn_name_t name;
   ndn_name_init(&name);
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
-  ndn_name_append_component(&name, &storage->self_identity.components[0]);
+  ndn_name_append_component(&name, &storage->self_identity[0].components[0]);
   ndn_name_append_bytes_component(&name, &service, sizeof(service));
   ndn_name_append_string_component(&name, "CMD", strlen("CMD"));
 
@@ -736,7 +745,7 @@ ps_publish_command(uint8_t service, const char* scope, const ps_event_t* event)
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("PUB-COMMAND-DATA-AES-ENC: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("[PUB/SUB] PUB-COMMAND-DATA-AES-ENC: %lluus\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   uint32_t default_freshness_period = 0;
@@ -747,22 +756,29 @@ ps_publish_command(uint8_t service, const char* scope, const ps_event_t* event)
   else {
     default_freshness_period = event->freshness_period;
   }
+  // select identity key
+  ndn_name_t* signing_identity = ndn_key_storage_get_self_identity(service);
+  ndn_name_t* signing_identity_key = ndn_key_storage_get_self_identity_key(service);
+  if (signing_identity == NULL || signing_identity_key == NULL) {
+    NDN_LOG_ERROR("[PUB/SUB] Cannot find proper identity to sign");
+    return;
+  }
   ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 7,
                       TLV_DATAARG_NAME_PTR, &name,
                       TLV_DATAARG_CONTENT_BUF, pkt_encoding_buf,
                       TLV_DATAARG_CONTENT_SIZE, used_size,
                       TLV_DATAARG_FRESHNESSPERIOD_U64, (uint64_t)default_freshness_period,
                       TLV_DATAARG_SIGTYPE_U8, NDN_SIG_TYPE_ECDSA_SHA256,
-                      TLV_DATAARG_IDENTITYNAME_PTR, &storage->self_identity,
-                      TLV_DATAARG_SIGKEY_PTR, &storage->self_identity_key);
-  NDN_LOG_DEBUG("PUB-CMD-PKT-SIZE: %u Bytes\n", topic->cache_size);
+                      TLV_DATAARG_IDENTITYNAME_PTR, signing_identity,
+                      TLV_DATAARG_SIGKEY_PTR, signing_identity_key);
+  NDN_LOG_DEBUG("[PUB/SUB] PUB-CMD-PKT-SIZE: %u Bytes\n", topic->cache_size);
   NDN_LOG_INFO("[PUB/SUB] CMD Data has been generated");
   NDN_LOG_INFO_NAME(&name);
 
   // express the /Notify Interest
   // FORMAT: /home/service/NOTIFY/CMD/identifier[0,2]/action
   ndn_name_init(&name);
-  ndn_name_append_component(&name, &storage->self_identity.components[0]);
+  ndn_name_append_component(&name, &storage->self_identity[0].components[0]);
   ndn_name_append_bytes_component(&name, &service, sizeof(service));
   ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
   ndn_name_append_string_component(&name, "CMD", strlen("CMD"));

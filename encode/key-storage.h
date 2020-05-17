@@ -46,9 +46,9 @@ typedef struct ndn_key_storage {
   /**
    * Identity Key.
    */
-  ndn_name_t self_identity; // FORMAT: /home-prefix/room/device-id
-  ndn_ecc_prv_t self_identity_key;
-  ndn_data_t self_cert;
+  ndn_name_t self_identity[NDN_SEC_CERT_SIZE]; // FORMAT: /home-prefix/room/device-id
+  ndn_ecc_prv_t self_identity_key[NDN_SEC_CERT_SIZE];
+  ndn_data_t self_cert[NDN_SEC_CERT_SIZE];
   uint8_t services[5];
   /**
    * Trust anchor.
@@ -125,6 +125,24 @@ ndn_key_storage_add_trusted_certificate(const ndn_data_t* certificate);
  */
 int
 ndn_key_storage_set_self_identity(const ndn_data_t* self_cert, const ndn_ecc_prv_t* self_prv_key);
+
+/*
+ * Get self identity for the key storage structure. Will do memcpy.
+ * @param self_cert. Input. Certificate issued by the system controller.
+ * @param self_prv_key. Input. Self priv key.
+ * @return 0 if there is no error.
+ */
+ndn_name_t*
+ndn_key_storage_get_self_identity(const uint8_t service);
+
+/*
+ * Get self identity for the key storage structure. Will do memcpy.
+ * @param self_cert. Input. Certificate issued by the system controller.
+ * @param self_prv_key. Input. Self priv key.
+ * @return 0 if there is no error.
+ */
+ndn_ecc_prv_t*
+ndn_key_storage_get_self_identity_key(const uint8_t service);
 
 /**
  * Get an empty HMAC key pointer from key storage structure.
