@@ -355,7 +355,7 @@ _on_sd_interest(const uint8_t* raw_int, uint32_t raw_int_size, void* userdata)
   }
   ndn_interest_t interest;
   ndn_decoder_t decoder;
-  // decoder_init(&decoder, raw_int, raw_int_size);
+
   ndn_interest_from_block(&interest, raw_int, raw_int_size);
   // TODO signature verification
   uint8_t sd_adv = NDN_SD_SD_AD;
@@ -515,7 +515,7 @@ _sd_query_sys_services(const uint8_t* service_ids, size_t size)
                                        _on_query_or_sd_meta_data, _on_sd_interest_timeout, NULL);
   m_is_my_own_sd_int = false;
   if (ret != 0) {
-    NDN_LOG_ERROR("Fail to send out adv Interest. Error Code: %d", ret);
+    NDN_LOG_ERROR("Fail to send service query Interest to the controller. Error Code: %d", ret);
     return ret;
   }
   NDN_LOG_INFO("Send service query Interest to the controller.");
@@ -559,10 +559,10 @@ sd_query_service(uint8_t service_id, const ndn_name_t* granularity, bool is_any)
                                        _on_query_or_sd_meta_data, _on_sd_interest_timeout, NULL);
   m_is_my_own_sd_int = false;
   if (ret != 0) {
-    NDN_LOG_ERROR("Fail to send out adv Interest. Error Code: %d\n", ret);
+    NDN_LOG_ERROR("Fail to send SD query Interest to the local system. Error Code: %d\n", ret);
     return ret;
   }
-  NDN_LOG_INFO("Send SD query Interest packet with name: \n");
+  NDN_LOG_INFO("Send SD query Interest to the local system: \n");
   ndn_name_print(&interest.name);
   return NDN_SUCCESS;
 }
