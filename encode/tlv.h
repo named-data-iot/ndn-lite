@@ -75,6 +75,7 @@ enum {
 
 // App Support Specific
 enum {
+  TLV_AC_KEYID = 129,
   TLV_AC_ECDH_PUB = 130,
   TLV_AC_SALT = 131,
   TLV_AC_KEY_LIFETIME = 132,

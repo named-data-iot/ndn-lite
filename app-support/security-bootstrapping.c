@@ -88,7 +88,7 @@ _sec_boot_after_bootstrapping()
   /*
    * Tianyuan: Will bring this back when controller's policy publishing is ready
    */
-  // ndn_policy_after_bootstrapping(3000);
+  ndn_policy_after_bootstrapping(3000);
 
   // we shouldn't delete the AES key because they may be used in other places
   // ndn_key_storage_delete_aes_key(SEC_BOOT_AES_KEY_ID);

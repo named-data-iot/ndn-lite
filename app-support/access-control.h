@@ -81,4 +81,7 @@ ndn_ac_register_access_request(uint8_t service);
 void
 ndn_ac_after_bootstrapping();
 
+int
+ndn_ac_trigger_expiration(uint8_t service, uint32_t received_keyid);
+
 #endif // NDN_APP_SUPPORT_ACCESS_CONTROL_H

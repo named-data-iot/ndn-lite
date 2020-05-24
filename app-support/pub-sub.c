@@ -213,7 +213,11 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
 #endif
 
   if (ret != NDN_SUCCESS) {
-    NDN_LOG_ERROR("[PUB/SUB] Cannot decrypt the newly published content. Abort...");
+    NDN_LOG_ERROR("[PUB/SUB] Cannot decrypt the newly published content. Abort...\n");
+    if (ret > NDN_OVERSIZE) {
+      // bigger than largest error code infers the keyid mismatch
+      ndn_ac_trigger_expiration(topic->service, aes_key->key_id + ret);
+    }
     return;
   }
 
@@ -244,7 +248,7 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
     }
   }
   if (!pass_schema_check) {
-    NDN_LOG_ERROR("[PUB/SUB] Cannot load trust schema rules. Drop.");
+    NDN_LOG_ERROR("[PUB/SUB] Cannot load trust schema rules. Drop.\n");
     return;
   }
 
@@ -254,7 +258,7 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
 #endif
 
   if (ret != NDN_SUCCESS) {
-    NDN_LOG_ERROR("[PUB/SUB] Cannot verify incoming content against trust schemas. Error code: %d", ret);
+    NDN_LOG_ERROR("[PUB/SUB] Cannot verify incoming content against trust schemas. Error code: %d\n", ret);
     return;
   }
   NDN_LOG_DEBUG("[PUB/SUB] NEW-DATA-FINSIH-VERIFICATION-TP: %llu ms\n", ndn_time_now_ms());

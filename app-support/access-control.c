@@ -22,6 +22,8 @@
 #include "../util/msg-queue.h"
 #include "../util/uniform-time.h"
 
+#define KEY_LIFTIMTE 10000000
+
 /* Logging Level: ERROR, DEBUG */
 #define ENABLE_NDN_LOG_ERROR 1
 #define ENABLE_NDN_LOG_DEBUG 1
@@ -41,7 +43,11 @@ typedef struct ac_key {
   /**
    * KeyLifetime, the key expiration time is Now + KeyLifetime.
    */
-  uint32_t expires_at;
+  uint64_t expires_at;
+  /**
+   * InRenewal, indicating if this key is in renewal process
+   */
+  bool in_renewal;
 } ac_key_t;
 
 /**
@@ -69,19 +75,81 @@ typedef struct ndn_access_control {
 ndn_access_control_t _ac_self_state;
 bool _ac_initialized = false;
 
+int _express_dkey_interest(uint8_t service);
+int _express_ekey_interest(uint8_t service);
+
 /* Initialize the AccessControlState */
 void
 _init_ac_state()
 {
   for (int i = 0; i < 10; i++) {
     _ac_self_state.access_keys[i].key_id = NDN_SEC_INVALID_KEY_ID;
+    _ac_self_state.access_keys[i].in_renewal = false;
     _ac_self_state.access_services[i] = NDN_SD_NONE;
   }
   for (int i = 0; i < 10; i++) {
     _ac_self_state.ekeys[i].key_id = NDN_SEC_INVALID_KEY_ID;
+    _ac_self_state.access_keys[i].in_renewal = false;
     _ac_self_state.self_services[i] = NDN_SD_NONE;
   }
   _ac_initialized = true;
+}
+
+void 
+_ac_timeout()
+{
+  ndn_time_ms_t now = ndn_time_now_ms();
+  if (!_ac_initialized) {
+    NDN_LOG_ERROR("[ACCESSCTL] Access Control module not initialized\n");
+  }
+  for (int i = 0; i < 10; i++) {
+    if (_ac_self_state.access_keys[i].key_id != NDN_SEC_INVALID_KEY_ID &&
+        _ac_self_state.access_keys[i].in_renewal == false &&
+        now > _ac_self_state.access_keys[i].expires_at) {
+          NDN_LOG_DEBUG("[ACCESSCTL] Now is %ld, Expiration time is %ld\n", now, _ac_self_state.access_keys[i].expires_at);
+          NDN_LOG_DEBUG("[ACCESSCTL] Access key for for service %u expired\n", _ac_self_state.access_services[i]);
+          // send the dk renew request
+          _express_dkey_interest(_ac_self_state.access_services[i]);
+          _ac_self_state.access_keys[i].in_renewal = true;
+        }
+    if (_ac_self_state.ekeys[i].key_id != NDN_SEC_INVALID_KEY_ID &&
+        _ac_self_state.ekeys[i].in_renewal == false &&
+        now > _ac_self_state.ekeys[i].expires_at) {
+          NDN_LOG_DEBUG("[ACCESSCTL] Now is %ld, Expiration time is %ld\n", now, _ac_self_state.ekeys[i].expires_at);
+          NDN_LOG_DEBUG("[ACCESSCTL] Encryption key for for service %u expired\n", _ac_self_state.self_services[i]);
+          // send the ek renew request
+          _express_ekey_interest(_ac_self_state.self_services[i]);
+          _ac_self_state.ekeys[i].in_renewal = true;
+        }
+  }
+
+  ndn_msgqueue_post(NULL, _ac_timeout, 0, NULL);
+}
+
+int
+_on_ac_notification(const uint8_t* interest, uint32_t interest_size, void* userdata)
+{
+  ndn_interest_t notification;
+  ndn_interest_from_block(&notification, interest, interest_size);
+  // /[home-prefix]/NDN_SD_AC/NOTIFY/[service-id]/keyid
+  NDN_LOG_DEBUG("[ACCESSCTL] Notification: ");
+  NDN_LOG_DEBUG_NAME(&notification);
+
+  ndn_aes_key_t* key = ndn_ac_get_key_for_service(notification.name.components[3].value[0]);
+  uint32_t keyid;
+  ndn_decoder_t decoder;
+  decoder_init(&decoder, notification.name.components[4].value, notification.name.components[4].size);
+  decoder_get_uint32_value(&decoder, &keyid);
+  if (key && key->key_id == keyid) {
+      NDN_LOG_DEBUG("[ACCESSCTL] Enforced update for Service %u, KeyID %ld\n", 
+      notification.name.components[3].value[0], keyid);
+      for (int i = 0; i < 10; i++) {
+        if (_ac_self_state.self_services[i] == notification.name.components[3].value[0])
+          _express_ekey_interest(notification.name.components[3].value[0]);
+        if (_ac_self_state.access_services[i] == notification.name.components[3].value[0])
+          _express_dkey_interest(notification.name.components[3].value[0]);   
+      }
+  }
 }
 
 /**
@@ -108,8 +176,9 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   NDN_LOG_DEBUG_NAME(&data.name);
 
   // get key: decrypt the key
-  uint32_t expires_in = 0;
-  uint8_t value[30] = {0};
+  uint32_t expires_in;
+  uint32_t keyid;
+  uint8_t value[50] = {0};
   uint32_t used_size = 0;
   ret = ndn_parse_encrypted_payload(data.content_value, data.content_size,
                                     value, &used_size, SEC_BOOT_AES_KEY_ID);
@@ -118,29 +187,63 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   }
 
   ndn_decoder_t decoder;
-  decoder_init(&decoder, value + NDN_AES_BLOCK_SIZE, sizeof(expires_in));
-  decoder_get_uint32_value(&decoder, &expires_in);
+  uint32_t probe;
+  decoder_init(&decoder, value + NDN_AES_BLOCK_SIZE, used_size - NDN_AES_BLOCK_SIZE);
+  decoder_get_type(&decoder, &probe);
+  if (probe != TLV_AC_KEYID) {
+    NDN_LOG_ERROR("[ACCESSCTL] TLV Type (should be TLV_AC_KEYID) not correct \n");
+    return;
+  }
+  decoder_get_length(&decoder, &probe);
+  ret = decoder_get_uint32_value(&decoder, &keyid);
+  if (ret) {
+    NDN_LOG_ERROR("[ACCESSCTL] Cannot get the AES KeyID, Error code is %d\n", ret);
+    return;
+  }
+  NDN_LOG_DEBUG("[ACCESSCTL] AES KeyID = %lu \n", keyid);
 
-  NDN_LOG_DEBUG("[ACCESSCTL] EncryptionKey KeyLifetime = %u ms\n", expires_in);
-
-  // store it into key_storage
+  // set lifetime
+  expires_in = KEY_LIFTIMTE;
+  // if exist the same key, renew the payload
+  uint8_t service;
+  memcpy(&service, &data.name.components[3].value, sizeof(service));
+  ndn_aes_key_t* ekey = ndn_ac_get_key_for_service(service);
   ndn_time_ms_t now = ndn_time_now_ms();
-  uint32_t keyid;
-  ndn_rng((uint8_t*)&keyid, 4);
-  uint8_t service = data.name.components[3].value[0];
-  for (int i = 0; i < 10; i++) {
-    if (_ac_self_state.self_services[i] == service) {
-      _ac_self_state.ekeys[i].key_id = keyid;
-      _ac_self_state.ekeys[i].expires_at = expires_in + now;
+  if (ekey) {
+    NDN_LOG_DEBUG("[ACCESSCTL] Update KeyID for service %u\n", service);
+    for (int i = 0; i < 10; i++) {
+      if (_ac_self_state.self_services[i] == service) {
+        //_ac_self_state.ekeys[i].key_id = keyid;
+        _ac_self_state.ekeys[i].expires_at = expires_in + now;
+        NDN_LOG_DEBUG("[ACCESSCTL] New expiration time is %ld, New keyid is %u\n", 
+                      _ac_self_state.ekeys[i].expires_at, _ac_self_state.ekeys[i].key_id);      
+        ndn_aes_key_init(ekey, value, NDN_AES_BLOCK_SIZE, _ac_self_state.ekeys[i].key_id);
+        _ac_self_state.ekeys[i].in_renewal = false;
+      }
     }
   }
-  ndn_aes_key_t* key = ndn_key_storage_get_empty_aes_key();
-  if (key != NULL) {
-    ndn_aes_key_init(key, value, NDN_AES_BLOCK_SIZE, keyid);
-  }
   else {
-    NDN_LOG_ERROR("[ACCESSCTL] No empty AES key in local key storage.");
+    NDN_LOG_DEBUG("[ACCESSCTL] Cannot find keys for service %u, might be the first time\n", service);
+    // store it into key_storage
+    uint8_t service = data.name.components[3].value[0];
+    for (int i = 0; i < 10; i++) {
+      if (_ac_self_state.self_services[i] == service) {
+        _ac_self_state.ekeys[i].key_id = keyid;
+        _ac_self_state.ekeys[i].in_renewal = false;
+        _ac_self_state.ekeys[i].expires_at = expires_in + now;
+        NDN_LOG_DEBUG("[ACCESSCTL] Expires at %ld ms\n", _ac_self_state.ekeys[i].expires_at);
+        break;
+      }
+    }
+    ndn_aes_key_t* key = ndn_key_storage_get_empty_aes_key();
+    if (key != NULL) {
+      ndn_aes_key_init(key, value, NDN_AES_BLOCK_SIZE, keyid);
+    }
+    else {
+      NDN_LOG_ERROR("[ACCESSCTL] No empty AES key in local key storage\n");
+    }
   }
+  _ac_timeout();
 }
 
 /**
@@ -168,7 +271,8 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 
   // get key: decrypt the key
   uint32_t expires_in = 0;
-  uint8_t value[30] = {0};
+  uint32_t keyid;
+  uint8_t value[50] = {0};
   uint32_t used_size = 0;
 
   ret = ndn_parse_encrypted_payload(data.content_value, data.content_size,
@@ -178,33 +282,64 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   }
 
   ndn_decoder_t decoder;
-  decoder_init(&decoder, value + NDN_AES_BLOCK_SIZE, sizeof(expires_in));
-  decoder_get_uint32_value(&decoder, &expires_in);
+  uint32_t probe;
+  decoder_init(&decoder, value + NDN_AES_BLOCK_SIZE, used_size - NDN_AES_BLOCK_SIZE);
+  decoder_get_type(&decoder, &probe);
+  if (probe != TLV_AC_KEYID) {
+    NDN_LOG_ERROR("[ACCESSCTL] TLV Type (should be TLV_AC_KEYID) not correct \n");
+    return;
+  }
+  decoder_get_length(&decoder, &probe);
+  ret = decoder_get_uint32_value(&decoder, &keyid);
+  if (ret) {
+    NDN_LOG_ERROR("[ACCESSCTL] Cannot get the AES KeyID, Error code is %d\n", ret);
+    return;
+  }
+  NDN_LOG_DEBUG("[ACCESSCTL] AES KeyID = %lu \n", keyid);
 
-  NDN_LOG_DEBUG("[ACCESSCTL] DecryptionKey KeyLifetime = %u ms\n", expires_in);
-
-  // store it into key_storage
+  // set lifetime to 3000ms
+  expires_in = KEY_LIFTIMTE;
+  // if exist the same key, renew the payload
+  uint8_t service;
+  memcpy(&service, &data.name.components[3].value, sizeof(service));
+  ndn_aes_key_t* access_key = ndn_ac_get_key_for_service(service);
   ndn_time_ms_t now = ndn_time_now_ms();
-  uint32_t keyid;
-  ndn_rng((uint8_t*)&keyid, 4);
-  uint8_t service = data.name.components[3].value[0];
-  for (int i = 0; i < 10; i++) {
-    if (_ac_self_state.access_services[i] == service) {
-      _ac_self_state.access_keys[i].key_id = keyid;
-      _ac_self_state.access_keys[i].expires_at = expires_in + now;
+  if (access_key) {
+    NDN_LOG_DEBUG("[ACCESSCTL] Update KeyID for service %u\n", service);
+    for (int i = 0; i < 10; i++) {
+      if (_ac_self_state.access_services[i] == service) {
+        //_ac_self_state.access_keys[i].key_id += 1;
+        _ac_self_state.access_keys[i].expires_at = expires_in + now;
+        NDN_LOG_DEBUG("[ACCESSCTL] New expiration time is %ld, New keyid is %u\n", 
+                      _ac_self_state.access_keys[i].expires_at, _ac_self_state.access_keys[i].key_id);      
+        ndn_aes_key_init(access_key, value, NDN_AES_BLOCK_SIZE, _ac_self_state.access_keys[i].key_id);
+        _ac_self_state.access_keys[i].in_renewal = false;
+      }
     }
   }
-  ndn_aes_key_t* key = ndn_key_storage_get_empty_aes_key();
-  if (key != NULL) {
-    ndn_aes_key_init(key, value, 16, keyid);
-  }
   else {
-    NDN_LOG_ERROR("[ACCESSCTL] No empty AES key in local key storage.");
+    NDN_LOG_DEBUG("[ACCESSCTL] Cannot find keys for service %u, might be the first time\n", service);
+    // store it into key_storage
+    uint8_t service = data.name.components[3].value[0];
+    for (int i = 0; i < 10; i++) {
+      if (_ac_self_state.access_services[i] == service) {
+        _ac_self_state.access_keys[i].key_id = keyid;
+        _ac_self_state.access_keys[i].in_renewal = false;
+        _ac_self_state.access_keys[i].expires_at = expires_in + now;
+        NDN_LOG_DEBUG("[ACCESSCTL] Expires at %ld ms\n", _ac_self_state.access_keys[i].expires_at);
+        break;
+      }
+    }
+    ndn_aes_key_t* key = ndn_key_storage_get_empty_aes_key();
+    if (key != NULL) {
+      ndn_aes_key_init(key, value, NDN_AES_BLOCK_SIZE, keyid);
+    }
+    else {
+      NDN_LOG_ERROR("[ACCESSCTL] No empty AES key in local key storage\n");
+    }
   }
+  _ac_timeout();
 }
-
-int _express_dkey_interest(uint8_t service);
-int _express_ekey_interest(uint8_t service);
 
 void
 _on_ekey_int_timeout(void* userdata)
@@ -323,10 +458,12 @@ ndn_aes_key_t*
 ndn_ac_get_key_for_service(uint8_t service)
 {
   for (int i = 0; i < 10; i++) {
-    if (_ac_self_state.self_services[i] == service) {
+    if (_ac_self_state.self_services[i] == service &&
+        _ac_self_state.ekeys[i].key_id != NDN_SEC_INVALID_KEY_ID) {
       return ndn_key_storage_get_aes_key(_ac_self_state.ekeys[i].key_id);
     }
-    if (_ac_self_state.access_services[i] == service) {
+    if (_ac_self_state.access_services[i] == service &&
+        _ac_self_state.access_keys[i].key_id != NDN_SEC_INVALID_KEY_ID) {
       return ndn_key_storage_get_aes_key(_ac_self_state.access_keys[i].key_id);
     }
   }
@@ -382,6 +519,7 @@ ndn_ac_after_bootstrapping()
       _express_ekey_interest(_ac_self_state.self_services[i]);
     }
   }
+  ndn_time_delay(10);
   // send /home/AC/DKEY/<the services that I need to access> to the controller
   for (int i = 0; i < 10; i++) {
     if (_ac_self_state.access_services[i] != NDN_SD_NONE) {
@@ -391,4 +529,52 @@ ndn_ac_after_bootstrapping()
   // e.g. Temp sensor produce under TEMP, access SD
   // 1. send /home/AC/EKEY/TEMP to obtain encryption key
   // 2. send /home/AC/DKEY/SD to obtain decryption key
+
+  // register for notification interest
+  ndn_name_t name;
+  ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+  int ret = -1;
+  ret = ndn_name_append_component(&name, &storage->self_identity[0].components[0]);
+  if (ret != 0) return;
+  uint8_t ac = NDN_SD_AC;
+  ret = ndn_name_append_bytes_component(&name, &ac, 1);
+  if (ret != 0) return;
+  ret = ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
+  if (ret != 0) return;
+  ret = ndn_forwarder_register_name_prefix(&name, _on_ac_notification, NULL);
+  if (ret != 0) {
+    NDN_LOG_ERROR("[ACCESSCTL] Cannot register notification prefix: ");
+    NDN_LOG_ERROR_NAME(&name);
+  }
+}
+
+int
+ndn_ac_trigger_expiration(uint8_t service, uint32_t received_keyid)
+{ 
+  int ret = -1;
+  // check if it's a local key
+  ndn_aes_key_t* aes_key = ndn_ac_get_key_for_service(service);
+  if (aes_key->key_id < received_keyid) {
+    NDN_LOG_DEBUG("[ACCESSCTL] Local Decryption Key %ld forced expired\n", aes_key->key_id);
+    _express_dkey_interest(service);
+  }
+  else {
+    NDN_LOG_DEBUG("[ACCESSCTL] Notifying Encryption Key %ld forced expired\n", received_keyid);
+    ndn_interest_t interest;
+    ndn_interest_init(&interest);
+    ndn_key_storage_t* storage = ndn_key_storage_get_instance();
+    ret = ndn_name_append_component(&interest.name, &storage->self_identity[0].components[0]);
+    if (ret != 0) return ret;
+    uint8_t ac = NDN_SD_AC;
+    ret = ndn_name_append_bytes_component(&interest.name, &ac, 1);
+    if (ret != 0) return ret;
+    ret = ndn_name_append_string_component(&interest.name, "NOTIFY", strlen("NOTIFY"));
+    if (ret != 0) return ret;
+    ret = ndn_name_append_bytes_component(&interest.name, &service, 1);
+    if (ret != 0) return ret;
+    ret = ndn_name_append_keyid(&interest.name, received_keyid);
+    if (ret != 0) return ret;
+    ret = ndn_forwarder_express_interest_struct(&interest, NULL, NULL, NULL);
+    if (ret != 0) return ret;
+  }
 }

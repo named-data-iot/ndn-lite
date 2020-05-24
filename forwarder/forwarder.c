@@ -7,8 +7,8 @@
  *
  * See AUTHORS.md for complete list of NDN-LITE authors and contributors.
  */
-#define ENABLE_NDN_LOG_INFO 1
-#define ENABLE_NDN_LOG_DEBUG 1
+#define ENABLE_NDN_LOG_INFO 0
+#define ENABLE_NDN_LOG_DEBUG 0
 #define ENABLE_NDN_LOG_ERROR 1
 #include "forwarder.h"
 #include "pit.h"
@@ -381,7 +381,7 @@ fwd_on_incoming_interest(uint8_t* interest,
 
   // Randomized dead nonce list
   if(pit_entry->options.nonce == options->nonce && options->nonce != 0){
-    NDN_LOG_ERROR("[Forwarder] Drop by dead nonce\n");
+    NDN_LOG_ERROR("[FORWARDER] Drop by dead nonce\n");
     return NDN_FWD_INTEREST_REJECTED;
   }
   if(pit_entry->on_data == NULL && pit_entry->on_timeout == NULL){
@@ -464,7 +464,7 @@ fwd_on_outgoing_interest(uint8_t* interest,
 
   fib_entry = ndn_fib_prefix_match(forwarder.fib, name, name_len);
   if(fib_entry == NULL){
-    NDN_LOG_DEBUG("drop by no route\n");
+    NDN_LOG_DEBUG("[FORWARDER] Drop by no route\n");
     return NDN_FWD_NO_ROUTE;
   }
 

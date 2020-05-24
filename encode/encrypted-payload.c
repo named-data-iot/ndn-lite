@@ -16,10 +16,17 @@
 #include "../security/ndn-lite-aes.h"
 #include "../security/ndn-lite-rng.h"
 
+
+#define ENABLE_NDN_LOG_INFO 0
+#define ENABLE_NDN_LOG_DEBUG 0
+#define ENABLE_NDN_LOG_ERROR 1
+#include "../util/logger.h"
+
 int
 ndn_probe_encrypted_payload_length(uint32_t input_size)
 {
   return encoder_probe_block_size(TLV_AC_AES_IV, NDN_AES_BLOCK_SIZE)
+         + encoder_probe_block_size(TLV_AC_KEYID, 4)
          + encoder_probe_block_size(TLV_AC_ENCRYPTED_PAYLOAD, ndn_aes_probe_padding_size(input_size) + NDN_AES_BLOCK_SIZE);
 }
 
@@ -31,6 +38,7 @@ ndn_gen_encrypted_payload(const uint8_t* input, uint32_t input_size, uint8_t* ou
   *used_size = 0;
   // probe the length of result
   *used_size += encoder_probe_block_size(TLV_AC_AES_IV, NDN_AES_BLOCK_SIZE);
+  *used_size += encoder_probe_block_size(TLV_AC_KEYID, 4);
   *used_size += encoder_probe_block_size(TLV_AC_ENCRYPTED_PAYLOAD, ndn_aes_probe_padding_size(input_size));
 
   // prepare output block
@@ -57,6 +65,14 @@ ndn_gen_encrypted_payload(const uint8_t* input, uint32_t input_size, uint8_t* ou
     ret_val = ndn_rng(iv_start, NDN_AES_BLOCK_SIZE);
     encoder.offset += NDN_AES_BLOCK_SIZE;
   }
+  if (ret_val != NDN_SUCCESS) return ret_val;
+
+  // type TLV_AES_KEYID
+  ret_val = encoder_append_type(&encoder, TLV_AC_KEYID);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_length(&encoder, 4);
+  if (ret_val != NDN_SUCCESS) return ret_val;
+  ret_val = encoder_append_uint32_value(&encoder, aes_key_id);
   if (ret_val != NDN_SUCCESS) return ret_val;
 
   // type: ENCRYPTED PAYLOAD
@@ -93,6 +109,14 @@ ndn_parse_encrypted_payload(const uint8_t* input, uint32_t input_size,
       if (length != NDN_AES_BLOCK_SIZE) return NDN_WRONG_TLV_LENGTH;
       iv = decoder.input_value + decoder.offset;
       decoder_move_forward(&decoder, length);
+    }
+    else if (type == TLV_AC_KEYID) {
+      uint32_t keyid;
+      decoder_get_uint32_value(&decoder, &keyid);
+      if (keyid != aes_key_id) {
+        NDN_LOG_ERROR("[ENCODING] Received KeyID %ld and Input KeyID %ld not match\n", keyid, aes_key_id);
+        return keyid - aes_key_id;
+      }
     }
     else if (type == TLV_AC_ENCRYPTED_PAYLOAD) {
       encrypted_payload = decoder.input_value + decoder.offset;

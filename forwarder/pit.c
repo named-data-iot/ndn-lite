@@ -129,7 +129,7 @@ ndn_pit_find_or_insert(ndn_pit_t* self, uint8_t* name, size_t length){
   }
   if(entry->pit_id == NDN_INVALID_ID){
     entry->pit_id = ndn_pit_add_new_entry(self, ndn_nametree_getid(self->nametree, entry));
-    NDN_LOG_DEBUG("[Forwarder] Add a new PIT entry\n");
+    NDN_LOG_DEBUG("[PIT] Add a new PIT entry\n");
     if(entry->pit_id == NDN_INVALID_ID){
       return NULL;
     }
