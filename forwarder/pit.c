@@ -7,8 +7,8 @@
  *
  * See AUTHORS.md for complete list of NDN-LITE authors and contributors.
  */
-#define ENABLE_NDN_LOG_INFO 1
-#define ENABLE_NDN_LOG_DEBUG 1
+#define ENABLE_NDN_LOG_INFO 0
+#define ENABLE_NDN_LOG_DEBUG 0
 #define ENABLE_NDN_LOG_ERROR 1
 #include "pit.h"
 #include "../util/msg-queue.h"

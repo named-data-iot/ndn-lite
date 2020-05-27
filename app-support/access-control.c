@@ -243,7 +243,7 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
       NDN_LOG_ERROR("[ACCESSCTL] No empty AES key in local key storage\n");
     }
   }
-  _ac_timeout();
+ // _ac_timeout();
 }
 
 /**
@@ -338,7 +338,7 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
       NDN_LOG_ERROR("[ACCESSCTL] No empty AES key in local key storage\n");
     }
   }
-  _ac_timeout();
+  //_ac_timeout();
 }
 
 void
@@ -441,7 +441,7 @@ _express_dkey_interest(uint8_t service)
   if (ret != 0) return ret;
   static uint8_t service_id = 0;
   service_id = service;
-  ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, _on_dkey_data, _on_ekey_int_timeout, &service_id);
+  ret = ndn_forwarder_express_interest(encoder.output_value, encoder.offset, _on_dkey_data, _on_dkey_int_timeout, &service_id);
   if (ret != 0) {
     NDN_LOG_ERROR("[ACCESSCTL] Fail to send out adv Interest. Error Code: %d\n", ret);
     return ret;
@@ -546,6 +546,7 @@ ndn_ac_after_bootstrapping()
     NDN_LOG_ERROR("[ACCESSCTL] Cannot register notification prefix: ");
     NDN_LOG_ERROR_NAME(&name);
   }
+  _ac_timeout();
 }
 
 int
