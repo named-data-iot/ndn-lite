@@ -22,12 +22,17 @@
 #include "../util/msg-queue.h"
 #include "../util/uniform-time.h"
 
-#define KEY_LIFTIMTE 10000000
+#define KEY_LIFTIME 60000
 
 /* Logging Level: ERROR, DEBUG */
 #define ENABLE_NDN_LOG_ERROR 1
 #define ENABLE_NDN_LOG_DEBUG 1
 #include "../util/logger.h"
+
+#if ENABLE_NDN_LOG_DEBUG
+static ndn_time_us_t m_measure_tp1 = 0;
+static ndn_time_us_t m_measure_tp2 = 0;
+#endif
 
 /* Encoding buffer for Access Control module */
 static uint8_t ac_buf[1024];
@@ -140,8 +145,8 @@ _on_ac_notification(const uint8_t* interest, uint32_t interest_size, void* userd
   ndn_decoder_t decoder;
   decoder_init(&decoder, notification.name.components[4].value, notification.name.components[4].size);
   decoder_get_uint32_value(&decoder, &keyid);
-  if (key && key->key_id == keyid) {
-      NDN_LOG_DEBUG("[ACCESSCTL] Enforced update for Service %u, KeyID %ld\n", 
+  if (key && key->key_id <= keyid) {
+      NDN_LOG_DEBUG("[ACCESSCTL] Enforced update for Service %u, KeyID %lu\n", 
       notification.name.components[3].value[0], keyid);
       for (int i = 0; i < 10; i++) {
         if (_ac_self_state.self_services[i] == notification.name.components[3].value[0])
@@ -203,7 +208,7 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   NDN_LOG_DEBUG("[ACCESSCTL] AES KeyID = %lu \n", keyid);
 
   // set lifetime
-  expires_in = KEY_LIFTIMTE;
+  expires_in = KEY_LIFTIME;
   // if exist the same key, renew the payload
   uint8_t service;
   memcpy(&service, &data.name.components[3].value, sizeof(service));
@@ -213,7 +218,7 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     NDN_LOG_DEBUG("[ACCESSCTL] Update KeyID for service %u\n", service);
     for (int i = 0; i < 10; i++) {
       if (_ac_self_state.self_services[i] == service) {
-        //_ac_self_state.ekeys[i].key_id = keyid;
+        _ac_self_state.ekeys[i].key_id = keyid;
         _ac_self_state.ekeys[i].expires_at = expires_in + now;
         NDN_LOG_DEBUG("[ACCESSCTL] New expiration time is %ld, New keyid is %u\n", 
                       _ac_self_state.ekeys[i].expires_at, _ac_self_state.ekeys[i].key_id);      
@@ -243,6 +248,11 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
       NDN_LOG_ERROR("[ACCESSCTL] No empty AES key in local key storage\n");
     }
   }
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp2 = ndn_time_now_us();
+  NDN_LOG_DEBUG("[ACCESSCTL] Key update: %lluus\n", m_measure_tp2 - m_measure_tp1);
+#endif
+
  // _ac_timeout();
 }
 
@@ -298,7 +308,7 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   NDN_LOG_DEBUG("[ACCESSCTL] AES KeyID = %lu \n", keyid);
 
   // set lifetime to 3000ms
-  expires_in = KEY_LIFTIMTE;
+  expires_in = KEY_LIFTIME;
   // if exist the same key, renew the payload
   uint8_t service;
   memcpy(&service, &data.name.components[3].value, sizeof(service));
@@ -308,7 +318,7 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     NDN_LOG_DEBUG("[ACCESSCTL] Update KeyID for service %u\n", service);
     for (int i = 0; i < 10; i++) {
       if (_ac_self_state.access_services[i] == service) {
-        //_ac_self_state.access_keys[i].key_id += 1;
+        _ac_self_state.ekeys[i].key_id = keyid;
         _ac_self_state.access_keys[i].expires_at = expires_in + now;
         NDN_LOG_DEBUG("[ACCESSCTL] New expiration time is %ld, New keyid is %u\n", 
                       _ac_self_state.access_keys[i].expires_at, _ac_self_state.access_keys[i].key_id);      
@@ -404,6 +414,9 @@ _express_ekey_interest(uint8_t service)
   }
   NDN_LOG_DEBUG("[ACCESSCTL] Send EncryptionKey Interest with Name: ");
   NDN_LOG_DEBUG_NAME(&interest.name);
+#if ENABLE_NDN_LOG_DEBUG
+  m_measure_tp1 = ndn_time_now_us();
+#endif
   return NDN_SUCCESS;
 }
 
@@ -532,16 +545,21 @@ ndn_ac_after_bootstrapping()
 
   // register for notification interest
   ndn_name_t name;
+  ndn_name_init(&name);
   ndn_key_storage_t* storage = ndn_key_storage_get_instance();
   int ret = -1;
   ret = ndn_name_append_component(&name, &storage->self_identity[0].components[0]);
+    NDN_LOG_ERROR_NAME(&name);
   if (ret != 0) return;
   uint8_t ac = NDN_SD_AC;
   ret = ndn_name_append_bytes_component(&name, &ac, 1);
-  if (ret != 0) return;
+
+  // ret = ndn_name_append_string_component(&name, "AC", strlen("AC"));
+  // if (ret != 0) return;
   ret = ndn_name_append_string_component(&name, "NOTIFY", strlen("NOTIFY"));
   if (ret != 0) return;
   ret = ndn_forwarder_register_name_prefix(&name, _on_ac_notification, NULL);
+  NDN_LOG_ERROR_NAME(&name);
   if (ret != 0) {
     NDN_LOG_ERROR("[ACCESSCTL] Cannot register notification prefix: ");
     NDN_LOG_ERROR_NAME(&name);

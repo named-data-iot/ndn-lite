@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-const static uint32_t SD_ADV_INTERVAL = 30000;
+const static uint32_t SD_ADV_INTERVAL = 1800000;
 
 /**
  * 1. Service Discovery protocol spec:
