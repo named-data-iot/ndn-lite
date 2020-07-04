@@ -19,7 +19,7 @@
 #include "ndn-lite/security/ndn-lite-hmac.h"
 #include "ndn-lite/ndn-constants.h"
 #include <string.h>
-#include <CUnit/CUnit.h>
+#include "../CUnit/CUnit.h"
 
 static const char *_current_test_name;
 static bool _all_function_calls_succeeded = true;
@@ -112,11 +112,13 @@ void add_random_test_suite(void)
   if (NULL == pSuite)
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
   if (NULL == CU_add_test(pSuite, "random_tests", run_random_tests))
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
 }

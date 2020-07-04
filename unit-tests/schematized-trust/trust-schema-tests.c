@@ -25,7 +25,7 @@
 #include "../../ndn-lite/encode/ndn-rule-storage.h"
 
 #include "../../ndn-lite/util/re.h"
-#include <CUnit/CUnit.h>
+#include "../CUnit/CUnit.h"
 
 static const char *_current_test_name;
 
@@ -192,11 +192,13 @@ void add_trust_schema_test_suite(void)
   if (NULL == pSuite)
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
   if (NULL == CU_add_test(pSuite, "trust_schema_tests", run_trust_schema_tests))
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
 }

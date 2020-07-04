@@ -8,7 +8,7 @@
 
 #include "data-tests.h"
 #include <stdio.h>
-#include <CUnit/CUnit.h>
+#include "../CUnit/CUnit.h"
 #include "data-tests-def.h"
 #include "../print-helpers.h"
 #include "../test-helpers.h"
@@ -312,11 +312,13 @@ void add_data_test_suite()
   if (NULL == pSuite)
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
   if (NULL == CU_add_test(pSuite, "data_tests", run_data_tests))
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
 }

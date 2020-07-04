@@ -18,7 +18,6 @@ set(CMAKE_C_FLAGS_RELEASE "-O3")
 set(DIR_CMAKEFILES "${PROJECT_SOURCE_DIR}/CMakeInputs")
 set(DIR_NDN_LITE "${PROJECT_SOURCE_DIR}/ndn-lite")
 set(DIR_ADAPTATION "${PROJECT_SOURCE_DIR}/adaptation")
-set(GCC_COVERAGE_LINK_FLAGS    "-lgcov")
 set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
 include_directories(${PROJECT_SOURCE_DIR})
 
@@ -36,7 +35,6 @@ include(${DIR_CMAKEFILES}/adaptation.cmake)
 # Unit test program
 add_executable(unittest ndn-lite.h)
 target_link_libraries(unittest ndn-lite)
-target_link_libraries(unittest -lcunit)
 include(${DIR_CMAKEFILES}/unittest.cmake)
 
 # Copy headers

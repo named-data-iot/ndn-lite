@@ -14,7 +14,7 @@
 #include "ecdsa-sign-verify-tests/ecdsa-sign-verify-tests.h"
 #include "hmac-sign-verify-tests/hmac-sign-verify-tests.h"
 #include "sha256-sign-verify-tests/sha256-sign-verify-tests.h"
-#include <CUnit/CUnit.h>
+#include "../CUnit/CUnit.h"
 
 void add_sign_verify_test_suite(void) {
   CU_pSuite pSuite = NULL;
@@ -24,7 +24,8 @@ void add_sign_verify_test_suite(void) {
   if (NULL == pSuite)
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
   if (NULL == CU_add_test(pSuite, "asn_encode_decode_multi_test", asn_encode_decode_multi_test) ||
       NULL == CU_add_test(pSuite, "ecdsa_multi_test", ecdsa_multi_test) ||

@@ -10,7 +10,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <errno.h>
-#include <CUnit/CUnit.h>
+#include "../CUnit/CUnit.h"
 
 #include "../test-helpers.h"
 #include "../print-helpers.h"
@@ -152,12 +152,14 @@ void add_forwarder_fragmentation_test_suite()
   if (NULL == pSuite)
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
   if (
       NULL == CU_add_test(pSuite, "forwarder_with_fragmentation_test", ff_forwarder_with_fragmentation_test))
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
 }

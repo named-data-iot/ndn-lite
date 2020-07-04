@@ -8,7 +8,7 @@
 
 #include "encoder-decoder-tests.h"
 #include <stdio.h>
-#include <CUnit/CUnit.h>
+#include "../CUnit/CUnit.h"
 #include "encoder-decoder-tests-def.h"
 #include "../print-helpers.h"
 #include "../test-helpers.h"
@@ -128,11 +128,13 @@ void add_encoder_decoder_test_suite(void){
   if (NULL == pSuite)
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
   if (NULL == CU_add_test(pSuite, "encoder_decoder_tests", run_encoder_decoder_tests))
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
 }

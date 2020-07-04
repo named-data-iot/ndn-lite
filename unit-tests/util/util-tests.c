@@ -16,7 +16,7 @@
 #include "../test-helpers.h"
 
 #include <stdio.h>
-#include <CUnit/CUnit.h>
+#include "../CUnit/CUnit.h"
 #include "ndn-lite/util/memory-pool.h"
 #include "ndn-lite/util/msg-queue.h"
 #include "ndn-lite/forwarder/name-tree.h"
@@ -302,11 +302,13 @@ void add_util_test_suite(void)
   if (NULL == pSuite)
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
   if (NULL == CU_add_test(pSuite, "util_tests", run_util_tests))
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
 }

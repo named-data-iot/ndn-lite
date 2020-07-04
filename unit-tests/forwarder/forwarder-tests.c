@@ -11,7 +11,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <errno.h>
-#include <CUnit/CUnit.h>
+#include "../CUnit/CUnit.h"
 
 #include "forwarder-tests-def.h"
 #include "../test-helpers.h"
@@ -480,12 +480,14 @@ void add_forwarder_test_suite()
   if (NULL == pSuite)
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
   if (NULL == CU_add_test(pSuite, "forwarder_tests", run_forwarder_tests) ||
       NULL == CU_add_test(pSuite, "forwarder_put_data_test", forwarder_put_data_test))
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
 }

@@ -9,7 +9,7 @@
 #include "name-encode-decode-tests.h"
 #include <stdio.h>
 #include <string.h>
-#include <CUnit/CUnit.h>
+#include "../CUnit/CUnit.h"
 #include "name-encode-decode-tests-def.h"
 #include "../print-helpers.h"
 #include "../test-helpers.h"
@@ -178,11 +178,13 @@ void add_name_encode_decode_test_suite(void)
   if (NULL == pSuite)
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
   if (NULL == CU_add_test(pSuite, "name_encode_decode_tests", run_name_encode_decode_tests))
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
 }

@@ -8,8 +8,8 @@
 
 #include "hmac-tests.h"
 #include "ndn-lite/security/ndn-lite-hmac.h"
-#include <CUnit/CUnit.h>
-#include <CUnit/Basic.h>
+#include "../CUnit/CUnit.h"
+#include "../CUnit/Basic.h"
 #include <string.h>
 
 void
@@ -61,12 +61,14 @@ void add_hmac_test_suite(void)
   if (NULL == pSuite)
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
   if (NULL == CU_add_test(pSuite, "hmac_test_case_1", hmac_test_case_1) ||
       NULL == CU_add_test(pSuite, "hmac_test_case_2", hmac_test_case_2))
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
 }

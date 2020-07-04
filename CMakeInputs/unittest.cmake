@@ -1,5 +1,27 @@
 set(DIR_UNITTESTS "${PROJECT_SOURCE_DIR}/unit-tests")
 
+# Include CUnit
+target_sources(unittest PRIVATE
+  "${DIR_UNITTESTS}/CUnit/TestDB.h"
+  "${DIR_UNITTESTS}/CUnit/TestDB.c"
+  "${DIR_UNITTESTS}/CUnit/TestRun.h"
+  "${DIR_UNITTESTS}/CUnit/TestRun.c"
+  "${DIR_UNITTESTS}/CUnit/MyMem.h"
+  "${DIR_UNITTESTS}/CUnit/MyMem.c"
+  "${DIR_UNITTESTS}/CUnit/Util.h"
+  "${DIR_UNITTESTS}/CUnit/Util.c"
+  "${DIR_UNITTESTS}/CUnit/CUError.h"
+  "${DIR_UNITTESTS}/CUnit/CUError.c"
+  "${DIR_UNITTESTS}/CUnit/CUnit_intl.h"
+  "${DIR_UNITTESTS}/CUnit/CUnit.h"
+  "${DIR_UNITTESTS}/CUnit/Basic.h"
+  "${DIR_UNITTESTS}/CUnit/Basic.c"
+  "${DIR_UNITTESTS}/CUnit/Automated.h"
+  "${DIR_UNITTESTS}/CUnit/Automated.c"
+  "${DIR_UNITTESTS}/CUnit/Console.h"
+  "${DIR_UNITTESTS}/CUnit/Console.c"
+)
+
 # Main files
 target_sources(unittest PRIVATE
   "${DIR_UNITTESTS}/print-helpers.h"

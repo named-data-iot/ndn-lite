@@ -12,7 +12,7 @@
 #include "ndn-lite/encode/fragmentation-support.h"
 #include <stdio.h>
 #include <string.h>
-#include <CUnit/CUnit.h>
+#include "../CUnit/CUnit.h"
 
 const uint8_t fragmentation_support_test_payload[FRAGMENTATION_SUPPORT_TEST_PAYLOAD_SIZE] = {
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
@@ -123,12 +123,14 @@ void run_fragmentation_support_test_2(void)
     if (NULL == pSuite)
     {
       CU_cleanup_registry();
-      return CU_get_error();
+    // return CU_get_error();
+    return;
     }
     if (NULL == CU_add_test(pSuite, "fragmentation_support_test_1", run_fragmentation_support_test_1) ||
         NULL == CU_add_test(pSuite, "fragmentation_support_test_2", run_fragmentation_support_test_2))
     {
       CU_cleanup_registry();
-      return CU_get_error();
+    // return CU_get_error();
+    return;
     }
   }

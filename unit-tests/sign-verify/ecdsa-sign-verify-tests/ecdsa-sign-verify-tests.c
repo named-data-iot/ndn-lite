@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
-#include <CUnit/CUnit.h>
+#include "../../CUnit/CUnit.h"
 
 #include "ecdsa-sign-verify-tests-def.h"
 #include "../../test-helpers.h"

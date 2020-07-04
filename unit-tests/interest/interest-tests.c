@@ -9,7 +9,7 @@
 #include "interest-tests.h"
 #include <stdio.h>
 #include <stdbool.h>
-#include <CUnit/CUnit.h>
+#include "../CUnit/CUnit.h"
 #include "interest-tests-def.h"
 #include "../print-helpers.h"
 #include "../test-helpers.h"
@@ -385,11 +385,13 @@ void add_interest_test_suite(void)
   if (NULL == pSuite)
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
   if (NULL == CU_add_test(pSuite, "interest_tests", run_interest_tests))
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
 }

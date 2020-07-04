@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <CUnit/CUnit.h>
+#include "../../CUnit/CUnit.h"
 
 #include "asn-encode-decode-tests-def.h"
 #include "../../test-helpers.h"

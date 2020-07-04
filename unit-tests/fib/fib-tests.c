@@ -12,7 +12,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <errno.h>
-#include <CUnit/CUnit.h>
+#include "../CUnit/CUnit.h"
 
 #include "ndn-lite/ndn-constants.h"
 #include "ndn-lite/encode/interest.h"
@@ -71,10 +71,12 @@ void add_fib_test_suite()
   if (NULL == pSuite)
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
   if (NULL == CU_add_test(pSuite, "fib_test_1", run_fib_test_1)) {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
 }

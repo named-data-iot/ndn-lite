@@ -8,7 +8,7 @@
 
 #include "metainfo-tests.h"
 #include <stdio.h>
-#include <CUnit/CUnit.h>
+#include "../CUnit/CUnit.h"
 #include "metainfo-tests-def.h"
 #include "../print-helpers.h"
 #include "../test-helpers.h"
@@ -111,11 +111,13 @@ void add_metainfo_test_suite(void)
   if (NULL == pSuite)
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
   if (NULL == CU_add_test(pSuite, "metainfo_tests", run_metainfo_tests))
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
 }

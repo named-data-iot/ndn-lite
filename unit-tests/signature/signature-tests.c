@@ -8,7 +8,7 @@
 
 #include "signature-tests.h"
 #include <stdio.h>
-#include <CUnit/CUnit.h>
+#include "../CUnit/CUnit.h"
 #include "signature-tests-def.h"
 #include "../print-helpers.h"
 #include "../test-helpers.h"
@@ -194,11 +194,13 @@ void add_signature_test_suite(void)
   if (NULL == pSuite)
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
   if (NULL == CU_add_test(pSuite, "signature_tests", run_signature_tests))
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
 }

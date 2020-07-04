@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
-#include <CUnit/CUnit.h>
+#include "../../CUnit/CUnit.h"
 
 #include "sha256-sign-verify-tests-def.h"
 #include "../../test-helpers.h"

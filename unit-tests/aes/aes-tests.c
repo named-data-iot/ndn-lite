@@ -7,8 +7,8 @@
  */
 
 #include "aes-tests.h"
-#include <CUnit/CUnit.h>
-#include <CUnit/Basic.h>
+#include "../CUnit/CUnit.h"
+#include "../CUnit/Basic.h"
 #include <stdio.h>
 #include <string.h>
 #include "../print-helpers.h"
@@ -120,7 +120,8 @@ void add_aes_test_suite(void)
   if (NULL == pSuite)
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
   if (NULL == CU_add_test(pSuite, "aes_test_case_1", aes_test_case_1) ||
       NULL == CU_add_test(pSuite, "aes_test_case_2", aes_test_case_2) ||
@@ -128,6 +129,7 @@ void add_aes_test_suite(void)
       NULL == CU_add_test(pSuite, "aes_test_case_4", aes_test_case_4))
   {
     CU_cleanup_registry();
-    return CU_get_error();
+    // return CU_get_error();
+    return;
   }
 }
