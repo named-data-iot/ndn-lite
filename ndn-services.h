@@ -25,6 +25,10 @@
 // ndncert only accepts printable ascii so should begin with 49
 #define NDN_SD_LED 49 // LED service
 #define NDN_SD_TEMP 50 // temperature service
+#define NDN_SD_MOTION 51
+#define NDN_SD_ALARM 52
+#define NDN_SD_SMOKE 53
+#define NDN_SD_AIRCON 54
 
 // per-service command types
 // DEV_CTL service
