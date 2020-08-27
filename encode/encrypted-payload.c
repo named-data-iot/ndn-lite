@@ -111,7 +111,7 @@ ndn_parse_encrypted_payload(const uint8_t* input, uint32_t input_size,
       decoder_move_forward(&decoder, length);
     }
     else if (type == TLV_AC_KEYID) {
-      uint32_t keyid;
+      uint32_t keyid = 0;
       decoder_get_uint32_value(&decoder, &keyid);
       if (keyid != aes_key_id) {
         NDN_LOG_ERROR("[ENCODING] Received KeyID %u and Input KeyID %u not match\n", keyid, aes_key_id);

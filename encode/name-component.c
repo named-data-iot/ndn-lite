@@ -23,7 +23,7 @@ _init_component_from_uint_value(name_component_t* component, uint64_t value)
 uint64_t
 _turn_component_to_uint_value(const name_component_t* component)
 {
-  uint64_t result;
+  uint64_t result = 0;
   ndn_decoder_t decoder;
   decoder_init(&decoder, component->value, NDN_NAME_COMPONENT_BUFFER_SIZE);
   decoder_get_uint_value(&decoder, component->size, &result);
