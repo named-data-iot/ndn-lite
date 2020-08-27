@@ -253,7 +253,7 @@ tlv_parse_data(uint8_t* buf, size_t buflen, int argc, ...)
   if (block_type != TLV_Data) {
     return NDN_WRONG_TLV_TYPE;
   }
-  if (block_len != end - ptr) {
+  if (ptr + block_len != end) {
     return NDN_WRONG_TLV_LENGTH;
   }
 
@@ -667,7 +667,7 @@ tlv_parse_interest(uint8_t* buf, size_t buflen, int argc, ...)
   if (block_type != TLV_Interest) {
     return NDN_WRONG_TLV_TYPE;
   }
-  if (block_len != end - ptr) {
+  if (ptr + block_len != end) {
     return NDN_WRONG_TLV_LENGTH;
   }
 

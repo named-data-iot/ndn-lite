@@ -80,8 +80,8 @@ nametree_create_node(ndn_nametree_t *nametree, uint8_t name[], size_t len)
 nametree_entry_t*
 ndn_nametree_find(ndn_nametree_t *nametree, uint8_t name[], size_t len)
 {
-  int now_node, last_node, father = 0 , offset = 0 , tmp;
-  size_t component_len, eqiv_component_len;
+  int now_node, last_node, father = 0 , tmp;
+  size_t component_len, eqiv_component_len, offset = 0;
   // TODO: Put it into decoder
   if (len < 2) return NULL;
   if (name[1] < 253) offset = 2; else offset = 4;
@@ -109,8 +109,8 @@ ndn_nametree_find(ndn_nametree_t *nametree, uint8_t name[], size_t len)
 static nametree_entry_t*
 nametree_find_or_insert_try(ndn_nametree_t *nametree, uint8_t name[], size_t len)
 {
-  int now_node, last_node, father = 0 , offset = 0 , tmp , new_node_number;
-  size_t component_len, eqiv_component_len;
+  int now_node, last_node, father = 0 , tmp , new_node_number;
+  size_t component_len, eqiv_component_len, offset = 0;
   // TODO: Put it into decoder
   if (len < 2) return NULL;
   if (name[1] < 253) offset = 2; else offset = 4;
@@ -161,8 +161,8 @@ ndn_nametree_prefix_match(
                           size_t len,
                           enum NDN_NAMETREE_ENTRY_TYPE type)
 {
-  int now_node, last_node = NDN_INVALID_ID , father = 0 , offset = 0 , tmp;
-  size_t component_len, eqiv_component_len;
+  int now_node, last_node = NDN_INVALID_ID , father = 0 , tmp;
+  size_t component_len, eqiv_component_len, offset = 0;
   if (len < 2) return NULL;
   if (name[1] < 253) offset = 2; else offset = 4;
   while (offset < len) {

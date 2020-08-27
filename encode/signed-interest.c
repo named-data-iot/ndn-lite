@@ -44,7 +44,7 @@ _prepare_signature_info(ndn_interest_t* interest, uint8_t signature_type,
   /*
    * Using uint64_t as local KeyID index is inpratical due to various constraints.
    * Thus issued certificate includes a uint64_t KeyID, but decoded as uint32_t.
-   * Thus when using identity key to sign, directly append original KeyID from 
+   * Thus when using identity key to sign, directly append original KeyID from
    * certificate instead from local KeyID storage.
    */
   bool cert_signing = false;
@@ -61,7 +61,7 @@ _prepare_signature_info(ndn_interest_t* interest, uint8_t signature_type,
   }
   if (cert_signing) {
     name_component_from_buffer(&interest->signature.key_locator_name.components[pos],
-                                TLV_GenericNameComponent, 
+                                TLV_GenericNameComponent,
                                 signing_cert_name->components[signing_cert_name->components_size - 3].value,
                                 signing_cert_name->components[signing_cert_name->components_size - 3].size);
   }
@@ -98,7 +98,7 @@ ndn_signed_interest_ecdsa_sign(ndn_interest_t* interest,
   if (identity == NULL) {
     identity = &keys->self_identity[0];
   }
-  
+
   if (prv_key == NULL) {
     prv_key = &keys->self_identity_key[0];
   }
@@ -295,7 +295,7 @@ ndn_signed_interest_ecdsa_verify(const ndn_interest_t* interest, const ndn_ecc_p
   encoder_init(&temp_encoder, be_signed, NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE);
 
   // the signing input starts at Name's Value (V) excluding the ending component
-  for (size_t i = 0; i < interest->name.components_size - 1; i++) {
+  for (uint8_t i = 0; i < interest->name.components_size - 1; i++) {
     ret_val = name_component_tlv_encode(&temp_encoder, &interest->name.components[i]);
     if (ret_val != NDN_SUCCESS) return ret_val;
   }
@@ -344,7 +344,7 @@ ndn_signed_interest_hmac_verify(const ndn_interest_t* interest, const ndn_hmac_k
   encoder_init(&temp_encoder, be_signed, NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE);
 
   // the signing input starts at Name's Value (V)
-  for (size_t i = 0; i < interest->name.components_size - 1; i++) {
+  for (uint8_t i = 0; i < interest->name.components_size - 1; i++) {
     ret_val = name_component_tlv_encode(&temp_encoder, &interest->name.components[i]);
     if (ret_val != NDN_SUCCESS) return ret_val;
   }
@@ -392,7 +392,7 @@ ndn_signed_interest_digest_verify(const ndn_interest_t* interest)
   encoder_init(&temp_encoder, be_signed, NDN_SIGNED_INTEREST_BE_SIGNED_MAX_SIZE);
 
   // the signing input starts at Name's Value (V)
-  for (size_t i = 0; i < interest->name.components_size - 1; i++) {
+  for (uint8_t i = 0; i < interest->name.components_size - 1; i++) {
     ret_val = name_component_tlv_encode(&temp_encoder, &interest->name.components[i]);
     if (ret_val != NDN_SUCCESS) return ret_val;
   }
