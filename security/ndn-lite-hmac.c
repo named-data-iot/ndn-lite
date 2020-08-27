@@ -143,9 +143,7 @@ ndn_hkdf(const uint8_t* input_value, uint32_t input_size,
          const uint8_t* info_value, uint32_t info_size)
 {
   // parameter check
-  if (input_size < 0 || seed_size < 0
-      || output_size > NDN_SEC_HMAC_MAX_OUTPUT_SIZE
-      || info_size < 0) {
+  if (output_size > NDN_SEC_HMAC_MAX_OUTPUT_SIZE) {
     return NDN_INVALID_ARG;
   }
 
