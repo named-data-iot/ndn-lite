@@ -123,7 +123,7 @@ ndn_key_storage_get_self_identity_key(const uint8_t service)
 }
 
 ndn_hmac_key_t*
-ndn_key_storage_get_empty_hmac_key()
+ndn_key_storage_get_empty_hmac_key(void)
 {
   if (!_key_storage_initialized)
     _ndn_key_storage_init();
@@ -153,7 +153,7 @@ ndn_key_storage_get_empty_ecc_key(ndn_ecc_pub_t** pub, ndn_ecc_prv_t** prv)
 }
 
 ndn_aes_key_t*
-ndn_key_storage_get_empty_aes_key()
+ndn_key_storage_get_empty_aes_key(void)
 {
   if (!_key_storage_initialized)
     _ndn_key_storage_init();

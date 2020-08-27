@@ -149,7 +149,7 @@ ndn_key_storage_get_self_identity_key(const uint8_t service);
  * @return NULL if there is no empty HMAC key anymore.
  */
 ndn_hmac_key_t*
-ndn_key_storage_get_empty_hmac_key();
+ndn_key_storage_get_empty_hmac_key(void);
 
 /**
  * Get an empty ECC key pointer from key storage structure.
@@ -164,7 +164,7 @@ ndn_key_storage_get_empty_ecc_key(ndn_ecc_pub_t** pub, ndn_ecc_prv_t** prv);
  * @return NULL if there is no more empty AES key.
  */
 ndn_aes_key_t*
-ndn_key_storage_get_empty_aes_key();
+ndn_key_storage_get_empty_aes_key(void);
 
 /**
  * Delete a HMAC key by searching corresponding unique key id.
