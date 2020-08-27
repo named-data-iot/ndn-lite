@@ -170,7 +170,7 @@ ndn_forwarder_express_interest(uint8_t* interest, size_t length,
                                void* userdata);
 
 int
-ndn_forwarder_express_interest_struct(const ndn_interest_t* interest,
+ndn_forwarder_express_interest_struct(ndn_interest_t* interest,
                                       ndn_on_data_func on_data,
                                       ndn_on_timeout_func on_timeout,
                                       void* userdata);
