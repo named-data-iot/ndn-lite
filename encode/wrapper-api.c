@@ -400,14 +400,14 @@ tlv_parse_data(uint8_t* buf, size_t buflen, int argc, ...)
         arg_ptr = va_arg(vl, uint64_t*);
         if (arg_ptr == NULL) {
           ret = NDN_INVALID_POINTER;
-          break;
         }
-        if (data.signature.enable_Timestamp) {
+        else if (data.signature.enable_Timestamp) {
           *(uint64_t*)arg_ptr = data.signature.timestamp;
         }
         else {
           *(uint64_t*)arg_ptr = 0;
         }
+        break;
 
       case TLV_DATAARG_VERIFY:
         verify_sig = va_arg(vl, uint32_t);
