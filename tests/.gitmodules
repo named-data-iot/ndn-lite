@@ -1,0 +1,3 @@
+[submodule "ndn-lite"]
+	path = ndn-lite
+	url = https://github.com/named-data-iot/ndn-lite.git
