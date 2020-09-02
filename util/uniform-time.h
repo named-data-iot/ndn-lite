@@ -12,6 +12,7 @@
 #define UTIL_UNIFORM_TIME_H
 
 #include <stdint.h>
+#include <inttypes.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +33,7 @@ typedef uint64_t ndn_time_ms_t;
 
 /** Time count in micro-seconds */
 typedef uint64_t ndn_time_us_t;
+#define PRI_ndn_time_us_t PRIu64
 
 /** Get current time count in ms.
  * @return Time count. The absolute value is meaningless.

@@ -10,6 +10,7 @@
 
 #include "name-component.h"
 #include <stdio.h>
+#include <inttypes.h>
 
 int
 _init_component_from_uint_value(name_component_t* component, uint64_t value)
@@ -175,15 +176,15 @@ name_component_print(const name_component_t* component)
       break;
 
     case TLV_VersionNameComponent:
-      printf("/v=%llu", name_component_to_version(component));
+      printf("/v=%" PRIu64 "", name_component_to_version(component));
       break;
 
     case TLV_TimestampNameComponent:
-      printf("/t=%llu", name_component_to_timestamp(component));
+      printf("/t=%" PRI_ndn_time_us_t "", name_component_to_timestamp(component));
       break;
 
     case TLV_SequenceNumNameComponent:
-      printf("/seq=%llu", name_component_to_sequence_num(component));
+      printf("/seq=%" PRIu64 "", name_component_to_sequence_num(component));
       break;
 
     default:

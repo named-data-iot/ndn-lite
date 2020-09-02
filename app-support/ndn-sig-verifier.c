@@ -172,7 +172,7 @@ ndn_sig_verifier_verify_int(const uint8_t* raw_pkt, size_t pkt_size,
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("[SIGVERIFIER] DATA-PKT-DECODING: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("[SIGVERIFIER] DATA-PKT-DECODING: %" PRI_ndn_time_us_t "\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   if (!ndn_interest_is_signed(&interest)) {
@@ -256,7 +256,7 @@ ndn_sig_verifier_verify_int(const uint8_t* raw_pkt, size_t pkt_size,
 }
 
 void
-ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size, 
+ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size,
                              on_data_verification_success on_success, void* on_success_userdata,
                              on_data_verification_failure on_failure, void* on_failure_userdata)
 {
@@ -271,7 +271,7 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size,
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("[SIGVERIFIER] DATA-PKT-DECODING: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("[SIGVERIFIER] DATA-PKT-DECODING: %" PRI_ndn_time_us_t "\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   if (data.signature.sig_type < 0 || data.signature.sig_type > 4) {
@@ -308,7 +308,7 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size,
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("[SIGVERIFIER] DATA-PKT-ECDSA-VERIFY: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("[SIGVERIFIER] DATA-PKT-ECDSA-VERIFY: %" PRI_ndn_time_us_t "\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
       if (result == NDN_SUCCESS) on_success(&data, on_success_userdata);
@@ -333,7 +333,7 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size,
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("[SIGVERIFIER] DATA-PKT-HMAC-VERIFY: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("[SIGVERIFIER] DATA-PKT-HMAC-VERIFY: %" PRI_ndn_time_us_t "\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
       if (result == NDN_SUCCESS) on_success(&data, on_success_userdata);

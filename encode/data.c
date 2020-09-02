@@ -79,11 +79,11 @@ _prepare_signature_info(ndn_data_t* data, uint8_t signature_type,
                              key_comp_string, sizeof(key_comp_string));
   data->signature.key_locator_name.components_size++;
   pos = data->signature.key_locator_name.components_size;
-  
+
   /*
    * Using uint64_t as local KeyID index is inpratical due to various constraints.
    * Thus issued certificate includes a uint64_t KeyID, but decoded as uint32_t.
-   * Thus when using identity key to sign, directly append original KeyID from 
+   * Thus when using identity key to sign, directly append original KeyID from
    * certificate instead from local KeyID storage.
    */
   bool cert_signing = false;
@@ -101,7 +101,7 @@ _prepare_signature_info(ndn_data_t* data, uint8_t signature_type,
   if (cert_signing) {
     NDN_LOG_DEBUG("using self cert to sign\n");
     name_component_from_buffer(&data->signature.key_locator_name.components[pos],
-                                TLV_GenericNameComponent, 
+                                TLV_GenericNameComponent,
                                 signing_cert_name->components[signing_cert_name->components_size - 3].value,
                                 signing_cert_name->components[signing_cert_name->components_size - 3].size);
   }
@@ -242,7 +242,7 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("DATA-PKT-ECDSA-SIGN: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("DATA-PKT-ECDSA-SIGN: %" PRI_ndn_time_us_t "\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   uint32_t data_buffer_size = ndn_name_probe_block_size(&data->name);
@@ -298,7 +298,7 @@ ndn_data_tlv_encode_ecdsa_sign(ndn_encoder_t* encoder, ndn_data_t* data,
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp1 = ndn_time_now_us();
-  NDN_LOG_DEBUG("DATA-PKT-ENCODING: %lluus\n", m_measure_tp1 - m_measure_tp2);
+  NDN_LOG_DEBUG("DATA-PKT-ENCODING: %" PRI_ndn_time_us_t "\n", m_measure_tp1 - m_measure_tp2);
 #endif
 
   return 0;
@@ -346,7 +346,7 @@ ndn_data_tlv_encode_hmac_sign(ndn_encoder_t* encoder, ndn_data_t* data,
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("DATA-PKT-HMAC-SIGN: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("DATA-PKT-HMAC-SIGN: %" PRI_ndn_time_us_t "\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   if (result < 0)
@@ -448,7 +448,7 @@ ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, u
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("DATA-PKT-DECODING: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("DATA-PKT-DECODING: %" PRI_ndn_time_us_t "\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   int result = ndn_ecdsa_verify(block_value + be_signed_start, be_signed_end - be_signed_start,
@@ -456,7 +456,7 @@ ndn_data_tlv_decode_ecdsa_verify(ndn_data_t* data, const uint8_t* block_value, u
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp1 = ndn_time_now_us();
-  NDN_LOG_DEBUG("DATA-PKT-ECDSA-VERIFY: %lluus\n", m_measure_tp1 - m_measure_tp2);
+  NDN_LOG_DEBUG("DATA-PKT-ECDSA-VERIFY: %" PRI_ndn_time_us_t "\n", m_measure_tp1 - m_measure_tp2);
 #endif
 
   if (result == NDN_SUCCESS)
@@ -478,7 +478,7 @@ ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, ui
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("DATA-PKT-DECODING: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("DATA-PKT-DECODING: %" PRI_ndn_time_us_t "\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   int result = ndn_hmac_verify(block_value + be_signed_start, be_signed_end - be_signed_start,
@@ -486,7 +486,7 @@ ndn_data_tlv_decode_hmac_verify(ndn_data_t* data, const uint8_t* block_value, ui
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp1 = ndn_time_now_us();
-  NDN_LOG_DEBUG("DATA-PKT-HMAC-VERIFY: %lluus\n", m_measure_tp1 - m_measure_tp2);
+  NDN_LOG_DEBUG("DATA-PKT-HMAC-VERIFY: %" PRI_ndn_time_us_t "\n", m_measure_tp1 - m_measure_tp2);
 #endif
 
   if (result == 0)

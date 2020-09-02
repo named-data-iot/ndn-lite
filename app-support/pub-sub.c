@@ -209,7 +209,7 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("[PUB/SUB] SUB-NEW-DATA-AES-DEC: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("[PUB/SUB] SUB-NEW-DATA-AES-DEC: %" PRI_ndn_time_us_t "\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   if (ret != NDN_SUCCESS) {
@@ -254,14 +254,14 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("[PUB/SUB] SUB-NEW-DATA-SCHEMA-VERIFY: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("[PUB/SUB] SUB-NEW-DATA-SCHEMA-VERIFY: %" PRI_ndn_time_us_t "\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   if (ret != NDN_SUCCESS) {
     NDN_LOG_ERROR("[PUB/SUB] Cannot verify incoming content against trust schemas. Error code: %d\n", ret);
     return;
   }
-  NDN_LOG_DEBUG("[PUB/SUB] NEW-DATA-FINSIH-VERIFICATION-TP: %llu ms\n", ndn_time_now_ms());
+  NDN_LOG_DEBUG("[PUB/SUB] NEW-DATA-FINSIH-VERIFICATION-TP: %" PRI_ndn_time_us_t " ms\n", ndn_time_now_ms());
   // command FORMAT: /home/service/CMD/identifier[0,2]/command
   // data FORMAT: /home/service/DATA/identifier[0,2]/data-identifier
 
@@ -310,7 +310,7 @@ _on_new_content(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     return;
   }
   NDN_LOG_INFO("[PUB/SUB] Received new published content/command");
-  NDN_LOG_DEBUG("[PUB/SUB] NEW-DATA-ARRIVE-TP: %llu ms\n", ndn_time_now_ms());
+  NDN_LOG_DEBUG("[PUB/SUB] NEW-DATA-ARRIVE-TP: %" PRI_ndn_time_us_t " ms\n", ndn_time_now_ms());
   NDN_LOG_DEBUG("[PUB/SUB] SUB-NEW-DATA-PKT-SIZE: %u Bytes\n", data_size);
   topic->received_content = true;
   memcpy(topic->last_digest, pkt_encoding_buf, 16);
@@ -627,7 +627,7 @@ ps_publish_content(uint8_t service, const ps_event_t* event)
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("[PUB/SUB] PUB-CONTENT-DATA-AES-ENC: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("[PUB/SUB] PUB-CONTENT-DATA-AES-ENC: %" PRI_ndn_time_us_t "\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
 
@@ -749,7 +749,7 @@ ps_publish_command(uint8_t service, const char* scope, const ps_event_t* event)
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("[PUB/SUB] PUB-COMMAND-DATA-AES-ENC: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("[PUB/SUB] PUB-COMMAND-DATA-AES-ENC: %" PRI_ndn_time_us_t "\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   uint32_t default_freshness_period = 0;
