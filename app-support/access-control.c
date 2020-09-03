@@ -11,6 +11,7 @@
 #include "access-control.h"
 #include "security-bootstrapping.h"
 #include "../ndn-services.h"
+#include "../ndn-error-code.h"
 #include "../encode/key-storage.h"
 #include "../encode/signed-interest.h"
 #include "../encode/encrypted-payload.h"
@@ -157,6 +158,8 @@ _on_ac_notification(const uint8_t* interest, uint32_t interest_size, void* userd
           _express_dkey_interest(notification.name.components[3].value[0]);
       }
   }
+
+  return NDN_SUCCESS;
 }
 
 /**
@@ -598,4 +601,6 @@ ndn_ac_trigger_expiration(uint8_t service, uint32_t received_keyid)
     ret = ndn_forwarder_express_interest_struct(&interest, NULL, NULL, NULL);
     if (ret != 0) return ret;
   }
+
+  return NDN_SUCCESS;
 }
