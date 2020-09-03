@@ -140,7 +140,7 @@ _on_ac_notification(const uint8_t* interest, uint32_t interest_size, void* userd
   ndn_interest_from_block(&notification, interest, interest_size);
   // /[home-prefix]/NDN_SD_AC/NOTIFY/[service-id]/keyid
   NDN_LOG_DEBUG("[ACCESSCTL] Notification: ");
-  NDN_LOG_DEBUG_NAME(&notification);
+  NDN_LOG_DEBUG_NAME(&notification.name);
 
   ndn_aes_key_t* key = ndn_ac_get_key_for_service(notification.name.components[3].value[0]);
   uint32_t keyid;
@@ -393,7 +393,7 @@ _express_ekey_interest(uint8_t service)
 
   // signature signing
   ndn_name_t* self_identity = ndn_key_storage_get_self_identity(service);
-  ndn_name_t* self_identity_key = ndn_key_storage_get_self_identity_key(service);
+  ndn_ecc_prv_t* self_identity_key = ndn_key_storage_get_self_identity_key(service);
   if (self_identity == NULL || self_identity_key == NULL) {
     NDN_LOG_ERROR("[ACCESSCTL] Cannot find proper identity to sign");
     return NDN_AC_KEY_NOT_FOUND;

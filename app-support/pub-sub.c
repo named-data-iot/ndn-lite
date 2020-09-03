@@ -647,12 +647,12 @@ ps_publish_content(uint8_t service, const ps_event_t* event)
   }
   // select identity key
   ndn_name_t* signing_identity = ndn_key_storage_get_self_identity(service);
-  ndn_name_t* signing_identity_key = ndn_key_storage_get_self_identity_key(service);
+  ndn_ecc_prv_t* signing_identity_key = ndn_key_storage_get_self_identity_key(service);
   if (signing_identity == NULL || signing_identity_key == NULL) {
     NDN_LOG_ERROR("[PUB/SUB] Cannot find proper identity to sign");
     return;
   }
-  ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 7,
+  ret = tlv_make_data(topic->cache, sizeof(topic->cache), (size_t *) &topic->cache_size, 7,
                       TLV_DATAARG_NAME_PTR, &name,
                       TLV_DATAARG_CONTENT_BUF, pkt_encoding_buf,
                       TLV_DATAARG_CONTENT_SIZE, used_size,
@@ -762,12 +762,12 @@ ps_publish_command(uint8_t service, const char* scope, const ps_event_t* event)
   }
   // select identity key
   ndn_name_t* signing_identity = ndn_key_storage_get_self_identity(service);
-  ndn_name_t* signing_identity_key = ndn_key_storage_get_self_identity_key(service);
+  ndn_ecc_prv_t* signing_identity_key = ndn_key_storage_get_self_identity_key(service);
   if (signing_identity == NULL || signing_identity_key == NULL) {
     NDN_LOG_ERROR("[PUB/SUB] Cannot find proper identity to sign");
     return;
   }
-  ret = tlv_make_data(topic->cache, sizeof(topic->cache), &topic->cache_size, 7,
+  ret = tlv_make_data(topic->cache, sizeof(topic->cache), (size_t *) &topic->cache_size, 7,
                       TLV_DATAARG_NAME_PTR, &name,
                       TLV_DATAARG_CONTENT_BUF, pkt_encoding_buf,
                       TLV_DATAARG_CONTENT_SIZE, used_size,
@@ -796,7 +796,7 @@ ps_publish_command(uint8_t service, const char* scope, const ps_event_t* event)
 
   // send out the notification Interest
   uint32_t buffer_length = 0;
-  tlv_make_interest(pkt_encoding_buf, sizeof(pkt_encoding_buf), &buffer_length, 3,
+  tlv_make_interest(pkt_encoding_buf, sizeof(pkt_encoding_buf), (size_t *) &buffer_length, 3,
                     TLV_INTARG_NAME_PTR, &name,
                     TLV_INTARG_CANBEPREFIX_BOOL, true,
                     TLV_INTARG_MUSTBEFRESH_BOOL, true);

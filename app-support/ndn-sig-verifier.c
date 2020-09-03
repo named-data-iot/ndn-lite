@@ -347,7 +347,7 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size,
     memcpy(&cert_interest.name, &data.signature.key_locator_name, sizeof(ndn_name_t));
 #if ENABLE_NDN_LOG_DEBUG
     NDN_LOG_DEBUG("[SIGVERIFIER] Interest Sent out from SigVerifier: ");
-    NDN_LOG_DEBUG_NAME(&cert_interest);
+    NDN_LOG_DEBUG_NAME(&cert_interest.name);
 #endif
     ndn_interest_set_CanBePrefix(&cert_interest, true);
     ndn_interest_set_MustBeFresh(&cert_interest, false);
