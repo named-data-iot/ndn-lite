@@ -211,7 +211,6 @@ void
 _prepare_sec_boot_send_cert_interest(ndn_interest_t* interest, uint8_t service)
 {
   // generate the cert interest (2nd interest)
-  int ret = 0;
   ndn_interest_init(interest);
   ndn_key_storage_t* key_storage = ndn_key_storage_get_instance();
 

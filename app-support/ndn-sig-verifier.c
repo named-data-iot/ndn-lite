@@ -54,7 +54,6 @@ sig_verifier_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata
   if (result == NDN_SUCCESS) {
     // add the received certificate to key storage
     ndn_key_storage_add_trusted_certificate(&cert);
-    uint32_t keyid_from_cert = key_id_from_cert_name(&cert.name);
     ndn_ecc_pub_t* pub_key = NULL;
     // verify the original interest/data
     if (dataptr->is_interest) {
