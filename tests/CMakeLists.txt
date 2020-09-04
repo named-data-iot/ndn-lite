@@ -28,7 +28,7 @@ else()
   add_library(ndn-lite STATIC)
 endif()
 include(${DIR_CMAKEFILES}/ndnlite.cmake)
-target_compile_options(ndn-lite PUBLIC -Werror)
+target_compile_options(ndn-lite PRIVATE -Werror)
 
 # Adaptation
 include(${DIR_CMAKEFILES}/adaptation.cmake)
