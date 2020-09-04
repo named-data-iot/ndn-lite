@@ -53,7 +53,6 @@ ndn_unix_slave_face_construct(int sock);
 static int
 ndn_unix_face_up(struct ndn_face_intf* self){
   ndn_unix_face_t* ptr = container_of(self, ndn_unix_face_t, intf);
-  int iyes = 1;
   int iflags;
 
   ptr->sock = socket(AF_UNIX, SOCK_STREAM, 0);
