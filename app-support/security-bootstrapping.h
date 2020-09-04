@@ -36,7 +36,7 @@ typedef struct ndn_bootstrapping_info {
 
 typedef struct ndn_device_info {
   char* device_identifier;
-  const uint8_t* service_list;
+  uint8_t* service_list;
   size_t service_list_size;
 } ndn_device_info_t;
 
