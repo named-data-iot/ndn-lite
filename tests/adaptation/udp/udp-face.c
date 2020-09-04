@@ -74,7 +74,7 @@ ndn_udp_face_up(struct ndn_face_intf* self){
 
   if(ptr->multicast){
     setsockopt(ptr->sock, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
-  
+
     mreq.imr_interface = ptr->local_addr.sin_addr;
     mreq.imr_multiaddr = ptr->remote_addr.sin_addr;
     if(setsockopt(ptr->sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) == -1){
@@ -122,7 +122,7 @@ static int
 ndn_udp_face_send(ndn_face_intf_t* self, const uint8_t* packet, uint32_t size){
   ndn_udp_face_t* ptr = (ndn_udp_face_t*)self;
   ssize_t ret;
-  ret = sendto(ptr->sock, packet, size, 0, 
+  ret = sendto(ptr->sock, packet, size, 0,
                (struct sockaddr*)&ptr->remote_addr, sizeof(ptr->remote_addr));
   if(ret != size){
     return NDN_UDP_FACE_SOCKET_ERROR;
@@ -203,7 +203,6 @@ ndn_udp_face_recv(void *self, size_t param_len, void *param){
   struct sockaddr_in client_addr;
   socklen_t addr_len;
   ssize_t size;
-  int ret;
   ndn_udp_face_t* ptr = (ndn_udp_face_t*)self;
 
   while(true){
@@ -211,7 +210,8 @@ ndn_udp_face_recv(void *self, size_t param_len, void *param){
                     (struct sockaddr*)&client_addr, &addr_len);
     if(size >= 0){
       // A packet recved
-      ret = ndn_forwarder_receive(&ptr->intf, ptr->buf, size);
+      // @TODO check return status
+      ndn_forwarder_receive(&ptr->intf, ptr->buf, size);
     }else if(size == -1 && (errno == EWOULDBLOCK || errno == EAGAIN)){
       // No more packet
       break;
