@@ -12,6 +12,7 @@
 #include <ndn-lite/security/ndn-lite-rng.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 #if defined(__APPLE__)
   #include <stdlib.h>
 #endif
