@@ -1,0 +1,17 @@
+os: linux
+dist: focal
+language: c
+
+addons:
+  apt:
+    update: true
+    packages:
+      - libcunit1
+      - cmake
+
+script:
+  - cd tests
+  - mkdir build && cd build
+  - cmake -DCMAKE_BUILD_TYPE=Debug ..
+  - make
+  - ./unittest

@@ -11,6 +11,7 @@
 #include "access-control.h"
 #include "security-bootstrapping.h"
 #include "../ndn-services.h"
+#include "../ndn-error-code.h"
 #include "../encode/key-storage.h"
 #include "../encode/signed-interest.h"
 #include "../encode/encrypted-payload.h"
@@ -21,6 +22,8 @@
 #include "../security/ndn-lite-rng.h"
 #include "../util/msg-queue.h"
 #include "../util/uniform-time.h"
+
+#include <inttypes.h>
 
 #define KEY_LIFTIME 60000
 
@@ -100,7 +103,7 @@ _init_ac_state()
   _ac_initialized = true;
 }
 
-void 
+void
 _ac_timeout()
 {
   ndn_time_ms_t now = ndn_time_now_ms();
@@ -138,7 +141,7 @@ _on_ac_notification(const uint8_t* interest, uint32_t interest_size, void* userd
   ndn_interest_from_block(&notification, interest, interest_size);
   // /[home-prefix]/NDN_SD_AC/NOTIFY/[service-id]/keyid
   NDN_LOG_DEBUG("[ACCESSCTL] Notification: ");
-  NDN_LOG_DEBUG_NAME(&notification);
+  NDN_LOG_DEBUG_NAME(&notification.name);
 
   ndn_aes_key_t* key = ndn_ac_get_key_for_service(notification.name.components[3].value[0]);
   uint32_t keyid;
@@ -146,15 +149,17 @@ _on_ac_notification(const uint8_t* interest, uint32_t interest_size, void* userd
   decoder_init(&decoder, notification.name.components[4].value, notification.name.components[4].size);
   decoder_get_uint32_value(&decoder, &keyid);
   if (key && key->key_id <= keyid) {
-      NDN_LOG_DEBUG("[ACCESSCTL] Enforced update for Service %u, KeyID %lu\n", 
+      NDN_LOG_DEBUG("[ACCESSCTL] Enforced update for Service %" PRIu32 ", KeyID %" PRIu32 "\n",
       notification.name.components[3].value[0], keyid);
       for (int i = 0; i < 10; i++) {
         if (_ac_self_state.self_services[i] == notification.name.components[3].value[0])
           _express_ekey_interest(notification.name.components[3].value[0]);
         if (_ac_self_state.access_services[i] == notification.name.components[3].value[0])
-          _express_dkey_interest(notification.name.components[3].value[0]);   
+          _express_dkey_interest(notification.name.components[3].value[0]);
       }
   }
+
+  return NDN_SUCCESS;
 }
 
 /**
@@ -205,7 +210,7 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     NDN_LOG_ERROR("[ACCESSCTL] Cannot get the AES KeyID, Error code is %d\n", ret);
     return;
   }
-  NDN_LOG_DEBUG("[ACCESSCTL] AES KeyID = %lu \n", keyid);
+  NDN_LOG_DEBUG("[ACCESSCTL] AES KeyID = %" PRIu32 "\n", keyid);
 
   // set lifetime
   expires_in = KEY_LIFTIME;
@@ -220,8 +225,8 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
       if (_ac_self_state.self_services[i] == service) {
         _ac_self_state.ekeys[i].key_id = keyid;
         _ac_self_state.ekeys[i].expires_at = expires_in + now;
-        NDN_LOG_DEBUG("[ACCESSCTL] New expiration time is %ld, New keyid is %u\n", 
-                      _ac_self_state.ekeys[i].expires_at, _ac_self_state.ekeys[i].key_id);      
+        NDN_LOG_DEBUG("[ACCESSCTL] New expiration time is %ld, New keyid is %u\n",
+                      _ac_self_state.ekeys[i].expires_at, _ac_self_state.ekeys[i].key_id);
         ndn_aes_key_init(ekey, value, NDN_AES_BLOCK_SIZE, _ac_self_state.ekeys[i].key_id);
         _ac_self_state.ekeys[i].in_renewal = false;
       }
@@ -250,7 +255,7 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
   }
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("[ACCESSCTL] Key update: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("[ACCESSCTL] Key update: %" PRI_ndn_time_us_t "\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
  // _ac_timeout();
@@ -305,7 +310,7 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
     NDN_LOG_ERROR("[ACCESSCTL] Cannot get the AES KeyID, Error code is %d\n", ret);
     return;
   }
-  NDN_LOG_DEBUG("[ACCESSCTL] AES KeyID = %lu \n", keyid);
+  NDN_LOG_DEBUG("[ACCESSCTL] AES KeyID = %" PRIu32 " \n", keyid);
 
   // set lifetime to 3000ms
   expires_in = KEY_LIFTIME;
@@ -320,8 +325,8 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
       if (_ac_self_state.access_services[i] == service) {
         _ac_self_state.ekeys[i].key_id = keyid;
         _ac_self_state.access_keys[i].expires_at = expires_in + now;
-        NDN_LOG_DEBUG("[ACCESSCTL] New expiration time is %ld, New keyid is %u\n", 
-                      _ac_self_state.access_keys[i].expires_at, _ac_self_state.access_keys[i].key_id);      
+        NDN_LOG_DEBUG("[ACCESSCTL] New expiration time is %ld, New keyid is %u\n",
+                      _ac_self_state.access_keys[i].expires_at, _ac_self_state.access_keys[i].key_id);
         ndn_aes_key_init(access_key, value, NDN_AES_BLOCK_SIZE, _ac_self_state.access_keys[i].key_id);
         _ac_self_state.access_keys[i].in_renewal = false;
       }
@@ -391,7 +396,7 @@ _express_ekey_interest(uint8_t service)
 
   // signature signing
   ndn_name_t* self_identity = ndn_key_storage_get_self_identity(service);
-  ndn_name_t* self_identity_key = ndn_key_storage_get_self_identity_key(service);
+  ndn_ecc_prv_t* self_identity_key = ndn_key_storage_get_self_identity_key(service);
   if (self_identity == NULL || self_identity_key == NULL) {
     NDN_LOG_ERROR("[ACCESSCTL] Cannot find proper identity to sign");
     return NDN_AC_KEY_NOT_FOUND;
@@ -569,16 +574,16 @@ ndn_ac_after_bootstrapping()
 
 int
 ndn_ac_trigger_expiration(uint8_t service, uint32_t received_keyid)
-{ 
+{
   int ret = -1;
   // check if it's a local key
   ndn_aes_key_t* aes_key = ndn_ac_get_key_for_service(service);
   if (aes_key->key_id < received_keyid) {
-    NDN_LOG_DEBUG("[ACCESSCTL] Local Decryption Key %ld forced expired\n", aes_key->key_id);
+    NDN_LOG_DEBUG("[ACCESSCTL] Local Decryption Key %" PRIu32 " forced expired\n", aes_key->key_id);
     _express_dkey_interest(service);
   }
   else {
-    NDN_LOG_DEBUG("[ACCESSCTL] Notifying Encryption Key %ld forced expired\n", received_keyid);
+    NDN_LOG_DEBUG("[ACCESSCTL] Notifying Encryption Key %" PRIu32 " forced expired\n", received_keyid);
     ndn_interest_t interest;
     ndn_interest_init(&interest);
     ndn_key_storage_t* storage = ndn_key_storage_get_instance();
@@ -596,4 +601,6 @@ ndn_ac_trigger_expiration(uint8_t service, uint32_t received_keyid)
     ret = ndn_forwarder_express_interest_struct(&interest, NULL, NULL, NULL);
     if (ret != 0) return ret;
   }
+
+  return NDN_SUCCESS;
 }

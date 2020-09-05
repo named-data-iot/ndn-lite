@@ -301,7 +301,7 @@ ndn_forwarder_express_interest(uint8_t* interest, size_t length,
 }
 
 int
-ndn_forwarder_express_interest_struct(const ndn_interest_t* interest,
+ndn_forwarder_express_interest_struct(ndn_interest_t* interest,
                                       ndn_on_data_func on_data,
                                       ndn_on_timeout_func on_timeout,
                                       void* userdata)
@@ -309,7 +309,7 @@ ndn_forwarder_express_interest_struct(const ndn_interest_t* interest,
   ndn_encoder_t encoder;
   encoder_init(&encoder, encoding_buf, sizeof(encoding_buf));
   ndn_interest_tlv_encode(&encoder, interest);
-  ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
+  return ndn_forwarder_express_interest(encoder.output_value, encoder.offset,
                                  on_data, on_timeout, userdata);
 }
 

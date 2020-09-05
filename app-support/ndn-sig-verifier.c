@@ -54,7 +54,6 @@ sig_verifier_on_data(const uint8_t* raw_data, uint32_t data_size, void* userdata
   if (result == NDN_SUCCESS) {
     // add the received certificate to key storage
     ndn_key_storage_add_trusted_certificate(&cert);
-    uint32_t keyid_from_cert = key_id_from_cert_name(&cert.name);
     ndn_ecc_pub_t* pub_key = NULL;
     // verify the original interest/data
     if (dataptr->is_interest) {
@@ -172,7 +171,7 @@ ndn_sig_verifier_verify_int(const uint8_t* raw_pkt, size_t pkt_size,
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("[SIGVERIFIER] DATA-PKT-DECODING: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("[SIGVERIFIER] DATA-PKT-DECODING: %" PRI_ndn_time_us_t "\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   if (!ndn_interest_is_signed(&interest)) {
@@ -256,7 +255,7 @@ ndn_sig_verifier_verify_int(const uint8_t* raw_pkt, size_t pkt_size,
 }
 
 void
-ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size, 
+ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size,
                              on_data_verification_success on_success, void* on_success_userdata,
                              on_data_verification_failure on_failure, void* on_failure_userdata)
 {
@@ -271,7 +270,7 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size,
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("[SIGVERIFIER] DATA-PKT-DECODING: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("[SIGVERIFIER] DATA-PKT-DECODING: %" PRI_ndn_time_us_t "\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
   if (data.signature.sig_type < 0 || data.signature.sig_type > 4) {
@@ -308,7 +307,7 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size,
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("[SIGVERIFIER] DATA-PKT-ECDSA-VERIFY: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("[SIGVERIFIER] DATA-PKT-ECDSA-VERIFY: %" PRI_ndn_time_us_t "\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
       if (result == NDN_SUCCESS) on_success(&data, on_success_userdata);
@@ -333,7 +332,7 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size,
 
 #if ENABLE_NDN_LOG_DEBUG
   m_measure_tp2 = ndn_time_now_us();
-  NDN_LOG_DEBUG("[SIGVERIFIER] DATA-PKT-HMAC-VERIFY: %lluus\n", m_measure_tp2 - m_measure_tp1);
+  NDN_LOG_DEBUG("[SIGVERIFIER] DATA-PKT-HMAC-VERIFY: %" PRI_ndn_time_us_t "\n", m_measure_tp2 - m_measure_tp1);
 #endif
 
       if (result == NDN_SUCCESS) on_success(&data, on_success_userdata);
@@ -347,7 +346,7 @@ ndn_sig_verifier_verify_data(const uint8_t* raw_pkt, size_t pkt_size,
     memcpy(&cert_interest.name, &data.signature.key_locator_name, sizeof(ndn_name_t));
 #if ENABLE_NDN_LOG_DEBUG
     NDN_LOG_DEBUG("[SIGVERIFIER] Interest Sent out from SigVerifier: ");
-    NDN_LOG_DEBUG_NAME(&cert_interest);
+    NDN_LOG_DEBUG_NAME(&cert_interest.name);
 #endif
     ndn_interest_set_CanBePrefix(&cert_interest, true);
     ndn_interest_set_MustBeFresh(&cert_interest, false);
