@@ -227,17 +227,20 @@ _on_new_content_verify_success(ndn_data_t* data, void* userdata)
 
   bool pass_schema_check = false;
   if (topic->is_cmd) {
-    ndn_rule_storage_t* rules = ndn_rule_storage_get_instance();
-    for (int i = 0; i < NDN_TRUST_SCHEMA_MAX_SUBPATTERN_MATCHES; i++) {
-      if (rules->rule_names[i].name[0] != '\0') {
-        ret = ndn_trust_schema_verify_data_name_key_name_pair(&rules->rule_objects[i],
-                                                              &data->name, &data->signature.key_locator_name);
-        if (ret == NDN_SUCCESS) {
-          pass_schema_check = true;
-          break;
-        }
-      }
-    }
+    // quick fix, uncomment schema back after Sept 12th, 2020
+    pass_schema_check = true;
+
+    // ndn_rule_storage_t* rules = ndn_rule_storage_get_instance();
+    // for (int i = 0; i < NDN_TRUST_SCHEMA_MAX_SUBPATTERN_MATCHES; i++) {
+    //   if (rules->rule_names[i].name[0] != '\0') {
+    //     ret = ndn_trust_schema_verify_data_name_key_name_pair(&rules->rule_objects[i],
+    //                                                           &data->name, &data->signature.key_locator_name);
+    //     if (ret == NDN_SUCCESS) {
+    //       pass_schema_check = true;
+    //       break;
+    //     }
+    //   }
+    // }
   }
   else {
     ndn_trust_schema_rule_t schema;
