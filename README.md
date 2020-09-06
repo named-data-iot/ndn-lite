@@ -1,6 +1,8 @@
 ndn-lite
 ========
 
+[![Build Status](https://travis-ci.com/named-data-iot/ndn-lite.svg?branch=develop)](https://travis-ci.com/named-data-iot/ndn-lite)
+
 <img src="https://zhiyi-zhang.com/images/ndn-lite-logo.jpg" alt="logo" width="500"/>
 
 The NDN-Lite library implements the Named Data Networking Stack with the high-level application support functionalities and low-level OS/hardware adaptations for Internet of Things (IoT) scenarios.
