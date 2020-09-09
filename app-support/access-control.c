@@ -23,9 +23,7 @@
 #include "../util/msg-queue.h"
 #include "../util/uniform-time.h"
 
-#include <inttypes.h>
-
-#define KEY_LIFTIME 60000
+#define KEY_LIFTIME 6000000
 
 /* Logging Level: ERROR, DEBUG */
 #define ENABLE_NDN_LOG_ERROR 1
