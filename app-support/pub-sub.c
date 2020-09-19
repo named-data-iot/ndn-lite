@@ -586,7 +586,7 @@ ps_publish_content(uint8_t service, const ps_event_t* event)
     if (topic == NULL) {
       NDN_LOG_INFO("[PUB/SUB] No availble topic, will drop the oldest pub topic.");
       uint64_t min_last_tp = m_pub_sub_state.pub_topics[0].last_update_tp;
-      int index = -1;
+      int index = 0;
       for (int i = 1; i < 5; i++) {
         if (m_pub_sub_state.pub_topics[i].last_update_tp < min_last_tp) {
           min_last_tp = m_pub_sub_state.pub_topics[i].last_update_tp;
