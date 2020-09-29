@@ -11,49 +11,13 @@
 #define ENABLE_NDN_LOG_DEBUG 1
 #define ENABLE_NDN_LOG_ERROR 1
 #include "forwarder.h"
-#include "pit.h"
-#include "fib.h"
-#include "face-table.h"
 #include "../ndn-constants.h"
 #include "../ndn-error-code.h"
 #include "../encode/tlv.h"
 #include "../encode/name.h"
 #include "../util/logger.h"
 
-#define NDN_FORWARDER_RESERVE_SIZE(nametree_size, facetab_size, fib_size, pit_size) \
-  (NDN_NAMETREE_RESERVE_SIZE(nametree_size) + \
-   NDN_FACE_TABLE_RESERVE_SIZE(facetab_size) + \
-   NDN_FIB_RESERVE_SIZE(fib_size) + \
-   NDN_PIT_RESERVE_SIZE(pit_size))
-
-#define NDN_FORWARDER_DEFAULT_SIZE \
-  NDN_FORWARDER_RESERVE_SIZE(NDN_NAMETREE_MAX_SIZE, \
-                             NDN_FACE_TABLE_MAX_SIZE, \
-                             NDN_FIB_MAX_SIZE, \
-                             NDN_PIT_MAX_SIZE)
-
 uint8_t encoding_buf[2048];
-
-/**
- * NDN-Lite forwarder.
- * We will support content store in future versions.
- * The NDN forwarder is a singleton in an application.
- */
-typedef struct ndn_forwarder {
-  ndn_nametree_t* nametree;
-  ndn_face_table_t* facetab;
-
-  /**
-   * The forwarding information base (FIB).
-   */
-  ndn_fib_t* fib;
-  /**
-   * The pending Interest table (PIT).
-   */
-  ndn_pit_t* pit;
-
-  uint8_t memory[NDN_FORWARDER_DEFAULT_SIZE];
-} ndn_forwarder_t;
 
 static ndn_forwarder_t forwarder;
 
@@ -110,6 +74,11 @@ ndn_forwarder_init(void)
   ndn_pit_init(ptr, NDN_PIT_MAX_SIZE, forwarder.nametree);
   forwarder.pit = (ndn_pit_t*)ptr;
   ptr += NDN_PIT_RESERVE_SIZE(NDN_PIT_MAX_SIZE);
+}
+
+const ndn_forwarder_t*
+ndn_forwarder_get(void){
+  return &forwarder;
 }
 
 void
