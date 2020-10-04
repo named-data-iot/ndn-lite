@@ -20,6 +20,7 @@
 #include "ndn-lite/ndn-constants.h"
 #include "ndn-lite/encode/interest.h"
 #include "ndn-lite/encode/data.h"
+#include "ndn-lite/forwarder/fib.h"
 #include "ndn-lite/forwarder/forwarder.h"
 #include "ndn-lite/face/dummy-face.h"
 
@@ -471,6 +472,40 @@ int test_sign_data(const char* id, uint32_t id_len, ndn_encoder_t* encoder, ndn_
   return 0;
 }
 
+void forwarder_pointer_test()
+{
+  ndn_forwarder_init();
+
+  const ndn_forwarder_t* forwarder;
+  forwarder = ndn_forwarder_get();
+
+  // prepare dummy face
+  ndn_dummy_face_t *dummy_face;
+  dummy_face = ndn_dummy_face_construct();
+
+  char prefix_string[] = "/test3";
+  ndn_name_t prefix;
+  int ret_val = ndn_name_from_string(&prefix, prefix_string, sizeof(prefix_string));
+  CU_ASSERT_EQUAL(ret_val, 0);
+  uint8_t tmp_name_buf[256] = {0};
+  ndn_encoder_t tmp_name_encoder;
+  encoder_init(&tmp_name_encoder, tmp_name_buf, 256);
+  ndn_name_tlv_encode(&tmp_name_encoder, &prefix);
+  ndn_fib_entry_t *fib_entry;
+  fib_entry = ndn_fib_find(forwarder->fib, tmp_name_buf, tmp_name_encoder.offset);
+  CU_ASSERT_PTR_NULL(fib_entry);
+
+  // add route
+  ret_val = ndn_forwarder_add_route_by_str(&dummy_face->intf, "/test3", strlen("/test3"));
+  CU_ASSERT_EQUAL(ret_val, 0);
+
+  fib_entry = ndn_fib_find(forwarder->fib, tmp_name_buf, tmp_name_encoder.offset);
+  CU_ASSERT_PTR_NOT_NULL(fib_entry);
+
+  CU_PASS("The forwarder pointer test was successful");
+  return;
+}
+
 void add_forwarder_test_suite()
 {
   CU_pSuite pSuite = NULL;
@@ -484,7 +519,8 @@ void add_forwarder_test_suite()
     return;
   }
   if (NULL == CU_add_test(pSuite, "forwarder_tests", run_forwarder_tests) ||
-      NULL == CU_add_test(pSuite, "forwarder_put_data_test", forwarder_put_data_test))
+      NULL == CU_add_test(pSuite, "forwarder_put_data_test", forwarder_put_data_test) ||
+      NULL == CU_add_test(pSuite, "forwarder_pointer_test", forwarder_pointer_test))
   {
     CU_cleanup_registry();
     // return CU_get_error();
