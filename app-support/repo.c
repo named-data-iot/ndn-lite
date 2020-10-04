@@ -49,9 +49,6 @@ ndn_repo_find_handle(uint32_t nonce)
 void
 _on_repo_publish_notify_ack(const uint8_t* raw_data, uint32_t data_size, void* userdata)
 {
-  ndn_data_t notify_ack;
-  uint32_t be_signed_start;
-  uint32_t be_signed_end; 
   NDN_LOG_DEBUG("[REPO] Receiving notification ack\n");
 
   // erase handle
@@ -70,10 +67,10 @@ _repo_publish_notify(nonce_to_msg_t* handle)
   ndn_interest_t notify;
   ndn_interest_init(&notify);
   ndn_name_init(&notify.name);
-  ndn_name_append_component(&notify, &ndn_key_storage_get_self_identity(handle->service)->components[0]);
-  ndn_name_append_string_component(&notify, "repo", strlen("repo"));
-  ndn_name_append_string_component(&notify, "insert", strlen("insert"));
-  ndn_name_append_string_component(&notify, "notify", strlen("notify"));
+  ndn_name_append_component(&notify.name, &ndn_key_storage_get_self_identity(handle->service)->components[0]);
+  ndn_name_append_string_component(&notify.name, "repo", strlen("repo"));
+  ndn_name_append_string_component(&notify.name, "insert", strlen("insert"));
+  ndn_name_append_string_component(&notify.name, "notify", strlen("notify"));
 
   uint8_t notify_param[500];
   ndn_encoder_t encoder;
@@ -174,7 +171,10 @@ ndn_repo_set_publish_handle(nonce_to_msg_t* handle, uint8_t* msg_value, uint32_t
     return NDN_OVERSIZE;
   if (msg_size > 500)
     return NDN_OVERSIZE;
-  ndn_rng(&handle->nonce, sizeof(uint32_t));
+  
+  uint8_t nonce[4];
+  ndn_rng(nonce, sizeof(nonce));
+  memcpy(&handle->nonce, nonce, sizeof(nonce));
   memcpy(handle->msg, msg_value, msg_size);
   handle->msg_size = msg_size;
   handle->service = service;
@@ -213,7 +213,9 @@ ndn_repo_publish_cmd_param(ndn_name_t* expected_name, uint8_t service)
    encoder_append_type(&encoder, 206);
    encoder_append_length(&encoder, sizeof(uint32_t));
    uint32_t nonce;
-   ndn_rng(&nonce, sizeof(nonce));
+   uint8_t get_nonce[4];
+   ndn_rng(get_nonce, sizeof(get_nonce));
+   memcpy(&nonce, get_nonce, sizeof(get_nonce));
    encoder_append_uint32_value(&encoder, nonce);
    // no register root prefix
 
