@@ -114,7 +114,7 @@ _ac_timeout()
     if (_ac_self_state.access_keys[i].key_id != NDN_SEC_INVALID_KEY_ID &&
         _ac_self_state.access_keys[i].in_renewal == false &&
         now > _ac_self_state.access_keys[i].expires_at) {
-          NDN_LOG_DEBUG("[ACCESSCTL] Now is %ld, Expiration time is %ld\n", now, _ac_self_state.access_keys[i].expires_at);
+          NDN_LOG_DEBUG("[ACCESSCTL] Now is %llu, Expiration time is %llu\n", now, _ac_self_state.access_keys[i].expires_at);
           NDN_LOG_DEBUG("[ACCESSCTL] Access key for for service %u expired\n", _ac_self_state.access_services[i]);
           // send the dk renew request
           _express_dkey_interest(_ac_self_state.access_services[i]);
@@ -123,7 +123,7 @@ _ac_timeout()
     if (_ac_self_state.ekeys[i].key_id != NDN_SEC_INVALID_KEY_ID &&
         _ac_self_state.ekeys[i].in_renewal == false &&
         now > _ac_self_state.ekeys[i].expires_at) {
-          NDN_LOG_DEBUG("[ACCESSCTL] Now is %ld, Expiration time is %ld\n", now, _ac_self_state.ekeys[i].expires_at);
+          NDN_LOG_DEBUG("[ACCESSCTL] Now is %llu, Expiration time is %llu\n", now, _ac_self_state.ekeys[i].expires_at);
           NDN_LOG_DEBUG("[ACCESSCTL] Encryption key for for service %u expired\n", _ac_self_state.self_services[i]);
           // send the ek renew request
           _express_ekey_interest(_ac_self_state.self_services[i]);
@@ -225,7 +225,7 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
       if (_ac_self_state.self_services[i] == service) {
         _ac_self_state.ekeys[i].key_id = keyid;
         _ac_self_state.ekeys[i].expires_at = expires_in + now;
-        NDN_LOG_DEBUG("[ACCESSCTL] New expiration time is %ld, New keyid is %u\n",
+        NDN_LOG_DEBUG("[ACCESSCTL] New expiration time is %llu, New keyid is %u\n",
                       _ac_self_state.ekeys[i].expires_at, _ac_self_state.ekeys[i].key_id);
         ndn_aes_key_init(ekey, value, NDN_AES_BLOCK_SIZE, _ac_self_state.ekeys[i].key_id);
         _ac_self_state.ekeys[i].in_renewal = false;
@@ -241,7 +241,7 @@ _on_ekey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
         _ac_self_state.ekeys[i].key_id = keyid;
         _ac_self_state.ekeys[i].in_renewal = false;
         _ac_self_state.ekeys[i].expires_at = expires_in + now;
-        NDN_LOG_DEBUG("[ACCESSCTL] Expires at %ld ms\n", _ac_self_state.ekeys[i].expires_at);
+        NDN_LOG_DEBUG("[ACCESSCTL] Expires at %llu ms\n", _ac_self_state.ekeys[i].expires_at);
         break;
       }
     }
@@ -325,7 +325,7 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
       if (_ac_self_state.access_services[i] == service) {
         _ac_self_state.ekeys[i].key_id = keyid;
         _ac_self_state.access_keys[i].expires_at = expires_in + now;
-        NDN_LOG_DEBUG("[ACCESSCTL] New expiration time is %ld, New keyid is %u\n",
+        NDN_LOG_DEBUG("[ACCESSCTL] New expiration time is %llu, New keyid is %u\n",
                       _ac_self_state.access_keys[i].expires_at, _ac_self_state.access_keys[i].key_id);
         ndn_aes_key_init(access_key, value, NDN_AES_BLOCK_SIZE, _ac_self_state.access_keys[i].key_id);
         _ac_self_state.access_keys[i].in_renewal = false;
@@ -341,7 +341,7 @@ _on_dkey_data(const uint8_t* raw_data, uint32_t data_size, void* userdata)
         _ac_self_state.access_keys[i].key_id = keyid;
         _ac_self_state.access_keys[i].in_renewal = false;
         _ac_self_state.access_keys[i].expires_at = expires_in + now;
-        NDN_LOG_DEBUG("[ACCESSCTL] Expires at %ld ms\n", _ac_self_state.access_keys[i].expires_at);
+        NDN_LOG_DEBUG("[ACCESSCTL] Expires at %llu ms\n", _ac_self_state.access_keys[i].expires_at);
         break;
       }
     }
