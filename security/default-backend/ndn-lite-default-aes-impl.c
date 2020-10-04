@@ -27,10 +27,6 @@ static int
 _pkcs7_padding(const uint8_t* input_value, uint8_t input_size,
                uint8_t* output_value, uint8_t output_size)
 {
-  if (input_size % TC_AES_BLOCK_SIZE == 0) {
-    memcpy(output_value, input_value, input_size);
-    return input_size;
-  }
   uint8_t num = TC_AES_BLOCK_SIZE - input_size % TC_AES_BLOCK_SIZE;
   if (output_size < input_size + num)
     return NDN_OVERSIZE;
