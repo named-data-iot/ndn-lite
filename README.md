@@ -1,7 +1,7 @@
 ndn-lite
 ========
 
-[![Build Status](https://travis-ci.com/named-data-iot/ndn-lite.svg?branch=master)](https://travis-ci.com/named-data-iot/ndn-lite)
+[![Build Status](https://travis-ci.com/named-data-iot/ndn-lite.svg?latest)](https://travis-ci.com/named-data-iot/ndn-lite)
 
 <img src="https://zhiyi-zhang.com/images/ndn-lite-logo.jpg" alt="logo" width="500"/>
 
