@@ -114,7 +114,7 @@ void add_metainfo_test_suite(void)
     // return CU_get_error();
     return;
   }
-  if (NULL == CU_add_test(pSuite, "metainfo_tests", run_metainfo_tests))
+  if (NULL == CU_add_test(pSuite, "metainfo_tests", (void (*)(void))run_metainfo_tests))
   {
     CU_cleanup_registry();
     // return CU_get_error();

@@ -181,7 +181,7 @@ void add_name_encode_decode_test_suite(void)
     // return CU_get_error();
     return;
   }
-  if (NULL == CU_add_test(pSuite, "name_encode_decode_tests", run_name_encode_decode_tests))
+  if (NULL == CU_add_test(pSuite, "name_encode_decode_tests", (void (*)(void))run_name_encode_decode_tests))
   {
     CU_cleanup_registry();
     // return CU_get_error();

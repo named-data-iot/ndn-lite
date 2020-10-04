@@ -29,7 +29,7 @@ void run_fib_test_1(void) {
   ndn_nametree_t * nametree = (ndn_nametree_t *)ptr;
   ptr += NDN_NAMETREE_RESERVE_SIZE(NDN_NAMETREE_MAX_SIZE);
   ndn_facetab_init(ptr, NDN_FACE_TABLE_MAX_SIZE);
-  ndn_face_table_t *facetab = (ndn_face_table_t *)ptr;
+  // ndn_face_table_t *facetab = (ndn_face_table_t *)ptr;
   ptr += NDN_FACE_TABLE_RESERVE_SIZE(NDN_FACE_TABLE_MAX_SIZE);
   ndn_fib_init(ptr, NDN_FIB_MAX_SIZE, nametree);
   ndn_fib_t *fib = (ndn_fib_t *)ptr;

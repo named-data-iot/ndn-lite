@@ -131,7 +131,7 @@ void add_encoder_decoder_test_suite(void){
     // return CU_get_error();
     return;
   }
-  if (NULL == CU_add_test(pSuite, "encoder_decoder_tests", run_encoder_decoder_tests))
+  if (NULL == CU_add_test(pSuite, "encoder_decoder_tests", (void (*)(void))run_encoder_decoder_tests))
   {
     CU_cleanup_registry();
     // return CU_get_error();

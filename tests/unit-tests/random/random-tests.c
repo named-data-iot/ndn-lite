@@ -115,7 +115,7 @@ void add_random_test_suite(void)
     // return CU_get_error();
     return;
   }
-  if (NULL == CU_add_test(pSuite, "random_tests", run_random_tests))
+  if (NULL == CU_add_test(pSuite, "random_tests", (void (*)(void))run_random_tests))
   {
     CU_cleanup_registry();
     // return CU_get_error();

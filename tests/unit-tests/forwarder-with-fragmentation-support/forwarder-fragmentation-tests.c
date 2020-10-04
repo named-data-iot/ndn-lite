@@ -29,9 +29,10 @@
 
 const char *_current_test_name;
 static bool _current_forwarder_test_app_received_interest = false;
-static bool _current_forwarder_test_app_received_data = false;
-static bool _current_forwarder_test_all_calls_succeeded = false;
+// static bool _current_forwarder_test_app_received_data = false;
+// static bool _current_forwarder_test_all_calls_succeeded = false;
 
+int ff_test_sign_data(const char* id, uint32_t id_len, ndn_encoder_t* encoder, ndn_data_t* data);
 
 void ff_on_interest_timeout_callback(void *userdata)
 {

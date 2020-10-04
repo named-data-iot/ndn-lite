@@ -15,17 +15,6 @@
 #include "../test-helpers.h"
 #include "ndn-lite/security/ndn-lite-aes.h"
 
-#define PLAIN_TEXT_BUFFER_MAX_SIZE 255
-
-static uint8_t plain_text[PLAIN_TEXT_BUFFER_MAX_SIZE];
-
-#define CIPHER_TEXT_BUFFER_MAX_SIZE 255
-
-static uint8_t cipher_text[CIPHER_TEXT_BUFFER_MAX_SIZE];
-
-static const char *_current_test_name;
-static bool _test_success = true;
-
 void aes_test_case_1(void)
 {
   // https://tools.ietf.org/html/rfc3602 Case #2
@@ -40,7 +29,7 @@ void aes_test_case_1(void)
   ndn_aes_key_t aes_key;
   ndn_aes_key_init(&aes_key, key, sizeof(key), 123);
   uint32_t used_size = 0;
-  int ret_val = ndn_aes_cbc_encrypt(plain_text, sizeof(plain_text), output, &used_size, iv, &aes_key);
+  ndn_aes_cbc_encrypt(plain_text, sizeof(plain_text), output, &used_size, iv, &aes_key);
   CU_ASSERT_EQUAL(memcmp(cipher_text, output, used_size), 0);
   CU_ASSERT_EQUAL(used_size, sizeof(cipher_text));
 }
@@ -59,7 +48,7 @@ void aes_test_case_2(void)
   ndn_aes_key_t aes_key;
   ndn_aes_key_init(&aes_key, key, sizeof(key), 123);
   uint32_t used_size = 0;
-  int ret_val = ndn_aes_cbc_decrypt(cipher_text, sizeof(cipher_text), output, &used_size, iv, &aes_key);
+  ndn_aes_cbc_decrypt(cipher_text, sizeof(cipher_text), output, &used_size, iv, &aes_key);
   CU_ASSERT_EQUAL(memcmp(plain_text, output, used_size), 0);
   CU_ASSERT_EQUAL(used_size, sizeof(plain_text));
 }
@@ -80,7 +69,7 @@ void aes_test_case_3(void)
   ndn_aes_key_t aes_key;
   ndn_aes_key_init(&aes_key, key, sizeof(key), 123);
   uint32_t used_size = 0;
-  int ret_val = ndn_aes_cbc_encrypt(plain_text, sizeof(plain_text), output, &used_size, iv, &aes_key);
+  ndn_aes_cbc_encrypt(plain_text, sizeof(plain_text), output, &used_size, iv, &aes_key);
   CU_ASSERT_EQUAL(memcmp(cipher_text, output, used_size), 0);
   CU_ASSERT_EQUAL(used_size, sizeof(cipher_text));
 }
@@ -101,7 +90,7 @@ void aes_test_case_4(void)
   ndn_aes_key_t aes_key;
   ndn_aes_key_init(&aes_key, key, sizeof(key), 123);
   uint32_t used_size = 0;
-  int ret_val = ndn_aes_cbc_decrypt(cipher_text, sizeof(cipher_text), output, &used_size, iv, &aes_key);
+  ndn_aes_cbc_decrypt(cipher_text, sizeof(cipher_text), output, &used_size, iv, &aes_key);
   CU_ASSERT_EQUAL(memcmp(plain_text, output, used_size), 0);
   CU_ASSERT_EQUAL(used_size, sizeof(plain_text));
 }
@@ -116,7 +105,7 @@ void add_aes_test_suite(void)
   CU_pSuite pSuite = NULL;
 
   /* add a suite to the registry */
-  pSuite = CU_add_suite("AES CBC Test", ndn_security_init, NULL);
+  pSuite = CU_add_suite("AES CBC Test", (int (*)(void))ndn_security_init, NULL);
   if (NULL == pSuite)
   {
     CU_cleanup_registry();

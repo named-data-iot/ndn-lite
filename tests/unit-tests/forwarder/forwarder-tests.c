@@ -43,6 +43,8 @@ static struct timeval _current_time;
 static uint32_t _current_forwarder_test_start_time_u_secs;
 static uint32_t _current_time_u_secs;
 
+int test_sign_data(const char* id, uint32_t id_len, ndn_encoder_t* encoder, ndn_data_t* data);
+
 void on_data_callback(const uint8_t *data, uint32_t data_size, void *userdata)
 {
   //printf("application receives a Data\n");
@@ -518,7 +520,7 @@ void add_forwarder_test_suite()
     // return CU_get_error();
     return;
   }
-  if (NULL == CU_add_test(pSuite, "forwarder_tests", run_forwarder_tests) ||
+  if (NULL == CU_add_test(pSuite, "forwarder_tests", (void (*)(void))run_forwarder_tests) ||
       NULL == CU_add_test(pSuite, "forwarder_put_data_test", forwarder_put_data_test) ||
       NULL == CU_add_test(pSuite, "forwarder_pointer_test", forwarder_pointer_test))
   {

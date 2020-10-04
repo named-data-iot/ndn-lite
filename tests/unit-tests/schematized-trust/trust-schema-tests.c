@@ -195,7 +195,7 @@ void add_trust_schema_test_suite(void)
     // return CU_get_error();
     return;
   }
-  if (NULL == CU_add_test(pSuite, "trust_schema_tests", run_trust_schema_tests))
+  if (NULL == CU_add_test(pSuite, "trust_schema_tests", (void (*)(void))run_trust_schema_tests))
   {
     CU_cleanup_registry();
     // return CU_get_error();

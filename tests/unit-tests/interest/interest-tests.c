@@ -388,7 +388,7 @@ void add_interest_test_suite(void)
     // return CU_get_error();
     return;
   }
-  if (NULL == CU_add_test(pSuite, "interest_tests", run_interest_tests))
+  if (NULL == CU_add_test(pSuite, "interest_tests", (void (*)(void))run_interest_tests))
   {
     CU_cleanup_registry();
     // return CU_get_error();

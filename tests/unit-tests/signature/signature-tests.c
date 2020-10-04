@@ -197,7 +197,7 @@ void add_signature_test_suite(void)
     // return CU_get_error();
     return;
   }
-  if (NULL == CU_add_test(pSuite, "signature_tests", run_signature_tests))
+  if (NULL == CU_add_test(pSuite, "signature_tests", (void (*)(void))run_signature_tests))
   {
     CU_cleanup_registry();
     // return CU_get_error();

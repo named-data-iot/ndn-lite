@@ -25,7 +25,6 @@
 
 static const char *_current_test_name;
 static bool _all_function_calls_succeeded = true;
-static CU_pSuite pSuite;
 
 void _run_asn_encode_decode_test(asn_encode_decode_test_t *test);
 

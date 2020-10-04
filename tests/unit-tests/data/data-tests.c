@@ -308,14 +308,14 @@ void add_data_test_suite()
   CU_pSuite pSuite = NULL;
 
   /* add a suite to the registry */
-  pSuite = CU_add_suite("Data Test", ndn_security_init, NULL);
+  pSuite = CU_add_suite("Data Test", (int (*)(void))ndn_security_init, NULL);
   if (NULL == pSuite)
   {
     CU_cleanup_registry();
     // return CU_get_error();
     return;
   }
-  if (NULL == CU_add_test(pSuite, "data_tests", run_data_tests))
+  if (NULL == CU_add_test(pSuite, "data_tests", (void (*)(void))run_data_tests))
   {
     CU_cleanup_registry();
     // return CU_get_error();
