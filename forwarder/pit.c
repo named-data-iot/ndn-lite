@@ -34,6 +34,8 @@ static void ndn_pit_timeout(void *selfptr, size_t param_len, void *param){
   ndn_on_timeout_func on_timeout = NULL;
   void* userdata = NULL;
 
+  NDN_LOG_DEBUG("[PIT] timeout with pointer to parameter: %p and size: %d\n", (void*) param, param_len);
+
   for(i = 0; i < self->capacity; i ++){
     if(self->slots[i].nametree_id == NDN_INVALID_ID){
       continue;
