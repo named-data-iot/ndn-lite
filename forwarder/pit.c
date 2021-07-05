@@ -28,13 +28,12 @@ ndn_pit_entry_reset(ndn_pit_entry_t* self){
 }
 
 static void ndn_pit_timeout(void *selfptr, size_t param_len, void *param){
+  (void*) param_len, param;
   ndn_pit_t* self = (ndn_pit_t*)selfptr;
   ndn_table_id_t i;
   ndn_time_ms_t now = ndn_time_now_ms();
   ndn_on_timeout_func on_timeout = NULL;
   void* userdata = NULL;
-
-  NDN_LOG_DEBUG("[PIT] timeout with pointer to parameter: %p and size: %d\n", (void*) param, param_len);
 
   for(i = 0; i < self->capacity; i ++){
     if(self->slots[i].nametree_id == NDN_INVALID_ID){
