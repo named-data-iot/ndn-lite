@@ -16,8 +16,7 @@
 /* always fails and return 0 */
 static int ndn_lite_default_rng(uint8_t *dest, unsigned size)
 {
-  (void*) dest;
-  (void*) size;
+  (void) dest, size;
 
   return 0;
 }
