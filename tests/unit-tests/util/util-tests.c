@@ -90,7 +90,7 @@ void msgproc(void *self, size_t param_length, void *param) {
 }
 
 void dummy_msgproc(void *self, size_t param_length, void *param){
-  (void) self, param_length, param;
+  (void) self, (void) param_length, (void) param;
   ret = true;
 }
 

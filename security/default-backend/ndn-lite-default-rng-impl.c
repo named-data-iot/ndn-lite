@@ -16,10 +16,7 @@
 /* always fails and return 0 */
 static int ndn_lite_default_rng(uint8_t *dest, unsigned size)
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-value"
-  (void) dest, size;
-#pragma GCC diagnostic pop
+  (void) dest, (void) size;
 
   return 0;
 }
