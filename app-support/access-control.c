@@ -393,6 +393,9 @@ _express_ekey_interest(uint8_t service)
   if (ret != 0) return ret;
   ret = ndn_name_append_bytes_component(&interest.name, &service, 1);
   if (ret != 0) return ret;
+  // append device-id to ekey_interest_name
+  ret = ndn_name_append_component(&interest.name, &storage->self_identity[0].components[storage->self_identity[0].components_size - 1]);
+  if (ret != 0) return ret;
 
   // signature signing
   ndn_name_t* self_identity = ndn_key_storage_get_self_identity(service);
@@ -446,6 +449,10 @@ _express_dkey_interest(uint8_t service)
   if (ret != 0) return ret;
   ret = ndn_name_append_bytes_component(&interest.name, &service, 1);
   if (ret != 0) return ret;
+  // append device-id to dkey_interest_name
+  ret = ndn_name_append_component(&interest.name, &storage->self_identity[0].components[storage->self_identity[0].components_size - 1]);
+  if (ret != 0) return ret;
+
 
   // TODO: figure out a better way to sign instead of using the first cert
   ndn_signed_interest_ecdsa_sign(&interest, &storage->self_identity[0], &storage->self_identity_key[0]);
