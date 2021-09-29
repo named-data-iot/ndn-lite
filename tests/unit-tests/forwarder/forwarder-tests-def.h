@@ -30,4 +30,6 @@ extern const uint8_t test_ecc_secp256r1_private_raw_1[SECP256R1_PRI_KEY_SIZE];
 
 extern const uint8_t test_ecc_secp256r1_public_raw_1[SECP256R1_PUB_KEY_SIZE];
 
+extern uint8_t content_store_packet_sample[143];
+
 #endif // FORWARDER_TESTS_DEF_H

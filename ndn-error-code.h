@@ -156,6 +156,10 @@
 /** The message queue is full.
  */
 #define NDN_FWD_MSGQUEUE_FULL -57
+
+/** The CS is full.
+ */
+#define NDN_FWD_CS_FULL -58
 /* @} */
 
 /** @defgroup NDNErrorCodeFace Face Errors

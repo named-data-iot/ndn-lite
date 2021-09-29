@@ -14,6 +14,7 @@
 #include "face.h"
 #include "name-tree.h"
 #include "pit.h"
+#include "cs.h"
 #include "fib.h"
 #include "face-table.h"
 #include "../encode/name.h"
@@ -21,17 +22,19 @@
 #include "callback-funcs.h"
 #include "../util/msg-queue.h"
 
-#define NDN_FORWARDER_RESERVE_SIZE(nametree_size, facetab_size, fib_size, pit_size) \
+#define NDN_FORWARDER_RESERVE_SIZE(nametree_size, facetab_size, fib_size, pit_size, cs_size) \
   (NDN_NAMETREE_RESERVE_SIZE(nametree_size) + \
    NDN_FACE_TABLE_RESERVE_SIZE(facetab_size) + \
    NDN_FIB_RESERVE_SIZE(fib_size) + \
-   NDN_PIT_RESERVE_SIZE(pit_size))
+   NDN_PIT_RESERVE_SIZE(pit_size) + \
+   NDN_PIT_RESERVE_SIZE(cs_size))
 
 #define NDN_FORWARDER_DEFAULT_SIZE \
   NDN_FORWARDER_RESERVE_SIZE(NDN_NAMETREE_MAX_SIZE, \
                              NDN_FACE_TABLE_MAX_SIZE, \
                              NDN_FIB_MAX_SIZE, \
-                             NDN_PIT_MAX_SIZE)
+                             NDN_PIT_MAX_SIZE, \
+                             NDN_CS_MAX_SIZE)
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,6 +59,10 @@ typedef struct ndn_forwarder {
    * The pending Interest table (PIT).
    */
   ndn_pit_t* pit;
+  /**
+   * The content store (CS).
+   */
+  ndn_cs_t* cs;
 
   uint8_t memory[NDN_FORWARDER_DEFAULT_SIZE];
 } ndn_forwarder_t;
