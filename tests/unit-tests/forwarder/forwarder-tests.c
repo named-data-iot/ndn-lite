@@ -757,25 +757,6 @@ void run_forwarder_cs_tests()
     print_error(_current_test_name, "run_forwarder_cs_tests", "ndn_interest_tlv_encode", ret_val);
   }
 
-  // recreate identical interest
-  ndn_interest_init(&interest);
-  ret_val = ndn_name_from_string(&interest.name, name_string, sizeof(name_string));
-  CU_ASSERT_EQUAL(ret_val, 0);
-  if (ret_val != 0)
-  {
-    _current_forwarder_test_all_calls_succeeded = false;
-    print_error(_current_test_name, "run_forwarder_cs_tests", "ndn_name_from_string", ret_val);
-  }
-
-  encoder_init(&encoder, interest_block, 256);
-  ret_val = ndn_interest_tlv_encode(&encoder, &interest);
-  CU_ASSERT_EQUAL(ret_val, 0);
-  if (ret_val != 0)
-  {
-    _current_forwarder_test_all_calls_succeeded = false;
-    print_error(_current_test_name, "run_forwarder_cs_tests", "ndn_interest_tlv_encode", ret_val);
-  }
-  
   // receive identical interest
   ret_val = ndn_forwarder_receive(&dummy_face->intf, interest_block, encoder.offset);
   CU_ASSERT_EQUAL(ret_val, 0);
