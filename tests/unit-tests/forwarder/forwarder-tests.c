@@ -511,6 +511,116 @@ void forwarder_pointer_test()
   return;
 }
 
+void create_fib(ndn_dummy_face_t* dummy_face, char* string){
+  int ret_val = -1;
+
+  // add FIB entry
+  //printf("\n***Add dummy face to FIB ***\n");
+  ndn_name_t prefix;
+  ret_val = ndn_name_from_string(&prefix, string, strlen(string));
+  CU_ASSERT_EQUAL(ret_val, 0);
+  if (ret_val != 0)
+  {
+    _current_forwarder_test_all_calls_succeeded = false;
+    print_error(_current_test_name, "run_forwarder_cs_tests", "ndn_name_from_string", ret_val);
+  }
+  uint8_t tmp_name_buf[256] = {0};
+  ndn_encoder_t tmp_name_encoder;
+  encoder_init(&tmp_name_encoder, tmp_name_buf, 256);
+  ndn_name_tlv_encode(&tmp_name_encoder, &prefix);
+  ret_val = ndn_forwarder_add_route(&dummy_face->intf, tmp_name_buf, tmp_name_encoder.offset);
+  CU_ASSERT_EQUAL(ret_val, 0);
+  if (ret_val != 0)
+  {
+    _current_forwarder_test_all_calls_succeeded = false;
+    print_error(_current_test_name, "run_forwarder_cs_tests", "ndn_forwarder_fib_insert", ret_val);
+  }
+}
+
+void create_data_packet(ndn_dummy_face_t* dummy_face, ndn_encoder_t encoder, const char* string){
+  int ret_val = -1;
+
+  // prepare Data content and Data packet
+  uint8_t buf[10] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
+  uint8_t block_value[1024];
+  ndn_data_t data;
+  ret_val = ndn_data_set_content(&data, buf, sizeof(buf));
+  CU_ASSERT_EQUAL(ret_val, 0);
+  if (ret_val != 0)
+  {
+    _current_forwarder_test_all_calls_succeeded = false;
+    print_error(_current_test_name, "run_forwarder_cs_tests", "ndn_data_set_content", ret_val);
+  }
+
+  // set name, metainfo
+  ret_val = ndn_name_from_string(&data.name, string, strlen(string));
+  CU_ASSERT_EQUAL(ret_val, 0);
+  if (ret_val != 0)
+  {
+    _current_forwarder_test_all_calls_succeeded = false;
+    print_error(_current_test_name, "run_forwarder_cs_tests", "ndn_name_from_string", ret_val);
+  }
+  ndn_metainfo_init(&data.metainfo);
+  ndn_metainfo_set_content_type(&data.metainfo, NDN_CONTENT_TYPE_BLOB);
+
+  // sign the packet
+  encoder_init(&encoder, block_value, 1024);
+  ret_val = test_sign_data("ndn/zhiyi", strlen("ndn/zhiyi"), &encoder, &data);
+  CU_ASSERT_EQUAL(ret_val, 0);
+
+  // receive the Data packet
+  //printf("\n***Dummy Face receives an Data ***\n");
+  ret_val = ndn_forwarder_receive(&dummy_face->intf, block_value, encoder.offset);
+  CU_ASSERT_EQUAL(ret_val, 0);
+  if (ret_val != 0)
+  {
+    _current_forwarder_test_all_calls_succeeded = false;
+    print_error(_current_test_name, "run_forwarder_cs_tests", "ndn_forwarder_receive", ret_val);
+  }
+}
+
+void create_and_express_interest(ndn_dummy_face_t* dummy_face, const char* string){
+  int ret_val = -1;
+
+  // create interest
+  ndn_interest_t interest;
+  ndn_interest_init(&interest);
+  ret_val = ndn_name_from_string(&interest.name, string, strlen(string));
+  CU_ASSERT_EQUAL(ret_val, 0);
+  if (ret_val != 0)
+  {
+    _current_forwarder_test_all_calls_succeeded = false;
+    print_error(_current_test_name, "run_forwarder_cs_tests", "ndn_name_from_string", ret_val);
+  }
+  uint8_t interest_block[256] = {0};
+  ndn_encoder_t encoder;
+  encoder_init(&encoder, interest_block, 256);
+  ret_val = ndn_interest_tlv_encode(&encoder, &interest);
+  CU_ASSERT_EQUAL(ret_val, 0);
+  if (ret_val != 0)
+  {
+    _current_forwarder_test_all_calls_succeeded = false;
+    print_error(_current_test_name, "run_forwarder_cs_tests", "ndn_interest_tlv_encode", ret_val);
+  }
+
+  // express Interest
+  //printf("\n***Express Interest ***\n");
+  ret_val = ndn_forwarder_express_interest(
+      interest_block,
+      encoder.offset,
+      on_data_callback,
+      on_interest_timeout_callback,
+      NULL);
+  CU_ASSERT_EQUAL(ret_val, 0);
+  if (ret_val != 0)
+  {
+    _current_forwarder_test_all_calls_succeeded = false;
+    print_error(_current_test_name, "run_forwarder_cs_tests", "ndn_direct_face_express_interest", ret_val);
+  }
+
+  create_data_packet(dummy_face, encoder, string);
+}
+
 void run_forwarder_cs_tests()
 {
   int ret_val = -1;
