@@ -81,6 +81,9 @@ typedef struct ndn_cs{
 void
 ndn_cs_init(void* memory, ndn_table_id_t capacity, ndn_nametree_t* nametree);
 
+void
+ndn_cs_remove_entry(ndn_cs_t* self, ndn_cs_entry_t* entry);
+
 ndn_cs_entry_t*
 ndn_cs_find_or_insert(ndn_cs_t* self, uint8_t* name, size_t length);
 

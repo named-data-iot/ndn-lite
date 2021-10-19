@@ -78,6 +78,8 @@ ndn_forwarder_init(void)
   ndn_cs_init(ptr, NDN_CS_MAX_SIZE, forwarder.nametree);
   forwarder.cs = (ndn_cs_t*)ptr;
   ptr += NDN_CS_RESERVE_SIZE(NDN_CS_MAX_SIZE);
+
+  dll_init();
 }
 
 const ndn_forwarder_t*
@@ -442,15 +444,24 @@ fwd_data_pipeline(uint8_t* data,
   }else{
     NDN_LOG_DEBUG("[FORWARDER] (fwd_data_pipeline) No cs entry found, inserting new one\n");
 
+    // try to insert new CS entry
     cs_entry = ndn_cs_find_or_insert(forwarder.cs, name, name_len);
     if (cs_entry == NULL){
       NDN_LOG_DEBUG("[FORWARDER] (fwd_data_pipeline) The CS table is already full\n");
-      // TODO handle full CS table (FIFO)
-    }else{
-      cs_entry->content = malloc(length);
-      memcpy(cs_entry->content, data, length);
-      cs_entry->content_len = length;
+      // CS table is full, remove first/oldest entry from CS and insert new entry
+      dll_remove_first();
+      cs_entry = ndn_cs_find_or_insert(forwarder.cs, name, name_len);
     }
+
+    if (cs_entry == NULL)
+      NDN_LOG_DEBUG("[FORWARDER] (fwd_data_pipeline) Could not create new cs_entry\n");
+
+    // create new CS entry with content
+    cs_entry->content = malloc(length);
+    memcpy(cs_entry->content, data, length);
+    cs_entry->content_len = length;
+
+    dll_insert(cs_entry);
   }
 
   ndn_pit_entry_t* pit_entry;

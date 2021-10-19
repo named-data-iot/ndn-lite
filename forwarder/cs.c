@@ -37,6 +37,12 @@ ndn_cs_init(void* memory, ndn_table_id_t capacity, ndn_nametree_t* nametree){
   }
 }
 
+void
+ndn_cs_remove_entry(ndn_cs_t* self, ndn_cs_entry_t* entry){
+  ndn_nametree_at(self->nametree, entry->nametree_id)->cs_id = NDN_INVALID_ID;
+  ndn_cs_entry_reset(entry);
+}
+
 static ndn_table_id_t
 ndn_cs_add_new_entry(ndn_cs_t* cs , int nametree_id){
   ndn_table_id_t i;

@@ -781,6 +781,15 @@ void run_forwarder_cs_tests()
     print_error(_current_test_name, "run_forwarder_cs_tests", "ndn_direct_face_express_interest", ret_val);
   }
 
+  create_fib(dummy_face, "/cs1");
+  create_fib(dummy_face, "/cs2");
+  create_fib(dummy_face, "/cs3");
+
+  create_and_express_interest(dummy_face, "/cs1/sample1");
+  create_and_express_interest(dummy_face, "/cs2/sample2");
+  create_and_express_interest(dummy_face, "/cs3/sample3");
+  create_and_express_interest(dummy_face, "/test4/content1");
+
   // test remove route /test4
   encoder_init(&tmp_name_encoder, tmp_name_buf, 256);
   ndn_name_tlv_encode(&tmp_name_encoder, &prefix);
