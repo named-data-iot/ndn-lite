@@ -50,6 +50,21 @@ dll_insert(ndn_cs_entry_t* entry);
 void
 dll_remove_first(void);
 
+void
+dll_remove_cs_entry(ndn_cs_entry_t* entry);
+
+int
+dll_check_all_cs_entry_freshness(void);
+
+int
+dll_check_one_cs_entry_freshness(ndn_cs_entry_t* entry);
+
+void
+dll_show_all_entries(void);
+
+void
+dll_remove_all_entries(void);
+
 /*@}*/
 
 #ifdef __cplusplus
