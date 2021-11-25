@@ -562,6 +562,7 @@ void create_data_packet(ndn_dummy_face_t* dummy_face, ndn_encoder_t encoder, con
   }
   ndn_metainfo_init(&data.metainfo);
   ndn_metainfo_set_content_type(&data.metainfo, NDN_CONTENT_TYPE_BLOB);
+  ndn_metainfo_set_freshness_period(&data.metainfo, 3000);
 
   // sign the packet
   encoder_init(&encoder, block_value, 1024);
@@ -722,6 +723,7 @@ void run_forwarder_cs_tests()
   }
   ndn_metainfo_init(&data.metainfo);
   ndn_metainfo_set_content_type(&data.metainfo, NDN_CONTENT_TYPE_BLOB);
+  ndn_metainfo_set_freshness_period(&data.metainfo, 3000);
 
   // sign the packet
   encoder_init(&encoder, block_value, 1024);
@@ -789,6 +791,8 @@ void run_forwarder_cs_tests()
   create_and_express_interest(dummy_face, "/cs2/sample2");
   create_and_express_interest(dummy_face, "/cs3/sample3");
   create_and_express_interest(dummy_face, "/test4/content1");
+
+  dll_remove_all_entries();
 
   // test remove route /test4
   encoder_init(&tmp_name_encoder, tmp_name_buf, 256);

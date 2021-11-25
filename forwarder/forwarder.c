@@ -15,6 +15,7 @@
 #include "../ndn-error-code.h"
 #include "../encode/tlv.h"
 #include "../encode/name.h"
+#include "../encode/data.h"
 #include "../util/logger.h"
 
 uint8_t encoding_buf[2048];
@@ -268,17 +269,25 @@ ndn_forwarder_express_interest(uint8_t* interest, size_t length,
     NDN_LOG_DEBUG("[FORWARDER] (ndn_forwarder_express_interest) Prefix match in content store found\n");
     if (cs_entry->options.can_be_prefix || ndn_cs_find(forwarder.cs, name, name_len) == cs_entry){
 
-      cs_entry->options = options;
-      cs_entry->on_data = on_data;
-      cs_entry->userdata = userdata;
+      // check if either the CS entry is fresh or must_be_fresh of the entry is false
+      int cs_entry_freshness = dll_check_one_cs_entry_freshness(cs_entry);
+      if ((cs_entry_freshness == 0) || ((cs_entry_freshness == -1) && (cs_entry->options.must_be_fresh == false))){
+        cs_entry->options = options;
+        cs_entry->on_data = on_data;
+        cs_entry->userdata = userdata;
 
-      cs_entry->last_time = cs_entry->express_time = ndn_time_now_ms();
+        cs_entry->last_time = ndn_time_now_ms();
 
-      if (cs_entry->on_data != NULL){
-        cs_entry->on_data(cs_entry->content, cs_entry->content_len, cs_entry->userdata);
+        if (cs_entry->on_data != NULL){
+          cs_entry->on_data(cs_entry->content, cs_entry->content_len, cs_entry->userdata);
+        }
+
+        return NDN_SUCCESS;
+      }else{
+        NDN_LOG_DEBUG("The found CS entry is not fresh anymore, but must be fresh\n");
+
+        dll_remove_cs_entry(cs_entry);
       }
-
-      return NDN_SUCCESS;
     }
   }
 
@@ -375,23 +384,32 @@ fwd_on_incoming_interest(uint8_t* interest,
   }else{
     NDN_LOG_DEBUG("[FORWARDER] (fwd_on_incoming_interest) Prefix match in content store found\n");
     if (cs_entry->options.can_be_prefix || ndn_cs_find(forwarder.cs, name, name_len) == cs_entry){
-      // Randomized dead nonce list
-      if(cs_entry->options.nonce == options->nonce && options->nonce != 0){
-        NDN_LOG_ERROR("[FORWARDER] Drop by dead nonce\n");
-        return NDN_FWD_INTEREST_REJECTED;
+
+      // check if either the CS entry is either fresh or must_be_fresh of the entry is false
+      int cs_entry_freshness = dll_check_one_cs_entry_freshness(cs_entry);
+      if ((cs_entry_freshness == 0) || ((cs_entry_freshness == -1) && (cs_entry->options.must_be_fresh == false))){
+        // Randomized dead nonce list
+        if(cs_entry->options.nonce == options->nonce && options->nonce != 0){
+          NDN_LOG_ERROR("[FORWARDER] Drop by dead nonce\n");
+          return NDN_FWD_INTEREST_REJECTED;
+        }
+        if(cs_entry->on_data == NULL){
+          // Update the options (lifetime) only when it's not expressed by an application, as done with the pit_entry below.
+          cs_entry->options = *options;
+        }
+        cs_entry->last_time = ndn_time_now_ms();
+
+        ndn_bitset_t incoming_faces;
+        incoming_faces = bitset_set(0, face_id);
+
+        fwd_multicast(cs_entry->content, cs_entry->content_len, incoming_faces, NDN_INVALID_ID);
+
+        return NDN_SUCCESS;
+      }else{
+        NDN_LOG_DEBUG("The found CS entry is not fresh anymore, but must be fresh\n");
+
+        dll_remove_cs_entry(cs_entry);
       }
-      if(cs_entry->on_data == NULL){
-        // Update the options (lifetime) only when it's not expressed by an application, as done with the pit_entry below.
-        cs_entry->options = *options;
-      }
-      cs_entry->last_time = ndn_time_now_ms();
-
-      ndn_bitset_t incoming_faces;
-      incoming_faces = bitset_set(0, face_id);
-
-      fwd_multicast(cs_entry->content, cs_entry->content_len, incoming_faces, NDN_INVALID_ID);
-
-      return NDN_SUCCESS;
     }
   }
 
@@ -448,18 +466,33 @@ fwd_data_pipeline(uint8_t* data,
     cs_entry = ndn_cs_find_or_insert(forwarder.cs, name, name_len);
     if (cs_entry == NULL){
       NDN_LOG_DEBUG("[FORWARDER] (fwd_data_pipeline) The CS table is already full\n");
-      // CS table is full, remove first/oldest entry from CS and insert new entry
-      dll_remove_first();
+      // CS table is full, remove all entries that are not fresh or first/oldest entry from CS
+      int deleted = dll_check_all_cs_entry_freshness();
+      if (deleted == 0)
+        dll_remove_first();
+
+      // insert new entry after creating space
       cs_entry = ndn_cs_find_or_insert(forwarder.cs, name, name_len);
     }
 
     if (cs_entry == NULL)
       NDN_LOG_DEBUG("[FORWARDER] (fwd_data_pipeline) Could not create new cs_entry\n");
 
+    ndn_data_t ndn_data_content;
+
+    // decode the data to extract the freshnessPeriod of the data
+    uint32_t be_signed_start, be_signed_end;
+    ndn_data_tlv_decode_no_verify(&ndn_data_content, data, length, &be_signed_start, &be_signed_end);
+
     // create new CS entry with content
     cs_entry->content = malloc(length);
     memcpy(cs_entry->content, data, length);
     cs_entry->content_len = length;
+
+    // set the timestamps and freshnessPeriod for the cs_entry
+    ndn_time_ms_t now = ndn_time_now_ms();
+    cs_entry->last_time = cs_entry->express_time = now;
+    cs_entry->fresh_until = ndn_data_content.metainfo.freshness_period + now;
 
     dll_insert(cs_entry);
   }
