@@ -22,6 +22,8 @@ ndn_cs_entry_reset(ndn_cs_entry_t* self){
   self->on_data = NULL;
   self->userdata = NULL;
   self->content = NULL;
+  self->content_len = 0;
+  self->fresh_until = 0;
   // Don't reset options.nonce here
 }
 

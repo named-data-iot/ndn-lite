@@ -60,6 +60,10 @@ typedef struct ndn_cs_entry {
    */
   size_t content_len;
 
+  /** Relative time until this entry is fresh
+   */
+  ndn_time_ms_t fresh_until;
+
   /** NameTree entry's ID.
    * #NDN_INVALID_ID if the entry is empty.
    */
