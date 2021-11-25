@@ -56,20 +56,41 @@ void dll_insert(ndn_cs_entry_t* entry){
 
 }
 
-void dll_remove_first(){
+void dll_remove_first(void){
   NDN_LOG_DEBUG("dll_remove_first called\n");
   if (head == NULL){
     NDN_LOG_DEBUG("The linked list is empty\n");
     return;
   }
 
+  // check if only one entry in dll
+  if (head->next == head){
+    NDN_LOG_DEBUG("only one entry in dll, removing that\n");
+
+    free(head->cs_entry->content);
+
+    const ndn_forwarder_t* forwarder = ndn_forwarder_get();
+    ndn_cs_remove_entry(forwarder->cs, head->cs_entry);
+
+    head->next = NULL;
+    head->prev = NULL;
+    head->cs_entry = NULL;
+
+    free(head);
+
+    head = NULL;
+
+    return;
+  }
+
   dll_entry_t* tmp = head;
-  tmp->prev = head->prev;
-  tmp->cs_entry = head->cs_entry;
+  dll_entry_t* last = head->prev;
 
   head = head->next;
-  head->prev = tmp->prev;
+  head->prev = last;
+  last->next = head;
 
+  NDN_LOG_DEBUG("head pointer after shifting: %p next: %p prev: %p\n", (void*) head, (void*) head->next, (void*) head->prev);
   free(tmp->cs_entry->content);
 
   const ndn_forwarder_t* forwarder = ndn_forwarder_get();
@@ -80,4 +101,6 @@ void dll_remove_first(){
   tmp->cs_entry = NULL;
 
   free(tmp);
+
+  tmp = NULL;
 }
