@@ -125,51 +125,52 @@ void dll_remove_cs_entry(ndn_cs_entry_t* entry){
   }
 
   const ndn_forwarder_t* forwarder = ndn_forwarder_get();
-  dll_entry_t* cur = head;
+  dll_entry_t* tmp = head->next;
+  dll_entry_t* next = tmp->next;
+  dll_entry_t* last = head->prev;
+
+  while (tmp != head){
+    if (tmp->cs_entry == entry){
+      NDN_LOG_DEBUG("CS entry found %p\n", tmp);
+
+      tmp->next->prev = tmp->prev;
+      tmp->prev->next = tmp->next;
+
+      free(tmp->cs_entry->content);
+      ndn_cs_remove_entry(forwarder->cs, tmp->cs_entry);
+
+      tmp->next = NULL;
+      tmp->prev = NULL;
+      tmp->cs_entry = NULL;
+
+      free(tmp);
+      tmp = NULL;
+
+      return;
+    }
+    tmp = next;
+    next = tmp->next;
+  }
 
   if (head->cs_entry == entry){
     NDN_LOG_DEBUG("CS entry found at head %p\n", head);
 
     head = head->next;
-    head->prev = cur->prev;
+    head->prev = tmp->prev;
+    last->next = head;
 
-    free(cur->cs_entry->content);
-    ndn_cs_remove_entry(forwarder->cs, cur->cs_entry);
+    free(tmp->cs_entry->content);
+    ndn_cs_remove_entry(forwarder->cs, tmp->cs_entry);
 
-    cur->next = NULL;
-    cur->prev = NULL;
-    cur->cs_entry = NULL;
+    tmp->next = NULL;
+    tmp->prev = NULL;
+    tmp->cs_entry = NULL;
 
-    free(cur);
-    cur = NULL;
-
+    free(tmp);
+    tmp = NULL;
     return;
   }
 
-  cur = cur->next;
-
-  while (cur != head)
-  {
-    if (cur->cs_entry == entry){
-      NDN_LOG_DEBUG("CS entry found %p\n", cur);
-
-      cur->next->prev = cur->prev;
-      cur->prev->next = cur->next;
-
-      free(cur->cs_entry->content);
-      ndn_cs_remove_entry(forwarder->cs, cur->cs_entry);
-
-      cur->next = NULL;
-      cur->prev = NULL;
-      cur->cs_entry = NULL;
-
-      free(cur);
-      cur = NULL;
-
-      return;
-    }
-    cur = cur->next;
-  }
   NDN_LOG_DEBUG("CS entry not in dll found\n");
 
 }
@@ -183,32 +184,26 @@ int dll_check_all_cs_entry_freshness(void){
   }
 
   dll_entry_t* tmp = head->next;
-  ndn_time_ms_t now = ndn_time_now_ms();
+  dll_entry_t* next = tmp->next;
 
-  if (head->cs_entry->fresh_until <= now){
+  while (tmp != head){
+    if (dll_check_one_cs_entry_freshness(tmp->cs_entry) == -1){
+      NDN_LOG_DEBUG("expired entry in CS detected\n");
+      counter++;
+
+      dll_remove_cs_entry(tmp->cs_entry);
+    }
+    tmp = next;
+    next = tmp->next;
+  }
+
+  if (dll_check_one_cs_entry_freshness(head->cs_entry) == -1){
     NDN_LOG_DEBUG("expired entry in CS head detected\n");
     counter++;
 
-    if (head->next == head){
-      NDN_LOG_DEBUG("only one entry in dll\n");
-
-      dll_remove_cs_entry(head->cs_entry);
-
-      return counter;
-    }
     dll_remove_cs_entry(head->cs_entry);
   }
 
-  while (tmp != head){
-    if (tmp->cs_entry->fresh_until <= now){
-      NDN_LOG_DEBUG("expired entry in CS entry detected\n");
-      counter++;
-
-      tmp = tmp->next;
-
-      dll_remove_cs_entry(tmp->prev->cs_entry);
-    } else tmp = tmp->next;
-  }
   return counter;
 }
 
