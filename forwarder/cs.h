@@ -97,6 +97,9 @@ ndn_cs_find(ndn_cs_t* self, uint8_t* prefix, size_t length);
 ndn_cs_entry_t*
 ndn_cs_prefix_match(ndn_cs_t* self, uint8_t* prefix, size_t length);
 
+void
+ndn_insert_cs_entry_with_content(ndn_cs_entry_t* cs_entry, uint8_t* data, size_t length);
+
 /*@}*/
 
 #ifdef __cplusplus

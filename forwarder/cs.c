@@ -11,6 +11,7 @@
 #define ENABLE_NDN_LOG_DEBUG 0
 #define ENABLE_NDN_LOG_ERROR 1
 #include "cs.h"
+#include "../encode/data.h"
 #include "../util/msg-queue.h"
 #include "../util/logger.h"
 
@@ -92,4 +93,26 @@ ndn_cs_prefix_match(ndn_cs_t* self, uint8_t* prefix, size_t length)
     return NULL;
   }
   return &self->slots[entry->cs_id];
+}
+
+void
+ndn_insert_cs_entry_with_content(ndn_cs_entry_t* cs_entry, uint8_t* data, size_t length){
+  ndn_data_t ndn_data_content;
+
+  // decode the data to extract the freshnessPeriod of the data
+  uint32_t be_signed_start, be_signed_end;
+  ndn_data_tlv_decode_no_verify(&ndn_data_content, data, length, &be_signed_start, &be_signed_end);
+
+  // create new CS entry with content
+  free(cs_entry->content);
+  cs_entry->content = NULL;
+  cs_entry->content = malloc(length);
+  memcpy(cs_entry->content, data, length);
+  cs_entry->content_len = length;
+
+  // set the timestamps and freshnessPeriod for the cs_entry
+  ndn_time_ms_t now = ndn_time_now_ms();
+  cs_entry->last_time = now;
+  cs_entry->fresh_until = ndn_data_content.metainfo.freshness_period + now;
+  return;
 }

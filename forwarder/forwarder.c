@@ -452,7 +452,9 @@ fwd_data_pipeline(uint8_t* data,
   if (cs_entry != NULL){
     NDN_LOG_DEBUG("[FORWARDER] (fwd_data_pipeline) cs entry already found\n");
 
-    // TODO Need to call on_data when receiving packet, which also is found in content store?
+    // update existing CS entry
+    ndn_insert_cs_entry_with_content(cs_entry, data, length);
+
     if (cs_entry->options.can_be_prefix || ndn_cs_find(forwarder.cs, name, name_len) == cs_entry){
       if (cs_entry->on_data != NULL){
           cs_entry->on_data(cs_entry->content, cs_entry->content_len, cs_entry->userdata);
@@ -478,22 +480,8 @@ fwd_data_pipeline(uint8_t* data,
     if (cs_entry == NULL)
       NDN_LOG_DEBUG("[FORWARDER] (fwd_data_pipeline) Could not create new cs_entry\n");
 
-    ndn_data_t ndn_data_content;
-
-    // decode the data to extract the freshnessPeriod of the data
-    uint32_t be_signed_start, be_signed_end;
-    ndn_data_tlv_decode_no_verify(&ndn_data_content, data, length, &be_signed_start, &be_signed_end);
-
-    // create new CS entry with content
-    cs_entry->content = malloc(length);
-    memcpy(cs_entry->content, data, length);
-    cs_entry->content_len = length;
-
-    // set the timestamps and freshnessPeriod for the cs_entry
-    ndn_time_ms_t now = ndn_time_now_ms();
-    cs_entry->last_time = cs_entry->express_time = now;
-    cs_entry->fresh_until = ndn_data_content.metainfo.freshness_period + now;
-
+    // insert the CS entry with the content into the dll
+    ndn_insert_cs_entry_with_content(cs_entry, data, length);
     dll_insert(cs_entry);
   }
 
