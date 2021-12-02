@@ -144,7 +144,7 @@ void dll_remove_cs_entry(ndn_cs_entry_t* entry){
   // step through dll starting at second entry and check for CS entry
   while (tmp != head){
     if (tmp->cs_entry == entry){
-      NDN_LOG_DEBUG("CS entry found %p\n", tmp);
+      NDN_LOG_DEBUG("CS entry found %p\n", (void*) tmp);
 
       // update pointer of neighbors
       tmp->next->prev = tmp->prev;
@@ -169,7 +169,7 @@ void dll_remove_cs_entry(ndn_cs_entry_t* entry){
 
   // after stepping through dll only head remains
   if (head->cs_entry == entry){
-    NDN_LOG_DEBUG("CS entry found at head %p\n", head);
+    NDN_LOG_DEBUG("CS entry found at head %p\n", (void*) head);
 
     // update pointer of neighbors
     head = head->next;
