@@ -128,10 +128,11 @@ void dll_remove_cs_entry(ndn_cs_entry_t* entry){
 
   // check if only one entry in dll and try removing it
   if (head->next == head){
-    if (head->cs_entry == entry)
+    if (head->cs_entry == entry){
       dll_remove_first();
-    else
+    }else{
       NDN_LOG_DEBUG("CS entry not in dll found");
+    }
     return;
   }
 
@@ -240,7 +241,9 @@ int dll_check_one_cs_entry_freshness(ndn_cs_entry_t* entry){
   if (entry->fresh_until <= now){
     NDN_LOG_DEBUG("CS entry is not fresh\n");
     return -1;
-  } else return NDN_SUCCESS;
+  }else{
+    return NDN_SUCCESS;
+  }
 
 }
 
