@@ -537,7 +537,7 @@ void create_fib(ndn_dummy_face_t* dummy_face, char* string){
   }
 }
 
-void create_data_packet(ndn_dummy_face_t* dummy_face, ndn_encoder_t encoder, const char* string){
+void create_data_packet(ndn_dummy_face_t* dummy_face, ndn_encoder_t encoder, const char* string, uint64_t freshnessPeriod){
   int ret_val = -1;
 
   // prepare Data content and Data packet
@@ -562,7 +562,7 @@ void create_data_packet(ndn_dummy_face_t* dummy_face, ndn_encoder_t encoder, con
   }
   ndn_metainfo_init(&data.metainfo);
   ndn_metainfo_set_content_type(&data.metainfo, NDN_CONTENT_TYPE_BLOB);
-  ndn_metainfo_set_freshness_period(&data.metainfo, 3000);
+  ndn_metainfo_set_freshness_period(&data.metainfo, freshnessPeriod);
 
   // sign the packet
   encoder_init(&encoder, block_value, 1024);
@@ -580,7 +580,7 @@ void create_data_packet(ndn_dummy_face_t* dummy_face, ndn_encoder_t encoder, con
   }
 }
 
-void create_and_express_interest(ndn_dummy_face_t* dummy_face, const char* string){
+void create_and_express_interest(ndn_dummy_face_t* dummy_face, const char* string, uint64_t freshnessPeriod){
   int ret_val = -1;
 
   // create interest
@@ -619,7 +619,7 @@ void create_and_express_interest(ndn_dummy_face_t* dummy_face, const char* strin
     print_error(_current_test_name, "run_forwarder_cs_tests", "ndn_direct_face_express_interest", ret_val);
   }
 
-  create_data_packet(dummy_face, encoder, string);
+  create_data_packet(dummy_face, encoder, string, freshnessPeriod);
 }
 
 void run_forwarder_cs_tests()
@@ -787,10 +787,10 @@ void run_forwarder_cs_tests()
   create_fib(dummy_face, "/cs2");
   create_fib(dummy_face, "/cs3");
 
-  create_and_express_interest(dummy_face, "/cs1/sample1");
-  create_and_express_interest(dummy_face, "/cs2/sample2");
-  create_and_express_interest(dummy_face, "/cs3/sample3");
-  create_and_express_interest(dummy_face, "/test4/content1");
+  create_and_express_interest(dummy_face, "/cs1/sample1", 3000);
+  create_and_express_interest(dummy_face, "/cs2/sample2", 3000);
+  create_and_express_interest(dummy_face, "/cs3/sample3", 3000);
+  create_and_express_interest(dummy_face, "/test4/content1",3000);
 
   dll_remove_all_entries();
 
