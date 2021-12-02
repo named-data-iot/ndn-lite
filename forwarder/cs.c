@@ -12,7 +12,6 @@
 #define ENABLE_NDN_LOG_ERROR 1
 #include "cs.h"
 #include "../encode/data.h"
-#include "../util/msg-queue.h"
 #include "../util/logger.h"
 
 static inline void
