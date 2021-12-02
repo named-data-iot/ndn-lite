@@ -38,7 +38,7 @@ void dll_insert(ndn_cs_entry_t* entry){
     head->prev = head;
     head->cs_entry = entry;
 
-    printf("Inserted first entry %p\n", (void*) head);
+    NDN_LOG_DEBUG("Inserted first entry %p\n", (void*) head);
 
     NDN_LOG_DEBUG("First entry is inserted successfully\n");
     return;
@@ -53,7 +53,7 @@ void dll_insert(ndn_cs_entry_t* entry){
   head->prev = new_entry;
   last->next = new_entry;
 
-  printf("Inserted entry %p with next: %p prev: %p\n", (void*) new_entry, (void*) new_entry->next, (void*) new_entry->prev);
+  NDN_LOG_DEBUG("Inserted entry %p with next: %p prev: %p\n", (void*) new_entry, (void*) new_entry->next, (void*) new_entry->prev);
 
 }
 
