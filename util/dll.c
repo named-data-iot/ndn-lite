@@ -252,9 +252,9 @@ void dll_show_all_entries(void){
 
   NDN_LOG_DEBUG("Showing full dll starting with oldest entry:\n");
   dll_entry_t* tmp = head->next;
-  printf("%p\n", head);
+  printf("%p\n", (void*) head);
   while (tmp != head){
-    printf("%p\n", tmp);
+    printf("%p\n", (void*) tmp);
     tmp = tmp->next;
   }
 }
