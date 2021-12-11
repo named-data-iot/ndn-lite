@@ -1,6 +1,7 @@
 set(DIR_FORWARDER "${DIR_NDN_LITE}/forwarder")
 target_sources(ndn-lite PUBLIC
   ${DIR_FORWARDER}/callback-funcs.h
+  ${DIR_FORWARDER}/cs.h
   ${DIR_FORWARDER}/face-table.h
   ${DIR_FORWARDER}/face.h
   ${DIR_FORWARDER}/fib.h
@@ -9,6 +10,7 @@ target_sources(ndn-lite PUBLIC
   ${DIR_FORWARDER}/pit.h
 )
 target_sources(ndn-lite PRIVATE
+  ${DIR_FORWARDER}/cs.c
   ${DIR_FORWARDER}/face-table.c
   ${DIR_FORWARDER}/fib.c
   ${DIR_FORWARDER}/forwarder.c

@@ -18,6 +18,7 @@ nametree_refresh(ndn_nametree_t *nametree, int num)
 {
   (*nametree)[num].left_child = NDN_INVALID_ID;
   (*nametree)[num].pit_id = NDN_INVALID_ID;
+  (*nametree)[num].cs_id = NDN_INVALID_ID;
   (*nametree)[num].fib_id = NDN_INVALID_ID;
 
   (*nametree)[num].right_bro = (*nametree)[0].right_bro;
@@ -36,6 +37,7 @@ nametree_clean(ndn_nametree_t *nametree, int num)
     (*nametree)[num].right_bro = nametree_clean(nametree, (*nametree)[num].right_bro);
     if ((*nametree)[num].fib_id == NDN_INVALID_ID &&
         (*nametree)[num].pit_id == NDN_INVALID_ID &&
+        (*nametree)[num].cs_id == NDN_INVALID_ID &&
         (*nametree)[num].left_child == NDN_INVALID_ID) {
       ret = (*nametree)[num].right_bro;
       nametree_refresh(nametree, num);
@@ -59,7 +61,7 @@ ndn_nametree_init(void* memory, ndn_table_id_t capacity)
   ndn_nametree_t *nametree = (ndn_nametree_t*)memory;
   //all free entries are linked as right_bro of (*nametree)[0], the root of the tree.
   for (int i = 0; i < capacity; ++i) {
-    (*nametree)[i].left_child = (*nametree)[i].pit_id = (*nametree)[i].fib_id = NDN_INVALID_ID;
+    (*nametree)[i].left_child = (*nametree)[i].pit_id = (*nametree)[i].cs_id = (*nametree)[i].fib_id = NDN_INVALID_ID;
     (*nametree)[i].right_bro = i + 1;
   }
   (*nametree)[capacity - 1].right_bro = NDN_INVALID_ID;
@@ -72,7 +74,7 @@ nametree_create_node(ndn_nametree_t *nametree, uint8_t name[], size_t len)
   if (output == NDN_INVALID_ID) return NDN_INVALID_ID;
   (*nametree)[0].right_bro = (*nametree)[output].right_bro;
   (*nametree)[output].left_child  = (*nametree)[output].right_bro = NDN_INVALID_ID;
-  (*nametree)[output].pit_id = (*nametree)[output].fib_id = NDN_INVALID_ID;
+  (*nametree)[output].pit_id = (*nametree)[output].cs_id = (*nametree)[output].fib_id = NDN_INVALID_ID;
   memcpy((*nametree)[output].val, name, len);
   return output;
 }
@@ -176,6 +178,7 @@ ndn_nametree_prefix_match(
     if (tmp == 0) {
       if ((*nametree)[now_node].fib_id != NDN_INVALID_ID && type == NDN_NAMETREE_FIB_TYPE) last_node = now_node;
       if ((*nametree)[now_node].pit_id != NDN_INVALID_ID && type == NDN_NAMETREE_PIT_TYPE) last_node = now_node;
+      if ((*nametree)[now_node].cs_id != NDN_INVALID_ID && type == NDN_NAMETREE_CS_TYPE) last_node = now_node;
     } else break;
     offset += component_len;
     father = now_node;

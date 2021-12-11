@@ -24,6 +24,7 @@
 enum NDN_NAMETREE_ENTRY_TYPE{
   NDN_NAMETREE_FIB_TYPE,
   NDN_NAMETREE_PIT_TYPE,
+  NDN_NAMETREE_CS_TYPE,
 
   NDN_NAMETREE_ENTRY_TYPE_CNT
 };
@@ -56,6 +57,12 @@ typedef struct nametree_entry{
    * #NDN_INVALID_ID if none.
    */
   ndn_table_id_t pit_id;
+
+  /**
+   * Corresponding CS entry's id.
+   * #NDN_INVALID_ID if none.
+   */
+  ndn_table_id_t cs_id;
 
   /**
    * Corresponding FIB entry's id.
